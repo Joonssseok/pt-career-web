@@ -1,87 +1,13 @@
-# PT Career Web - Decision Log
+# PT Career Decision Log
 
-## 결정: 새 GitHub 저장소 전환 (2026-07-16)
-
-**상황:**
-- 기존 저장소(Joonssseok/pt-career): Vite/Express/Render 기반 MVP
-- Phase 1-B 목표: "Vercel에서 404 없이 기본 Next.js 페이지 공개 접근"
-- Phase 1-B 결과: 빌드 성공 → 배포 404 (반복 실패)
-
-**근본 원인:**
-1. main/master 브랜치 불일치
-2. 기존 Vite/Express/Render 설정 잔재
-3. Vercel 프로젝트 손상 (캐시/설정 문제)
-
-**의사결정:**
-- ✅ 새 GitHub 저장소 생성 (pt-career-web)
-- ✅ Clean baseline으로 Next.js 재구축
-- ✅ 기존 저장소는 삭제 아닌 보존/아카이브
-- ✅ 선별된 문서와 UI 자산만 이관
-
-**구현:**
-1. Phase New-0: 새 저장소 생성 + 문서 이관
-2. Phase New-1: Next.js 클린 베이스라인
-3. Phase New-2: Vercel 배포 검증
-
----
-
-## 저장소 정보
-
-**기존 저장소:**
-- URL: https://github.com/Joonssseok/pt-career
-- 상태: 보존 (아카이브)
-- 용도: 레거시 코드 참고용
-
-**새 저장소:**
-- URL: https://github.com/Joonssseok/pt-career-web
-- 상태: Active (신규)
-- 목표: MVP 출시 기준
-
----
-
-## 이관 정책
-
-### 절대 이식하지 말 것
-- ❌ client/ 전체 (Vite SPA)
-- ❌ server/ 전체 (Express)
-- ❌ drizzle/ 전체 (MySQL schema)
-- ❌ render.yaml (Render 배포)
-- ❌ vite.config.ts
-- ❌ 기존 vercel.json
-- ❌ GitHub Pages workflow
-- ❌ Express/tRPC 코드
-- ❌ Manus OAuth 코드
-- ❌ Manus Forge API 코드
-
-### 선별 이식 가능
-- ✅ UI 컴포넌트 마크업/스타일
-  - ExpertCard
-  - ExpertDetail
-  - NearbyExpertCard
-  - NearbyExpertsModal
-- ✅ Radix 기반 ui 컴포넌트
-- ✅ Tailwind 디자인 토큰
-- ✅ 유틸 함수
-  - distance.ts (haversine)
-- ✅ DB 필드 설계 아이디어
-- ✅ UX/기획 문서
-  - 13_UX_FLOW.md
-  - SCREEN_SPEC.md
-
----
-
-## Phase New-0 완료 조건
-
-- [x] 새 GitHub 저장소 생성
-- [x] main 브랜치만 존재
-- [x] docs/ 문서 이관
-- [x] DECISION_LOG.md 기록
-- [x] CHANGELOG.md 초기화
-- [x] 기존 저장소 URL 기록
-- [ ] GitHub 원격 연결 (사용자가 저장소 생성 후)
-
----
-
-**기록일:** 2026-07-16  
-**담당:** PT Career Web Team  
-**상태:** Phase New-0 실행 중
+| Date | Decision | Reason |
+|---|---|---|
+| 2026-07-10 | MVP에서 예약 기능 제외 | 법적 리스크와 구현 복잡도를 줄이고 프로필 플랫폼에 집중하기 위해 |
+| 2026-07-10 | MVP에서 결제 기능 제외 | 초기에는 센터 직접 문의 구조가 더 안전하고 단순하기 때문에 |
+| 2026-07-10 | MVP에서 후기 기능 제외 | 의료광고, 조작 가능성, 운영 리스크가 크기 때문에 |
+| 2026-07-10 | 온라인 명함을 핵심 기능으로 채택 | 입소문을 디지털로 연결하는 PT Career의 차별화 포인트이기 때문에 |
+| 2026-07-10 | North Star Metric을 ‘공유된 전문가 프로필 수’로 설정 | 공유는 단순 조회보다 강한 신뢰 신호이기 때문에 |
+| 2026-07-10 | 소비자 열람은 회원가입 없이 가능하게 결정 | 검색과 프로필 확인의 진입장벽을 낮추기 위해 |
+| 2026-07-10 | 전문가 프로필 작성은 5분 이내를 목표로 설정 | 초기 전문가 확보를 위해 입력 부담을 줄여야 하기 때문에 |
+| 2026-07-10 | Claude Code와 Manus를 역할 분리하여 사용 | Manus는 화면 초안, Claude Code는 검증·수정·보안에 적합하기 때문에 |
+| 2026-07-10 | MVP 기술스택을 Next.js + Supabase + Vercel로 설정 | 비전공자가 AI 도구로 운영하기 쉬운 관리형 구조이기 때문에 |

@@ -8,7 +8,8 @@
 
 | 보고서 | Phase | 작성일 | 상태 | 설명 |
 |--------|-------|--------|------|------|
-| PHASE_M1_COMPLETION_REPORT.md | M1 | 2026-07-17 | CTO Review | Supabase 이메일 인증 구현 (이메일 미구성 이슈 포함) |
+| PHASE_M1_1_AUTH_HOTFIX_REPORT.md | M1.1 | 2026-07-17 | E2E Test | 인증 보안 개선 + 흐름 통일 (middleware, callback, redirect) |
+| PHASE_M1_COMPLETION_REPORT.md | M1 | 2026-07-17 | Review | Supabase 이메일 인증 구현 (이메일 미구성 이슈 포함) |
 | PHASE_M0_3_DEPENDENCY_REPORT.md | M0.3 | 2026-07-17 | Completed | 의존성 안정화 — Next.js 14→15 업그레이드 |
 | PHASE_M0_3_PRE_REPORT.md | M0.3 | 2026-07-17 | Completed | 의존성 안정화 — 작업 전 분석 |
 | PHASE_M0_2_COMPLETION_REPORT.md | M0.2 | 2026-07-17 | Completed | 문서 정합성 최종 검증 및 보고서 |

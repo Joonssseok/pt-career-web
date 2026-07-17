@@ -138,29 +138,34 @@ export function getSafeRedirectUrl(nextUrl, fallback = '/my'): string {
 
 ### E. 비밀번호 재설정 흐름 통일
 
-**변경 전:**
-```text
-/forgot-password → resetPasswordForEmail()
-  ↓ (이메일 링크)
-/reset-password  (직접 접근, 세션 없음)
-```
+**`/reset-password` 정확한 동작:**
+- ✅ 인증된 세션에서만 접근 가능
+- ✅ 비로그인 사용자의 직접 접근은 차단
+- ✅ 비밀번호 재설정 이메일 callback을 통해서도 진입
+- ✅ 세션 생성 후 `/reset-password`로 이동
+- ✅ `updateUser()` 성공 후 로그아웃 및 `/login?reset=success` 이동
 
-**변경 후:**
+**변경 흐름:**
 ```text
 /forgot-password → resetPasswordForEmail(redirect: /auth/callback?next=/reset-password)
   ↓ (이메일 링크)
 /auth/callback → exchangeCodeForSession()
-  ↓ (next 파라미터 검증)
-/reset-password (세션 확인, 유효한 상태)
+  ↓ (인증된 세션 생성)
+/reset-password (세션 기반 접근만 가능)
   ↓ (새 비밀번호 입력)
 updateUser({ password })
   ↓ (성공)
 signOut() → /login?reset=success
 ```
 
+**중요 부분:**
+- ✅ 복구 전용 별도 쿠키/세션 없음 (일반 인증 세션 사용)
+- ✅ 복잡한 nonce/recovery 상태 시스템 없음
+- ✅ 인증된 사용자는 모두 `/reset-password` 접근 가능
+
 **개선 사항:**
 - ✅ 일관된 callback 흐름
-- ✅ /reset-password 직접 접근 차단
+- ✅ 비로그인 사용자 차단
 - ✅ 비밀번호 변경 후 기존 세션 로그아웃
 - ✅ 사용자 친화적 오류 메시지
 

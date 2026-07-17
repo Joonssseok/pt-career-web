@@ -24,11 +24,17 @@ export function validateRedirectUrl(url: string | null): boolean {
   // Block if not starting with / (must be relative path)
   if (!url.startsWith('/')) return false
 
+  // Block if contains backslash
+  if (url.includes('\\')) return false
+
   // Block if contains null byte
   if (url.includes('\0')) return false
 
   // Block if contains control characters
   if (/[\x00-\x1F\x7F]/g.test(url)) return false
+
+  // Block if contains URL-encoded dangerous characters: %2F (/) or %5C (\)
+  if (/%2[fF]|%5[cC]/g.test(url)) return false
 
   // Allow only internal paths
   return true

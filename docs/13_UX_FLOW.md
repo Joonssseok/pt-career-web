@@ -33,7 +33,7 @@ PT Career recognizes three distinct user types based on authentication and profi
 **Definition:** Authenticated user without a profile.  
 **Code Basis:** `isAuthenticated === true` AND `profile === null`  
 **Access:** 
-- Browse `/experts`, `/experts/:id`, `/map`
+- Browse `/experts`, `/experts/:id`
 - Search and filter specialists
 - View public profiles, contact specialists
 - **Cannot:** Create content, manage data
@@ -75,8 +75,7 @@ PT Career (/)
 │   ├── Home (/)
 │   ├── 전문가 찾기
 │   │   ├── 전체 전문가 (/experts)
-│   │   ├── 전문가 상세 (/experts/:id)
-│   │   └── 지도 (/map)
+│   │   └── 전문가 상세 (/experts/:id)
 │   ├── 인증 (Auth)
 │   │   ├── 로그인 (/login)
 │   │   └── 회원가입 (/signup)
@@ -97,8 +96,7 @@ PT Career (/)
     └── 관리자 페이지 (/admin)
         ├── 대시보드 (Dashboard)
         ├── 자격 검증 (Licenses)
-        ├── 프로필 관리 (Profiles)
-        └── 신고 관리 (Reports)
+        └── 프로필 관리 (Profiles)
 ```
 
 ### 3.2 Route Table
@@ -108,7 +106,6 @@ PT Career (/)
 | `/` | Home | Featured specialists, service intro | No | No |
 | `/experts` | Experts | Search/filter specialist directory | No | No |
 | `/experts/:id` | ExpertDetail | Specialist profile + contact info | No | No |
-| `/map` | MapPage | Map-based specialist discovery | No | No |
 | `/login` | Login | OAuth redirect entry point | No | No |
 | `/signup` | Signup | OAuth redirect entry point | No | No |
 | `/about` | About | Service information | No | No |
@@ -120,11 +117,11 @@ PT Career (/)
 | `/mypage/licenses` | MyLicenses | License/credential management | Yes | No |
 | `/mypage/experiences` | MyExperiences | Work history management | Yes | No |
 | `/mypage/educations` | MyEducations | Education history management | Yes | No |
-| `/admin` | AdminPage | Admin dashboard + 4 tabs | Yes | Yes |
+| `/admin` | AdminPage | Admin dashboard + 3 tabs | Yes | Yes |
 | `/404` | NotFound | Explicit not-found page | No | No |
 | `` (catch-all) | NotFound | Implicit not-found route | No | No |
 
-**Total Routes:** 18 (16 explicit + 1 explicit `/404` + 1 catch-all)
+**Total Routes:** 16 (14 explicit + 1 explicit `/404` + 1 catch-all)
 
 ---
 
@@ -136,11 +133,9 @@ PT Career (/)
 flowchart TD
     A["홈 도착<br/>(/)"] --> B{탐색 방법 선택}
     B -->|검색| C["검색/필터 입력<br/>(/experts)"]
-    B -->|지도| D["위치 기반 조회<br/>(/map)"]
     B -->|특별 추천| E["추천 전문가<br/>(/)"]
     
     C --> F["검색 결과 조회"]
-    D --> F
     E --> F
     
     F --> G{"결과 있는가?"}

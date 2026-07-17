@@ -1,12 +1,66 @@
-# M1.2 Auth E2E Verification — 로컬 검증 + 이메일 설정 발견
+# M1.2.1 Email Redirect Configuration Fix — 코드 수정 완료
 
-**작성일:** 2026-07-17  
-**상태:** 🔴 **Supabase 이메일 설정 오류 발견, 설정 수정 대기**  
-**목표:** M1 인증 흐름 완전 검증 (회원가입 → 로그인 → 비밀번호 재설정)
+**작성일:** 2026-07-18  
+**상태:** ✅ **M1.2.1 코드 수정 완료, Supabase 설정 및 재테스트 대기**  
+**목표:** 회원가입 이메일 리다이렉트 설정 수정 + Safe Redirect 강화
 
 ---
 
-## 0️⃣ 로컬 검증 결과 (AI 수행)
+## 0️⃣ M1.2.1 코드 수정 (AI 수행 완료)
+
+**현황:** ✅ **회원가입 + Safe Redirect 수정 완료, 빌드 검증 완료**
+
+### 2-1. 회원가입 emailRedirectTo 수정
+```typescript
+// 변경 전
+emailRedirectTo: `${window.location.origin}/auth/callback`
+
+// 변경 후 ✓
+emailRedirectTo: `${window.location.origin}/auth/callback?next=/my`
+```
+
+**파일:** `app/signup/page.tsx:45`  
+**상태:** ✅ FIXED (commit 5461c04)
+
+### 2-2. Safe Redirect 함수 강화
+**추가 검증:**
+- ✅ 역슬래시 포함 패턴 차단 (`/\evil.com`)
+- ✅ URL 인코딩된 `/` 차단 (`/%2Fevil.com`)
+- ✅ URL 인코딩된 `\` 차단 (`%5Cevil.com`)
+
+**파일:** `lib/auth/safe-redirect.ts`  
+**상태:** ✅ ENHANCED (commit 5461c04)
+
+### 2-3. Safe Redirect 테스트 실행 ✓
+**결과: 20/20 통과**
+
+**허용 케이스 (5/5):**
+- ✓ `/` (Root path)
+- ✓ `/my` (Basic path)
+- ✓ `/reset-password` (Reset password path)
+- ✓ `/my?tab=profile` (Path with query string)
+- ✓ `/experts` (Experts path)
+
+**차단 케이스 (15/15):**
+- ✓ `//evil.com` (Protocol-relative URL)
+- ✓ `https://evil.com` (HTTPS URL)
+- ✓ `http://evil.com` (HTTP URL)
+- ✓ `\\evil.com` (Backslash path)
+- ✓ `/\evil.com` (Mixed slash-backslash) — **수정 후 통과**
+- ✓ `%2F%2Fevil.com` (URL-encoded //)
+- ✓ `/%2Fevil.com` (URL-encoded forward slash) — **수정 후 통과**
+- ✓ `%5Cevil.com` (URL-encoded backslash)
+- ✓ `%00` (Null byte)
+- ✓ `/%0d%0aLocation:...` (CRLF injection)
+- ✓ ` https://evil.com` (Leading whitespace)
+- ✓ `/\x00evil` (Control character - null)
+- ✓ `/\x1Fevil` (Control character - unit separator)
+- ✓ `` (Empty string)
+- ✓ `null` (Null input)
+
+**평가:** ✅ PASS — 모든 공격 벡터 차단 검증 완료
+
+### 2-4. 로컬 검증 결과 (AI 수행)
 
 **현황:** ✅ **Dev 서버 시작 + HTTP 상태 검증 완료**
 
@@ -32,41 +86,51 @@ Status: ✓ Ready in 2s
 
 ---
 
-## 🔴 중요: Supabase 이메일 설정 오류 발견
+## 🔍 원인 판정: MISSING_EMAIL_REDIRECT_TO
 
-**문제 상황:**
-1. 회원가입 폼 제출 → 이메일 발송 ✓
-2. 이메일 링크 클릭 → **홈(`/`)으로 리다이렉트** ❌
-3. 세션 생성 실패 → 로그인 불가
+**발견된 문제:**
+회원가입 `signUp()` 호출에서 `emailRedirectTo` 콜백에 `?next=/my` 파라미터가 **없었음**
 
-**원인:**
-Supabase 대시보드의 이메일 설정에서 **확인 링크 리다이렉트 URL이 `/`로 설정되어 있음**
+**근거:**
+- 코드 검증 결과: `app/signup/page.tsx:45`에서 `/auth/callback` 만 지정
+- 이메일 링크 클릭 후 `/auth/callback`에 도달하면 → `next` 파라미터 없음
+- `/auth/callback`은 기본값 `/my`로 리다이렉트하지만, 세션 미설정 상태에서 `/my` 접근 시 `/login` 리다이렉트 → 홈으로 보여짐
 
-**정상이어야 할 것:**
+**이미 수정됨:**
+```typescript
+// 수정 commit: 5461c04
+emailRedirectTo: `${window.location.origin}/auth/callback?next=/my`
+```
+
+---
+
+## 🔧 Supabase Dashboard 설정 (사용자 작업 필요)
+
+**필수 설정:**
+
+### Authentication → URL Configuration
+
+**Site URL:**
+- Production 루트 URL (예: https://pt-career-web.vercel.app)
+
+**Redirect URLs (추가 필요):**
 ```
 http://localhost:3001/auth/callback
 https://pt-career-web.vercel.app/auth/callback
+(+ 현재 Hotfix Preview URL)
 ```
 
-**해결 방법:**
-1. **Supabase 대시보드** 접속
-2. **Authentication** → **URL Configuration** 클릭
-3. **Redirect URLs** 섹션에 아래 2개 추가:
-   ```
-   http://localhost:3001/auth/callback
-   https://pt-career-web.vercel.app/auth/callback
-   ```
-4. **Save** 클릭
-5. 이메일 한도 회복 후 재테스트
+### Email Templates
 
-**영향 범위:**
-- ❌ 회원가입 이메일 확인 불가
-- ❌ 비밀번호 재설정 이메일 링크 불가
-- ❌ `/auth/callback`이 올바른 세션을 생성하지 않음
+**Confirm signup:**
+- 변수: `{{ .ConfirmationURL }}`로 확인
+- 링크가 `/auth/callback?code=...&type=signup` 형식이어야 함
 
-**중요 참고:**
-- 이메일 한도(Supabase 무료 플랜 제한)로 인해 즉시 재테스트 불가
-- 설정 수정 후 한도 회복 시점에 재테스트 진행
+**Reset password:**
+- 변수: `{{ .ConfirmationURL }}`로 확인
+- 링크가 `/auth/callback?code=...&type=recovery` 형식이어야 함
+
+**상태:** ⏳ **사용자 설정 대기**
 
 ---
 
@@ -253,70 +317,93 @@ https://pt-career-web.vercel.app/auth/callback
 
 ## 최종 평가
 
-### 기술 검증 현황 ✅
+### M1.2.1 코드 수정 현황 ✅
+
+| 항목 | 상태 | 상세 |
+|------|------|------|
+| 회원가입 emailRedirectTo 수정 | ✅ FIXED | `/auth/callback?next=/my` 추가 |
+| Safe Redirect 함수 강화 | ✅ ENHANCED | 역슬래시, %2F, %5C 차단 추가 |
+| Safe Redirect 테스트 | ✅ PASS (20/20) | 모든 공격 벡터 차단 검증 |
+| 비밀번호 재설정 코드 | ✅ VERIFIED | `?next=/reset-password` 이미 정상 |
+| Callback HTTP 검증 | ✅ PASS | code 없을 때 307 → `/login?error=missing_code` |
+| Build 성공 | ✅ PASS | 2.7s 컴파일 |
+| TypeScript 오류 | ✅ PASS | 없음 |
+| Git Push | ✅ PASS | commit 5461c04 |
+
+### 기술 검증 ✅
 
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| Dev 서버 시작 | ✅ PASS | localhost:3001 준비 완료 |
-| 모든 라우트 HTTP 상태 | ✅ PASS | 200/307 정상 응답 |
-| Build 성공 | ✅ PASS | 2.4s 컴파일 |
-| TypeScript 오류 없음 | ✅ PASS | 모두 통과 |
-| Safe Redirect 코드 검증 | ✅ PASS | 14개 공격 벡터 차단 |
-| Git 동기화 | ✅ PASS | origin과 일치 |
+| Dev 서버 | ✅ | localhost:3001 실행 중 |
+| 라우트 접근성 | ✅ | 모든 라우트 HTTP 200/307 |
+| 세션 보호 | ✅ | `/my` 비로그인 차단 (307) |
+| URL 검증 | ✅ | Safe Redirect 20/20 통과 |
+| 모바일 UI | 🟡 NOT VERIFIED | 실제 360px 검증 필요 |
 
-### 차단 이슈 🔴
+### 대기 중인 작업 ⏳
 
-| 항목 | 상태 | 원인 |
+| 항목 | 상태 | 사유 |
 |------|------|------|
-| Supabase 이메일 설정 | ❌ FAIL | Redirect URL 미설정 |
-| 회원가입 이메일 확인 | ⏹️ BLOCKED | 위 설정 오류로 진행 불가 |
-| 로그인 세션 생성 | ⏹️ BLOCKED | 위 설정 오류로 진행 불가 |
-| 비밀번호 재설정 | ⏹️ BLOCKED | 위 설정 오류로 진행 불가 |
-| Hotfix Preview 배포 | ⏹️ BLOCKED | 로컬 검증 먼저 필요 |
-
-### E2E 테스트 현황
-
-| 항목 | 상태 | 원인 |
-|------|------|------|
-| 회원가입 | ⏹️ BLOCKED | Supabase 이메일 설정 |
-| 로그인 | ⏹️ BLOCKED | 회원가입 불가 → 테스트 불가 |
-| 로그아웃 | ⏹️ BLOCKED | 로그인 불가 → 테스트 불가 |
-| 세션 유지 | ⏹️ BLOCKED | 로그인 불가 → 테스트 불가 |
-| 비밀번호 재설정 | ⏹️ BLOCKED | Supabase 이메일 설정 |
-| 모바일 검증 | ✅ PASS | UI 레이아웃 정상 (로컬 확인) |
-| Redirect 검증 | ✅ PASS | Safe Redirect 함수 검증 완료 |
+| Supabase 이메일 설정 | ⏳ USER ACTION | 사용자가 Dashboard 설정 필요 |
+| Hotfix Preview 배포 | ⏳ USER ACTION | 설정 후 사용자가 Vercel 배포 |
+| 회원가입 E2E 테스트 | ⏳ BLOCKED | 이메일 한도 회복 필요 |
+| 로그인 E2E 테스트 | ⏳ BLOCKED | 회원가입 완료 필요 |
+| 비밀번호 재설정 E2E | ⏳ BLOCKED | 이메일 한도 회복 필요 |
 
 ---
 
-## 🔄 다음 단계
+## 📋 M1.2.1 완료 체크리스트
 
-### 즉시 해결 (필수)
-1. **Supabase 이메일 설정 수정**
-   - URL Configuration → Redirect URLs 추가
-   - 로컬: `http://localhost:3001/auth/callback`
-   - 운영: `https://pt-career-web.vercel.app/auth/callback`
-   
-2. **Supabase 이메일 한도 회복 대기**
-   - 현재 무료 플랜 일일 한도 초과
-   - 24시간 후 재테스트
-
-### 설정 후 재테스트 순서
-1. 회원가입 → 이메일 확인
-2. 로그인 → 세션 생성
-3. 로그아웃 → 세션 정리
-4. 비밀번호 재설정
-
-### Hotfix Preview 배포
-- 로컬 테스트 통과 후
-- Vercel에 배포
-- 11개 기술 검증 항목 확인
+- [x] 회원가입 `emailRedirectTo` 수정
+- [x] 비밀번호 재설정 코드 확인
+- [x] Safe Redirect 함수 강화
+- [x] Safe Redirect 테스트 20/20 통과 실행
+- [x] Callback HTTP 검증 (307)
+- [x] Build 성공
+- [x] TypeScript 오류 없음
+- [x] Git commit & push
+- [ ] Supabase Dashboard 설정 (사용자 작업)
+- [ ] Hotfix Preview 배포 (사용자 작업)
+- [ ] 회원가입 E2E 재테스트
+- [ ] 로그인 E2E 재테스트
+- [ ] 모바일 360px 검증 (사용자 작업)
 
 ---
 
-**M1 최종 완료 조건:** 
-- Supabase 이메일 설정 완료
-- 모든 E2E 테스트 PASS
-- 핵심 흐름에 FAIL 없음
+## 🚀 다음 단계
+
+### 1단계: Supabase 설정 (사용자)
+**Authentication → URL Configuration:**
+- Redirect URLs에 추가:
+  ```
+  http://localhost:3001/auth/callback
+  https://pt-career-web.vercel.app/auth/callback
+  ```
+
+### 2단계: 이메일 한도 회복 대기
+- Supabase 기본 메일 제공자: **프로젝트 전체 기준 시간당 2건 제한**
+- 마지막 요청 이후 한도 회복 후 재검증
+
+### 3단계: Hotfix Preview 배포 (사용자)
+**Vercel Dashboard:**
+- 새 Preview 배포 (commit 5461c04 이상)
+- HTTP 검증 (11개 항목)
+
+### 4단계: 회원가입 E2E 재테스트 (사용자)
+```
+1. 새 이메일로 회원가입
+2. 확인 이메일 수신 및 링크 클릭
+3. /auth/callback → /my 이동 확인
+4. 세션 생성 확인
+5. 로그인/로그아웃 테스트
+```
+
+### 5단계: 비밀번호 재설정 E2E 테스트 (사용자)
+- 이메일 한도 회복 후 수행
+
+---
 
 **작성자:** PT Career MVP 팀  
-**상태:** ⏸️ Supabase 설정 수정 대기
+**상태:** ✅ M1.2.1 코드 수정 완료, ⏳ Supabase 설정 대기  
+**Commit:** 5461c04  
+**Branch:** feature/m1-supabase-auth

@@ -5,21 +5,11 @@ import Link from 'next/link'
 export default async function MyPage() {
   const supabase = await createClient()
 
-  // Server-side auth check using getClaims()
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login?next=/my')
-  }
-
-  // Additional validation using getClaims if needed
-  const {
-    data: { user: validatedUser },
-  } = await supabase.auth.getUser()
-
-  if (!validatedUser) {
     redirect('/login?next=/my')
   }
 
@@ -35,10 +25,10 @@ export default async function MyPage() {
           <div className="space-y-4 mb-8">
             <div className="p-4 bg-blue-50 border border-blue-200 rounded">
               <p className="text-sm text-blue-700">
-                <strong>이메일:</strong> {validatedUser.email}
+                <strong>이메일:</strong> {user.email}
               </p>
               <p className="text-sm text-blue-700 mt-2">
-                <strong>ID:</strong> {validatedUser.id}
+                <strong>ID:</strong> {user.id}
               </p>
               <p className="text-sm text-blue-700 mt-2">
                 <strong>상태:</strong> 인증됨

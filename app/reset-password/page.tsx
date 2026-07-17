@@ -11,6 +11,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
+  const [sessionReady, setSessionReady] = useState(false)
   const [linkValid, setLinkValid] = useState(true)
   const router = useRouter()
   const supabase = createClient()
@@ -20,6 +21,8 @@ export default function ResetPasswordPage() {
       const { data } = await supabase.auth.getSession()
       if (!data.session) {
         setLinkValid(false)
+      } else {
+        setSessionReady(true)
       }
     }
     checkSession()
@@ -54,10 +57,12 @@ export default function ResetPasswordPage() {
         })
 
       if (updateError) {
-        setError(updateError.message)
+        setError('비밀번호 변경 중 문제가 발생했습니다. 다시 시도해주세요.')
       } else {
+        // Logout existing session and redirect
+        await supabase.auth.signOut()
         setMessage('비밀번호가 변경되었습니다. 로그인 페이지로 이동합니다.')
-        setTimeout(() => router.push('/login'), 2000)
+        setTimeout(() => router.push('/login?reset=success'), 2000)
       }
     } catch (err) {
       setError('오류가 발생했습니다')
@@ -73,16 +78,24 @@ export default function ResetPasswordPage() {
           <div className="bg-white rounded-lg shadow p-8">
             <h1 className="text-2xl font-bold mb-4 text-center">링크 오류</h1>
             <div className="p-4 bg-yellow-50 border border-yellow-200 text-yellow-700 rounded mb-6">
-              비밀번호 재설정 링크가 만료되었거나 유효하지 않습니다.
+              유효한 비밀번호 재설정 링크가 필요합니다. 이메일에서 받은 링크를 클릭해주세요.
             </div>
             <Link
               href="/forgot-password"
               className="block text-center bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 transition"
             >
-              새 링크 요청하기
+              재설정 링크 요청하기
             </Link>
           </div>
         </div>
+      </div>
+    )
+  }
+
+  if (!sessionReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="text-center">로딩 중...</div>
       </div>
     )
   }

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { getSafeRedirectUrl } from '@/lib/auth/safe-redirect'
 import Link from 'next/link'
 
 export default function LoginForm() {
@@ -12,7 +13,7 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const nextUrl = searchParams.get('next') || '/my'
+  const nextUrl = getSafeRedirectUrl(searchParams.get('next'))
   const supabase = createClient()
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -35,16 +36,7 @@ export default function LoginForm() {
       if (loginError) {
         setError('이메일 또는 비밀번호가 올바르지 않습니다')
       } else {
-        // Validate next URL - only allow internal paths starting with /
-        if (
-          nextUrl.startsWith('/') &&
-          !nextUrl.startsWith('//') &&
-          !nextUrl.includes('://')
-        ) {
-          router.push(nextUrl)
-        } else {
-          router.push('/my')
-        }
+        router.push(nextUrl)
       }
     } catch (err) {
       setError('로그인 중 오류가 발생했습니다')

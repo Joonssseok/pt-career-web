@@ -16,7 +16,13 @@ export async function updateSession(request: NextRequest) {
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(
+          cookiesToSet: Array<{
+            name: string
+            value: string
+            options?: Record<string, unknown>
+          }>
+        ) {
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           )
@@ -25,7 +31,8 @@ export async function updateSession(request: NextRequest) {
     }
   )
 
-  await supabase.auth.getSession()
+  // Refresh session via getClaims (cookie refresh only, no auth judgment)
+  await supabase.auth.getClaims()
 
   return response
 }

@@ -27,7 +27,6 @@ Map:
 
 AI Tools:
 - ChatGPT: 전략, PRD, UX, 마케팅, 문서화
-- Manus: UI 초안, 빠른 화면 생성
 - Claude Code: 코드 리뷰, 디버깅, 리팩토링, 보안 수정
 
 Version Control:

@@ -53,8 +53,8 @@
 
 2. **환경변수 설정**
    - NEXT_PUBLIC_SUPABASE_URL
-   - NEXT_PUBLIC_SUPABASE_ANON_KEY
-   - SUPABASE_SERVICE_ROLE_KEY (서버용, 클라이언트 미노출)
+   - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY (anon key, 클라이언트용)
+   - 주의: SUPABASE_SERVICE_ROLE_KEY는 M1에서 미사용 (M2+에서 필요)
 
 3. **Supabase Auth 설정**
    - Provider: Email (비밀번호)
@@ -66,8 +66,8 @@
    - UUID 타입 활성화
 
 5. **Storage 버킷 생성**
-   - public: `profile-images` (프로필 사진, 공개)
-   - private: `evidence-files` (증빙파일, 비공개)
+   - 주의: M1에서는 Storage 버킷 미생성
+   - M2에서 생성 예정: public `profile-images`, private `evidence-files`
 
 6. **기본 RLS 정책 준비** (Phase 4에서 구현)
    - (이 단계에서는 준비만, 구현 아님)
@@ -128,12 +128,11 @@
    - licenses (document_url_private, license_number_encrypted)
    - experiences
    - educations
-   - specialties (마스터 데이터)
+   - specialties (마스터 데이터, 12개 카테고리)
    - profile_specialties (N:M)
    - admin_users (권한)
    - admin_actions (검토 기록)
-   - share_events (Optional, Phase 2)
-   - contact_click_events (Optional, Phase 2)
+   - share_events (선택사항, M2+)
    ```
 
 2. **RLS 정책 5개 구현**
@@ -165,10 +164,10 @@
 - M1 (Supabase 프로젝트 준비)
 
 ### 완료 조건
-- ✅ 11개 테이블 생성 및 스키마 검증
+- ✅ 10개 테이블 생성 및 스키마 검증 (share_events 제외)
 - ✅ RLS 정책 5개 적용 및 테스트
-- ✅ Storage 정책 적용
-- ✅ 마스터 데이터 (specialties) 등록
+- ✅ Storage 정책은 M3+ (M2에서 구현)
+- ✅ 마스터 데이터 (specialties 12개 카테고리) 등록
 - ✅ migration 파일 버전 관리 (git 추적)
 
 ### 테스트 항목
@@ -187,10 +186,10 @@
 
 ### CTO 승인 게이트
 **M3 진행 조건**:
-- [ ] 11개 테이블 생성 완료
+- [ ] 10개 테이블 생성 완료
 - [ ] RLS 정책 5개 적용 확인
-- [ ] Storage 정책 적용 확인
-- [ ] 마스터 데이터 등록 완료
+- [ ] Storage 정책은 M3+에서 적용
+- [ ] 마스터 데이터 (12개 specialties) 등록 완료
 
 ### 남은 리스크
 - 테이블 설계 오류 → 초기 단계에서 발견 및 수정

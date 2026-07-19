@@ -1,6 +1,11 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 
 export default function Home() {
+  const [showExpertsNotice, setShowExpertsNotice] = useState(false);
+
   return (
     <main className="flex min-h-screen flex-col bg-white">
       {/* Navigation */}
@@ -34,12 +39,12 @@ export default function Home() {
           {/* CTAs */}
           <div className="space-y-3 sm:space-y-4">
             {/* Find Experts Button */}
-            <Link
-              href="/experts"
-              className="block w-full py-3 sm:py-4 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-center"
+            <button
+              onClick={() => setShowExpertsNotice(true)}
+              className="block w-full py-3 sm:py-4 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-center cursor-pointer"
             >
               내 주변 전문가 찾기
-            </Link>
+            </button>
 
             {/* Create Profile Button */}
             <Link
@@ -49,6 +54,15 @@ export default function Home() {
               전문가 프로필 만들기
             </Link>
           </div>
+
+          {/* Notice */}
+          {showExpertsNotice && (
+            <div className="mt-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+              <p className="text-sm text-slate-700">
+                전문가 목록은 다음 단계에서 준비됩니다.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

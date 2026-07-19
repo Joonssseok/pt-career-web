@@ -123,6 +123,62 @@ FOR EACH ROW
 EXECUTE FUNCTION check_max_primary_specialty();
 
 -- ============================================================================
+-- 4.5 Protection: Prevent non-admin from modifying protected profile columns
+-- ============================================================================
+CREATE OR REPLACE FUNCTION protect_profile_columns()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Only enforce if user is authenticated (not admin)
+  -- Admins bypass this check via separate admin policies
+  IF auth.uid() IS NOT NULL AND NOT is_admin(auth.uid()) THEN
+    -- Non-admin user: cannot change these protected fields
+    IF NEW.verification_status != OLD.verification_status THEN
+      RAISE EXCEPTION 'Permission denied: cannot modify verification_status';
+    END IF;
+    IF NEW.is_public != OLD.is_public THEN
+      RAISE EXCEPTION 'Permission denied: cannot modify is_public';
+    END IF;
+    IF NEW.approved_at IS DISTINCT FROM OLD.approved_at THEN
+      RAISE EXCEPTION 'Permission denied: cannot modify approved_at';
+    END IF;
+    IF NEW.user_id != OLD.user_id THEN
+      RAISE EXCEPTION 'Permission denied: cannot modify user_id';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER protect_profile_columns_before_update
+BEFORE UPDATE ON profiles
+FOR EACH ROW
+EXECUTE FUNCTION protect_profile_columns();
+
+-- ============================================================================
+-- 4.6 Protection: Prevent non-admin from setting license verification to 'verified'
+-- ============================================================================
+CREATE OR REPLACE FUNCTION protect_license_verification()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Only enforce if user is authenticated (not admin)
+  IF auth.uid() IS NOT NULL AND NOT is_admin(auth.uid()) THEN
+    -- Non-admin: cannot set verification_status to 'verified'
+    IF NEW.verification_status = 'verified' AND OLD.verification_status != 'verified' THEN
+      RAISE EXCEPTION 'Permission denied: only admins can verify licenses';
+    END IF;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER protect_license_verification_before_update
+BEFORE UPDATE ON licenses
+FOR EACH ROW
+EXECUTE FUNCTION protect_license_verification();
+
+-- ============================================================================
 -- 5. Helper Function: Check if user is admin (Security Definer)
 -- ============================================================================
 CREATE OR REPLACE FUNCTION is_admin(user_id UUID DEFAULT auth.uid())
@@ -164,9 +220,9 @@ GRANT EXECUTE ON FUNCTION is_profile_public_approved(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION is_profile_public_approved(UUID) TO anon;
 
 -- ============================================================================
--- 7. View: Public License Summaries (Safe for public viewing)
+-- 7. View: Public License Summaries (Safe for public viewing, RLS-enforced)
 -- ============================================================================
-CREATE OR REPLACE VIEW public_license_summaries AS
+CREATE OR REPLACE VIEW public_license_summaries WITH (security_invoker = true) AS
 SELECT
   l.id,
   l.profile_id,

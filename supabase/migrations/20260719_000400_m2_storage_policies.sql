@@ -80,15 +80,15 @@ FOR SELECT
 TO authenticated
 USING (
   bucket_id = 'profile-images'
-  AND (auth.jwt() ->> 'app_metadata' -> 'role') = 'super_admin'
+  AND (auth.jwt() ->> 'app_metadata') LIKE '%super_admin%'
 );
 
 -- 6. Anon: DENY SELECT (bucket is private)
-CREATE POLICY "anon_deny_profile_images"
+CREATE POLICY "anon_deny_select_profile_images"
 ON storage.objects
 FOR SELECT
 TO anon
-USING (bucket_id != 'profile-images');
+USING (false);
 
 -- ============================================================================
 -- EVIDENCE-FILES BUCKET POLICIES
@@ -148,15 +148,15 @@ FOR SELECT
 TO authenticated
 USING (
   bucket_id = 'evidence-files'
-  AND (auth.jwt() ->> 'app_metadata' -> 'role') = 'super_admin'
+  AND (auth.jwt() ->> 'app_metadata') LIKE '%super_admin%'
 );
 
 -- 6. Anon: DENY SELECT (bucket is private, not for public access)
-CREATE POLICY "anon_deny_evidence_files"
+CREATE POLICY "anon_deny_select_evidence_files"
 ON storage.objects
 FOR SELECT
 TO anon
-USING (bucket_id != 'evidence-files');
+USING (false);
 
 -- ============================================================================
 -- Storage Policy Summary

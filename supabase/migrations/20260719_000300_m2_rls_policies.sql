@@ -31,22 +31,13 @@ FOR INSERT
 TO authenticated
 WITH CHECK (auth.uid() = user_id);
 
--- authenticated: UPDATE own profile, but not verification_status, approved_at, or is_public
-CREATE POLICY "auth_update_own_safe_fields"
+-- authenticated: UPDATE own profile (protected fields enforced via trigger)
+CREATE POLICY "auth_update_own"
 ON profiles
 FOR UPDATE
 TO authenticated
 USING (auth.uid() = user_id)
-WITH CHECK (
-  auth.uid() = user_id
-  AND (
-    -- Allow update if NOT changing these protected fields
-    -- Or allow if these fields are unchanged
-    COALESCE(verification_status, 'draft') = COALESCE((SELECT verification_status FROM profiles WHERE id = profiles.id), 'draft')
-    AND COALESCE(is_public, false) = COALESCE((SELECT is_public FROM profiles WHERE id = profiles.id), false)
-    AND approved_at IS NOT DISTINCT FROM (SELECT approved_at FROM profiles WHERE id = profiles.id)
-  )
-);
+WITH CHECK (auth.uid() = user_id);
 
 -- admin: Full access (SELECT, INSERT, UPDATE, DELETE)
 CREATE POLICY "admin_all"
@@ -140,8 +131,8 @@ WITH CHECK (
   )
 );
 
--- authenticated: UPDATE own licenses, but cannot change verification_status to 'verified'
-CREATE POLICY "auth_update_own_safe"
+-- authenticated: UPDATE own licenses (verification_status protection via trigger)
+CREATE POLICY "auth_update_own"
 ON licenses
 FOR UPDATE
 TO authenticated
@@ -153,11 +144,6 @@ USING (
 WITH CHECK (
   profile_id IN (
     SELECT id FROM profiles WHERE auth.uid() = user_id
-  )
-  AND (
-    -- If verification_status is being set to 'verified', allow only if it was already 'verified'
-    verification_status != 'verified'
-    OR verification_status = (SELECT verification_status FROM licenses WHERE id = licenses.id)
   )
 );
 

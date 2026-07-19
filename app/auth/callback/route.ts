@@ -32,14 +32,23 @@ export async function GET(request: NextRequest) {
 
   try {
     const supabase = await createClient()
+    console.log('[AUTH_CALLBACK] Attempting exchange for code:', code?.substring(0, 10) + '...')
+
     const { error: exchangeError } =
       await supabase.auth.exchangeCodeForSession(code)
 
     if (exchangeError) {
+      console.error('[AUTH_CALLBACK] Exchange failed:', {
+        message: exchangeError.message,
+        status: exchangeError.status,
+        code: code?.substring(0, 10) + '...'
+      })
       return NextResponse.redirect(
         new URL('/login?error=invalid_or_expired_link', request.url)
       )
     }
+
+    console.log('[AUTH_CALLBACK] Exchange successful')
 
     // Determine redirect URL
     let redirectUrl = '/my'

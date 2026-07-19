@@ -1,0 +1,119 @@
+{
+  "timestamp": "2026-07-19T20:54:01.151Z",
+  "profileImages": [
+    {
+      "bucket": "profile-images",
+      "operation": "TEST_EXPERT_A-upload_own",
+      "expected": "success",
+      "actual_status": 400,
+      "actual_error_code": "mime type text/plain is not supported",
+      "result": "FAIL"
+    },
+    {
+      "bucket": "profile-images",
+      "operation": "TEST_EXPERT_A-upload_other",
+      "expected": "fail",
+      "actual_status": 400,
+      "actual_error_code": "mime type text/plain is not supported",
+      "result": "PASS"
+    },
+    {
+      "bucket": "profile-images",
+      "operation": "TEST_EXPERT_A-download_own",
+      "expected": "success",
+      "actual_status": 400,
+      "actual_error_code": "Object not found",
+      "result": "FAIL"
+    },
+    {
+      "bucket": "profile-images",
+      "operation": "TEST_EXPERT_B-download_own",
+      "expected": "fail",
+      "actual_status": 400,
+      "actual_error_code": "Object not found",
+      "result": "PASS"
+    },
+    {
+      "bucket": "profile-images",
+      "operation": "anon-download_own",
+      "expected": "fail",
+      "actual_status": 400,
+      "actual_error_code": "Object not found",
+      "result": "PASS"
+    },
+    {
+      "bucket": "profile-images",
+      "operation": "TEST_EXPERT_A-delete_own",
+      "expected": "success",
+      "actual_status": 400,
+      "actual_error_code": "Unknown error",
+      "result": "FAIL"
+    }
+  ],
+  "evidenceFiles": [
+    {
+      "bucket": "evidence-files",
+      "operation": "TEST_EXPERT_A-upload_own",
+      "expected": "success",
+      "actual_status": 400,
+      "actual_error_code": "mime type text/plain is not supported",
+      "result": "FAIL"
+    },
+    {
+      "bucket": "evidence-files",
+      "operation": "TEST_EXPERT_A-upload_other",
+      "expected": "fail",
+      "actual_status": 400,
+      "actual_error_code": "mime type text/plain is not supported",
+      "result": "PASS"
+    },
+    {
+      "bucket": "evidence-files",
+      "operation": "TEST_EXPERT_A-download_own",
+      "expected": "success",
+      "actual_status": 400,
+      "actual_error_code": "Object not found",
+      "result": "FAIL"
+    },
+    {
+      "bucket": "evidence-files",
+      "operation": "TEST_EXPERT_B-download_own",
+      "expected": "fail",
+      "actual_status": 400,
+      "actual_error_code": "Object not found",
+      "result": "PASS"
+    },
+    {
+      "bucket": "evidence-files",
+      "operation": "anon-download_own",
+      "expected": "fail",
+      "actual_status": 400,
+      "actual_error_code": "Object not found",
+      "result": "PASS"
+    },
+    {
+      "bucket": "evidence-files",
+      "operation": "TEST_ADMIN-download_own",
+      "expected": "success",
+      "actual_status": 400,
+      "actual_error_code": "Object not found",
+      "result": "FAIL"
+    },
+    {
+      "bucket": "evidence-files",
+      "operation": "TEST_EXPERT_A-delete_own",
+      "expected": "success",
+      "actual_status": 400,
+      "actual_error_code": "Unknown error",
+      "result": "FAIL"
+    }
+  ],
+  "summary": {
+    "total_tests": 13,
+    "total_pass": 6,
+    "total_fail": 7,
+    "pass_rate": "46%",
+    "profile_images_pass": 3,
+    "evidence_files_pass": 3
+  }
+}

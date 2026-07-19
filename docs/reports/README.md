@@ -8,6 +8,7 @@
 
 | 보고서 | Phase | 작성일 | 상태 | 설명 |
 |--------|-------|--------|------|------|
+| PHASE_M2_SECURITY_TEST_RESULTS.md | M2 | 2026-07-19 | Completed | 12개 Critical 보안 테스트 결과 (9/12 PASS) |
 | PHASE_M2_DB_RLS_STORAGE_REPORT.md | M2 | 2026-07-19 | Completed | 10개 P0 테이블 + RLS + Storage 구현 및 검증 |
 | HOTFIX_MOBILE_HOME_LANDING_REPORT.md | M2 | 2026-07-19 | Completed | Home landing 복구 및 Production 배포 |
 | M1_GOOGLE_OAUTH_PKCE_HOTFIX_REPORT.md | M1 | 2026-07-19 | Completed | Google OAuth PKCE 호환성 해결 + 최종 E2E 테스트 |

@@ -388,132 +388,41 @@ rollback;
 
 ---
 
-#### 상세 진단 결과
+#### 근본 원인 (CTO 검토 결과)
 
-**1단계: share_type 컬럼 구조 확인**
+**최종 판정**: 정책 버그가 아님
 
-```
-share_type | text | NOT NULL | DEFAULT: NULL
-```
+**근본 원인**: INSERT 테스트에서 **RETURNING 절 사용**으로 인한 SELECT 권한 검사 발생
 
-- 필수 컬럼이지만 기본값 없음
-- **수정**: ALTER TABLE share_events ALTER COLUMN share_type SET DEFAULT 'copy_link' 실행 ✅
-
-**2단계: 테이블 구조**
-
-```
-id          | uuid | NOT NULL | gen_random_uuid()
-profile_id  | uuid | NOT NULL | NULL
-share_type  | text | NOT NULL | NULL (→ 기본값 추가)
-referrer_domain | text | NULL | NULL
-created_at  | timestamp | NOT NULL | now()
-```
-
-**3단계: WITH CHECK 조건 검증**
-
-```
-(profile_id IN ( SELECT profiles.id
-   FROM profiles
-  WHERE ((profiles.is_public = true) AND (profiles.verification_status = 'approved'::text))))
-```
-
-- 조건은 정확함 ✅
-- anon이 직접 실행 시 1개 반환됨 ✅
-
-**4단계: GRANT 권한 확인**
-
-```
-anon → INSERT, SELECT, UPDATE, DELETE, TRIGGER, REFERENCES, TRUNCATE 모두 있음 ✅
-```
-
-**5단계: postgres(admin)로 INSERT 시도**
-
+테스트 쿼리:
 ```sql
 INSERT INTO share_events (profile_id, share_type)
-VALUES ('d2fa3a28-c94b-4336-9faa-8a60acd4529c', 'copy_link')
+VALUES (<APPROVED_PUBLIC_PROFILE_ID>, 'copy_link')
+RETURNING id;  ← 이 부분
 ```
 
-**결과**: ✅ 성공 (1행 삽입)
+**분석**:
+- INSERT는 RLS 정책의 WITH CHECK로 통과 가능했을 가능성 높음
+- RETURNING 절은 삽입된 행의 id를 SELECT하려고 시도
+- 이때 anon의 SELECT 권한이 필요하고, SELECT RLS 정책도 평가됨
+- anon은 share_events에서 SELECT 권한이 없으므로 실패
 
-**6단계: anon으로 INSERT 재시도**
+**검증**: CTO 의견에 따라 테스트 재설계
+- RETURNING 절 제거
+- Fire-and-forget 방식으로 변경 (응답은 error 여부만 확인)
 
-```sql
-begin;
-set local role anon;
-INSERT INTO share_events (profile_id, share_type)
-VALUES ('d2fa3a28-c94b-4336-9faa-8a60acd4529c', 'copy_link')
-RETURNING id;
-rollback;
-```
+#### 임시 변경 사항 정리
 
-**결과**: ❌ RLS 정책 위반 (여전히 실패)
-
-**7단계: 정책 role 확인**
+진단 과정에서 수행한 임시 변경사항은 **corrective migration**으로 모두 제거됨:
 
 ```
-public_insert_shared_profile | roles: {public}
-pg_roles에서 'public' 조회 결과: 없음
+✅ share_type DEFAULT 'copy_link' 제거
+✅ anon/authenticated 권한 최소화 (INSERT만)
+✅ public_insert_shared_profile 정책 복원 (FOR INSERT TO public)
+✅ is_approved_public_profile() 함수 제거
 ```
 
-**근본 원인 발견**:
-- public_insert_shared_profile 정책이 **{public} role**에만 적용됨
-- **anon은 {public}에 속하지 않음** (별개 role)
-- 따라서 정책이 anon에게 적용되지 않음
-
-**8단계: 정책 수정 시도**
-
-```sql
-DROP POLICY public_insert_shared_profile ON share_events;
-
-CREATE POLICY public_insert_shared_profile ON share_events
-  FOR INSERT TO anon, authenticated
-  WITH CHECK (
-    profile_id IN (
-      SELECT profiles.id FROM profiles
-      WHERE is_public = true AND verification_status = 'approved'
-    )
-  );
-```
-
-**결과**: 정책 생성 성공 ✅
-**INSERT 재테스트**: ❌ 여전히 실패
-
-**9단계: SECURITY DEFINER 함수로 재시도**
-
-```sql
-CREATE OR REPLACE FUNCTION is_approved_public_profile(profile_uuid uuid)
-RETURNS boolean AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM profiles
-    WHERE id = profile_uuid
-    AND is_public = true
-    AND verification_status = 'approved'
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE POLICY public_insert_shared_profile ON share_events
-  FOR INSERT TO anon, authenticated
-  WITH CHECK (is_approved_public_profile(profile_id));
-```
-
-**결과**: ❌ 여전히 RLS 정책 위반
-
-**최종 결론**:
-
-- **1차 근본 원인**: {public} role 설정 오류 (anon이 포함되지 않음) → 수정 시도
-- **2차 문제**: 정책 수정 후에도 여전히 실패
-- **가능 원인**: 
-  * anon의 profiles SELECT 권한이 특정 컨텍스트에서 제한될 수 있음
-  * WITH CHECK 평가 시 RLS 정책 상호작용으로 인한 권한 부족
-  * Supabase의 특수 RLS 정책 설정 문제
-
-**권장 해결책**:
-1. Supabase 공식 문서 검토 (anon 역할의 권한 범위)
-2. profiles 테이블의 RLS 정책 재검토
-3. 정책 실행 순서 및 상호작용 분석
-4. 필요시 trigger 기반 검증으로 변경
+현재 상태: **Canonical state 확정**
 
 ---
 
@@ -701,36 +610,33 @@ share_events:     6개 정책 ⚠️ (INSERT 정책 버그 발견)
 ✅ M2 동적 RLS·Storage 보안 검증: 진행 중
 
 검증 결과:
-- 9 PASS (테스트 1-9)
-- 1 FAIL (테스트 12: share_events INSERT 정책)
-- 2 NOT VERIFIED (테스트 10-11)
+- 9 PASS (테스트 1-9: RLS, 트리거, 소유권 격리)
+- 1 CONDITIONAL (테스트 12: share_events INSERT)
+- 2 NOT VERIFIED (테스트 10-11: 데이터 준비 필요)
 
-share_events 버그 상태:
-- ✅ 근본 원인 파악: {public} role 설정 오류 (anon이 포함되지 않음)
-- ✅ 1차 수정 시도: anon, authenticated role 명시 → 재현실패
-- ✅ 2차 수정 시도: SECURITY DEFINER 함수로 권한 우회 → 재현실패
-- ⏳ 결론: 복잡한 RLS 정책 상호작용 → CTO 검토 필요
+share_events 재진단:
+- ✅ 근본 원인 정정: RETURNING으로 인한 SELECT 권한 검사 (정책 버그 아님)
+- ✅ Canonical state 확정: corrective migration으로 전부 제거
 ```
 
 ### M3 진행 조건
 
 ```
-⚠️ 현재 상태: M3 진행 검토 필요
+⏳ 현재 상태: 추가 검증 필요
 
-이유:
-1. share_events INSERT 정책 버그 발견 및 진단 완료
-2. 근본 원인: {public} role ≠ anon (역할 범위 설정 오류)
-3. 1차, 2차 수정 시도 모두 실패 → CTO 의사결정 필요
+필수 완료 항목:
+1. TEST 12 재테스트 (RETURNING 제거, fire-and-forget 방식)
+2. TEST 7 보강 (데이터 불변성 확인)
+3. TEST 9 보강 (실제 admin_actions 행 생성 후 접근 차단 확인)
+4. TEST 10: public_license_summaries (verified license 준비)
+5. TEST 11: Storage 격리 (Node.js 스크립트로 검증)
+6. Google OAuth Production 회귀 테스트
+7. 모바일 실기기 검증
 
-옵션:
-A) CTO 검토 후 trigger 기반 검증으로 변경
-B) Supabase 설정 재검토 및 권한 재구성
-C) 별도 전문가 자문
-
-필수 항목 미충족:
-- TEST 10: public_license_summaries (verified license 필요)
-- TEST 11: Storage 격리 (JWT/cURL 환경 필요)
-- TEST 12: share_events INSERT (정책 버그)
+진행 가능 조건:
+- 모든 필수 항목이 PASS
+- UUID/민감정보 마스킹 완료
+- CTO 최종 승인
 ```
 
 ---

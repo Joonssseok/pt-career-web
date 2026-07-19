@@ -89,7 +89,7 @@ Test Data Prepared:
 - Case 5: approved + public의 verified + private ✅
 
 Row Filtering:
-- approved + public profile: 1개 (d2fa3a28-c94b-4336-9faa-8a60acd4529c)
+- approved + public profile: 1개 (<TEST_APPROVED_PUBLIC_PROFILE_ID>)
 - verified + public licenses: 2개 확인
 - anon visibility: Filtering logic verified
 

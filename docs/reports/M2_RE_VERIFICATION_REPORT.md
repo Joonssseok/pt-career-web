@@ -76,7 +76,7 @@ Migration Type:
 - Total licenses: 8 (verified: 2, pending: 2, not_submitted: 1, verified+private: 1, etc.)
 
 ⏳ anon 조회 테스트:
-- approved + public profile 확인: 1개 존재 (d2fa3a28-c94b-4336-9faa-8a60acd4529c)
+- approved + public profile 확인: 1개 존재 (<TEST_APPROVED_PUBLIC_PROFILE_ID>)
 - [PENDING] Row filtering verification needed
 ```
 

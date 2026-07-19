@@ -1,7 +1,7 @@
 # M2 Database / RLS / Storage 최종 보고서
 
 **작성일**: 2026-07-19  
-**상태**: ✅ 구현 완료 (동적 검증 준비)  
+**상태**: 🔄 진행 중 (동적 검증 대기)  
 **브랜치**: `feature/m2-db-rls-storage` + `main`  
 
 ---
@@ -10,13 +10,11 @@
 
 M2에서 PT Career의 데이터 기반을 구축했습니다.
 
-### 완료 항목
-- ✅ 10개 P0 테이블 생성 및 검증
-- ✅ 5개 migration 원격 적용
-- ✅ 57개 RLS 정책 구성
-- ✅ 2개 private Storage bucket 설정
-- ✅ 12개 전문분야 초기 데이터
-- ✅ Migration history 정합화
+### 완료 항목 (정적 검증)
+- ✅ M2 데이터 기반 구현 및 원격 적용: 완료
+- ✅ M2 정적 검증: 완료
+- ⏳ M2 동적 RLS·Storage 보안 검증: 미완료
+- ⏳ M2 최종 승인: 보류
 
 ---
 
@@ -271,51 +269,63 @@ auth_update_own_profile_images      UPDATE  {authenticated}
 
 ## 8. 동적 보안 검증 상태
 
-### 12개 Critical 테스트
+### 12개 Critical 테스트 (기술진 수행)
 
-| # | 항목 | 상태 | 비고 |
-|---|------|------|------|
-| 1 | 비공개 Profile 차단 | USER ACTION REQUIRED | 테스트 계정 필요 |
-| 2 | Profile 승인 권한 상승 차단 | USER ACTION REQUIRED | TEST_EXPERT_A 필요 |
-| 3 | License 자기 검증 차단 | USER ACTION REQUIRED | TEST_EXPERT_A 필요 |
-| 4 | Profile 소유권 격리 | USER ACTION REQUIRED | TEST_EXPERT_A/B 필요 |
-| 5 | 관련 데이터 소유권 격리 | USER ACTION REQUIRED | TEST_EXPERT_A/B 필요 |
-| 6 | Admin 자기 등록 차단 | USER ACTION REQUIRED | TEST_EXPERT_A 필요 |
-| 7 | 감사 로그 보호 | USER ACTION REQUIRED | TEST_ADMIN 필요 |
-| 8 | Public License View | USER ACTION REQUIRED | 쿼리 검증 필요 |
-| 9 | Share Events | USER ACTION REQUIRED | anon/auth 필요 |
-| 10 | Profile Image 격리 | USER ACTION REQUIRED | 업로드 테스트 필요 |
-| 11 | Evidence File 격리 | USER ACTION REQUIRED | 업로드 테스트 필요 |
-| 12 | Google OAuth 회귀 | NOT VERIFIED | 실제 환경 테스트 필요 |
+| # | 항목 | 상태 | 담당자 |
+|---|------|------|--------|
+| 1 | anon의 draft·pending·rejected profile 조회 차단 | NOT VERIFIED | 기술진 |
+| 2 | approved + public profile만 anon 조회 허용 | NOT VERIFIED | 기술진 |
+| 3 | 일반 사용자의 verification_status 변경 차단 | NOT VERIFIED | 기술진 |
+| 4 | 일반 사용자의 is_public 임의 변경 차단 | NOT VERIFIED | 기술진 |
+| 5 | 일반 사용자의 approved_at 변경 차단 | NOT VERIFIED | 기술진 |
+| 6 | 일반 사용자의 license self-verification 차단 | NOT VERIFIED | 기술진 |
+| 7 | TEST_EXPERT_A와 B의 데이터 소유권 격리 | NOT VERIFIED | 기술진 |
+| 8 | 일반 사용자의 admin_users 자기 등록 차단 | NOT VERIFIED | 기술진 |
+| 9 | 일반 사용자의 admin_actions 접근 차단 | NOT VERIFIED | 기술진 |
+| 10 | public_license_summaries 민감정보 미노출 | NOT VERIFIED | 기술진 |
+| 11 | profile-images·evidence-files 타인 폴더 접근 차단 | NOT VERIFIED | 기술진 |
+| 12 | share_events 공개 profile만 INSERT 허용 | NOT VERIFIED | 기술진 |
 
-**설명**: 실제 보안 테스트는 다음 조건이 필요합니다:
-- 2개 이상의 Google 로그인 사용자 계정
-- 관리자 권한 등록
-- 실제 파일 업로드 테스트
-- 실제 Supabase 세션 JWT
+**설명**: 기술진이 다음 역할로 테스트를 수행합니다:
+- anon (비인증)
+- TEST_EXPERT_A (Google 로그인)
+- TEST_EXPERT_B (Google 로그인)
+- TEST_ADMIN (관리자 권한)
+
+사용자 협조: 테스트용 Google 계정 또는 TEST_ADMIN 계정 지정
 
 ---
 
-## 9. 남은 리스크 및 제약
+## 9. 리스크 분류
 
-### 알려진 제약
+### 🟢 Low Risk (정적 검증 완료)
 
-1. **암호화**: license_number_encrypted는 DB 레벨 암호화 미구현 (M3+)
-2. **Signed URL**: Storage 파일 접근용 signed URL 미구현 (M3+)
-3. **파일 검증**: MIME 타입 검증은 서버 로직 필요 (M3+)
-4. **Rate Limiting**: Share events 스팸 방어 미구현 (M3+)
+- Build: PASS
+- TypeScript: PASS
+- Migration history: PASS
+- Schema 존재 여부: PASS
+- Seed 데이터 존재 여부: PASS
 
-### 리스크 수준
+### 🔴 High Risk (동적 검증 필요)
 
-- 🟢 **Low**: 구현 계획 있음, 향후 해결 가능
-- 🟡 **Medium**: 없음
-- 🔴 **High**: 없음
+- 실제 사용자 역할 기반 RLS 미검증
+- Storage 소유권 격리 미검증
+- Protected column 공격 테스트 미검증
+- Google OAuth Production 회귀 미검증
+- Home CTA의 `/experts` 404 ✅ 해결됨
+
+### 향후 구현 (M3+)
+
+1. **암호화**: license_number_encrypted는 DB 레벨 암호화 미구현
+2. **Signed URL**: Storage 파일 접근용 signed URL 미구현
+3. **파일 검증**: MIME 타입 검증은 서버 로직 필요
+4. **Rate Limiting**: Share events 스팸 방어 미구현
 
 ---
 
 ## 10. 최종 상태
 
-### ✅ M2 구현 완료
+### ✅ M2 데이터 기반 구현 및 원격 적용: 완료
 
 ```
 ✅ 5개 migration 원격 적용
@@ -325,31 +335,66 @@ auth_update_own_profile_images      UPDATE  {authenticated}
 ✅ 12개 전문분야 seed
 ✅ Build/TypeScript PASS
 ✅ Migration history 정합화
-✅ 정적 분석 PASS
 ```
 
-### ⏳ M2 동적 검증 준비
+### ✅ M2 정적 검증: 완료
 
 ```
-⏳ 12개 Critical 보안 테스트 (테스트 계정 필요)
-⏳ Google OAuth 회귀 테스트
-⏳ 실제 Storage 업로드 테스트
+✅ Schema 존재 및 정합성
+✅ RLS 활성화 (10개 테이블)
+✅ Storage bucket 설정 (2개)
+✅ 정책 구조 정확성 (파일 검토)
+```
+
+### ⏳ M2 동적 RLS·Storage 보안 검증: 미완료
+
+```
+⏳ 12개 Critical 보안 테스트 (기술진 수행)
+⏳ Google OAuth Production 회귀 테스트
+⏳ 모바일 실기기 검증
+```
+
+### ⏳ M2 최종 승인: 보류
+
+```
+다음 항목이 모두 PASS인 경우에만 M2 최종 승인:
+- 12개 Critical 보안 테스트
+- Storage 사용자 격리
+- Protected column 차단
+- Public View 민감정보 미노출
+- Google OAuth Production 회귀
+- 모바일 실기기
+- Build
+- TypeScript
+- GitHub main과 Vercel Production 일치
 ```
 
 ---
 
 ## 11. 다음 단계
 
-1. **동적 보안 검증** (기술진 수행)
-   - 12개 Critical 테스트 실행
-   - 테스트 계정 준비 (TEST_EXPERT_A, TEST_EXPERT_B, TEST_ADMIN)
+1. **테스트 계정 준비** (사용자 협조)
+   - TEST_EXPERT_A: Google OAuth 로그인
+   - TEST_EXPERT_B: Google OAuth 로그인
+   - TEST_ADMIN: admin_users에 등록할 계정 지정
+
+2. **동적 보안 검증** (기술진 수행)
+   - 12개 Critical RLS 테스트
+   - Google OAuth Production 회귀 테스트
+   - 모바일 실기기 검증 (iOS Safari, Android Chrome)
    - 결과 기록
 
-2. **최종 승인**
-   - CTO 검증 완료
-   - M3 진행 결정
+3. **최종 승인** (조건부)
+   - 12개 Critical 테스트 PASS
+   - Google OAuth 회귀 PASS
+   - 모바일 실기기 PASS
+   - CTO 최종 검토
+   - M3 진행 승인
 
 ---
 
-**M2 데이터 기반 구축 완료. 동적 보안 검증 대기 중.**
+**M2 데이터 기반 구현 및 원격 적용: 완료**
+**M2 정적 검증: 완료**
+**M2 동적 RLS·Storage 보안 검증: 미완료**
+**M2 최종 승인: 보류**
 

@@ -32,23 +32,20 @@ export async function GET(request: NextRequest) {
 
   try {
     const supabase = await createClient()
-    console.log('[AUTH_CALLBACK] Attempting exchange for code:', code?.substring(0, 10) + '...')
+    console.log('[AUTH_CALLBACK] Code present:', !!code)
 
     const { error: exchangeError } =
       await supabase.auth.exchangeCodeForSession(code)
 
     if (exchangeError) {
-      console.error('[AUTH_CALLBACK] Exchange failed:', {
-        message: exchangeError.message,
-        status: exchangeError.status,
-        code: code?.substring(0, 10) + '...'
-      })
+      console.error('[AUTH_CALLBACK] Exchange success: false')
+      console.error('[AUTH_CALLBACK] Error category: PKCE_VERIFIER_MISSING')
       return NextResponse.redirect(
         new URL('/login?error=invalid_or_expired_link', request.url)
       )
     }
 
-    console.log('[AUTH_CALLBACK] Exchange successful')
+    console.log('[AUTH_CALLBACK] Exchange success: true')
 
     // Determine redirect URL
     let redirectUrl = '/my'

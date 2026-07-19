@@ -15,11 +15,11 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.3",
+    "@supabase/supabase-js": "^2.38.0",
     "next": "15.5.20",
     "react": "^19.2.1",
-    "react-dom": "^19.2.1",
-    "@supabase/ssr": "^0.0.10",
-    "@supabase/supabase-js": "^2.38.0"
+    "react-dom": "^19.2.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

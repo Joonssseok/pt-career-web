@@ -19,8 +19,8 @@
   - 이메일/비밀번호는 보조 영역으로 배치
   - 동일한 OAuth 로직 구현
 
-- **OAuth 콜백 라우트** (`app/auth/v1/callback/route.ts`)
-  - 경로 수정: `/auth/callback` → `/auth/v1/callback` (Supabase 표준)
+- **OAuth 콜백 라우트** (`app/auth/callback/route.ts`)
+  - Supabase 및 이메일 인증 모두 처리
   - `exchangeCodeForSession()` 로직 유지
   - 에러 처리 및 로깅 추가
 

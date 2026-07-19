@@ -21,21 +21,21 @@ export default function SignUpPage() {
     setError('')
 
     try {
+      const redirectTo = `${window.location.origin}/auth/callback?next=/my`
+
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/v1/callback`,
+          redirectTo,
         },
       })
 
       if (oauthError) {
         setError(`Google 회원가입에 실패했습니다: ${oauthError.message}`)
-        console.error('OAuth error:', oauthError)
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err)
       setError(`Google 회원가입 중 오류: ${errorMsg}`)
-      console.error('Catch error:', err)
     } finally {
       setOauthLoading(false)
     }

@@ -1,265 +1,311 @@
-# M2 Migration 부분 적용 Incident Report
+# M2 Migration Incident - Complete Recovery Report
 
 **작성일**: 2026-07-19  
-**발생 시간**: Migration 원격 적용 중  
-**심각도**: 🔴 Critical - DB 상태 불완전  
-**상태**: ⏸️ CTO 지시 대기  
+**상태**: ✅ **RESOLVED** (Emergency Recovery Applied)  
+**심각도**: 🔴 Critical (보안 잠금으로 완화)  
 
 ---
 
 ## 1. 사건 개요
 
-### 발생 상황
+### 발생
 ```
-명령: supabase db push --linked
-예상: 5개 migration 순서대로 적용
-실제: 첫 번째만 적용, 두 번째부터 버전 충돌로 실패
+Migration CLI application에서 version prefix 충돌로 인해
+첫 번째 migration만 적용, 나머지 4개는 적용 실패
 ```
 
 ### 원인
-Migration 파일명이 모두 같은 날짜 `20260719`를 사용하여, Supabase CLI의 schema_migrations 버전이 충돌함:
+```
+기존 migration 파일들의 version prefix가 모두 동일하게 해석되어
+(20260719_000000, 20260719_000100, ... 모두 version=20260719로 인식)
+첫 번째 migration만 원격 history에 기록되고
+후속 migration이 duplicate version 충돌로 적용되지 않음
+```
 
-```
-첫 번째 파일: 20260719_000000_... → version=20260719 (적용됨)
-두 번째 파일: 20260719_000100_... → version=20260719 (충돌! 이미 존재)
-```
-
-### 에러 메시지
-```
-ERROR: duplicate key value violates unique constraint "schema_migrations_pkey"
-Key (version)=(20260719) already exists.
-```
+### 영향
+- ✅ 10개 P0 테이블 생성됨
+- ❌ RLS 정책 미적용 → **보안 위협**
+- ❌ Trigger/함수 미적용 → 데이터 무결성 위협
+- ❌ Seed 데이터 미적용
+- ❌ Storage 미적용
 
 ---
 
-## 2. 현재 원격 DB 상태
+## 2. 즉시 대응 (CTO Option C)
 
-### 적용된 항목
-✅ **Migration 1 완료**: `20260719_000000_m2_core_tables.sql`
-```
-생성됨:
-- profiles 테이블 (user_id FK, indexes)
-- workplaces 테이블
-- licenses 테이블
-- experiences 테이블
-- educations 테이블
-- specialties 테이블 (empty)
-- profile_specialties 테이블
-- admin_users 테이블
-- admin_actions 테이블
-- share_events 테이블
-```
+### 2.1 긴급 RLS 잠금
 
-### 미적용 항목
-❌ **Migration 2-5 실패**: 버전 충돌
-```
-Missing:
-- updated_at 자동 유지 trigger (5개)
-- Business rule enforcement (specialties 제약)
-- Protected column protection (프로필/자격 컬럼)
-- Admin verification 함수
-- 57개 RLS 정책 (모든 테이블)
-- 2개 Storage bucket
-- 12개 전문분야 seed 데이터
-```
-
-### 결과
-```
-Schema: ✅ 생성됨
-RLS: ❌ 미구성 (누구나 모든 데이터 조회/수정 가능!)
-Triggers: ❌ 미구성 (updated_at 미유지)
-Seed: ❌ 미구성 (specialties 비어있음)
-Storage: ❌ 미생성
-```
-
----
-
-## 3. 보안 영향도
-
-### 🔴 Critical Risk
-현재 상태에서 RLS가 없으므로:
-- 로그인하지 않은 사용자도 모든 profiles 데이터 조회 가능
-- 사용자가 타인의 verified 라이선스 수정 가능
-- Protected columns (verification_status, is_public) 임의 변경 가능
-
-**이 상태로는 production 배포 불가능**
-
----
-
-## 4. 해결 방안 검토
-
-### Option A: 완전 롤백 후 재적용 (권장)
-
-**단계**:
-1. Supabase Dashboard SQL Editor에서:
-   ```sql
-   DROP TABLE IF EXISTS share_events CASCADE;
-   DROP TABLE IF EXISTS admin_actions CASCADE;
-   DROP TABLE IF EXISTS admin_users CASCADE;
-   DROP TABLE IF EXISTS profile_specialties CASCADE;
-   DROP TABLE IF EXISTS specialties CASCADE;
-   DROP TABLE IF EXISTS educations CASCADE;
-   DROP TABLE IF EXISTS experiences CASCADE;
-   DROP TABLE IF EXISTS licenses CASCADE;
-   DROP TABLE IF EXISTS workplaces CASCADE;
-   DROP TABLE IF EXISTS profiles CASCADE;
-   
-   DELETE FROM schema_migrations WHERE version = '20260719';
-   ```
-
-2. 로컬 파일명 수정 (이미 완료):
-   ```
-   20260719000000_m2_core_tables.sql
-   20260719000100_m2_functions_constraints.sql
-   20260719000200_m2_seed_specialties.sql
-   20260719000300_m2_rls_policies.sql
-   20260719000400_m2_storage_policies.sql
-   ```
-
-3. 재적용:
-   ```bash
-   supabase db push --linked
-   ```
-
-**장점**:
-- 깔끔한 migration history
-- CLI 자동 추적 가능
-- 재현성 있음
-
-**단점**:
-- Dashboard에서 수동 작업 필요
-- 실수 위험
-
----
-
-### Option B: 수동 계속 진행 (시간 소모)
-
-**단계**:
-1. 첫 번째 파일 확인 (이미 적용됨)
-2. Supabase Dashboard SQL Editor에서:
-   - 나머지 4개 파일 내용 복사·붙여넣기 (순서대로)
-   - 각 실행 후 성공 확인
-3. Migration history 수동 기록
-
-**장점**:
-- CLI 명령 재실행 불필요
-- 빠른 진행 가능
-
-**단점**:
-- Migration history가 CLI 추적과 불일치
-- 향후 유지보수 어려움
-- 실수 위험 높음
-
----
-
-### Option C: 유지 (권장하지 않음)
-
-**위험**:
-- RLS 미구성 (data exposure)
-- Protected column 보호 없음 (권한 상승)
-- Production 배포 불가능
-
----
-
-## 5. 권장 결정
-
-**가장 안전한 경로**: **Option A (완전 롤백)**
-
-**근거**:
-- Supabase CLI의 design intent 준수
-- Migration history 정확성 보장
-- 향후 유지보수 용이
-- 수작업 실수 최소화
-
-**예상 소요 시간**:
-- Dashboard SQL 실행: 10분
-- 재적용 (dry-run + push): 5분
-- 합계: 15분
-
----
-
-## 6. 실행 가능 체크리스트
-
-### Pre-Rollback
-- [ ] Supabase Dashboard 접근 확인
-- [ ] SQL Editor 열기
-- [ ] 데이터 백업 (선택, 아직 중요 데이터 없음)
-
-### Rollback SQL
+**Supabase Dashboard SQL Editor에서 실행** (사용자 수행):
 ```sql
--- Disable RLS first (if any)
-ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
-ALTER TABLE workplaces DISABLE ROW LEVEL SECURITY;
-ALTER TABLE licenses DISABLE ROW LEVEL SECURITY;
-ALTER TABLE experiences DISABLE ROW LEVEL SECURITY;
-ALTER TABLE educations DISABLE ROW LEVEL SECURITY;
-ALTER TABLE specialties DISABLE ROW LEVEL SECURITY;
-ALTER TABLE profile_specialties DISABLE ROW LEVEL SECURITY;
-ALTER TABLE admin_users DISABLE ROW LEVEL SECURITY;
-ALTER TABLE admin_actions DISABLE ROW LEVEL SECURITY;
-ALTER TABLE share_events DISABLE ROW LEVEL SECURITY;
-
--- Drop tables in reverse order of FK dependencies
-DROP TABLE IF EXISTS share_events CASCADE;
-DROP TABLE IF EXISTS admin_actions CASCADE;
-DROP TABLE IF EXISTS admin_users CASCADE;
-DROP TABLE IF EXISTS profile_specialties CASCADE;
-DROP TABLE IF EXISTS specialties CASCADE;
-DROP TABLE IF EXISTS educations CASCADE;
-DROP TABLE IF EXISTS experiences CASCADE;
-DROP TABLE IF EXISTS licenses CASCADE;
-DROP TABLE IF EXISTS workplaces CASCADE;
-DROP TABLE IF EXISTS profiles CASCADE;
-
--- Clear migration history
-DELETE FROM schema_migrations WHERE version LIKE '20260719%';
+begin;
+alter table public.profiles enable row level security;
+alter table public.workplaces enable row level security;
+alter table public.licenses enable row level security;
+alter table public.experiences enable row level security;
+alter table public.educations enable row level security;
+alter table public.specialties enable row level security;
+alter table public.profile_specialties enable row level security;
+alter table public.admin_users enable row level security;
+alter table public.admin_actions enable row level security;
+alter table public.share_events enable row level security;
+commit;
 ```
 
-### Post-Rollback
-- [ ] `supabase db push --linked --dry-run` (확인)
-- [ ] `supabase db push --linked` (재적용)
-- [ ] `supabase migration list` (확인)
-- [ ] 10개 테이블 존재 확인
-- [ ] 57개 RLS 정책 확인
-- [ ] 12개 specialties seed 확인
+**효과**: RLS 정책 없음 → 모든 SELECT 거부 (임시 보안)
+
+### 2.2 Migration History 검사
+
+```
+Before repair:
+REMOTE           LOCAL
+20260719         
+                 20260719000000
+                 20260719000100
+                 20260719000200
+                 20260719000300
+                 20260719000400
+```
+
+### 2.3 First Migration 동일성 검증
+
+```bash
+git diff f9ce615:supabase/migrations/20260719_000000_m2_core_tables.sql \
+         HEAD:supabase/migrations/20260719000000_m2_core_tables.sql
+```
+
+**결과**: ✅ No differences (SQL 내용 동일, 파일명만 변경)
+
+### 2.4 Migration History Repair
+
+```bash
+supabase migration repair 20260719 --status reverted --linked
+supabase migration repair 20260719000000 --status applied --linked
+```
+
+**결과**:
+```
+LOCAL            REMOTE
+20260719000000   20260719000000 ✅
+20260719000100   (pending)
+20260719000200   (pending)
+20260719000300   (pending)
+20260719000400   (pending)
+```
+
+### 2.5 Dry-run 검증
+
+**예상**: 4개 파일만 (20260719000000 제외)  
+**결과**: ✅ Exact match
+
+### 2.6 RLS 정책 문법 에러 발견 및 수정
+
+**에러**: 
+```
+ERROR: only WITH CHECK expression allowed for INSERT (SQLSTATE 42601)
+```
+
+**원인**: share_events INSERT 정책이 USING 사용 (PostgreSQL은 WITH CHECK만 허용)
+
+**수정**: 
+```sql
+-- Before (❌)
+CREATE POLICY "public_insert_shared_profile"
+ON share_events
+FOR INSERT
+USING (...)
+
+-- After (✅)
+CREATE POLICY "public_insert_shared_profile"
+ON share_events
+FOR INSERT
+WITH CHECK (...)
+```
+
+**action**: Migration 20260719000300 reverted, fixed, re-applied
+
+### 2.7 최종 적용
+
+```bash
+supabase db push --linked
+```
+
+**결과**:
+```
+LOCAL            REMOTE
+20260719000000   20260719000000 ✅
+20260719000100   20260719000100 ✅
+20260719000200   20260719000200 ✅
+20260719000300   20260719000300 ✅
+20260719000400   20260719000400 ✅
+```
 
 ---
 
-## 7. 파일명 수정 완료 확인
+## 3. 최종 상태
 
-로컬 migration 파일이 이미 고유한 타임스탐프로 수정됨:
+### ✅ 성공 항목
 
-```
-✅ 20260719000000_m2_core_tables.sql
-✅ 20260719000100_m2_functions_constraints.sql
-✅ 20260719000200_m2_seed_specialties.sql
-✅ 20260719000300_m2_rls_policies.sql
-✅ 20260719000400_m2_storage_policies.sql
-```
+- ✅ 10개 P0 테이블 생성
+- ✅ 5개 trigger 함수 (updated_at 유지)
+- ✅ 2개 protection trigger (profile + license columns)
+- ✅ 57개 RLS 정책 (모든 테이블 RLS 활성화)
+- ✅ 12개 specialties seed 데이터
+- ✅ 2개 private storage bucket (profile-images, evidence-files)
+- ✅ Migration history 정합화
+- ✅ Build/TypeScript 통과
 
-(원래: 20260719_000000 → 이제: 20260719000000)
+### ⚠️ 임시 상태
 
----
-
-## 8. 다음 단계
-
-**CTO 결정 필요**:
-
-1. **Option A 승인** → 즉시 롤백 + 재적용 진행
-2. **Option B 승인** → Dashboard SQL Editor 수동 진행
-3. **기타 지시** → 대기
-
-**예상 소요 시간** (Option A 후):
-- RLS/Storage 테스트: 30분
-- Google OAuth 회귀: 15분
-- 최종 보고서: 30분
-- **합계: 1시간 15분 (추가)**
+- ⚠️ RLS 정책 적용되었으나, 실제 동작 미검증
+- ⚠️ Storage 정책 적용되었으나, 실제 접근 미검증
+- ⚠️ 12개 Specialties 생성되었으나, 데이터 완성도 미검증
 
 ---
 
-**현재 상태**: ⏸️ **CTO 지시 대기**  
-**로컬 파일**: ✅ 준비됨 (파일명 수정 완료)  
-**원격 DB**: ⚠️ 불완전 (테이블만 생성, RLS/trigger 미구성)  
+## 4. 복구 과정 요약
 
-CTO의 결정에 따라 롤백 또는 계속 진행합니다.
+```
+1. Emergency RLS lockdown (긴급 보안)
+   ↓
+2. Migration history inspection (현재 상태 파악)
+   ↓
+3. First migration content equality verification (무결성 확인)
+   ↓
+4. Migration repair (history 정합화)
+   ↓
+5. Dry run (정확성 검증)
+   ↓
+6. RLS 정책 문법 에러 발견 (share_events INSERT)
+   ↓
+7. Migration 수정 + 재적용
+   ↓
+8. Remaining four migrations db push (최종 완료)
+   ↓
+9. Build/TypeScript verification (코드 정합성)
+   ↓
+10. Dynamic security verification (다음 단계)
+```
 
+---
+
+## 5. 파일명 규칙 고정
+
+**변경 전** (❌ 버전 충돌 발생):
+```
+20260719_000000_m2_core_tables.sql
+20260719_000100_m2_functions_constraints.sql
+...
+```
+
+**변경 후** (✅ 고유 버전):
+```
+20260719000000_m2_core_tables.sql
+20260719000100_m2_functions_constraints.sql
+...
+```
+
+**규칙**: `YYYYMMDDHHMMSS_description.sql` (14자리 timestamp 필수)
+
+---
+
+## 6. Commit History
+
+```
+66de195  fix: correct M2 RLS policy for share_events INSERT
+b286a83  fix: rename M2 migration files with unique timestamps + incident report
+5b9e211  docs: add M2 preflight report to README
+f9ce615  feat: add M2 database schema migrations
+a755f40  docs: finalize M1 Google OAuth authentication
+```
+
+---
+
+## 7. 알려진 제약 사항
+
+### 이미 적용된 내용
+- 10개 테이블 schema
+- RLS 정책 (protection trigger 포함)
+- Updated_at trigger
+- Storage bucket
+
+### 아직 검증 필요
+- RLS 실제 동작 (공개/비공개 프로필 구분)
+- Protected column 보호 (profile/license)
+- Storage 폴더 격리 (user_id 기반)
+- Trigger 함수 실제 동작
+- Specialties seed 데이터 정확성
+
+---
+
+## 8. Incident 완전 해결 조건
+
+모두 충족되면 Incident 종료:
+
+- [x] 테이블 삭제 없음 (DROP TABLE 미사용)
+- [x] Auth 사용자 영향 없음
+- [x] 5개 migration history 일치 (local == remote)
+- [x] 4개 후속 migration 정상 적용
+- [x] 10개 테이블 RLS 활성화
+- [ ] Critical 보안 테스트 PASS (다음 단계)
+- [ ] Storage private 설정 검증 (다음 단계)
+- [ ] Specialties 12개 정확성 검증 (다음 단계)
+- [x] Build/TypeScript PASS
+- [ ] Google OAuth 회귀 테스트 PASS (다음 단계)
+
+---
+
+## 9. 다음 단계
+
+### 9.1 Security Verification (12개 Critical 항목)
+
+```
+[ ] anon → draft profile 조회 불가
+[ ] anon → pending profile 조회 불가
+[ ] anon → rejected profile 조회 불가
+[ ] anon → approved + public profile만 조회
+[ ] auth user → 자신 profile 조회
+[ ] auth user → verification_status 변경 불가
+[ ] auth user → is_public 변경 불가
+[ ] auth user → license 'verified' 설정 불가
+[ ] auth user → 타인 data 접근 불가
+[ ] anon → licenses 원본 테이블 조회 불가
+[ ] public_license_summaries → 자격번호/증빙 경로 미포함
+[ ] Storage → 사용자 폴더 격리 (user_id 기반)
+```
+
+### 9.2 Schema Verification
+
+```
+[ ] 10개 테이블 생성 확인
+[ ] 모든 FK 정상
+[ ] UNIQUE 제약 정상
+[ ] CHECK 제약 정상
+[ ] Index 생성 확인
+[ ] Trigger 활성화 확인
+```
+
+### 9.3 Reporting
+
+```
+[ ] PHASE_M2_DB_RLS_STORAGE_REPORT.md (작성)
+[ ] PHASE_M2_SECURITY_TEST_REPORT.md (작성)
+[ ] README.md (갱신)
+[ ] DECISION_LOG.md (갱신)
+[ ] CHANGELOG.md (갱신)
+```
+
+---
+
+## 10. 종료 상태
+
+**Incident**: ✅ **RECOVERED** (긴급 조치 완료)
+
+**M2 Database**: 🔄 **구현 중** (보안 검증 진행 필요)
+
+**다음**: CTO의 보안 검증 결과에 따라 M2 완료 판정
+
+---
+
+**작성자**: Claude Haiku 4.5  
+**최종 업데이트**: 2026-07-19  
+**상태**: Recovery Completed, Verification Pending

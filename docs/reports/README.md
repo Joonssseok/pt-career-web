@@ -8,6 +8,7 @@
 
 | 보고서 | Phase | 작성일 | 상태 | 설명 |
 |--------|-------|--------|------|------|
+| PHASE_M2_PREFLIGHT_REPORT.md | M2 | 2026-07-19 | In Progress | M2 범위, 스키마, RLS, Storage 설계 검토 |
 | M1_GOOGLE_OAUTH_PKCE_HOTFIX_REPORT.md | M1 | 2026-07-19 | Completed | Google OAuth PKCE 호환성 해결 + 최종 E2E 테스트 |
 | M1_GOOGLE_OAUTH_FINAL_STATUS_REPORT.md | M1 | 2026-07-19 | Completed | Google OAuth 최종 구현 상태 및 검증 |
 | PHASE_M1_1_AUTH_HOTFIX_REPORT.md | M1.1 | 2026-07-17 | Archived | 인증 보안 개선 + 흐름 통일 (legacy email auth) |
@@ -59,9 +60,14 @@
 - ✅ Google OAuth 로컬 E2E (PASS)
 - ✅ Google OAuth Production E2E (PASS)
 
+### M2 (Database / RLS / Storage)
+- ✅ PHASE_M2_PREFLIGHT_REPORT.md (사전 검토)
+- ⏳ PHASE_M2_DB_RLS_STORAGE_REPORT.md (구현 중)
+- ⏳ PHASE_M2_SECURITY_TEST_REPORT.md (필요시)
+
 ### 향후 Phase
-- PHASE_M2_COMPLETION_REPORT.md
 - PHASE_M3_COMPLETION_REPORT.md
+- PHASE_M4_COMPLETION_REPORT.md
 - ... (각 Phase별)
 
 ---

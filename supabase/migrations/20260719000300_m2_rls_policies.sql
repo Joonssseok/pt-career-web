@@ -432,7 +432,7 @@ WITH CHECK (
 CREATE POLICY "public_insert_shared_profile"
 ON share_events
 FOR INSERT
-USING (
+WITH CHECK (
   profile_id IN (
     SELECT id FROM profiles
     WHERE is_public = true AND verification_status = 'approved'

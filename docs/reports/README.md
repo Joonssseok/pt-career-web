@@ -8,8 +8,10 @@
 
 | 보고서 | Phase | 작성일 | 상태 | 설명 |
 |--------|-------|--------|------|------|
-| PHASE_M1_1_AUTH_HOTFIX_REPORT.md | M1.1 | 2026-07-17 | E2E Test | 인증 보안 개선 + 흐름 통일 (middleware, callback, redirect) |
-| PHASE_M1_COMPLETION_REPORT.md | M1 | 2026-07-17 | Review | Supabase 이메일 인증 구현 (이메일 미구성 이슈 포함) |
+| M1_GOOGLE_OAUTH_PKCE_HOTFIX_REPORT.md | M1 | 2026-07-19 | Completed | Google OAuth PKCE 호환성 해결 + 최종 E2E 테스트 |
+| M1_GOOGLE_OAUTH_FINAL_STATUS_REPORT.md | M1 | 2026-07-19 | Completed | Google OAuth 최종 구현 상태 및 검증 |
+| PHASE_M1_1_AUTH_HOTFIX_REPORT.md | M1.1 | 2026-07-17 | Archived | 인증 보안 개선 + 흐름 통일 (legacy email auth) |
+| PHASE_M1_COMPLETION_REPORT.md | M1 | 2026-07-17 | Superseded | Supabase 이메일 인증 구현 (대체됨: Google OAuth로 변경) |
 | PHASE_M0_3_DEPENDENCY_REPORT.md | M0.3 | 2026-07-17 | Completed | 의존성 안정화 — Next.js 14→15 업그레이드 |
 | PHASE_M0_3_PRE_REPORT.md | M0.3 | 2026-07-17 | Completed | 의존성 안정화 — 작업 전 분석 |
 | PHASE_M0_2_COMPLETION_REPORT.md | M0.2 | 2026-07-17 | Completed | 문서 정합성 최종 검증 및 보고서 |
@@ -51,9 +53,11 @@
 - ✅ PHASE_M0_2_COMPLETION_REPORT.md
 - ⏳ PHASE_M0_3_DEPENDENCY_REPORT.md (작성 중)
 
-### M1 (Supabase 이메일 인증)
-- ⏳ PHASE_M1_COMPLETION_REPORT.md (M0.3 후)
-- ⏳ PHASE_M1_TEST_REPORT.md (필요시)
+### M1 (Google OAuth 인증)
+- ✅ M1_GOOGLE_OAUTH_PKCE_HOTFIX_REPORT.md
+- ✅ M1_GOOGLE_OAUTH_FINAL_STATUS_REPORT.md
+- ✅ Google OAuth 로컬 E2E (PASS)
+- ✅ Google OAuth Production E2E (PASS)
 
 ### 향후 Phase
 - PHASE_M2_COMPLETION_REPORT.md

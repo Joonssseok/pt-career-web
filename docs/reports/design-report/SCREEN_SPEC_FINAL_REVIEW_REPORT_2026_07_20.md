@@ -200,7 +200,7 @@ Production Deployment:                NOT APPROVED 🚫
 - TM-01~TM-10 항목별 현행 기술 구조 분석 (변경 없음)
 
 ### 4단계: M2.1 Technical Mapping 시작 (병렬, 2026-07-21~25)
-- 10개 M2 확인항목 기술진 검증
+- M2.1 TM-01~TM-10 항목 기술진 검증
   1. 프로필 실제 DB 필드와 컬럼명
   2. 근무기관 데이터 저장 위치
   3. 증빙파일 Storage와 접근 정책
@@ -245,5 +245,5 @@ Production Deployment:                NOT APPROVED 🚫
 - 운영 정책 (3개): ✅ ALL APPROVED
 - 합계: 12개 의사결정안 모두 CEO 승인
 
-**다음**: Screen Spec 최종 반영 → M2 기술 검증
+**다음**: Screen Spec 최종 반영 → M2.1 Technical Mapping
 

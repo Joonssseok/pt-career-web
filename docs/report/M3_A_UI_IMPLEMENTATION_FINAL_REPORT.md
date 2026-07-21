@@ -15,8 +15,8 @@ M3-1 UI Skeleton (5개 화면)이 완성되었습니다.
 |-----|------|------|------|-----------|--------|-------|
 | EXP-ONB-002 | ✅ | ✓ | N/A | ✓ | ✓ | Profile form |
 | EXP-ONB-003 | ✅ | ✓ | N/A | ✓ | ✓ | Policy: Pending |
-| EXP-ONB-004 | ✅ | ✓ | ✓ | ✓ | ✓ | add/delete |
-| EXP-ONB-007 | ✅ | ✓ | ✓ | ✓ | ✓ | add/delete |
+| EXP-ONB-004 | ✅ | ✓ | ✓ | ✓ | ✓ | add/edit/delete |
+| EXP-ONB-007 | ✅ | ✓ | ✓ | ✓ | ✓ | add/edit/delete |
 | EXP-ONB-008 | ✅ | ✓ | N/A | ✓ | ✓ | 1-3 rule |
 
 ---
@@ -31,8 +31,8 @@ M3-1 UI Skeleton (5개 화면)이 완성되었습니다.
 [✅] Error State
 [✅] Loading State (1.5초)
 [✅] Saved State (auto-reset 2초)
-[✅] Experience CRUD (add/delete)
-[✅] Education CRUD (add/delete)
+[✅] Experience CRUD (add/edit/delete)
+[✅] Education CRUD (add/edit/delete)
 [✅] Specialties 12개 선택
 [✅] Specialties 1~3개 규칙 강제
 [✅] Empty state messages
@@ -109,6 +109,7 @@ M3-1 UI Skeleton (5개 화면)이 완성되었습니다.
 **구현**
 ```
 ✅ Add: companyName, position, startDate, endDate, isCurrently
+✅ Edit: In-line edit mode with save/cancel buttons
 ✅ Delete: per-experience delete button
 ✅ Display: List with company/position/dates
 ```
@@ -128,8 +129,9 @@ M3-1 UI Skeleton (5개 화면)이 완성되었습니다.
 **구현**
 ```
 ✅ Add: name (datalist), issuer, issueDate
+✅ Edit: In-line edit mode with save/cancel buttons
 ✅ Delete: per-cert delete button
-✅ Datalist: 9개 common certs
+✅ Datalist: 8개 common certs
 ✅ Display: List with cert/issuer/date
 ```
 
@@ -280,7 +282,7 @@ Mock-Only:
 ```
 ✅ Evidence와 Proposal 분리 (M2.1)
 ✅ Policy decision pending 명시 (EXP-ONB-003)
-✅ Edit 기능 구현 (Experience/Education)
+✅ Full CRUD 기능 구현 (Experience: add/edit/delete, Education: add/edit/delete)
 ✅ 360px QA 전체 PASS
 ✅ 공식 연락처 비공개 안내
 ✅ 거주지역/근무지역 미확정 표시

@@ -3,16 +3,17 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-export default function ExperienceStep() {
-  const [experiences, setExperiences] = useState<Array<{
-    id: string;
-    companyName: string;
-    position: string;
-    startDate: string;
-    endDate: string;
-    isCurrently: boolean;
-  }>>([]);
+type Experience = {
+  id: string;
+  companyName: string;
+  position: string;
+  startDate: string;
+  endDate: string;
+  isCurrently: boolean;
+};
 
+export default function ExperienceStep() {
+  const [experiences, setExperiences] = useState<Experience[]>([]);
   const [newExperience, setNewExperience] = useState({
     companyName: '',
     position: '',
@@ -20,7 +21,8 @@ export default function ExperienceStep() {
     endDate: '',
     isCurrently: false,
   });
-
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<typeof newExperience | null>(null);
   const [formState, setFormState] = useState<'default' | 'loading' | 'saved'>('default');
 
   const handleAddExperience = () => {
@@ -40,6 +42,34 @@ export default function ExperienceStep() {
         isCurrently: false,
       });
     }
+  };
+
+  const handleEditStart = (exp: Experience) => {
+    setEditingId(exp.id);
+    setEditForm({
+      companyName: exp.companyName,
+      position: exp.position,
+      startDate: exp.startDate,
+      endDate: exp.endDate,
+      isCurrently: exp.isCurrently,
+    });
+  };
+
+  const handleEditSave = (id: string) => {
+    if (editForm) {
+      setExperiences(
+        experiences.map((exp) =>
+          exp.id === id ? { ...exp, ...editForm } : exp
+        )
+      );
+      setEditingId(null);
+      setEditForm(null);
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingId(null);
+    setEditForm(null);
   };
 
   const handleDeleteExperience = (id: string) => {
@@ -153,17 +183,13 @@ export default function ExperienceStep() {
         {/* State Messages */}
         {formState === 'loading' && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-900 font-medium">
-              ⏳ 저장 중입니다...
-            </p>
+            <p className="text-sm text-blue-900 font-medium">⏳ 저장 중입니다...</p>
           </div>
         )}
 
         {formState === 'saved' && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-sm text-green-900 font-medium">
-              ✓ 저장되었습니다!
-            </p>
+            <p className="text-sm text-green-900 font-medium">✓ 저장되었습니다!</p>
           </div>
         )}
 
@@ -172,27 +198,84 @@ export default function ExperienceStep() {
           <div className="space-y-3">
             <h3 className="font-medium text-gray-900">추가된 경력 ({experiences.length})</h3>
             {experiences.map((exp) => (
-              <div
-                key={exp.id}
-                className="bg-white border border-gray-200 rounded-lg p-4 flex items-center justify-between"
-              >
-                <div>
-                  <p className="font-medium text-gray-900">{exp.companyName}</p>
-                  <p className="text-sm text-gray-600">{exp.position}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {exp.startDate && exp.startDate.substring(0, 7)}
-                    {exp.endDate
-                      ? ` ~ ${exp.endDate.substring(0, 7)}`
-                      : ' ~ 현재'}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteExperience(exp.id)}
-                  className="text-red-500 hover:text-red-700 text-sm font-medium"
-                >
-                  삭제
-                </button>
+              <div key={exp.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                {editingId === exp.id ? (
+                  // Edit Mode
+                  <div className="space-y-3">
+                    <input
+                      type="text"
+                      value={editForm?.companyName || ''}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm!,
+                          companyName: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                      placeholder="기관명"
+                    />
+                    <input
+                      type="text"
+                      value={editForm?.position || ''}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm!,
+                          position: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                      placeholder="직책"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleEditSave(exp.id)}
+                        className="px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600"
+                      >
+                        저장
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleEditCancel}
+                        className="px-3 py-1 bg-gray-300 text-gray-900 text-xs rounded hover:bg-gray-400"
+                      >
+                        취소
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // View Mode
+                  <div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">{exp.companyName}</p>
+                        <p className="text-sm text-gray-600">{exp.position}</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {exp.startDate && exp.startDate.substring(0, 7)}
+                          {exp.endDate
+                            ? ` ~ ${exp.endDate.substring(0, 7)}`
+                            : ' ~ 현재'}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleEditStart(exp)}
+                          className="text-blue-500 hover:text-blue-700 text-sm font-medium"
+                        >
+                          수정
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExperience(exp.id)}
+                          className="text-red-500 hover:text-red-700 text-sm font-medium"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

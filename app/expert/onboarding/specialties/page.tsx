@@ -3,10 +3,19 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-export default function SpecialtiesStep() {
-  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([]);
+type FormState = 'default' | 'error' | 'loading' | 'saved';
 
-  // From database specialties migration
+export default function SpecialtiesStep() {
+  // Mock data: 3개 선택
+  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([
+    '필라테스·요가·유연성',
+    '자세교정·통증관리',
+    '체력향상·컨디셔닝',
+  ]);
+
+  const [formState, setFormState] = useState<FormState>('default');
+  const [showWarning, setShowWarning] = useState(false);
+
   const specialties = [
     '근력강화·바디프로필',
     '다이어트·체형관리',
@@ -22,18 +31,47 @@ export default function SpecialtiesStep() {
     '필라테스·요가·유연성',
   ];
 
+  const MIN_SELECTION = 1;
+  const MAX_SELECTION = 3;
+
   const toggleSpecialty = (specialty: string) => {
-    setSelectedSpecialties((prev) =>
-      prev.includes(specialty)
-        ? prev.filter((s) => s !== specialty)
-        : [...prev, specialty]
-    );
+    setSelectedSpecialties((prev) => {
+      if (prev.includes(specialty)) {
+        setShowWarning(false);
+        return prev.filter((s) => s !== specialty);
+      }
+
+      // Try to add if under max
+      if (prev.length < MAX_SELECTION) {
+        setShowWarning(false);
+        return [...prev, specialty];
+      }
+
+      // Show warning if over max
+      setShowWarning(true);
+      return prev;
+    });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Selected specialties:', selectedSpecialties);
-    // TODO: Save to database
+
+    if (selectedSpecialties.length < MIN_SELECTION) {
+      setShowWarning(true);
+      return;
+    }
+
+    setFormState('loading');
+
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    setFormState('saved');
+
+    // Reset to default after 2 seconds
+    setTimeout(() => {
+      setFormState('default');
+    }, 2000);
   };
 
   return (
@@ -45,17 +83,54 @@ export default function SpecialtiesStep() {
             전문분야 선택
           </h2>
           <p className="text-sm text-gray-600">
-            당신의 전문 분야를 선택해주세요 (최소 1개)
+            당신의 전문 분야를 선택해주세요 ({MIN_SELECTION}~{MAX_SELECTION}개)
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Selection Count */}
+      {/* State Messages */}
+      {formState === 'loading' && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-900 font-medium">
-            선택됨: {selectedSpecialties.length}개
+            ⏳ 저장 중입니다...
           </p>
+        </div>
+      )}
+
+      {formState === 'saved' && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-sm text-green-900 font-medium">
+            ✓ 저장되었습니다!
+          </p>
+        </div>
+      )}
+
+      {showWarning && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-sm text-red-900 font-medium">
+            ⚠️ 전문분야는 최소 {MIN_SELECTION}개, 최대 {MAX_SELECTION}
+            개까지 선택할 수 있습니다.
+          </p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Selection Count */}
+        <div
+          className={`border rounded-lg p-4 ${
+            selectedSpecialties.length === 0
+              ? 'bg-yellow-50 border-yellow-200'
+              : 'bg-blue-50 border-blue-200'
+          }`}
+        >
+          <p className="text-sm font-medium">
+            선택됨: {selectedSpecialties.length}/{MAX_SELECTION}개
+          </p>
+          {selectedSpecialties.length === 0 && (
+            <p className="text-xs text-yellow-700 mt-1">
+              최소 1개를 선택해야 다음 단계로 진행할 수 있습니다.
+            </p>
+          )}
         </div>
 
         {/* Specialties Grid */}
@@ -65,15 +140,20 @@ export default function SpecialtiesStep() {
               key={specialty}
               type="button"
               onClick={() => toggleSpecialty(specialty)}
+              disabled={formState === 'loading'}
               className={`p-4 rounded-lg border-2 text-left transition-all ${
                 selectedSpecialties.includes(specialty)
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 bg-white hover:border-gray-300'
+              } ${
+                formState === 'loading'
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'cursor-pointer'
               }`}
             >
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                  className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
                     selectedSpecialties.includes(specialty)
                       ? 'border-blue-500 bg-blue-500'
                       : 'border-gray-300'
@@ -112,29 +192,25 @@ export default function SpecialtiesStep() {
         <div className="flex gap-3 pt-4">
           <Link
             href="/expert/onboarding/education"
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             이전
           </Link>
           <button
             type="submit"
-            disabled={selectedSpecialties.length === 0}
+            disabled={
+              selectedSpecialties.length === 0 ||
+              selectedSpecialties.length > MAX_SELECTION ||
+              formState === 'loading'
+            }
             className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            프로필 설정 완료
+            {formState === 'loading'
+              ? '저장 중...'
+              : '프로필 설정 완료'}
           </button>
         </div>
       </form>
-
-      {/* Completion Message */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 hidden">
-        <p className="text-sm text-green-900 font-medium">
-          ✓ 프로필 설정이 완료되었습니다!
-        </p>
-        <p className="text-xs text-green-800 mt-1">
-          마이페이지에서 언제든 수정할 수 있습니다.
-        </p>
-      </div>
     </div>
   );
 }

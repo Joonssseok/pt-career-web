@@ -52,10 +52,22 @@ export default function WorkplaceStep() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [formState, setFormState] = useState<'default' | 'loading' | 'saved'>('default');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Workplace data:', formData);
-    // TODO: Save to database
+
+    if (!formData.centerName.trim() || !formData.workplaceRegion) {
+      return;
+    }
+
+    setFormState('loading');
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    setFormState('saved');
+
+    setTimeout(() => {
+      setFormState('default');
+    }, 2000);
   };
 
   return (

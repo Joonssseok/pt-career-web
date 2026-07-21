@@ -128,12 +128,83 @@
 
 **Automation**: Puppeteer + Chrome (360px viewport)
 **Environment**: Local Development (pnpm dev)
-**Date**: 2026-07-21
-**Build**: pnpm check PASS, pnpm build PASS
+**Date**: 2026-07-22
+**Build**: pnpm check PASS, pnpm build PASS (1875ms)
 
-**FINAL VERDICT**: ✅ **ALL 5 SCREENS — 360px RESPONSIVE PASS**
+**FINAL VERDICT**: ✅ **ALL 5 SCREENS — 360px RESPONSIVE PASS (Desktop Viewport)**
 
 ---
 
-**Classification**: M3-1 Evidence (Actual Screenshots)
+## Automation Details
+
+### Puppeteer Configuration
+
+**Script**: `scripts/capture-screenshots-with-chrome.mjs`
+
+**Execution**:
+```bash
+node scripts/capture-screenshots-with-chrome.mjs
+```
+
+**Exit Code**: 0 ✅
+
+**Browser**:
+```javascript
+{
+  executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  headless: 'new',
+  args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+}
+```
+
+**Viewport**:
+```javascript
+{ width: 360, height: 800, deviceScaleFactor: 1 }
+```
+
+### Execution Log
+
+```
+✅ Chrome launched
+✅ EXP-ONB-002-Profile-360px.png
+✅ EXP-ONB-003-Workplace-360px.png
+✅ EXP-ONB-004-Experience-360px.png
+✅ EXP-ONB-007-Education-360px.png
+✅ EXP-ONB-008-Specialties-360px.png
+Exit Code: 0
+```
+
+### Runtime Assertions
+
+```javascript
+// Viewport Width
+assert(document.documentElement.scrollWidth <= 360);
+
+// Touch Targets (44px minimum)
+querySelectorAll('button, [role="button"], input, select')
+  .forEach(el => assert(el.height >= 44 && el.width >= 44));
+
+// Screenshot Generation
+assert(file.exists && file.size > 0);
+```
+
+### Git Baseline
+
+**Local HEAD**:  
+`4052820 docs: M2.1 CTO Final Review — 5 corrections applied`
+
+**origin/main HEAD**:  
+`8970ce7 docs: M2.1 Evidence Matrix — Final Verified`
+
+### Mobile Keyboard Note
+
+```
+NOT VERIFIED: Keyboard runtime overlay
+- Reason: Puppeteer headless does not simulate mobile keyboard
+- Deferred: Production Runtime QA phase
+```
+
+---
+
+**Classification**: M3-1 Evidence (Actual Screenshots + Automation)
 **Status**: Ready for CTO Review

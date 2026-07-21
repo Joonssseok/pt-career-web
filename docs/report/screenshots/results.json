@@ -1,0 +1,42 @@
+[
+  {
+    "name": "EXP-ONB-002",
+    "path": "/expert/onboarding/profile",
+    "title": "Profile",
+    "filename": "EXP-ONB-002-Profile-360px.png",
+    "viewport": "360px",
+    "status": "PASS"
+  },
+  {
+    "name": "EXP-ONB-003",
+    "path": "/expert/onboarding/workplace",
+    "title": "Workplace",
+    "filename": "EXP-ONB-003-Workplace-360px.png",
+    "viewport": "360px",
+    "status": "PASS"
+  },
+  {
+    "name": "EXP-ONB-004",
+    "path": "/expert/onboarding/experience",
+    "title": "Experience",
+    "filename": "EXP-ONB-004-Experience-360px.png",
+    "viewport": "360px",
+    "status": "PASS"
+  },
+  {
+    "name": "EXP-ONB-007",
+    "path": "/expert/onboarding/education",
+    "title": "Education",
+    "filename": "EXP-ONB-007-Education-360px.png",
+    "viewport": "360px",
+    "status": "PASS"
+  },
+  {
+    "name": "EXP-ONB-008",
+    "path": "/expert/onboarding/specialties",
+    "title": "Specialties",
+    "filename": "EXP-ONB-008-Specialties-360px.png",
+    "viewport": "360px",
+    "status": "PASS"
+  }
+]

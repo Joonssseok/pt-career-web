@@ -1,9 +1,9 @@
 # M2 Final Security Verification Report
 
 **작성일**: 2026-07-20  
-**최종 갱신**: 2026-07-21  
-**상태**: ✅ COMPLETE (Step 1-4 검증 완료, Step 5 선택사항)  
-**최종 판정**: **✅ PASS** (5/6 단계 검증 완료, 83.3%)
+**갱신**: 2026-07-21  
+**상태**: IN PROGRESS  
+**최종 판정**: Technical verification PARTIAL COMPLETE
 
 ---
 
@@ -11,18 +11,18 @@
 
 CTO 10점 지시사항에 따라 M2 보안 검증을 수행했습니다.
 
-| Step | 항목 | 상태 | 판정 | 근거 |
-|------|------|------|------|------|
-| 1 | Google OAuth Production | ✅ 완료 | **PASS** | 8/8 체크리스트 |
-| 2 | 모바일 실기기 테스트 | ✅ 완료 | **PASS** | 11/11 항목 |
-| 3 | Public License View RLS | ✅ 완료 | **PASS** | RLS + 필터링 검증 |
-| 4a | Storage 일반 사용자 격리 | ✅ 완료 | **PASS** | 13/13 테스트 |
-| 4b | Storage 관리자 권한 (is_admin) | ✅ 완료 | **PASS** | Admin 추가/제거 검증 |
-| 4c | Storage 타인 경로 이동 차단 | ✅ 완료 | **PASS** | Move operation 차단 확인 |
-| 5 | Clean Rebuild | ⏳ 선택사항 | NOT VERIFIED | Docker 필요 (선택사항) |
-| 6 | pg_policies 최종 확인 | ✅ 완료 | **PASS** | 12개 정책, 이메일 제거 |
-
-**최종 검증율**: 83.3% (5/6 완료, Step 5 선택사항)
+| Item | Status | Result |
+|------|--------|--------|
+| OAuth Production | ✅ PASS | 8/8 end-to-end verified |
+| 모바일 실기기 | ✅ PASS | 11/11 items verified |
+| Public License View Runtime Test | ✅ PASS | RLS filtering verified |
+| Storage Runtime Test | ✅ PASS | User isolation verified |
+| Build / TypeScript | ✅ PASS | pnpm check/build PASS |
+| Remote Storage Policies | ✅ PASS | 12 policies confirmed |
+| Clean Rebuild | ❌ NOT VERIFIED | Docker execution required |
+| Migration Reproducibility | ❌ NOT VERIFIED | Applied migrations TBD |
+| M2 Final Security Closure | ⏳ IN PROGRESS | Pending Clean Rebuild |
+| M3 | ❌ NOT STARTED | Awaiting M2 closure |
 
 ---
 
@@ -258,34 +258,30 @@ if (!deleteRes?.error && deleteRes?.data?.length > 0) {
 
 ## Summary & Judgment
 
-### 최종 기술진 검증 현황
-```
-✅ Step 1: Google OAuth Production (PASS)
-✅ Step 2: 모바일 실기기 (PASS)
-✅ Step 3: Public License View RLS (PASS)
-✅ Step 4a: Storage 일반 사용자 격리 (PASS - 13/13)
-✅ Step 4b: Storage 관리자 권한 (PASS - is_admin 기반)
-✅ Step 4c: Storage 타인 경로 이동 차단 (PASS - move blocked)
-✅ Step 6: pg_policies 최종 확인 (PASS - 12개 정책)
-⏳ Step 5: Clean Rebuild (선택사항 - Docker 필요)
-```
+### 현재 기술진 검증 상황
+- OAuth Production: ✅ PASS
+- 모바일 실기기: ✅ PASS
+- Public License View Runtime Test: ✅ PASS
+- Storage Runtime Test: ✅ PASS (STG-01~11 pending renumbering)
+- Build / TypeScript: ✅ PASS
+- Remote Storage Policies: ✅ PASS (12 confirmed)
+- Clean Rebuild: ❌ NOT VERIFIED (Docker required)
+- Migration Reproducibility: ❌ NOT VERIFIED (TBD)
 
-### CTO 지시사항 이행 현황 (10점)
-
-**✅ 완료된 항목** (10/10):
-1. ✅ 보고서 UUID 제거 (모든 판정에서 UUID 삭제)
-2. ✅ 데이터 불변성 테스트 (13/13 테스트 구현)
-3. ✅ 판정 단순화 (PASS/NOT VERIFIED만 사용)
-4. ✅ M3 진행 금지 (Step 5 완료 후 승인 대기)
-5. ✅ 이메일 정책 제거 (Corrective migration 적용)
-6. ✅ is_admin() 함수 사용 (admin_users 테이블 기반)
-7. ✅ 정정 migration 생성 (20260720000200_m2_correct_storage_policies.sql)
-8. ✅ Move/Admin 테스트 강화 (move blocking + admin_users 추가/제거)
-9. ✅ 빌드 재검증 (pnpm check/build PASS)
-10. ✅ pg_policies 확인 (12개 정책, admin_fallback_* 제거됨)
+### CTO 지시사항 대응 현황
+1. 보고서 UUID 제거: 처리 중
+2. 데이터 불변성 테스트: 구현 완료, 재검증 필요
+3. 판정 단순화: PASS/NOT VERIFIED 적용
+4. M3 진행 금지: 유지 중
+5. 이메일 정책 제거: Migration 준비 (적용 미확인)
+6. is_admin() 함수: Migration에 포함 (적용 미확인)
+7. 정정 migration: 생성됨 (적용 미확인)
+8. Move/Admin 테스트: 스크립트 구현 (재검증 필요)
+9. 빌드 재검증: 로컬 PASS (Clean Rebuild 필요)
+10. pg_policies 확인: Remote 12개 확인 (적용 불확실)
 
 ### M3 상태
-✅ **READY FOR DEPLOYMENT** - 모든 검증 완료, CTO 최종 승인 대기
+⏳ **NOT STARTED** - M2 완료 대기
 
 ---
 
@@ -353,16 +349,54 @@ git log -1 --oneline
 
 ---
 
-## 다음 단계 (선택사항)
+## 최종 보고서 상태
 
-| 항목 | 상태 | 비고 |
-|------|------|------|
-| Step 5: Clean Rebuild | ⏳ 선택사항 | Docker 필요 (CTO 재요청 시) |
+### Clean Rebuild 전
+
+```
+Technical verification: PARTIAL COMPLETE
+├─ 완료: OAuth, Mobile, License View, Storage Runtime, Build, Remote policies
+├─ 대기: Clean Rebuild (Docker 필요)
+├─ 대기: Migration Reproducibility (Clean Rebuild 후 확인)
+└─ 상태: In Progress
+
+CTO recommendation: PENDING
+CEO approval: PENDING
+M3: NOT STARTED
+```
+
+### Clean Rebuild 완료 후 (예상)
+
+```
+Technical verification: COMPLETE
+├─ 모든 검증 통과
+├─ Migration reproducibility 확인
+└─ 상태: Closed
+
+CTO recommendation: REQUESTED
+CEO approval: PENDING
+M3: NOT STARTED
+```
+
+---
+
+## 다음 단계
+
+| 항목 | 요구사항 | 상태 |
+|------|---------|------|
+| Clean Rebuild | Docker (로컬만) | ❌ 미실행 |
+| Migration 재현성 | Clean Rebuild 후 | ❌ 미검증 |
+| CTO 최종 검토 | 기술검증 완료 후 | ⏳ 대기 중 |
+| CEO 승인 | CTO 권고 후 | ⏳ 대기 중 |
+| M3 진행 | 모든 승인 후 | ⏳ NOT STARTED |
 
 ---
 
 **Document**: M2_FINAL_SECURITY_REPORT.md  
 **Date**: 2026-07-20 → 2026-07-21  
-**Status**: ✅ COMPLETE (5/6 PASS, 83.3%)  
-**CTO**: 최종 검토 및 승인 대기
+**Status**: IN PROGRESS  
+**Technical Verification**: PARTIAL COMPLETE (awaiting Clean Rebuild)  
+**CTO Recommendation**: PENDING  
+**CEO Approval**: PENDING  
+**M3**: NOT STARTED
 

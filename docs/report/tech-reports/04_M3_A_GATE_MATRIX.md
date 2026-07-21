@@ -69,7 +69,7 @@ CTO Review: PENDING
 
 ## Gate 2: M2.1 핵심 TM 판정
 
-**M3-A 필수** (8개):
+**M3-A 필수** (9개):
 - TM-01, 02, 04A, 04B, 06, 07, 08, 09, 10
 
 **상태**: Development Input Pending

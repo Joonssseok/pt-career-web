@@ -9,7 +9,10 @@
 
 ## Executive Summary
 
-M3-1 UI is complete. M3-A database implementation requires **3 policy decisions** before development can proceed:
+M3-1 Core UI: ✅ CTO PASS (5 screens, mock data, full CRUD for exp/edu)  
+M3-1 Final QA Evidence: Attachment verification pending (360px screenshots + automation)
+
+M3-A database implementation requires **3 policy decisions** before development can proceed:
 
 - **AD-04**: How to control public exposure of business information
 - **AD-05A**: How to store residential location data
@@ -32,7 +35,7 @@ Experts register their workplace (center name, website, official contact). Platf
 | **OFF (Private)** | Center name hidden, website hidden |
 | **ON (Public)** | Center name shown, website shown — **after admin approval** |
 | **Always Private** | Detailed address (never stored), personal contact (never shown) |
-| **Official Contact** | Managed separately under AD-05B (not here) |
+| **Official Contact** | TM-04A (저장) + TM-04B (공개) — AD-04와 무관 |
 | **Workplace Location** | Managed separately under AD-05B (not here) |
 
 ### Impact
@@ -48,9 +51,26 @@ Experts register their workplace (center name, website, official contact). Platf
 ## Decision B: AD-05A — Residential Location Storage & Privacy
 
 ### Business Context
-Experts enter their home region (for platform operations like notification targeting). This data is highly personal and must be kept private.
+Experts enter their home region. This data is highly personal and must be kept private.
+
+**⚠️ CTO Note on Purpose**:
+- Notification targeting: MVP scope NOT included
+- Advertising targeting: MVP scope NOT included
+- Unstated purposes: Do not collect unneeded PII
 
 ### CTO Recommendation
+
+**Option A (Recommended): EXCLUDE from MVP**
+
+Rationale:
+```
+- Unnecessary for MVP customer search (use workplace location instead)
+- No direct link to core value (trust, word-of-mouth)
+- Creates privacy, RLS, and operations burden
+- Unused notification/advertising features not in scope
+```
+
+**Option B (If Inclusion Required):**
 
 | Aspect | Decision |
 |--------|----------|
@@ -62,20 +82,38 @@ Experts enter their home region (for platform operations like notification targe
 | **Admin Access** | Minimal operational access only |
 | **Database** | Master regions table (auto-maintained) |
 
-### Technical Options (CTO Note)
-```
-Approved: Use DB master table (17 provinces + ~250 districts)
-Alternative 1: Static constants (smaller UX but maintainable)
-Alternative 2: External address API (more data, external dependency)
-```
-
 ### Impact
 - ✅ Privacy-first (always hidden from public)
 - ✅ Operational value (platform can use for internal targeting)
 - ✅ Compliant (not searchable, not visible to others)
 
-### Decision Requested
-**"Should we approve this privacy-first approach for residential location?"**
+### Decision Requested (CEO CHOOSES ONE)
+
+**"Option A: Exclude residential location from MVP?"**
+OR  
+**"Option B: Include residential location with privacy rules?"**
+
+---
+
+## Technical Implementation (NOT CEO Decision)
+
+The following are determined by CTO after policy decision:
+
+```
+❌ CEO does NOT decide these:
+- Database: Master table vs. Static constants vs. API
+- Column type: TEXT vs. ENUM vs. INT
+- Index strategy
+- RLS SQL syntax
+- Caching approach
+
+✅ CEO DECIDES ONLY:
+- What data to collect (residential yes/no)
+- Who can see it (always private / public toggle / etc)
+- How it's used (operational only / search / etc)
+```
+
+**Timeline**: Policy Decision → CTO Schema Design (separate phase)
 
 ---
 
@@ -117,25 +155,64 @@ Expert can toggle ON → Becomes searchable by location
 
 ---
 
-## Implementation Timeline
+## Implementation Sequence
 
-Once approved:
+Once policy decisions are made:
 
 ```
-Week of 2026-07-22:
-✓ CEO approves AD-04, AD-05A, AD-05B
-✓ CTO designs schema + RLS rules
-✓ Dev team begins M3-A implementation
-
-Week of 2026-07-29:
-✓ M3-A schema + API ready
-✓ Testing + QA
-
-Week of 2026-08-05:
-✓ Production deployment (pending final approval)
+1. CEO approves AD-04, AD-05A, AD-05B
+   ↓
+2. CTO designs Schema Decision Table
+   ↓
+3. CTO technical review
+   ↓
+4. CEO DB·RLS change approval
+   ↓
+5. Dev team local migration + testing
+   ↓
+6. CTO implementation review
+   ↓
+7. CEO production approval (separate gate)
 ```
 
 **Blocker**: Without these 3 decisions, M3-A cannot start.
+
+---
+
+## CTO 정책 권고 (CEO 결정용)
+
+### AD-04: Business Information Public Exposure
+
+**CTO Recommendation**: ✅ **APPROVE**
+
+```
+대상: 센터명 + 공식 홈페이지
+기본값: OFF (private)
+공개 조건: Toggle ON + 프로필 Approved
+항상 비공개: 상세주소, 개인연락처
+공식연락처: TM-04B에서 별도 (무관)
+```
+
+### AD-05A: Residential Location
+
+**CTO 1순위 권고**: ⏸️ **MVP EXCLUDE**
+
+**이유**: 근무지역으로 충분, 핵심가치 미기여, 불필요한 부담
+
+**포함 시**: 선택입력 → 시도+시군구 → 본인전용 → 절대비공개 → 검색미사용
+
+### AD-05B: Workplace Location
+
+**CTO Recommendation**: ✅ **APPROVE**
+
+```
+입력: 선택
+저장: 시도+시군구
+MVP: 단일 대표지역
+기본값: OFF (private)
+공개조건: Toggle ON + 프로필 Approved
+향후: 다중지역 (Later Backlog)
+```
 
 ---
 

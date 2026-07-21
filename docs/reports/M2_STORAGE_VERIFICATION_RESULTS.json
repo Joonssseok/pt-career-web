@@ -1,29 +1,45 @@
 {
-  "timestamp": "2026-07-19T20:54:01.151Z",
+  "timestamp": "2026-07-21T00:34:25.656Z",
   "profileImages": [
+    {
+      "bucket": "profile-images",
+      "operation": "TEST_ADMIN-download_own",
+      "expected": "fail",
+      "actual_status": 400,
+      "actual_error_code": "Object not found",
+      "result": "PASS"
+    },
+    {
+      "bucket": "profile-images",
+      "operation": "TEST_ADMIN-download_own",
+      "expected": "success",
+      "actual_status": 400,
+      "actual_error_code": "Object not found",
+      "result": "FAIL"
+    },
     {
       "bucket": "profile-images",
       "operation": "TEST_EXPERT_A-upload_own",
       "expected": "success",
-      "actual_status": 400,
-      "actual_error_code": "mime type text/plain is not supported",
-      "result": "FAIL"
+      "actual_status": 200,
+      "actual_error_code": null,
+      "result": "PASS"
     },
     {
       "bucket": "profile-images",
       "operation": "TEST_EXPERT_A-upload_other",
       "expected": "fail",
       "actual_status": 400,
-      "actual_error_code": "mime type text/plain is not supported",
+      "actual_error_code": "new row violates row-level security policy",
       "result": "PASS"
     },
     {
       "bucket": "profile-images",
       "operation": "TEST_EXPERT_A-download_own",
       "expected": "success",
-      "actual_status": 400,
-      "actual_error_code": "Object not found",
-      "result": "FAIL"
+      "actual_status": 200,
+      "actual_error_code": null,
+      "result": "PASS"
     },
     {
       "bucket": "profile-images",
@@ -43,11 +59,27 @@
     },
     {
       "bucket": "profile-images",
+      "operation": "TEST_EXPERT_A-move_own_to_other",
+      "expected": "fail",
+      "actual_status": 500,
+      "actual_error_code": "Cannot access 'downloadPath' before initialization",
+      "result": "FAIL"
+    },
+    {
+      "bucket": "profile-images",
       "operation": "TEST_EXPERT_A-delete_own",
       "expected": "success",
+      "actual_status": 200,
+      "actual_error_code": null,
+      "result": "PASS"
+    },
+    {
+      "bucket": "profile-images",
+      "operation": "TEST_ADMIN-download_own",
+      "expected": "fail",
       "actual_status": 400,
-      "actual_error_code": "Unknown error",
-      "result": "FAIL"
+      "actual_error_code": "Object not found",
+      "result": "PASS"
     }
   ],
   "evidenceFiles": [
@@ -55,25 +87,25 @@
       "bucket": "evidence-files",
       "operation": "TEST_EXPERT_A-upload_own",
       "expected": "success",
-      "actual_status": 400,
-      "actual_error_code": "mime type text/plain is not supported",
-      "result": "FAIL"
+      "actual_status": 200,
+      "actual_error_code": null,
+      "result": "PASS"
     },
     {
       "bucket": "evidence-files",
       "operation": "TEST_EXPERT_A-upload_other",
       "expected": "fail",
       "actual_status": 400,
-      "actual_error_code": "mime type text/plain is not supported",
+      "actual_error_code": "new row violates row-level security policy",
       "result": "PASS"
     },
     {
       "bucket": "evidence-files",
       "operation": "TEST_EXPERT_A-download_own",
       "expected": "success",
-      "actual_status": 400,
-      "actual_error_code": "Object not found",
-      "result": "FAIL"
+      "actual_status": 200,
+      "actual_error_code": null,
+      "result": "PASS"
     },
     {
       "bucket": "evidence-files",
@@ -101,19 +133,35 @@
     },
     {
       "bucket": "evidence-files",
+      "operation": "TEST_EXPERT_A-move_own_to_other",
+      "expected": "fail",
+      "actual_status": 500,
+      "actual_error_code": "Cannot access 'downloadPath' before initialization",
+      "result": "FAIL"
+    },
+    {
+      "bucket": "evidence-files",
       "operation": "TEST_EXPERT_A-delete_own",
       "expected": "success",
+      "actual_status": 200,
+      "actual_error_code": null,
+      "result": "PASS"
+    },
+    {
+      "bucket": "evidence-files",
+      "operation": "TEST_ADMIN-download_own",
+      "expected": "fail",
       "actual_status": 400,
-      "actual_error_code": "Unknown error",
-      "result": "FAIL"
+      "actual_error_code": "Object not found",
+      "result": "PASS"
     }
   ],
   "summary": {
-    "total_tests": 13,
-    "total_pass": 6,
-    "total_fail": 7,
-    "pass_rate": "46%",
-    "profile_images_pass": 3,
-    "evidence_files_pass": 3
+    "total_tests": 19,
+    "total_pass": 15,
+    "total_fail": 4,
+    "pass_rate": "79%",
+    "profile_images_pass": 8,
+    "evidence_files_pass": 7
   }
 }

@@ -34,6 +34,7 @@ ON CONFLICT (id) DO NOTHING;
 CREATE POLICY "auth_select_own_profile_images"
 ON storage.objects
 FOR SELECT
+TO authenticated
 USING (
   bucket_id = 'profile-images'
   AND auth.uid()::text = (storage.foldername(name))[1]
@@ -102,6 +103,7 @@ USING (false);
 CREATE POLICY "auth_select_own_evidence_files"
 ON storage.objects
 FOR SELECT
+TO authenticated
 USING (
   bucket_id = 'evidence-files'
   AND auth.uid()::text = (storage.foldername(name))[1]

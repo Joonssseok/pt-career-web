@@ -1,4 +1,5 @@
-# CEO AD Decision Brief — 5개 추가 정책 결정
+# CEO AD Decision Brief — 5개 추가 결정
+※ AD-05는 AD-05A·AD-05B로 세분화
 
 **발신**: PT Career 디자인팀  
 **대상**: CEO  
@@ -24,7 +25,11 @@
 - 홈페이지: 전문가 공개 선택 + 관리자 승인 후 공개
 - 상세 주소: MVP 공개 프로필 미노출
 
-**CTO 리스크 검토**: 필요 (RLS 복잡도)
+**Design Recommendation**: 제시 완료
+
+**CTO Risk Review**: PENDING (RLS 복잡도)
+
+**CEO Decision**: PENDING
 
 **CEO 결정**:
 ```
@@ -40,7 +45,8 @@
 **현재 승인된 정책**:
 - 거주지역: 선택 입력
 - 거주지역: 본인 전용
-- 공개 및 조회 금지
+- 타인 공개 및 관리자 일반조회 금지
+- 전문가 본인은 조회 가능
 
 **결정할 질문**:
 사용자가 거주지역을 입력할 경우, 시·도까지만 받을지 시·군·구까지 받을지?
@@ -49,13 +55,17 @@
 거주지역 전체 입력: 선택  
 입력 시: 시·도 + 시·군·구 권장
 
-**CTO 리스크 검토**: 필요 (성능, 유지보수)
+**Design Recommendation**: 제시 완료
+
+**CTO Risk Review**: PENDING (성능, 유지보수)
+
+**CEO Decision**: PENDING
 
 **CEO 결정**:
 ```
 [ ] 시·도만
+
 [ ] 시·도 + 시·군·구
-[ ] 거주지역 입력 제외
 ```
 
 ---
@@ -73,12 +83,18 @@
 근무지역: 선택 입력  
 입력 시: 시·도 + 시·군·구 필수 권장
 
-**CTO 리스크 검토**: 필요 (검색 정밀도)
+**Design Recommendation**: 제시 완료
+
+**CTO Risk Review**: PENDING (검색 정밀도)
+
+**CEO Decision**: PENDING
 
 **CEO 결정**:
 ```
 [ ] 시·도 + 시·군·구 필수
+
 [ ] 시·도 필수, 시·군·구 선택
+
 [ ] 시·도만
 ```
 
@@ -93,9 +109,16 @@
 
 **디자인팀 권고**: 선택
 
+**Design Recommendation**: 제시 완료
+
+**CTO Risk Review**: PENDING
+
+**CEO Decision**: PENDING
+
 **CEO 결정**:
 ```
 [ ] 필수
+
 [ ] 선택
 ```
 
@@ -108,9 +131,16 @@
 
 **디자인팀 권고**: PDF, JPEG, PNG
 
+**Design Recommendation**: 제시 완료
+
+**CTO Risk Review**: PENDING
+
+**CEO Decision**: PENDING
+
 **CEO 결정**:
 ```
 [ ] PDF, JPEG, PNG (권고)
+
 [ ] 수정안: ( )
 ```
 
@@ -125,9 +155,16 @@
 - 파일당: 5MB
 - 자격당: 1개 파일
 
+**Design Recommendation**: 제시 완료
+
+**CTO Risk Review**: PENDING
+
+**CEO Decision**: PENDING
+
 **CEO 결정**:
 ```
 [ ] 5MB / 1개 (권고)
+
 [ ] 수정안: ( )
 ```
 
@@ -135,15 +172,15 @@
 
 ## 결정 상태
 
-| AD | 항목 | 상태 | M3 범위 |
-|----|------|------|--------|
-| AD-04 | 센터명·홈페이지 공개 | ⏳ | M3-A |
-| AD-05A | 거주지역 입력 단위 | ⏳ | M3-A |
-| AD-05B | 근무지역 입력 단위 | ⏳ | M3-A |
-| AD-01 | 자격번호 필수 | ⏳ | M3-B |
-| AD-02 | 증빙 형식 | ⏳ | M3-B |
-| AD-03 | 증빙 용량 | ⏳ | M3-B |
+| AD | 항목 | Design Rec | CTO Review | CEO Decision | M3 범위 |
+|----|------|-----------|-----------|------------|--------|
+| AD-04 | 센터명·홈페이지 공개 | 제시 | PENDING | PENDING | M3-A |
+| AD-05A | 거주지역 입력 단위 | 제시 | PENDING | PENDING | M3-A |
+| AD-05B | 근무지역 입력 단위 | 제시 | PENDING | PENDING | M3-A |
+| AD-01 | 자격번호 필수 | 제시 | PENDING | PENDING | M3-B |
+| AD-02 | 증빙 형식 | 제시 | PENDING | PENDING | M3-B |
+| AD-03 | 증빙 용량 | 제시 | PENDING | PENDING | M3-B |
 
 ---
 
-**상태**: CEO 의사결정 대기
+**상태**: CEO 의사결정 및 CTO 리스크 검토 대기

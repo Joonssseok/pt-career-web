@@ -1506,13 +1506,15 @@ Code Implementation:    Not Started
 - evidence-files (증빙자료): 저장 위치, 접근 권한, 보안 정책
 - 권한 관리자 조회 범위 (거주지역 제외)
 
-### ⚠️ New Field Proposal (신규 제안)
+### ⚠️ Pending Mapping / Technical Proposal Candidate
 
-| 필드 | 정의 | 상태 |
+| 개념 | 정의 | 상태 |
 |------|------|------|
-| phone_type | official / personal (CEO 정의) | ⚠️ 승인 전까지 유지 |
-| user_rejection_reason | 전문가에게 전달되는 반려 사유 | ⚠️ 승인 전까지 유지 |
-| internal_admin_notes | 관리자만 조회하는 내부 메모 | ⚠️ 승인 전까지 유지 |
+| 공식·개인 연락처 구분 | official / personal 유형 구분 (CEO 결정 후) | TM-04A 기술 근거 대기 |
+| 사용자 전달용 반려 사유 | 전문가에게 전달되는 반려 사유 | TM-05 기술 근거 대기 |
+| 관리자 내부 메모 | 관리자만 조회하는 내부 메모 (사용자 비노출) | TM-05 기술 근거 대기 |
+
+**참고**: 실제 필드명·저장 위치·RLS 정책은 개발팀 기술 근거 제출 후 CTO 판정 단계에서 확정됩니다.
 
 ---
 
@@ -1571,22 +1573,30 @@ TM-01~TM-10: 위 항목 참조 (M2.1 Technical Mapping 항목)
 
 ## 최종 상태
 
+**Baseline v0.9**:
 ```
-형식 완성도:
-✅ 13개 화면 × 26개 필드 = 338개 항목 완성
+CTO REVIEW REQUESTED
+```
 
-내용 정합성:
-⏳ CEO 결정 1~12 반영 교정 중
-⏳ 거주·근무지역 선택사항 변경 중
-⏳ 선택사항 vs 필수 항목 재분류 중
-⏳ MVP 주소 검색 문구 제거 중
-⏳ M2.1 Technical Mapping 연계 정리 중
+**M2.1**:
+```
+EVIDENCE COLLECTION PENDING
+```
+
+**Implementation Figma**:
+```
+NOT STARTED
+```
+
+**M3-A**:
+```
+NOT APPROVED
 ```
 
 ---
 
 **작성**: 2026-07-20  
-**교정**: 2026-07-21 (CEO 결정 1~12 반영)
-**버전**: V3 (디자인팀 교정)  
-**상태**: CEO 결정 반영 교정 진행 중  
-**다음**: 디자인팀 자체검수 → 팀장 확인 → CTO 정합성 확인
+**V3 교정**: 2026-07-21  
+**버전**: V3 (디자인팀장 검수 완료, CTO 검토 요청)  
+**상태**: CTO REVIEW REQUESTED  
+**다음**: CTO 기술 정합성 검토 → CEO 정책 결정 → Gate 진행

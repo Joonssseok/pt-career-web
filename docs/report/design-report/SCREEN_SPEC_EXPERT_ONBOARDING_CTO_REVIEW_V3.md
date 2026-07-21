@@ -155,12 +155,12 @@ Code Implementation:    Not Started
 - ← / (소비자 홈)
 - ← /mypage (마이페이지)
 
-**관련 테이블**: `profiles` (읽기 전용)
+**관련 기술 매핑**: Technical Mapping Required — TM-01
 
 **관련 RLS 조건**: 
-- 사용자가 자신의 프로필만 조회 가능
+- 사용자가 자신의 프로필만 조회 가능 (TM-01에서 확인)
 
-**Figma 상태**: Draft
+**Figma 상태**: NOT STARTED
 
 **구현 상태**: Not Started
 
@@ -325,14 +325,14 @@ Code Implementation:    Not Started
 - ← EXP-ONB-001 (이전)
 - ← /mypage (나중에 하기)
 
-**관련 테이블**: `profiles` (⏳ Pending Mapping)
+**관련 기술 매핑**: Technical Mapping Required — TM-01
 
 **관련 RLS 조건**:
 - 사용자는 자신의 프로필만 수정 가능
 - 보호 필드는 수정 불가 (제품 요구사항)
 - 기술 구현: M2.1에서 현행 구조 확인 후 CTO 권고안 작성, 실제 변경은 CEO 승인 후 진행
 
-**Figma 상태**: Draft
+**Figma 상태**: NOT STARTED
 
 **구현 상태**: Not Started
 
@@ -480,7 +480,7 @@ Code Implementation:    Not Started
 - → EXP-ONB-004 (경력 관리)
 - ← EXP-ONB-002 (이전)
 
-**관련 테이블**: ⏳ Pending Mapping (profiles 또는 workplaces 미확정)
+**관련 기술 매핑**: Technical Mapping Required — TM-02, TM-04A, TM-04B, TM-06~10
 
 **관련 RLS 조건**:
 - 사용자는 자신의 기관 정보만 수정 가능
@@ -492,7 +492,7 @@ Code Implementation:    Not Started
 - 개인 문의 연락처: 항상 비공개
 - 센터명·근무기관 상세 주소·홈페이지: AD-04 결정 전 자동 공개로 단정하지 않음
 
-**Figma 상태**: Draft
+**Figma 상태**: NOT STARTED
 
 **구현 상태**: Not Started
 
@@ -592,12 +592,12 @@ Code Implementation:    Not Started
 - → EXP-ONB-005 (자격·면허 관리)
 - ← EXP-ONB-003 (이전)
 
-**관련 테이블**: `experiences` (⏳ Pending Mapping)
+**관련 기술 매핑**: Technical Mapping Required — TM-02
 
 **관련 RLS 조건**:
 - 사용자는 자신의 경력만 입력·수정·삭제 가능
 
-**Figma 상태**: Draft
+**Figma 상태**: NOT STARTED
 
 **구현 상태**: Not Started
 
@@ -694,13 +694,13 @@ Code Implementation:    Not Started
 - → EXP-ONB-006 (자격 증빙 업로드)
 - ← EXP-ONB-004 (이전)
 
-**관련 테이블**: `licenses` (⏳ Pending Mapping)
+**관련 기술 매핑**: Technical Mapping Required — TM-02
 
 **관련 RLS 조건**:
 - 사용자는 자신의 자격만 입력·수정·삭제 가능
 - 검토 상태는 관리자만 변경
 
-**Figma 상태**: Draft
+**Figma 상태**: NOT STARTED
 
 **구현 상태**: Not Started
 
@@ -790,7 +790,7 @@ Code Implementation:    Not Started
 - → EXP-ONB-007 (교육 이력)
 - ← EXP-ONB-005 (자격 수정)
 
-**관련 테이블**: `license_documents` (⏳ Pending Mapping)
+**관련 기술 매핑**: Technical Mapping Required — TM-03
 
 **관련 RLS 조건**:
 - 사용자는 자신의 파일만 업로드 가능
@@ -798,7 +798,7 @@ Code Implementation:    Not Started
 - 관리자 증빙파일 접근 방식은 M2.1 TM-03 검증 후 CTO 권고안을 작성
   - 실제 정책 변경은 CEO 승인 후 진행
 
-**Figma 상태**: Draft
+**Figma 상태**: NOT STARTED
 
 **구현 상태**: Not Started
 
@@ -887,12 +887,12 @@ Code Implementation:    Not Started
 - → EXP-ONB-008 (전문분야 선택)
 - ← EXP-ONB-006 (이전)
 
-**관련 테이블**: `educations` (⏳ Pending Mapping)
+**관련 기술 매핑**: Technical Mapping Required — TM-02
 
 **관련 RLS 조건**:
 - 사용자는 자신의 교육만 입력·수정·삭제 가능
 
-**Figma 상태**: Draft
+**Figma 상태**: NOT STARTED
 
 **구현 상태**: Not Started
 
@@ -980,12 +980,12 @@ Code Implementation:    Not Started
 - → EXP-ONB-009 (입력 내용 확인)
 - ← EXP-ONB-007 (이전)
 
-**관련 테이블**: `profile_specialties` (⏳ Pending Mapping)
+**관련 기술 매핑**: Technical Mapping Required — TM-02
 
 **관련 RLS 조건**:
 - 사용자는 자신의 전문분야만 선택·변경 가능
 
-**Figma 상태**: Draft
+**Figma 상태**: NOT STARTED
 
 **구현 상태**: Not Started
 
@@ -1087,7 +1087,7 @@ Code Implementation:    Not Started
 - → EXP-ONB-010 (검토 요청)
 - ← EXP-ONB-002, 003, 004, 005, 006, 007, 008 (각 수정 링크)
 
-**관련 테이블**: 모든 테이블 (읽기 전용)
+**관련 기술 매핑**: Technical Mapping Required — TM-01 (읽기 전용)
 
 **관련 RLS 조건**:
 - 사용자는 자신의 정보만 조회 가능
@@ -1095,7 +1095,7 @@ Code Implementation:    Not Started
 - 거주지역은 일반 관리자 검토 범위에서 제외한다
 - 실제 관리자 접근범위는 M2.1과 개인정보 검토 후 확정한다
 
-**Figma 상태**: Draft
+**Figma 상태**: NOT STARTED
 
 **구현 상태**: Not Started
 
@@ -1205,14 +1205,14 @@ Code Implementation:    Not Started
 - → EXP-ONB-011 (검토 대기) [자동 이동]
 - ← EXP-ONB-009 (이전)
 
-**관련 테이블**: `profiles` (⏳ Pending Mapping)
+**관련 기술 매핑**: Technical Mapping Required — TM-01
 
 **관련 RLS 조건**:
 - 사용자는 검토 요청 액션을 실행할 수 있다
 - 사용자는 verification_status, is_public, approved_at 직접 수정 불가 (제품 요구사항)
 - 기술 구현 방식 미확정 (RLS, Trigger, API 중 선택)
 
-**Figma 상태**: Draft
+**Figma 상태**: NOT STARTED
 
 **구현 상태**: Not Started
 
@@ -1292,12 +1292,12 @@ Code Implementation:    Not Started
 - → EXP-ONB-013 (승인) [관리자 결정]
 - ← /mypage
 
-**관련 테이블**: `profiles` (⏳ Pending Mapping)
+**관련 기술 매핑**: Technical Mapping Required — TM-01
 
 **관련 RLS 조건**:
 - 사용자는 자신의 상태만 조회 가능
 
-**Figma 상태**: Draft
+**Figma 상태**: NOT STARTED
 
 **구현 상태**: Not Started
 
@@ -1375,12 +1375,12 @@ Code Implementation:    Not Started
 - → EXP-ONB-010 (재제출)
 - ← /mypage
 
-**관련 테이블**: `profiles` (⏳ Pending Mapping)
+**관련 기술 매핑**: Technical Mapping Required — TM-01
 
 **관련 RLS 조건**:
 - 사용자는 자신의 반려 정보만 조회 가능
 
-**Figma 상태**: Draft
+**Figma 상태**: NOT STARTED
 
 **구현 상태**: Not Started
 
@@ -1456,7 +1456,7 @@ Code Implementation:    Not Started
 - → 소비자 공개 프로필 (/experts/:id)
 - ← /mypage
 
-**관련 테이블**: `profiles` (⏳ Pending Mapping)
+**관련 기술 매핑**: Technical Mapping Required — TM-01
 
 **관련 RLS 조건**:
 - 사용자는 자신의 승인 정보 조회 가능
@@ -1469,7 +1469,7 @@ Code Implementation:    Not Started
 - 공식 문의 연락처: 승인된 경우에만 노출
 - 센터명·근무기관 상세 주소·홈페이지: AD-04 결정과 M2.1 결과에 따라 노출
 
-**Figma 상태**: Draft
+**Figma 상태**: NOT STARTED
 
 **구현 상태**: Not Started
 

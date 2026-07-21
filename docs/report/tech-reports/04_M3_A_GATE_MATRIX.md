@@ -194,10 +194,10 @@ G2: [ ] 개발팀 근거 입력
 
 G3: [ ] CEO AD 결정
 
-G4: [ ] Figma Inventory 준비
-    [ ] 디자인팀장 UX 검토
-    [ ] CTO 기술 정합성 확인
-    [ ] CEO Figma 착수 승인
+G4: [ ] Figma Inventory 준비 (사전 작업)
+    [ ] 디자인팀장 UX·Handoff 검토 완료
+    [ ] CTO 기술 정합성 확인 완료
+    [ ] CEO Implementation Figma 착수 승인 (최종)
 
 G5: [ ] RLS 테스트 완료
     [ ] CTO 승인

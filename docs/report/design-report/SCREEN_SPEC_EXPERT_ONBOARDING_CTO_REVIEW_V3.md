@@ -515,6 +515,8 @@ Code Implementation:    Not Started
 
 **화면 목적**: 전문가의 경력(회사/기관, 직책, 기간)을 입력받고 관리한다.
 
+**관련 기술 매핑**: Technical Mapping Required — M2.1 범위 외 기술 구조
+
 **진입 경로**:
 - ← EXP-ONB-003에서 "다음"
 - ← EXP-ONB-009에서 편집
@@ -616,6 +618,8 @@ Code Implementation:    Not Started
 **접근 조건**: `isAuthenticated === true`
 
 **화면 목적**: 전문가의 자격·면허(명칭, 발급기관, 취득일)를 입력받고 관리한다.
+
+**관련 기술 매핑**: Technical Mapping Required — TM-03 (증빙파일)
 
 **진입 경로**:
 - ← EXP-ONB-004에서 "다음"
@@ -816,6 +820,8 @@ Code Implementation:    Not Started
 
 **화면 목적**: 전문가의 교육 이력(교육명, 기관, 이수일)을 선택적으로 입력한다.
 
+**관련 기술 매핑**: Technical Mapping Required — M2.1 범위 외 기술 구조
+
 **진입 경로**:
 - ← EXP-ONB-006에서 "다음"
 - ← EXP-ONB-009에서 편집
@@ -911,6 +917,8 @@ Code Implementation:    Not Started
 **접근 조건**: `isAuthenticated === true`
 
 **화면 목적**: 전문가의 전문분야를 선택한다. 12개 공식 카테고리 중 1~3개를 선택한다.
+
+**관련 기술 매핑**: Technical Mapping Required — M2.1 범위 외 기술 구조
 
 **진입 경로**:
 - ← EXP-ONB-007에서 "다음" 또는 "건너뛰기"
@@ -1055,7 +1063,7 @@ Code Implementation:    Not Started
 **사용자 변경 금지 항목**:
 - 검증 상태 필드 (사용자 직접 변경 불가) — Technical Mapping Required
 - 공개 여부 필드 (사용자 직접 변경 불가) — Technical Mapping Required
-- approved_at (사용자 직접 변경 불가)
+- 승인 시각 필드 (Technical Mapping Required) (사용자 직접 변경 불가)
 - 기타 관리자 전용 상태
 
 **참고**: Draft 또는 Rejected 상태에서는 각 입력 화면을 통해 프로필 사진·이름·자격 정보·증빙파일을 수정할 수 있다.
@@ -1210,7 +1218,7 @@ Code Implementation:    Not Started
 **관련 RLS 조건**:
 - 사용자는 검토 요청 액션을 실행할 수 있다
 - 사용자는 검증·공개·승인 필드를 직접 수정 불가 (제품 요구사항, Technical Mapping Required)
-- 기술 구현 방식 미확정 (RLS, Trigger, API 중 선택)
+- 기술 구현 방식 미확정 (기술 구현 방식 — Technical Mapping Required)
 
 **Figma 상태**: NOT STARTED
 
@@ -1318,6 +1326,8 @@ Code Implementation:    Not Started
 
 **화면 목적**: 사용자에게 검토 반려 사실과 사유를 명확히 알리고, 수정 후 재제출 방법을 안내한다.
 
+**관련 기술 매핑**: Technical Mapping Required — TM-05 (반려 사유)
+
 **진입 경로**: ← 관리자가 프로필을 반려 시 자동 상태 변경
 
 **완료 조건**: 사용자가 반려 항목 수정 후 재제출 → EXP-ONB-010 (검토 요청)
@@ -1330,7 +1340,7 @@ Code Implementation:    Not Started
 **표시 데이터**:
 - 현재 상태: "반려"
 - 반려 일자
-- 사용자에게 전달되는 반려 사유 (user_rejection_reason)
+- 사용자에게 전달되는 반려 사유 (Technical Mapping Required)
 - 수정이 필요한 항목 (강조 표시)
 - 재제출 방법 안내
 
@@ -1341,7 +1351,7 @@ Code Implementation:    Not Started
 **선택 항목**: 해당 없음
 
 **읽기 전용 항목**:
-- 반려 사유 (user_rejection_reason)
+- 반려 사유 (Technical Mapping Required)
 - 반려 날짜
 
 **사용자 변경 금지 항목**: 해당 없음

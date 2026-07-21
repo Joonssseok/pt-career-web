@@ -1,9 +1,43 @@
 # Expert Onboarding Implementation — 개발 핸드오프 체크리스트
 
 **작성일**: 2026-07-21  
-**기준**: Implementation Baseline v0.9  
-**대상**: M3-A 단계별 개발  
-**검증**: 디자인팀장 확인 전 완료  
+**상태**: DESIGN LEAD GATE REVIEW / 핵심 교정 진행  
+**목표**: M3-A 개발팀 입력 (CEO 승인 후)  
+
+---
+
+## 게이트 교정 사항
+
+### GATE-01: 상태 정정
+- ✅ Baseline v0.9: PREPARED (APPROVED 수정)
+- ✅ M3-A: NOT APPROVED (조기 착수 표현 제거)
+
+### GATE-02: M3-A 선결조건 정확화
+- TM-01, TM-02, TM-06~10, AD-04, AD-05 필수
+- TM-03, TM-04, TM-05, AD-01~03: M3-B·C로 이동
+- TM-04 연락처 필드: CTO 최종 판정 대기
+
+### GATE-03: 기술 구조 확정 제거
+- 테이블명·필드명: "참고 후보 / Verified 아님" 형식으로 변경
+- "Technical Mapping Required — TM-XX" 명시
+
+### GATE-04: EXP-ONB-001 진입 조건
+- isAuthenticated === true AND profile === null
+
+### GATE-05: Draft·Rejected 편집정책
+- 상태별로 명확히 구분
+
+### GATE-06: TM 연결 오류
+- 자격·면허: TM-05와 직접 연결 제거
+- 경력·교육·전문분야: 근거 확인 전 테이블 미명시
+
+### GATE-07: 체크박스 상태
+- [ ] 모두 미체크 상태
+- "COMPLETE" 표현: "DRAFT" 또는 "TEMPLATE" 사용
+
+### GATE-08: Figma 상태 구분
+- Figma 준비 문서: COMPLETE
+- Figma 화면: NOT STARTED
 
 ---
 
@@ -14,27 +48,26 @@
 **기본 정보**
 - [ ] 화면 ID: EXP-ONB-001
 - [ ] 화면명: 로그인 후 최초 진입
-- [ ] 진입 조건: isAuthenticated === true
+- [ ] 진입 조건: isAuthenticated === true AND profile === null
 - [ ] 완료 조건: "프로필 작성 시작" → EXP-ONB-002 이동
 
 **기능 요구사항**
 - [ ] 프로필 작성 시작 CTA
-- [ ] 기존 프로필 조회 (작성 중인 경우)
+- [ ] 기존 프로필 조회 (Draft 상태인 경우)
 - [ ] 진행 상태 안내
 - [ ] 완료 상태 조회
 
 **상태별 UI**
 - [ ] 001 로딩
-- [ ] 002 진행 중
-- [ ] 003 완료
+- [ ] 002 진행 중 (draft 존재)
+- [ ] 003 완료 (approved 상태)
 - [ ] 007 권한 거부
 - [ ] 008 세션 만료
 - [ ] 009 네트워크 오류
 
 **기술 요구사항**
-- [ ] 테이블: profiles (Pending Mapping — TM-01)
-- [ ] 필드: status, created_at, updated_at
-- [ ] RLS: 본인 조회만 가능
+- [ ] 제품 데이터: 프로필 상태, 생성일, 업데이트일
+- [ ] Technical Mapping Required — TM-01
 
 ---
 
@@ -45,10 +78,10 @@
 - [ ] 직군 (8개 옵션, CEO 승인)
 
 **선택 입력**
-- [ ] 프로필 사진 (Pending Mapping — TM-01)
+- [ ] 프로필 사진
   - 지원 형식: JPEG, PNG, WebP
   - 최대 용량: 5MB
-  - 저장소: profile-images (Pending Mapping)
+  - 저장소: Technical Mapping Required — TM-01
 - [ ] 한 줄 소개 (60자 이내, CEO 승인)
 - [ ] 상세 소개 (500자 이내, 의료광고 기준 안내)
 
@@ -65,10 +98,9 @@
 - [ ] 모바일 키보드 (입력 필드 노출)
 
 **기술 요구사항**
-- [ ] 테이블: profiles
-- [ ] 필드: name, occupation_id, avatar_url, bio_short, bio_long
+- [ ] 제품 데이터: 이름, 직군, 프로필 사진, 소개
+- [ ] Technical Mapping Required — TM-01 (테이블·필드)
 - [ ] 상태: draft (저장 가능)
-- [ ] 저장소: profile-images (Pending Mapping)
 
 ---
 
@@ -93,8 +125,8 @@
 - [ ] 센터명·주소·홈페이지: AD-04 결정과 M2.1 결과에 따라 노출
 
 **기술 요구사항**
-- [ ] 테이블: workplaces (Pending Mapping — TM-02, TM-06~TM-10)
-- [ ] 필드: center_name, address, resident_area, work_area, contact_type, contact_info, homepage
+- [ ] 제품 데이터: 센터명, 주소, 지역 정보, 연락처
+- [ ] Technical Mapping Required — TM-02 (저장 위치), TM-06~10 (지역 구조·권한), TM-04 (연락처 유형)
 - [ ] 상태: draft
 
 ---
@@ -102,7 +134,7 @@
 ### EXP-ONB-004: 경력 관리
 
 **필수 입력**
-- [ ] 경력 최소 1개
+- [ ] 경력 최소 1개 (검토 요청 시 필수)
 - [ ] 회사명
 - [ ] 직책
 - [ ] 시작·종료 기간
@@ -113,15 +145,16 @@
 - [ ] 추가/편집/삭제 버튼
 
 **기술 요구사항**
-- [ ] 테이블: experiences
-- [ ] CEO 요구사항: 최소 1개 필수 (검토 요청 시)
+- [ ] 제품 데이터: 회사, 직책, 기간
+- [ ] Technical Mapping Required (테이블·구조)
+- [ ] 최소 1개 필수 (검토 요청 시)
 
 ---
 
 ### EXP-ONB-005: 자격·면허 관리
 
 **필수 입력**
-- [ ] 자격·면허 최소 1개
+- [ ] 자격·면허 최소 1개 (검토 요청 시 필수)
 - [ ] 자격명
 - [ ] 발급기관
 - [ ] 취득일
@@ -135,7 +168,8 @@
 - [ ] 추가/편집/삭제 버튼
 
 **기술 요구사항**
-- [ ] 테이블: licenses (Pending Mapping — TM-05)
+- [ ] 제품 데이터: 자격명, 기관, 취득일
+- [ ] Technical Mapping Required (테이블·구조)
 - [ ] AD-01: 자격번호 필수 여부 (미결정)
 
 ---
@@ -146,7 +180,6 @@
 - [ ] 등록한 모든 자격의 증빙파일
 - [ ] 지원 형식 (AD-02 — CEO 승인 대기)
 - [ ] 최대 용량 (AD-03 — CEO 승인 대기)
-- [ ] 저장소: evidence-files (Pending Mapping — TM-03)
 
 **상태 요구사항**
 - [ ] 업로드 중 (진행률)
@@ -155,8 +188,8 @@
 - [ ] 재업로드 옵션
 
 **기술 요구사항**
-- [ ] 테이블: license_documents
-- [ ] 저장소: evidence-files (Pending Mapping)
+- [ ] 제품 데이터: 파일, 상태
+- [ ] Technical Mapping Required — TM-03 (Storage·RLS)
 - [ ] AD-02, AD-03: 형식·용량 (미결정)
 
 ---
@@ -173,15 +206,16 @@
 - [ ] 카드 형식
 - [ ] 추가/편집/삭제 버튼
 
-**제출 필수조건**
-- [ ] 교육은 제출 필수사항 **아님**
+**기술 요구사항**
+- [ ] 제품 데이터: 교육명, 기관, 이수일
+- [ ] 교육: 제출 필수사항 **아님**
 
 ---
 
 ### EXP-ONB-008: 전문분야 선택
 
 **필수 입력**
-- [ ] 전문분야 1~3개 (CEO 승인)
+- [ ] 전문분야 1~3개 (CEO 승인, 검토 요청 시 필수)
 
 **상태 요구사항**
 - [ ] 전문분야 목록 (체크박스)
@@ -211,7 +245,10 @@
 
 **수정 경로**
 - [ ] 각 섹션의 수정 링크 (해당 입력 화면으로 이동)
-- [ ] Draft 상태에서만 수정 가능
+- [ ] Draft: 수정 가능
+- [ ] Pending: 수정 불가
+- [ ] Rejected: 수정 가능 및 재제출 가능
+- [ ] Approved: 수정정책 별도 승인 전 미확정
 
 ---
 
@@ -241,7 +278,6 @@
 - [ ] Draft: 수정 가능
 - [ ] Pending: 수정 불가
 - [ ] Rejected: 수정 후 재제출 가능
-- [ ] Approved: 공개 프로필 조회 가능
 
 ---
 
@@ -288,42 +324,60 @@
 
 ## 기술 요구사항 통합
 
-### Technical Mapping Required
+### Technical Mapping Required (TM)
 
 다음 항목은 M2.1 Technical Mapping 확인 후 최종 결정:
 
-| 항목 | 현재 상태 | M2.1 검증 | 개발 입력 |
-|------|---------|---------|---------|
-| TM-01 | 프로필 DB 필드 | Pending Mapping | 필드명·테이블 확정 후 |
-| TM-02 | 근무기관 저장 위치 | Pending Mapping | workplaces vs profiles |
-| TM-03 | 증빙파일 Storage | Pending Mapping | Bucket명·RLS 정책 |
-| TM-04 | 연락처 유형 | Pending Mapping | phone_type 필드 생성 |
-| TM-05 | 반려·메모 저장 | Pending Mapping | 필드 생성 여부 |
-| TM-06~10 | 거주·근무지역 | Pending Mapping | 마스터 데이터·RLS |
+| TM | 항목 | 현재 상태 | M2.1 검증 범위 |
+|----|------|---------|--------------|
+| TM-01 | 프로필 기본정보 DB 필드 | Pending Mapping | 테이블·필드명 |
+| TM-02 | 근무기관 저장 위치 | Pending Mapping | workplaces vs profiles 선택 |
+| TM-03 | 증빙파일 Storage·RLS | Pending Mapping | Bucket·정책 (M3-B) |
+| TM-04 | 연락처 유형 | Pending Mapping | 필드 생성 여부 (CTO 판정) |
+| TM-05 | 반려·메모 저장 | Pending Mapping | 필드 생성 여부 (M3-B) |
+| TM-06~10 | 거주·근무지역 | Pending Mapping | 마스터·RLS·공개 정책 |
+
+**참고**: 각 테이블·필드명은 확정되지 않음 (M2.1 근거 필수)
+
+---
+
+## M3-A 선결조건 정리
+
+### 필수 (M3-A 직접 관련)
+- TM-01 (프로필 DB)
+- TM-02 (근무기관 위치)
+- TM-06~10 (거주·근무지역)
+- AD-04 (센터명·주소·홈페이지 공개)
+- AD-05 (지역 입력 단위)
+
+### 선택 (M3-B·C로 이동)
+- TM-03, TM-04, TM-05
+- AD-01, AD-02, AD-03
 
 ---
 
 ## 완료 기준
 
 ```
-각 화면별:
-✅ 기본 정보 (ID, 이름, 진입·완료 조건)
-✅ 필수·선택 입력 (명시)
-✅ 상태별 UI (모두 기술)
-✅ 공개·비공개 (명확한 정책)
-✅ 기술 요구사항 (TM 참조)
-✅ 제출 조건 (검토 요청 시만)
+체크박스:
+[ ] 모두 미체크 (미검수 상태)
 
-문서 레벨:
-✅ 13개 화면 모두 기술
-✅ Blocker 0건
-✅ Non-blocker 백로그 분리
-✅ Technical Mapping Required 명시
-✅ M3-A 개발팀 입력 가능
+상태 표현:
+[ ] DRAFT (COMPLETE 제거)
+
+기술 구조:
+[ ] Technical Mapping Required 명시
+[ ] 테이블·필드 임의 확정 0건
+
+M3-A:
+[ ] NOT APPROVED (CEO 승인 대기)
+
+디자인팀장 게이트:
+[ ] GATE-01~08 모두 교정 완료
 ```
 
 ---
 
-**승인**: Implementation Baseline v0.9 완성  
-**다음**: M3-A 개발팀 검토 → CEO 승인
+**상태**: 게이트 검토 진행 중  
+**다음**: 디자인팀장 교정 사항 이행 → CTO 제출
 

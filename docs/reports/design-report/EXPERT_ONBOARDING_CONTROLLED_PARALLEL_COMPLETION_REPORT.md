@@ -3,7 +3,7 @@
 **작성일**: 2026-07-21  
 **작업자**: PT Career 디자인팀  
 **근거**: CTO 「Expert Onboarding 통제된 병렬 진행」지시 / 디자인팀장 「통제된 병렬 진행 실행계획」  
-**상태**: P0 완료 — M3-A 개발팀 입력 준비 완료  
+**상태**: 디자인팀 자체검수 완료 / 디자인팀장 게이트 검토 진행 중  
 
 ---
 
@@ -14,7 +14,7 @@
 ```
 SCREEN_SPEC_EXPERT_ONBOARDING_CTO_REVIEW_V3.md
 
-Status: Implementation Baseline v0.9 APPROVED
+Status: Implementation Baseline v0.9 PREPARED / DESIGN LEAD REVIEW
 
 범위:
 ✅ 13개 화면 (EXP-ONB-001~013)
@@ -295,23 +295,23 @@ Figma 핸드오프:
 ## 10. 대결재
 
 ```
-준비 완료: 디자인팀
+자체검수: 디자인팀 PASS
 기준: CTO 통제된 병렬 진행 지시
 
-Baseline v0.9: READY ✅
-Blocker Check: PASS ✅
-Handoff Checklist: COMPLETE ✅
-Technical Mapping: MARKED ✅
+Baseline v0.9: PREPARED (디자인팀장 검토 필요)
+Blocker Check: 자체검수 PASS (디자인팀장 확인 필요)
+Handoff Checklist: DRAFT (미체크 상태)
+Technical Mapping: MARKED (M2.1 병렬 진행)
 
 다음 결재:
-→ 디자인팀장 확인
+→ 디자인팀장 게이트 검토 (현재 진행 중)
 → CTO 기술 정합성 확인
-→ CEO M3-A 착수 승인
+→ CEO M3-A 착수 승인 (NOT APPROVED)
 ```
 
 ---
 
-**최종 상태**: Implementation Baseline v0.9 완료  
-**병렬 진행**: M2.1·M3-A·Figma 동시 준비  
-**M3 승인**: M2.1·AD 완료 후 CTO → CEO 제출
+**현재 상태**: 디자인팀 자체검수 완료 / 디자인팀장 게이트 검토 진행 중  
+**M3-A**: NOT APPROVED (기술·CEO 승인 대기)  
+**다음**: 디자인팀장 핵심 교정 지시 이행 → CTO 제출
 

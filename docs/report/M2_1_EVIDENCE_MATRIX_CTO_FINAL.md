@@ -10,7 +10,7 @@
 ## Baseline Reference (명확화)
 
 ```text
-Local Approved Baseline:
+Local Approved Schema Baseline:
 4개 migration (up to 20260721000200)
 Sources:
 - 20260719000000 (base: profiles, admin_users, specialties, share_events)
@@ -18,16 +18,17 @@ Sources:
 - 20260721000100 (specialties seed)
 - 20260721000200 (license_requests view)
 
-Remote Production Applied:
+Remote Production Applied Head:
 20260720000000 (6개 migration, 승인 대기)
 
-Remote Pending (NOT IN LOCAL):
-20260721000000
-20260721000100
-20260721000200
+Remote Pending Migrations:
+Local migration files에는 존재하지만 Remote Production에는 아직 미적용
+- 20260721000000 (storage policies)
+- 20260721000100 (specialties seed)
+- 20260721000200 (license_requests view)
 ```
 
-**모든 Evidence는 Local Approved Baseline에서만 수집됨**
+**모든 Evidence는 Local Approved Schema Baseline에서만 수집됨**
 
 ---
 
@@ -91,28 +92,29 @@ Remote Pending (NOT IN LOCAL):
 
 ---
 
-### TM-04A: 공식 연락처 저장 구조 (AD-04와 분리)
+### TM-04A: 연락처 저장 구조
 
 **제품 요구사항**
 ```
-- official_contact (phone/email)
-- 저장만 담당
+- contact_type: personal / official
+- phone/email 저장
+- 저장 구조만 담당
 ```
 
-**참고**
+**공개 정책**
 ```
-- 공개 정책은 TM-04B 참조
-- 기관정보 공개 Toggle(AD-04)과는 별개
+개인 연락처: 공개 금지 (항상 비공개)
+공식 연락처: TM-04B에서 결정
 ```
 
 **현재 Active DB**
 ```
-❌ official_contact: NOT IMPLEMENTED
+❌ contacts 테이블 또는 workplaces.contact_fields: NOT IMPLEMENTED
 ```
 
-**선택지**
+**저장 방식 선택지**
 ```
-Option 1: workplaces에 official_contact 필드
+Option 1: workplaces에 contact 필드 포함
 Option 2: 별도 contacts 테이블
 Option 3: M3-B로 연기
 
@@ -123,22 +125,22 @@ STATUS: POLICY DECISION REQUIRED
 
 ---
 
-### TM-04B: 공식 연락처 공개 제어
+### TM-04B: 연락처 공개 제어
 
 **제품 요구사항**
 ```
-공개 여부 제어 (저장과 분리)
+연락처 공개 여부 제어 (저장과 분리)
 ```
 
-**참고**
+**범위**
 ```
-- 저장은 TM-04A
-- 기관정보 공개(AD-04)와는 별개 정책
+공식 연락처만 해당
+개인 연락처: 항상 비공개 (공개 선택지 없음)
 ```
 
-**현재 Active DB**
+**현고 Active DB**
 ```
-❌ official_contact access control: NOT IMPLEMENTED
+❌ contact access control: NOT IMPLEMENTED
 ```
 
 **판정**: **NOT IMPLEMENTED**
@@ -200,9 +202,9 @@ CTO 권고:
 - workplace_region TEXT (선택)
 ```
 
-**저장 단위**
+**저장 단위 (AD-05B 결정 대상)**
 ```
-시·도 + 시·군·구 (AD-05A 동일)
+거주지역과 동일한 공통 taxonomy를 재사용할 수 있으나 기술 결정은 추후
 ```
 
 **현재 Active DB**
@@ -230,6 +232,8 @@ CTO 권고:
 - 검색 사용: 공개 + Approved일 때만
 - MVP: 단일 대표 근무지역
 - 다중: Later Backlog (M3-B)
+
+참고: 공식 연락처 공개는 TM-04B에서 별도 관리 (AD-05B와 무관)
 ```
 
 **현재 Active DB**
@@ -373,24 +377,17 @@ Deferred to Post-Decision Phase:
 
 ```text
 M2.1 Evidence Collection:
-✅ FACT-FINDING COMPLETE
+✅ CTO APPROVED
 
-CTO Corrections Applied:
-✅ 1. Local vs Remote Baseline — Clearly Separated
-✅ 2. TM-01 AD-04 Connection — Deleted
-✅ 3. TM-02 Scope — Reduced to center_name/website_url
-✅ 4. TM-04A/04B — Separated (Storage vs. Access Control)
-✅ 5. AD-05A — Noted as Decision, not Proposal
-✅ 6. TM-07 — Always Private, No Search
-✅ 7. TM-07 RLS Candidate — Moved to Separate Section
-✅ 8. AD-05C — Removed
-✅ 9. Multi-workplace — Moved to Later Backlog
-✅ 10. Official Contact — Separated from AD-04
+CTO Final Review Corrections (5/5):
+✅ M21-01. Remote Pending 설명 수정
+✅ M21-02. AD-04 범위 통일
+✅ M21-03. TM-04A 연락처 유형 복구
+✅ M21-04. TM-08 정책 연결 수정
+✅ M21-05. 기준 환경 용어 수정
 
-Ready for: CTO FINAL REVIEW + CEO POLICY DECISIONS
-
-Current Evidence: VERIFIED (Local Baseline)
-Pending: AD-04, AD-05A, AD-05B (CEO Decision)
+Current Evidence: VERIFIED (Local Approved Schema Baseline)
+Pending Policy Decisions: AD-04, AD-05A, AD-05B (CEO)
 Candidate Options: NOT APPROVED (awaiting decisions)
 ```
 

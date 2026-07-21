@@ -198,9 +198,9 @@ Corrective migration applied: TBD (requires SQL query)
 Environment: Supabase Remote (linked)
 Date: 2026-07-21
 Test Users:
-- TEST_EXPERT_A (66bc54d6-747b-44f7-9ad5-fd04069d3215)
-- TEST_EXPERT_B (e80da742-3cc8-4dc1-9544-c9c7a7cf62d2)
-- TEST_ADMIN (1e4a9932-a201-4cf6-a24a-d9b30223a649)
+- TEST_EXPERT_A: [REDACTED]
+- TEST_EXPERT_B: [REDACTED]
+- TEST_ADMIN: [REDACTED]
 
 File Paths:
 - Profile-images: {uuid}/{timestamp}-test-file.png

@@ -66,8 +66,7 @@ Rationale:
 ```
 - Unnecessary for MVP customer search (use workplace location instead)
 - No direct link to core value (trust, word-of-mouth)
-- Creates privacy, RLS, and operations burden
-- Unused notification/advertising features not in scope
+- Creates privacy, RLS, and operations burden without clear product benefit
 ```
 
 **Option B (If Inclusion Required):**
@@ -80,7 +79,8 @@ Rationale:
 | **Public Exposure** | ❌ Never public (always private) |
 | **Search Usage** | ❌ Cannot be used in user search |
 | **Admin Access** | Minimal operational access only |
-| **Database** | Master regions table (auto-maintained) |
+
+**Note**: Database implementation method (Master table, Static constants, API) will be determined by CTO in Schema Decision phase.
 
 ### Impact
 - ✅ Privacy-first (always hidden from public)
@@ -232,7 +232,7 @@ MVP: 단일 대표지역
 All three decisions follow **privacy-by-default principles**:
 
 - **AD-04**: Business info private until admin approves + expert opts in
-- **AD-05A**: Residential always private (operational only)
+- **AD-05A**: CTO 1순위 권고 = MVP 미수집; CEO 포함 선택 시 = 선택 입력 + 완전 비공개
 - **AD-05B**: Workplace private by default; public only if expert toggles ON + profile approved
 
 **CTO Assessment**: ✅ **RECOMMENDED** — balances user privacy, platform functionality, and compliance.

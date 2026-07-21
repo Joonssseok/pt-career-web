@@ -49,3 +49,14 @@ LIMIT 100;
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_profiles_user_id ON public.profiles(user_id);
 CREATE INDEX IF NOT EXISTS idx_admin_users_role ON public.admin_users(role);
+
+-- is_admin Function
+CREATE OR REPLACE FUNCTION public.is_admin(user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS(
+    SELECT 1 FROM public.admin_users
+    WHERE admin_users.user_id = is_admin.user_id
+  );
+END;
+$$ LANGUAGE plpgsql STABLE SECURITY DEFINER;

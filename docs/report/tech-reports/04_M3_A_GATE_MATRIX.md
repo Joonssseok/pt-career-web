@@ -109,18 +109,19 @@ CEO Figma Approval: PENDING
 - EXP-ONB-008 전문분야 선택
 
 **PASS 조건**:
-- 기본 화면 및 핵심 상태
-- 필수·선택 항목
-- 공개·비공개 안내
-- 모바일 구조
-- 개발 주석
+- Figma Inventory 준비 완료
+- CEO Implementation Figma 착수 승인 완료
+- M3-A 대상 Figma 제작 완료
+- Handoff 작성 완료
+- 디자인팀장 UX·Handoff 검토 완료
+- CTO 기술 정합성 확인 완료
+- 기본 화면 및 핵심 상태 반영
+- 필수·선택 항목 명시
+- 공개·비공개 안내 포함
+- 모바일 구조 확인
 - Technical Mapping Required 표시
-- 디자인팀장 UX·핸드오프 검토
-- CTO 기술 정합성 확인
 
-**Implementation Figma 실제 착수**: CEO 승인 전 금지
-
-**담당**: 디자인팀 → CTO → CEO
+**담당**: CEO → 디자인팀 → CTO
 
 ---
 
@@ -195,9 +196,11 @@ G2: [ ] 개발팀 근거 입력
 G3: [ ] CEO AD 결정
 
 G4: [ ] Figma Inventory 준비 (사전 작업)
+    [ ] CEO Implementation Figma 착수 승인
+    [ ] M3-A 대상 Figma 제작
+    [ ] Handoff 작성
     [ ] 디자인팀장 UX·Handoff 검토 완료
     [ ] CTO 기술 정합성 확인 완료
-    [ ] CEO Implementation Figma 착수 승인 (최종)
 
 G5: [ ] RLS 테스트 완료
     [ ] CTO 승인

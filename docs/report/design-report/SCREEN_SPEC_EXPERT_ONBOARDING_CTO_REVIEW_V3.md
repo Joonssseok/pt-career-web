@@ -1,25 +1,25 @@
 # PT Career — Expert Onboarding Screen Spec (CTO Review V3)
 
-**Document Status**: DESIGN CORRECTION IN PROGRESS  
+**Document Status**: CTO REVIEW REQUESTED  
 **대상 흐름**: 전문가 프로필 작성 (Expert Onboarding)  
 **범위**: 13개 화면 (EXP-ONB-001 ~ EXP-ONB-013)
 
 **작성**: 2026-07-20  
 **버전**: V3 (전체 화면 + 정합성 교정)  
 **검토 책임자**: PT Career 디자인팀장  
-**CTO 검토**: 대기 중
+**CTO 검토**: REQUESTED
 
 ---
 
 ## 📋 문서 상태
 
 ```
-Document Status:         DESIGN CORRECTION IN PROGRESS
-Screen Spec:            CEO 결정 반영 완료 / 문서 정합성 교정 중
-CTO Review:            디자인팀장 확인 후 요청
+Document Status:         CTO REVIEW REQUESTED
+Screen Spec:            CEO 결정 반영 완료 / 정합성 교정 완료
+CTO Review:            REQUESTED
 Figma Foundations:      Approved
 Component Specifications: Approved Draft
-Figma Screen Instances: Draft (착수 미승인)
+Figma Screen Instances: NOT STARTED (착수 미승인)
 Code Implementation:    Not Started
 ```
 

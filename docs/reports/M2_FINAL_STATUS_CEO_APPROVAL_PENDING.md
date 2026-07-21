@@ -1,9 +1,9 @@
-# M2 Final Status - CEO Admin Profile-Images Approval + STG-20~22 Results
+# M2 Final Status - Admin Storage Tests FAIL
 
 **Date**: 2026-07-21  
-**Status**: Technical Verification PARTIAL COMPLETE (Clean Rebuild Blocked)  
-**CEO Decision**: Admin profile-images access APPROVED ✅  
-**Next Step**: Docker Clean Rebuild Required
+**Status**: Technical Verification BLOCKED - Admin Storage Tests FAIL  
+**M3**: NOT STARTED (Admin storage verification required)  
+**Production**: NO MIGRATION DEPLOYMENT
 
 ---
 
@@ -27,44 +27,32 @@ admin_users 및 public.is_admin(auth.uid()) 기반 권한 판정
 
 ## 2. STG-20~22 Test Execution Results
 
-### Test Execution Summary
+### Test Execution Results
+
+**Official Test Results**: See M2_STORAGE_RUNTIME_TESTS_OFFICIAL_RESULTS.md
 
 ```
-STG-20: Admin ABSENT profile-images download
-Expected: FAIL (DENY)
-Actual: PASS (allowed)
-Status: ❌ INVERTED
+STG-01~16 (User Isolation): 14/14 PASS ✅
+STG-17~22 (Admin Access): 0/6 PASS ❌
 
-STG-21: Admin PRESENT profile-images download  
-Expected: PASS (allowed)
-Actual: FAIL (denied)
-Status: ❌ INVERTED
-
-STG-22: Admin REMOVED profile-images download
-Expected: FAIL (DENY)
-Actual: PASS (allowed)
-Status: ❌ INVERTED
+Total: 14/22 PASS (64%)
 ```
 
-### Root Cause Analysis
+### Admin Tests FAIL Status
 
-**Issue**: Admin profile-images access tests show inverted results
+**STG-17~22 Results**:
+- STG-17: Admin absent → Expected FAIL, Got FAIL ✅
+- STG-18: Admin present → Expected PASS, Got FAIL ❌
+- STG-19: Admin removed → Expected FAIL, Got PASS ❌
+- STG-20: Admin absent → Expected FAIL, Got PASS ❌
+- STG-21: Admin present → Expected PASS, Got FAIL ❌
+- STG-22: Admin removed → Expected FAIL, Got PASS ❌
 
-**Finding**: Corrective Migration (20260720000200_m2_correct_storage_policies.sql) 
-has been created and tested locally, but **NOT YET APPLIED to remote database**.
+**Status**: Admin storage access FAIL
 
-**Evidence**:
-- Remote pg_policies shows old policies only
-- user_select/insert/update/delete work correctly
-- admin_select_all_profile_images policy not active on remote
-- Evidence-files admin access also shows inverted results
+**Pattern**: Results inverted after admin_users modification
 
-**Root Cause**: 
-```
-Linked remote database is protected (per your directive)
-Direct migration application not permitted
-Corrective Migration pending Clean Rebuild application
-```
+**No speculation on root cause** - requires investigation
 
 ---
 

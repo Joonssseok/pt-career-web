@@ -210,7 +210,7 @@ Code Implementation:    Not Started
 
 **프로필 사진**:
 - 유형: 이미지 파일
-- 저장소: Pending Mapping (현재 `profile-images` 후보)
+- 저장소: Technical Mapping Required — TM-01 (프로필 사진)
   - M2.1에서 확인: TM-01 프로필 기본정보 매핑에 참조 필드 확인
   - 기술 구현: M2.1에서 현행 구조 확인 및 CTO 권고안 작성, 실제 변경은 CEO 승인 후 진행
 - 지원 형식: JPEG, PNG, WebP
@@ -274,9 +274,9 @@ Code Implementation:    Not Started
 - 승인일 (존재 시)
 
 **사용자 변경 금지 항목** (제품 요구사항):
-- `verification_status` (사용자 직접 변경 불가)
-- `is_public` (사용자 직접 변경 불가)
-- `approved_at` (사용자 직접 변경 불가)
+- 검증 상태 필드 (사용자 직접 변경 불가) — Technical Mapping Required
+- 공개 여부 필드 (사용자 직접 변경 불가) — Technical Mapping Required
+- 승인 시각 필드 (사용자 직접 변경 불가) — Technical Mapping Required
 
 **상태별 UI**:
 - **001 (로딩)**: "저장 중..." Skeleton 표시
@@ -745,7 +745,7 @@ Code Implementation:    Not Started
 
 **증빙파일** (각 자격별, 필수):
 - 유형: 파일 선택
-- 저장소: M2.1 TM-03 확인 대기 (Pending Mapping / 현재 `evidence-files` 후보)
+- 저장소: Technical Mapping Required — TM-03 (증빙파일)
 - 지원 가능한 파일 형식과 최대 용량은 운영·기술 정책 확정 후 표시합니다
 - AD-02 (파일 형식): CEO 승인 대기
 - AD-03 (최대 용량): CEO 승인 대기
@@ -1053,8 +1053,8 @@ Code Implementation:    Not Started
 **읽기 전용 항목**: 모든 정보
 
 **사용자 변경 금지 항목**:
-- verification_status (사용자 직접 변경 불가)
-- is_public (사용자 직접 변경 불가)
+- 검증 상태 필드 (사용자 직접 변경 불가) — Technical Mapping Required
+- 공개 여부 필드 (사용자 직접 변경 불가) — Technical Mapping Required
 - approved_at (사용자 직접 변경 불가)
 - 기타 관리자 전용 상태
 
@@ -1169,9 +1169,9 @@ Code Implementation:    Not Started
 **읽기 전용 항목**: 제출될 정보 요약
 
 **사용자 변경 금지 항목**:
-- `verification_status` (사용자 직접 변경 불가)
-- `is_public` (사용자 직접 변경 불가)
-- `approved_at` (사용자 직접 변경 불가)
+- 검증 상태 필드 (사용자 직접 변경 불가) — Technical Mapping Required
+- 공개 여부 필드 (사용자 직접 변경 불가) — Technical Mapping Required
+- 승인 시각 필드 (사용자 직접 변경 불가) — Technical Mapping Required
 - 기타 관리자 관리 상태 필드
 
 **상태별 UI**:
@@ -1209,7 +1209,7 @@ Code Implementation:    Not Started
 
 **관련 RLS 조건**:
 - 사용자는 검토 요청 액션을 실행할 수 있다
-- 사용자는 verification_status, is_public, approved_at 직접 수정 불가 (제품 요구사항)
+- 사용자는 검증·공개·승인 필드를 직접 수정 불가 (제품 요구사항, Technical Mapping Required)
 - 기술 구현 방식 미확정 (RLS, Trigger, API 중 선택)
 
 **Figma 상태**: NOT STARTED

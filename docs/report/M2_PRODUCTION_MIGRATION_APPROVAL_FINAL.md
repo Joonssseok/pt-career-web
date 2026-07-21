@@ -2,562 +2,427 @@
 
 **작성**: 2026-07-21  
 **대상**: CTO 검토 → CEO 승인  
-**상태**: M2 Closure IN PROGRESS  
+**상태**: M2 Closure REVISION REQUIRED  
 **M3**: NOT STARTED
+
+**Git Baseline**: 42959d2 (LOCAL/REMOTE SYNC)
 
 ---
 
 ## Executive Status
 
 ```
-Technical Verification: IN PROGRESS
-Storage Runtime: FAIL — 21/22
-Local Clean Rebuild: NOT VERIFIED (Docker WSL issue)
-Production Migration: NOT APPLIED
-M2 Closure: NOT APPROVED
+Technical Verification: IN PROGRESS ⏳
+Storage Runtime: FAIL — 21/22 (STG-21 pending migration)
+Local Clean Rebuild: NOT VERIFIED ❌ (requires actual execution)
+Migration Policy Mapping: REQUIRES VERIFICATION ⏳
+Production Migration: NOT APPLIED (awaiting CEO approval)
+M2 Closure: BLOCKED (Local rebuild pending)
 M3: NOT STARTED
 ```
 
 ---
 
-## Part 1: Original Evidence - Migration Files
+## Part 1: Migration Files Overview
 
-### Local Migrations (Complete List)
-
-```
-supabase/migrations/20260719000000_m2_core_tables.sql
-supabase/migrations/20260719000100_m2_functions_constraints.sql
-supabase/migrations/20260719000200_m2_seed_specialties.sql
-supabase/migrations/20260719000300_m2_rls_policies.sql
-supabase/migrations/20260719000400_m2_storage_policies.sql
-supabase/migrations/20260720000000_m2_normalize_share_events.sql
-supabase/migrations/20260720000100_fix_storage_select_policies.sql
-supabase/migrations/20260720000200_m2_correct_storage_policies.sql
-
-Total: 8 migrations
-Local Head: 20260720000200_m2_correct_storage_policies.sql
-```
-
-### Remote Migration Status (Original Output)
-
-```json
-{
-  "migrations": [
-    {
-      "local": "20260719000000",
-      "remote": "20260719000000",
-      "time": "2026-07-19 00:00:00"
-    },
-    {
-      "local": "20260719000100",
-      "remote": "20260719000100",
-      "time": "2026-07-19 00:01:00"
-    },
-    {
-      "local": "20260719000200",
-      "remote": "20260719000200",
-      "time": "2026-07-19 00:02:00"
-    },
-    {
-      "local": "20260719000300",
-      "remote": "20260719000300",
-      "time": "2026-07-19 00:03:00"
-    },
-    {
-      "local": "20260719000400",
-      "remote": "20260719000400",
-      "time": "2026-07-19 00:04:00"
-    },
-    {
-      "local": "20260720000000",
-      "remote": "20260720000000",
-      "time": "2026-07-20 00:00:00"
-    },
-    {
-      "local": "20260720000100",
-      "remote": "",
-      "time": "2026-07-20 00:01:00"
-    },
-    {
-      "local": "20260720000200",
-      "remote": "",
-      "time": "2026-07-20 00:02:00"
-    }
-  ],
-  "message": "Migrations listed"
-}
-```
-
-### Analysis
+### Local Migrations (9 total)
 
 ```
-Applied to Remote: 6 migrations
-  ✅ 20260719000000
-  ✅ 20260719000100
-  ✅ 20260719000200
-  ✅ 20260719000300
-  ✅ 20260719000400
-  ✅ 20260720000000
+Base migrations (6):
+  ✅ 20260719000000_m2_core_tables.sql
+  ✅ 20260719000100_m2_functions_constraints.sql
+  ✅ 20260719000200_m2_seed_specialties.sql
+  ✅ 20260719000300_m2_rls_policies.sql
+  ✅ 20260719000400_m2_storage_policies.sql
+  ✅ 20260720000000_m2_normalize_share_events.sql
 
-Pending on Remote: 2 migrations
-  ⏳ 20260720000100 (fix_storage_select_policies.sql)
-  ⏳ 20260720000200 (m2_correct_storage_policies.sql)
+Policy refinement migrations (2, pending on Remote):
+  ⏳ 20260720000100_fix_storage_select_policies.sql
+  ⏳ 20260720000200_m2_correct_storage_policies.sql
 
-Remote Migration Head: 20260720000000
-Local Migration Head: 20260720000200
-Status: NOT IN SYNC
+Final cleanup migration (NEW):
+  🆕 20260721000000_m2_finalize_storage_policy_alignment.sql
+
+Local HEAD: 20260721000000_m2_finalize_storage_policy_alignment.sql
 ```
 
 ---
 
-## Part 2: Production Migrations to Apply
+## Part 2: New Forward-only Migration (P0-02)
 
-### Migration 1: 20260720000100_fix_storage_select_policies.sql
+### Migration: 20260721000000_m2_finalize_storage_policy_alignment.sql
 
-**Purpose**: Add explicit role specification to SELECT policies
+**Purpose**: 
+- Removes ALL legacy and deprecated storage policies from Remote
+- Establishes canonical final 12-policy set
+- Replaces email-based admin detection with is_admin() function
 
-**File Content Summary**:
+**Policy Cleanup (DROP IF EXISTS)**:
 ```
-- DROP POLICY: 2개
-  ✓ auth_select_own_profile_images
-  ✓ auth_select_own_evidence_files
+Admin Policies (insecure, email-based):
+  - admin_select_profile_images
+  - admin_select_evidence_files
 
-- CREATE POLICY: 2개
-  ✓ auth_select_own_profile_images (TO authenticated)
-  ✓ auth_select_own_evidence_files (TO authenticated)
+Fallback Policies (legacy):
+  - admin_fallback_profile
+  - admin_fallback_evidence
 
-Function Changes: NO
-View Changes: NO
-Data Changes: NO
-Storage Objects Changes: NO
-```
+Current Auth Policies (to be renamed to user_*):
+  - auth_select_with_path_restriction_profile
+  - auth_select_with_path_restriction_evidence
+  - auth_insert_with_path_restriction_profile
+  - auth_insert_with_path_restriction_evidence
+  - auth_delete_simple_profile
+  - auth_delete_simple_evidence
+  - auth_update_own_profile_images
+  - auth_update_own_evidence_files
 
-**Impact Assessment**:
-```
-User Impact: NONE (refines existing policy role)
-Admin Impact: NONE (user policies only)
-Downtime: NO
-Risk Level: VERY LOW
-Reversibility: YES (drop and recreate)
-```
+Old Naming Policies (if present):
+  - auth_select_own_profile_images
+  - auth_select_own_evidence_files
+  - auth_update_with_path_restriction_profile
+  - auth_update_with_path_restriction_evidence
 
-### Migration 2: 20260720000200_m2_correct_storage_policies.sql
-
-**Purpose**: Replace email-based admin detection with is_admin() function-based access control
-
-**File Content Summary**:
-```
-- DROP POLICY: 12개
-  Profile-Images: 6개
-    ✓ auth_select_with_path_restriction_profile
-    ✓ admin_fallback_profile
-    ✓ auth_insert_with_path_restriction_profile
-    ✓ auth_delete_simple_profile
-    ✓ auth_update_with_path_restriction_profile
-    ✓ anon_deny_select_profile_images
-
-  Evidence-Files: 6개
-    ✓ auth_select_with_path_restriction_evidence
-    ✓ admin_fallback_evidence
-    ✓ auth_insert_with_path_restriction_evidence
-    ✓ auth_delete_simple_evidence
-    ✓ auth_update_with_path_restriction_evidence
-    ✓ anon_deny_select_evidence_files
-
-- CREATE POLICY: 12개
-  Profile-Images: 6個
-    ✓ user_select_own_profile_images
-    ✓ user_insert_own_profile_images
-    ✓ user_update_own_profile_images
-    ✓ user_delete_own_profile_images
-    ✓ admin_select_all_profile_images (is_admin()-based)
-    ✓ anon_deny_all_profile_images
-
-  Evidence-Files: 6個
-    ✓ user_select_own_evidence_files
-    ✓ user_insert_own_evidence_files
-    ✓ user_update_own_evidence_files
-    ✓ user_delete_own_evidence_files
-    ✓ admin_select_all_evidence_files (is_admin()-based)
-    ✓ anon_deny_all_evidence_files
-
-Function Changes: NO (is_admin() already exists)
-View Changes: NO
-Data Changes: NO
-Storage Objects Changes: NO
+Anon Deny Policies (legacy naming):
+  - anon_deny_select_profile_images
+  - anon_deny_select_evidence_files
 ```
 
-**Impact Assessment**:
+**Final Policy Creation (CREATE 12)**:
+
+Profile-Images (6):
+1. user_select_own_profile_images
+2. user_insert_own_profile_images
+3. user_update_own_profile_images
+4. user_delete_own_profile_images
+5. admin_select_all_profile_images (is_admin()-based)
+6. anon_deny_all_profile_images
+
+Evidence-Files (6):
+7. user_select_own_evidence_files
+8. user_insert_own_evidence_files
+9. user_update_own_evidence_files
+10. user_delete_own_evidence_files
+11. admin_select_all_evidence_files (is_admin()-based)
+12. anon_deny_all_evidence_files
+
+---
+
+## Part 3: Expected Final State (Post-Migration)
+
+### Storage Policies: Exactly 12
+
 ```
-User Access: MAINTAINED (user policies unchanged)
-Admin Access: MODEL CHANGE (email-based → function-based)
-  Current: STG-21 FAIL (admin_select_profile_images broken)
-  After: Expected admin_select_all_profile_images working
+Profile-Images Bucket (6 policies):
+  ✅ user_select_own_profile_images (authenticated)
+  ✅ user_insert_own_profile_images (authenticated)
+  ✅ user_update_own_profile_images (authenticated)
+  ✅ user_delete_own_profile_images (authenticated)
+  ✅ admin_select_all_profile_images (is_admin()-based)
+  ✅ anon_deny_all_profile_images (deny all)
 
-Storage Access:
-  User files: No change expected
-  Admin files: Expected to work for profile-images
+Evidence-Files Bucket (6 policies):
+  ✅ user_select_own_evidence_files (authenticated)
+  ✅ user_insert_own_evidence_files (authenticated)
+  ✅ user_update_own_evidence_files (authenticated)
+  ✅ user_delete_own_evidence_files (authenticated)
+  ✅ admin_select_all_evidence_files (is_admin()-based)
+  ✅ anon_deny_all_evidence_files (deny all)
 
-Downtime: NO (policies only)
-Risk Level: LOW (policies replced, no data loss)
-Reversibility: YES (previous policies can be restored)
+Email-based policies: 0 (all removed)
+Legacy policies: 0 (all removed)
+Old auth_* naming: 0 (all removed)
+
+Expected policy count: EXACTLY 12
+```
+
+### Key Design Features
+
+```
+✅ User folder isolation (uuid-based path: uuid/filename)
+✅ is_admin() function-based admin detection (secure)
+✅ Admin has SELECT-only access (no INSERT/UPDATE/DELETE)
+✅ All anonymous access explicitly denied
+✅ RLS enabled on storage.objects
+✅ No email-based access control
 ```
 
 ---
 
-## Part 3: Remote Storage Policies - Current State
+## Part 4: Production Migration Application Plan
 
-### SQL Query Executed
-
-```sql
-SELECT
-  policyname,
-  roles,
-  cmd,
-  qual,
-  with_check
-FROM pg_policies
-WHERE schemaname = 'storage'
-  AND tablename = 'objects'
-ORDER BY policyname;
-```
-
-### Current Remote Policies (12 Total)
-
-| policyname | roles | cmd | Purpose |
-|---|---|---|---|
-| admin_select_evidence_files | {authenticated} | SELECT | Email-based admin access (working) |
-| admin_select_profile_images | {authenticated} | SELECT | Email-based admin access (NOT WORKING) |
-| anon_deny_select_evidence_files | {anon} | SELECT | Deny anonymous access |
-| anon_deny_select_profile_images | {anon} | SELECT | Deny anonymous access |
-| auth_delete_simple_evidence | {authenticated} | DELETE | User delete own |
-| auth_delete_simple_profile | {authenticated} | DELETE | User delete own |
-| auth_insert_with_path_restriction_evidence | {authenticated} | INSERT | User insert own |
-| auth_insert_with_path_restriction_profile | {authenticated} | INSERT | User insert own |
-| auth_select_with_path_restriction_evidence | {authenticated} | SELECT | User select own |
-| auth_select_with_path_restriction_profile | {authenticated} | SELECT | User select own |
-| auth_update_own_evidence_files | {authenticated} | UPDATE | User update own |
-| auth_update_own_profile_images | {authenticated} | UPDATE | User update own |
-
-**Status**: Email-based admin detection confirmed
-
-**After Migration 20260720000200**:
-- admin_select_evidence_files → admin_select_all_evidence_files (is_admin()-based)
-- admin_select_profile_images → admin_select_all_profile_images (is_admin()-based)
-- User policies unchanged
-- Policy count remains: 12
-
----
-
-## Part 4: Current Test Status
-
-### STG-01~22 Results (Remote, Before Migration)
+### Pre-CEO-Approval Restrictions
 
 ```
-Total Tests: 22
-PASS: 21
-FAIL: 1
-
-User Isolation: PASS 16/16 (100%)
-  - Profile-Images: 8/8
-  - Evidence-Files: 8/8
-
-Admin Access: FAIL 5/6 (83%)
-  - STG-20: PASS (admin absent → deny)
-  - STG-21: FAIL (admin present → deny, expected allow)
-  - STG-22: PASS (admin removed → deny)
-
-Root Cause (STG-21):
-  Current: admin_select_profile_images uses email-based detection
-  Issue: Fails to recognize admin access pattern
-  Expected: admin_select_all_profile_images (is_admin()-based) will fix
+❌ NOT PERMITTED before CEO approval:
+  - supabase db push
+  - Remote SQL Editor policy modifications
+  - Production policy changes
+  - M3 code implementation
 ```
 
-**Status After Migration**: NOT VERIFIED (awaiting production deployment)
-
----
-
-## Part 5: Production Migration Application Plan
-
-### Pre-Approval Restrictions
-
-❌ NOT PERMITTED BEFORE CEO APPROVAL:
-```
-supabase db push
-Remote SQL Editor policy modifications
-Production policy DROP/CREATE
-M3 code implementation
-```
-
-### Post-CEO-Approval Execution (Sequential)
+### Post-CEO-Approval Sequential Steps
 
 ```
-Step 1: Apply migrations
+Step 1: Apply forward-only migration
   Command: supabase db push
-  Expected: Both migrations applied to Remote
-  
-Step 2: Verify migration
-  Command: supabase migration list --linked
-  Expected: Remote head = 20260720000200
-  
-Step 3: Verify policies exist
+  Expected: 20260721000000 applied to Remote
+  Verify: supabase migration list --linked
+
+Step 2: Verify policy count
   SQL: SELECT COUNT(*) FROM pg_policies WHERE schemaname='storage'
-  Expected: 12 policies present
-  
-Step 4: Verify Public License View
+  Expected: 12
+
+Step 3: Verify policy names
+  SQL: SELECT policyname FROM pg_policies WHERE schemaname='storage' ORDER BY policyname
+  Expected: Exactly 12 canonical policy names
+
+Step 4: Verify public.license_requests_view
   SQL: SELECT * FROM public.license_requests_view LIMIT 1
-  Expected: View accessible, data present
-  
+  Expected: View accessible, data returns
+
 Step 5: Verify is_admin function
-  SQL: SELECT public.is_admin(auth.uid()) — 3 states
-  Expected: false → true → false
-  
-Step 6: Execute STG-01~22
+  SQL: SELECT public.is_admin('[TEST_UUID]'::uuid)
+  Expected: 3-state verification (false → true → false)
+
+Step 6: Execute full test suite
   Command: node scripts/m2-storage-verification/dynamic-test.mjs
-  Expected: 22/22 PASS (all tests including STG-21)
-  Note: STG-21 result depends on successful migration
-  
+  Expected: ALL 22 tests PASS (including STG-21 after migration)
+
 Step 7: Data cleanup
   - Remove temporary admin_users entries
   - Delete test storage files
   - Verify no test data remains
-  
+
 Step 8: Build verification
-  Command: pnpm check
-  Expected: No type errors
+  Commands:
+    pnpm check    (expect: PASS)
+    pnpm build    (expect: PASS)
+
+Step 9: Document completion
+  - Record actual policy names
+  - Document test results
+  - Record cleanup completion
+```
+
+### Risk Assessment
+
+```
+Risk Level: LOW
+
+Rationale:
+  ✓ Policy-only changes (no data loss)
+  ✓ All new policies include IF EXISTS guards
+  ✓ No function/view modifications
+  ✓ Reversible (old policies can be restored from git)
+  ✓ User access patterns unchanged
+  ✓ Admin access model change (email→function) isolated
+
+Mitigation:
+  ✓ Test execution required post-deployment
+  ✓ All legacy policies documented for rollback
+  ✓ Forward-only migration (no git history rewrite)
+```
+
+---
+
+## Part 5: Current Test Status
+
+### Pre-Migration State
+
+```
+Remote Storage Runtime Tests: 21/22 PASS
+
+User Isolation: 16/16 PASS (100%)
+  - Profile-Images: 8/8 PASS
+  - Evidence-Files: 8/8 PASS
+
+Admin Access: 5/6 PASS (83%)
+  - STG-20: PASS (admin absent → deny)
+  - STG-21: FAIL (admin present → deny, expected allow)
+    Reason: admin_select_profile_images uses email-based detection
+    Fix: Migration 20260721000000 replaces with is_admin()-based
+  - STG-22: PASS (admin removed → deny)
+```
+
+### Expected Post-Migration State
+
+```
+Storage Runtime Tests: 22/22 PASS (expected)
+
+Reason:
+  - STG-21 currently fails due to email-based admin_select_profile_images
+  - Migration 20260721000000 replaces with is_admin()-based admin_select_all_profile_images
+  - Post-migration: admin access will work correctly
+  - High confidence: 22/22 PASS after deployment
+```
+
+---
+
+## Part 6: Git Baseline Confirmation
+
+### Current State
+
+```
+Local HEAD: 42959d2
+Remote HEAD: 42959d2
+Status: ✅ IN SYNC
+
+Commit: 42959d2 (docs: P0 compliance report revision - local rebuild verification required)
+  - Contains new migration 20260721000000
+  - Contains updated FINAL_P0_COMPLIANCE_REPORT.md
+  - Pushed to origin/main
+```
+
+### All Commits Since Base
+
+```
+42959d2 docs: P0 compliance report revision - local rebuild verification required
+e184510 feat(migrations): Add forward-only M2 finalize storage policy alignment
+e68c092 docs: 최종 P0 오류 3건 수정 - TM 개수, Gate 순서, Screen Spec 상태 통일
+882abfe docs: P0 오류 4건 최종 수정 - TM 개수, Screen Spec 기술 구조
+
+Base: 2af4a03 (docs: 디자인팀장 최종 재수정 지시서 반영 - 기존 5개 공식 문서 최종 수정)
+```
+
+---
+
+## Part 7: Outstanding Items (P0-03~05)
+
+### P0-03: Local Clean Rebuild (USER ACTION REQUIRED)
+
+**Status**: ❌ NOT VERIFIED
+
+**User must execute**:
+```bash
+supabase stop --no-backup
+supabase start
+supabase db reset
+```
+
+**Expected output to capture** (11 items):
+1. db reset complete log
+2. Applied migrations (list all 9)
+3. public BASE TABLES (exact list)
+4. specialties count (expected: 12)
+5. RLS active tables
+6. storage.objects policies (list all 12 names)
+7. storage.buckets status
+8. license_requests_view exists
+9. security_invoker setting
+10. trigger list
+11. share_events state
+
+**Blocking**: All downstream items wait for this
+
+---
+
+### P0-04: Git Baseline (COMPLETED)
+
+**Status**: ✅ CONFIRMED
+
+```
+Local/Remote Sync: 42959d2
+New Migration Included: YES (20260721000000)
+Remote Git Push: COMPLETE
+Baseline Ready for CTO Review: YES
+```
+
+---
+
+### P0-05: is_admin Verification Method (PLAN REQUIRED)
+
+**Status**: ⏳ PLAN DOCUMENTED
+
+**3-Step UUID Verification Plan**:
+
+```
+Step 1 - Before admin_users INSERT:
+  SELECT public.is_admin('[TEST_UUID]'::uuid);
+  Expected: false
+
+Step 2 - After admin_users INSERT:
+  INSERT INTO admin_users (user_id, role, created_by)
+  VALUES ('[TEST_UUID]'::uuid, 'super_admin', '[TEST_UUID]'::uuid);
   
-Step 9: Build verification
-  Command: pnpm build
-  Expected: Successful production build
-```
+  SELECT public.is_admin('[TEST_UUID]'::uuid);
+  Expected: true
 
-### Completion Criteria
-
-```
-✓ Remote migrations applied
-✓ Storage policies: 12 confirmed
-✓ STG-01~22: ALL tests passing (expected)
-✓ Data cleanup: Complete
-✓ pnpm check: PASS
-✓ pnpm build: PASS
-✓ is_admin verification: 3/3 states
-```
-
----
-
-## Part 6: Local Clean Rebuild Status
-
-### Current Blocker
-
-```
-Docker Desktop: Installed but WSL 2 initialization FAILED
-  Error: "500 Internal Error" on Docker API calls
-  Cause: WSL 2 backend not fully initialized
+Step 3 - After admin_users DELETE:
+  DELETE FROM admin_users WHERE user_id = '[TEST_UUID]'::uuid;
   
-Attempted Solutions:
-  ✗ Docker restart (30 seconds wait)
-  ✗ WSL shutdown (60 seconds wait)
-  → Both failed
+  SELECT public.is_admin('[TEST_UUID]'::uuid);
+  Expected: false
 
-Status: BLOCKED (requires computer restart or alternative approach)
+Cleanup: Remove TEST_UUID row if accidentally left behind
 ```
 
-### Verification Items (Not Yet Started)
+**Note**: Execute post-deployment in Remote environment
+
+---
+
+## Part 8: Document Synchronization
+
+### Two Official Documents
 
 ```
-- [ ] All migrations from zero
-- [ ] 10 P0 tables
-- [ ] 12 specialties
-- [ ] Public RLS
-- [ ] Storage policies 12
-- [ ] 2 private buckets
-- [ ] Public License View
-- [ ] security_invoker=true
-- [ ] Protected triggers
-- [ ] share_events canonical state
+1. FINAL_P0_COMPLIANCE_REPORT.md
+   - P0 item status table
+   - Blocking issues documented
+   - Outstanding actions listed
+   Status: REVISION REQUIRED
 
-Result: NOT VERIFIED
+2. M2_PRODUCTION_MIGRATION_APPROVAL_FINAL.md
+   - Migration file content
+   - Expected final state
+   - Application plan
+   - Current test status
+   Status: THIS FILE (updated 2026-07-21)
+```
+
+### Required Synchronization
+
+```
+Git Baseline: BOTH MUST USE 42959d2 ✅
+Migration Files: BOTH MUST REFERENCE 20260721000000 ✅
+Local/Remote Status: BOTH MUST STATE IN SYNC ✅
+Blocking Items: BOTH MUST LIST P0-03 PENDING ✅
 ```
 
 ---
 
-## Part 7: Current State Summary
+## Summary Status
 
-### Technical Status
+| Item | Status | Blocker? |
+|------|--------|----------|
+| Forward-only Migration | ✅ Created & Committed | No |
+| Git Baseline | ✅ 42959d2 (Synced) | No |
+| P0-03 Local Rebuild | ❌ NOT EXECUTED | **YES** |
+| P0-05 is_admin Plan | ✅ Documented | No |
+| CTO Review Ready | ❌ Blocked on P0-03 | **YES** |
+| CEO Approval Ready | ❌ Blocked on P0-03 | **YES** |
 
-```
-Build Environment: ✅ COMPLETE
-  - Node.js: v24.14.1
-  - pnpm: 10.4.1
-  - pnpm install: PASS
-  - pnpm check: PASS
-  - pnpm build: PASS
+---
 
-Remote State: ⏳ NOT SYNCED
-  - Local head: 20260720000200
-  - Remote head: 20260720000000
-  - Pending: 2 migrations
-
-Storage Runtime (Remote): ❌ FAIL 21/22
-  - User tests: 16/16 PASS
-  - Admin tests: 5/6 PASS (STG-21 pending migration)
-
-Local Rebuild: ❌ BLOCKED
-  - Docker WSL: Initialization failed
-  - Alternative: Computer restart or skip
-
-is_admin Function: ✅ VERIFIED
-  - 3/3 state transitions working
-
-Migration Analysis: ✅ COMPLETE
-  - 2 migrations ready
-  - 12 total policy changes
-  - 0 function changes
-  - 0 data changes
-  - Risk: LOW
-```
-
-### Approval Status
+## Current Blockers
 
 ```
-CTO Review: REQUESTED
-CTO Recommendation: PENDING
+1. LOCAL CLEAN REBUILD (P0-03)
+   User must execute: supabase stop/start/db reset
+   Required output: 11 items captured
+   Blocks: Everything downstream
 
-CEO Production Approval: PENDING
-CEO M2 Closure Approval: PENDING
-CEO M3 Kickoff Approval: PENDING
+2. DOCKER/WSL ISSUE
+   Previous error: WSL 2 initialization failed
+   Option 1: Restart Windows 11
+   Option 2: Troubleshoot Docker
+   Critical: Must resolve to proceed
 ```
 
 ---
 
-## Key Findings
+**Next Action**: User executes P0-03 Local Clean Rebuild with actual output capture
 
-### What's Working
+**Document Status**: Ready for CTO Review (pending P0-03 completion)
 
-```
-✅ Build pipelines (pnpm) — all 3/3 passing
-✅ User data isolation — 16/16 tests passing
-✅ is_admin function — 3/3 state transitions verified
-✅ Migration analysis — 2 migrations ready
-✅ Remote state sync — clear (2 pending)
-```
-
-### What's Not Working
-
-```
-❌ Admin profile-images access — STG-21 fails (migration-dependent)
-❌ Local rebuild — Docker WSL initialization blocked
-❌ Full 22/22 validation — STG-21 pending
-```
-
-### Root Causes
-
-```
-STG-21 Failure:
-  Cause: admin_select_profile_images uses email-based detection
-  Location: Current Remote policies
-  Fix: Migration 20260720000200 replaces with is_admin()-based
-  Status: Ready for deployment
-
-Docker Failure:
-  Cause: WSL 2 backend not fully initialized
-  Attempts: 2 failed (restart, shutdown)
-  Option: Computer restart (not attempted)
-  Impact: Part 5 (Local rebuild) blocked
-```
-
----
-
-## Recommendations
-
-### For CTO Review
-
-```
-Technical Preparation: COMPLETE ✅
-  - Migrations analyzed and ready
-  - Risk assessment: LOW
-  - Post-migration verification plan: Documented
-  - Alternative path if Local rebuild fails: Identified
-
-Migration Analysis: SUFFICIENT ✅
-  - All changes documented
-  - No data/function impact
-  - Reversibility confirmed
-  - User impact: NONE
-
-Recommendation to CEO: CONDITIONAL
-  - Proceed with migration application ✅
-  - Conditional on Part 5 completion or acceptance
-  - STG-21 will pass post-migration (high confidence)
-```
-
-### For CEO Approval
-
-```
-Production Migration Application:
-  ✓ Ready for deployment
-  ✓ Low risk (policies only)
-  ✓ Reversible
-  ✓ No user downtime
-  
-M2 Closure:
-  ✓ 95% complete
-  ⏳ 5% pending (Part 5 or decision to skip)
-  
-M3 Kickoff:
-  ⏳ Conditional on M2 closure
-```
-
----
-
-## Final Status Declaration
-
-```
-Technical Verification: COMPLETE (for applied tests)
-Storage Runtime: FAIL 21/22 (STG-21 migration-dependent)
-Local Clean Rebuild: NOT VERIFIED (Docker blocked)
-Production Migration: NOT APPLIED (awaiting CEO approval)
-
-M2 Closure: IN PROGRESS
-  Completed: Parts 1-4, 6 (Build/Migration analysis)
-  Pending: Part 5 (Local rebuild - blocked)
-  Blocked: Part 7 (CEO approval required)
-
-M3: NOT STARTED (awaiting M2 closure)
-```
-
----
-
-## Git Status
-
-```
-Current Branch: main
-Current Commit: a2dc6bd
-Commit Message: refactor: docs/reports → docs/report 디렉토리 정리
-Status: Clean (no uncommitted changes)
-Ahead of origin/main: 30 commits
-```
-
----
-
-## Appendices
-
-### Reference Documents
-
-- **Migration Files**: supabase/migrations/20260720000100*, 20260720000200*
-- **Test Suite**: scripts/m2-storage-verification/dynamic-test.mjs
-- **Previous Reports**: docs/report/M2_FINAL_REPORT_FOR_APPROVAL.md
-
-### Contact Points for Clarification
-
-- Migration content: supabase/migrations/20260720000*
-- Test results: scripts/m2-storage-verification/dynamic-test.mjs
-- Remote state: supabase migration list --linked
-- Storage policies: Remote SQL Editor query results
-
----
-
-**Document Status**: Ready for CTO/CEO Review  
-**Approval Required**: CEO Production Migration Authorization  
-**Next Decision Point**: CEO approval to apply migrations
-
+**Approval Chain**: P0-03 COMPLETE → CTO REVIEW → CEO APPROVAL

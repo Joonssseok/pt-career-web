@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-07-21T00:34:25.656Z",
+  "timestamp": "2026-07-21T01:30:18.043Z",
   "profileImages": [
     {
       "bucket": "profile-images",
@@ -61,9 +61,9 @@
       "bucket": "profile-images",
       "operation": "TEST_EXPERT_A-move_own_to_other",
       "expected": "fail",
-      "actual_status": 500,
-      "actual_error_code": "Cannot access 'downloadPath' before initialization",
-      "result": "FAIL"
+      "actual_status": 400,
+      "actual_error_code": "new row violates row-level security policy",
+      "result": "PASS"
     },
     {
       "bucket": "profile-images",
@@ -125,19 +125,11 @@
     },
     {
       "bucket": "evidence-files",
-      "operation": "TEST_ADMIN-download_own",
-      "expected": "success",
-      "actual_status": 400,
-      "actual_error_code": "Object not found",
-      "result": "FAIL"
-    },
-    {
-      "bucket": "evidence-files",
       "operation": "TEST_EXPERT_A-move_own_to_other",
       "expected": "fail",
-      "actual_status": 500,
-      "actual_error_code": "Cannot access 'downloadPath' before initialization",
-      "result": "FAIL"
+      "actual_status": 400,
+      "actual_error_code": "new row violates row-level security policy",
+      "result": "PASS"
     },
     {
       "bucket": "evidence-files",
@@ -157,11 +149,11 @@
     }
   ],
   "summary": {
-    "total_tests": 19,
-    "total_pass": 15,
-    "total_fail": 4,
-    "pass_rate": "79%",
-    "profile_images_pass": 8,
-    "evidence_files_pass": 7
+    "total_tests": 18,
+    "total_pass": 17,
+    "total_fail": 1,
+    "pass_rate": "94%",
+    "profile_images_pass": 9,
+    "evidence_files_pass": 8
   }
 }

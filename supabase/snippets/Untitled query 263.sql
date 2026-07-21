@@ -1,0 +1,1 @@
+SELECT policyname, tablename, cmd FROM pg_policies WHERE schemaname='storage' ORDER BY policyname;

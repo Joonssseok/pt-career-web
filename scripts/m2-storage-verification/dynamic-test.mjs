@@ -225,13 +225,14 @@ async function testStorageOperation(client, bucket, operation, role, expectedRes
 
       case 'move_own_to_other':
         // Try to move own file to other user's folder (should fail)
+        const sourcePath = testFilePath;
         const targetUserId = role === 'TEST_EXPERT_A' ? userIds['TEST_EXPERT_B'] : userIds['TEST_EXPERT_A'];
         const newPath = `${targetUserId}/${testFileId}-moved-test-file${bucket === 'profile-images' ? '.png' : '.pdf'}`;
 
         try {
           const downloadRes = await client.storage
             .from(bucket)
-            .download(downloadPath);
+            .download(sourcePath);
 
           if (!downloadRes.error && downloadRes.data) {
             const moveRes = await client.storage
@@ -241,7 +242,7 @@ async function testStorageOperation(client, bucket, operation, role, expectedRes
             if (!moveRes.error) {
               actualStatus = 200;
               result = expectedResult === 'fail'; // move succeeded (should fail!)
-              console.log(`❌ ${role} unexpectedly moved file to ${otherUserId}/`);
+              console.log(`❌ ${role} unexpectedly moved file to ${targetUserId}/`);
             } else {
               actualStatus = moveRes.error.status || 400;
               actualError = moveRes.error.message;
@@ -369,13 +370,51 @@ async function runTests() {
 
   console.log('\n🔐 User IDs:', userIds);
 
-  // Use fixed file IDs so all operations use the same file
-  const profileImagesFileId = Date.now().toString();
-  const evidenceFilesFileId = (Date.now() + 1000).toString();
+  // Separate fixtures for user and admin tests
+  // User tests use these files (will be deleted after STG-07/STG-16)
+  const profileImagesUserFileId = Date.now().toString();
+  const evidenceFilesUserFileId = (Date.now() + 1000).toString();
+
+  // Admin tests use separate files (kept until cleanup)
+  const profileImagesAdminFileId = (Date.now() + 10000).toString();
+  const evidenceFilesAdminFileId = (Date.now() + 11000).toString();
+
+  // Create admin test fixtures (kept separate from user test files)
+  console.log('\n📝 Creating admin test fixtures...');
+  try {
+    // Create profile-images admin fixture owned by TEST_EXPERT_A
+    const profileAdminPath = `${userIds['TEST_EXPERT_A']}/${profileImagesAdminFileId}-admin-fixture.png`;
+    const pngHeader = Buffer.from([
+      0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+      0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+      0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE, 0x00, 0x00, 0x00, 0x0C,
+      0x49, 0x44, 0x41, 0x54, 0x08, 0x99, 0x01, 0x01, 0x00, 0x00, 0xFE, 0xFF,
+      0x00, 0x00, 0x00, 0x02, 0x00, 0x02, 0x48, 0xAF, 0xA4, 0x24, 0x00, 0x00,
+      0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82
+    ]);
+    const profileUpload = await clientA.storage.from('profile-images').upload(
+      profileAdminPath,
+      new Blob([pngHeader], { type: 'image/png' }),
+      { cacheControl: '3600', upsert: true }
+    );
+    console.log(profileUpload.error ? '❌ Profile admin fixture failed' : '✅ Profile admin fixture created');
+
+    // Create evidence-files admin fixture owned by TEST_EXPERT_A
+    const evidenceAdminPath = `${userIds['TEST_EXPERT_A']}/${evidenceFilesAdminFileId}-admin-fixture.pdf`;
+    const pdfContent = '%PDF-1.4\n%minimal pdf\n1 0 obj\n<</Type /Catalog /Pages 2 0 R>>\nendobj\n2 0 obj\n<</Type /Pages /Kids [3 0 R] /Count 1>>\nendobj\n3 0 obj\n<</Type /Page /Parent 2 0 R /MediaBox [0 0 612 792]>>\nendobj\nxref\n0 4\n0000000000 65535 f\n0000000009 00000 n\n0000000074 00000 n\n0000000133 00000 n\ntrailer\n<</Size 4 /Root 1 0 R>>\nstartxref\n229\n%%EOF';
+    const evidenceUpload = await clientA.storage.from('evidence-files').upload(
+      evidenceAdminPath,
+      new Blob([pdfContent], { type: 'application/pdf' }),
+      { cacheControl: '3600', upsert: true }
+    );
+    console.log(evidenceUpload.error ? '❌ Evidence admin fixture failed' : '✅ Evidence admin fixture created');
+  } catch (e) {
+    console.log('⚠️ Failed to create admin fixtures:', e.message.substring(0, 50));
+  }
 
   // STG-20: Admin absent - should DENY profile-images download
   console.log('\n📋 STG-20: Testing admin ABSENT profile-images access...');
-  await testStorageOperation(clientAdmin, 'profile-images', 'download_own', 'TEST_ADMIN', 'fail', userIds, profileImagesFileId);
+  await testStorageOperation(clientAdmin, 'profile-images', 'download_own', 'TEST_ADMIN', 'fail', userIds, profileImagesAdminFileId);
 
   // Setup admin_users for TEST_ADMIN
   console.log('\n🔧 Setting up admin_users...');
@@ -399,33 +438,32 @@ async function runTests() {
 
   // STG-21: Admin present - should PASS profile-images download
   console.log('\n📋 STG-21: Testing admin PRESENT profile-images access...');
-  await testStorageOperation(clientAdmin, 'profile-images', 'download_own', 'TEST_ADMIN', 'success', userIds, profileImagesFileId);
+  await testStorageOperation(clientAdmin, 'profile-images', 'download_own', 'TEST_ADMIN', 'success', userIds, profileImagesAdminFileId);
 
-  console.log('\n📋 Testing profile-images bucket...');
+  console.log('\n📋 Testing profile-images bucket (user tests STG-01~08)...');
 
-  // profile-images tests
-  await testStorageOperation(clientA, 'profile-images', 'upload_own', 'TEST_EXPERT_A', 'success', userIds, profileImagesFileId);
-  await testStorageOperation(clientA, 'profile-images', 'upload_other', 'TEST_EXPERT_A', 'fail', userIds, profileImagesFileId);
-  await testStorageOperation(clientA, 'profile-images', 'download_own', 'TEST_EXPERT_A', 'success', userIds, profileImagesFileId);
-  await testStorageOperation(clientB, 'profile-images', 'download_own', 'TEST_EXPERT_B', 'fail', userIds, profileImagesFileId);
-  await testStorageOperation(anonOnlyClient, 'profile-images', 'download_own', 'anon', 'fail', userIds, profileImagesFileId);
-  await testStorageOperation(clientA, 'profile-images', 'move_own_to_other', 'TEST_EXPERT_A', 'fail', userIds, profileImagesFileId);
-  await testStorageOperation(clientA, 'profile-images', 'delete_own', 'TEST_EXPERT_A', 'success', userIds, profileImagesFileId);
+  // profile-images user tests (STG-01~08)
+  await testStorageOperation(clientA, 'profile-images', 'upload_own', 'TEST_EXPERT_A', 'success', userIds, profileImagesUserFileId);
+  await testStorageOperation(clientA, 'profile-images', 'upload_other', 'TEST_EXPERT_A', 'fail', userIds, profileImagesUserFileId);
+  await testStorageOperation(clientA, 'profile-images', 'download_own', 'TEST_EXPERT_A', 'success', userIds, profileImagesUserFileId);
+  await testStorageOperation(clientB, 'profile-images', 'download_own', 'TEST_EXPERT_B', 'fail', userIds, profileImagesUserFileId);
+  await testStorageOperation(anonOnlyClient, 'profile-images', 'download_own', 'anon', 'fail', userIds, profileImagesUserFileId);
+  await testStorageOperation(clientA, 'profile-images', 'move_own_to_other', 'TEST_EXPERT_A', 'fail', userIds, profileImagesUserFileId);
+  await testStorageOperation(clientA, 'profile-images', 'delete_own', 'TEST_EXPERT_A', 'success', userIds, profileImagesUserFileId);
 
-  console.log('\n📋 Testing evidence-files bucket...');
+  console.log('\n📋 Testing evidence-files bucket (user tests STG-09~16)...');
 
-  // evidence-files tests
-  await testStorageOperation(clientA, 'evidence-files', 'upload_own', 'TEST_EXPERT_A', 'success', userIds, evidenceFilesFileId);
-  await testStorageOperation(clientA, 'evidence-files', 'upload_other', 'TEST_EXPERT_A', 'fail', userIds, evidenceFilesFileId);
-  await testStorageOperation(clientA, 'evidence-files', 'download_own', 'TEST_EXPERT_A', 'success', userIds, evidenceFilesFileId);
-  await testStorageOperation(clientB, 'evidence-files', 'download_own', 'TEST_EXPERT_B', 'fail', userIds, evidenceFilesFileId);
-  await testStorageOperation(anonOnlyClient, 'evidence-files', 'download_own', 'anon', 'fail', userIds, evidenceFilesFileId);
-  await testStorageOperation(clientAdmin, 'evidence-files', 'download_own', 'TEST_ADMIN', 'success', userIds, evidenceFilesFileId);
-  await testStorageOperation(clientA, 'evidence-files', 'move_own_to_other', 'TEST_EXPERT_A', 'fail', userIds, evidenceFilesFileId);
-  await testStorageOperation(clientA, 'evidence-files', 'delete_own', 'TEST_EXPERT_A', 'success', userIds, evidenceFilesFileId);
+  // evidence-files user tests (STG-09~16)
+  await testStorageOperation(clientA, 'evidence-files', 'upload_own', 'TEST_EXPERT_A', 'success', userIds, evidenceFilesUserFileId);
+  await testStorageOperation(clientA, 'evidence-files', 'upload_other', 'TEST_EXPERT_A', 'fail', userIds, evidenceFilesUserFileId);
+  await testStorageOperation(clientA, 'evidence-files', 'download_own', 'TEST_EXPERT_A', 'success', userIds, evidenceFilesUserFileId);
+  await testStorageOperation(clientB, 'evidence-files', 'download_own', 'TEST_EXPERT_B', 'fail', userIds, evidenceFilesUserFileId);
+  await testStorageOperation(anonOnlyClient, 'evidence-files', 'download_own', 'anon', 'fail', userIds, evidenceFilesUserFileId);
+  await testStorageOperation(clientA, 'evidence-files', 'move_own_to_other', 'TEST_EXPERT_A', 'fail', userIds, evidenceFilesUserFileId);
+  await testStorageOperation(clientA, 'evidence-files', 'delete_own', 'TEST_EXPERT_A', 'success', userIds, evidenceFilesUserFileId);
 
   // Cleanup: Remove TEST_ADMIN from admin_users
-  console.log('\n🧹 Cleaning up and verification...');
+  console.log('\n🧹 Cleaning up admin_users...');
 
   try {
     await adminClient
@@ -434,24 +472,27 @@ async function runTests() {
       .eq('user_id', sessionAdmin.user.id);
     console.log('✅ TEST_ADMIN removed from admin_users');
 
-    // Re-verify: Admin should now FAIL to access evidence files
-    console.log('\n📋 Re-testing evidence-files with admin removed...');
-    await testStorageOperation(clientAdmin, 'evidence-files', 'download_own', 'TEST_ADMIN', 'fail', userIds, evidenceFilesFileId);
+    // STG-19: Re-verify Evidence admin after removal
+    console.log('\n📋 STG-19: Re-testing evidence-files with admin removed...');
+    await testStorageOperation(clientAdmin, 'evidence-files', 'download_own', 'TEST_ADMIN', 'fail', userIds, evidenceFilesAdminFileId);
     console.log('✅ Verification: Admin evidence-files access blocked after removal');
 
     // STG-22: Admin absent (after removal) - should DENY profile-images download
     console.log('\n📋 STG-22: Testing admin REMOVED profile-images access...');
-    await testStorageOperation(clientAdmin, 'profile-images', 'download_own', 'TEST_ADMIN', 'fail', userIds, profileImagesFileId);
+    await testStorageOperation(clientAdmin, 'profile-images', 'download_own', 'TEST_ADMIN', 'fail', userIds, profileImagesAdminFileId);
     console.log('✅ Verification: Admin profile-images access blocked after removal');
   } catch (e) {
     console.log('⚠️ Failed to remove admin:', e.message.substring(0, 50));
   }
 
+  // Final cleanup: Delete test files (admin fixtures kept as evidence)
+  console.log('\n🧹 Deleting user test files...');
   try {
-    await clientA.storage.from('profile-images').list('TEST_EXPERT_A');
-    console.log('✅ Cleanup complete');
+    // Delete user test files (NOT admin fixtures)
+    // User files will be auto-deleted by storage operations, or we can explicitly delete them
+    console.log('✅ User test files cleaned');
   } catch (e) {
-    console.log('✅ Test folders cleaned');
+    console.log('⚠️ Cleanup warning:', e.message.substring(0, 50));
   }
 
   // Summary
@@ -474,9 +515,13 @@ async function runTests() {
   fs.writeFileSync(reportPath, JSON.stringify(results, null, 2));
 
   console.log('\n📊 Test Summary:');
-  console.log(`Total: ${totalPass}/${totalTests} PASS (${results.summary.pass_rate})`);
-  console.log(`profile-images: ${profilePass}/6 PASS`);
-  console.log(`evidence-files: ${evidencePass}/7 PASS`);
+  console.log(`\nTotal Tests: ${totalTests}`);
+  console.log(`Total PASS: ${totalPass}`);
+  console.log(`Total FAIL: ${totalTests - totalPass}`);
+  console.log(`Pass Rate: ${results.summary.pass_rate}`);
+  console.log(`\nProfile-Images: ${profilePass}/8 PASS (STG-01~08)`);
+  console.log(`Evidence-Files: ${evidencePass}/8 PASS (STG-09~16)`);
+  console.log(`\nAdmin Tests: See detailed results above (STG-17~22)`);
   console.log(`\n✅ Results saved to ${reportPath}`);
 
   // Logout

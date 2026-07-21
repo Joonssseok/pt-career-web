@@ -1,8 +1,11 @@
 # M3-1 UI Implementation — Final Report
 
 **작성**: 2026-07-21  
+**최종 수정**: 2026-07-22 (P1 보정 완료)  
 **상태**: M3-1 UI COMPLETE (360px QA VERIFIED)  
-**Git Baseline**: b2c6046  
+**Git Baseline**: 
+- UI Implementation: b2c6046
+- Edit Feature: d1e0d98 (add/edit/delete CRUD complete)
 **CTO Directive**: All corrections applied
 
 ---
@@ -280,12 +283,12 @@ Mock-Only:
 ## CTO Directive 준수 사항
 
 ```
-✅ Evidence와 Proposal 분리 (M2.1)
-✅ Policy decision pending 명시 (EXP-ONB-003)
+✅ P1-01: 근무지역 필수값 해제 (workplaceRegion 선택으로 변경)
+✅ P1-02: 공식 연락처 안내 교정 (정책 미확정 표시)
+✅ P1-03: 360px QA 증빙 5개 연결 (QA_360PX_EVIDENCE.md)
+✅ P1-04: Git 기준선 정리 (b2c6046 + d1e0d98 Edit commit)
 ✅ Full CRUD 기능 구현 (Experience: add/edit/delete, Education: add/edit/delete)
-✅ 360px QA 전체 PASS
-✅ 공식 연락처 비공개 안내
-✅ 거주지역/근무지역 미확정 표시
+✅ Evidence와 Proposal 분리 (M2.1)
 ```
 
 ---
@@ -293,8 +296,8 @@ Mock-Only:
 ## M3-A 다음 단계
 
 ```
-1. ✅ M2.1 Evidence Matrix CTO 승인
-2. ⏳ AD-04·AD-05A·AD-05B CEO 결정
+1. ⏳ M2.1 Evidence Matrix CTO Final Review
+2. ⏳ AD-04·AD-05A·AD-05B CEO Policy Decisions
 3. ⏳ 최소 Schema Decision Table 작성
 4. ⏳ CTO 기술 승인
 5. ⏳ CEO DB·RLS 변경 승인
@@ -308,15 +311,21 @@ Mock-Only:
 
 ```
 M3-1 UI Skeleton:
-✅ COMPLETE
+✅ COMPLETE (5/5 screens)
 
 All M3-1 Completion Criteria:
 ✅ MET
 
+P1 Corrections:
+✅ P1-01: workplaceRegion 선택으로 변경
+✅ P1-02: 공식 연락처 안내 교정
+✅ P1-03: 360px QA 증빙 생성 (QA_360PX_EVIDENCE.md)
+✅ P1-04: Git 기준선 정리 (b2c6046 + d1e0d98)
+
 Ready for:
-✅ CTO Final Review
-✅ CEO Policy Decisions (AD-04/05A/05B)
-✅ M3-A Schema & API Implementation (post-approval)
+✅ CTO Final Review (M2.1 Evidence + M3-1 P1 corrections)
+⏳ CEO Policy Decisions (AD-04/05A/05B)
+⏳ M3-A Schema & API Implementation (post-approval)
 ```
 
 ---

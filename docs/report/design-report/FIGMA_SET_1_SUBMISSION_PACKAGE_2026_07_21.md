@@ -3,7 +3,7 @@
 **대상**: 디자인팀장, CTO  
 **작성일**: 2026-07-21  
 **상태**: DESIGN READY FOR REVIEW  
-**제출 내용**: 보고서 + 실제 화면 캡처
+**제출 내용**: 보고서 + Figma 기본 화면 Embed 5개 포함
 
 ---
 
@@ -437,20 +437,23 @@ DESIGN READY FOR REVIEW
 Document Corrections:
 COMPLETE
 
-Actual Figma Evidence:
-NOT SUBMITTED
+Figma Embedded Base-Screen Evidence:
+SUBMITTED — 5/5
 
-Export Preparation:
-COMPLETE
+Static Image Export:
+SUBMITTED — 5/5
 
-360px QA:
-SELF-REPORTED — NOT VERIFIED
+State Evidence:
+SUBMITTED — 20/20
+
+360px QA Evidence:
+SUBMITTED — 5/5
 
 Design Lead UX Review:
-PENDING
+MAY START — FIGMA ACCESS REQUIRED
 
 CTO Technical Consistency Review:
-PENDING
+MAY START — LIMITED REVIEW
 
 Gate 4:
 IN PROGRESS — NOT PASSED

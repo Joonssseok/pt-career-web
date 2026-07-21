@@ -181,13 +181,13 @@ Figma Embedded Base-Screen Evidence:
 SUBMITTED — 5/5
 
 Static Image Export:
-NOT SUBMITTED
+SUBMITTED — 5/5
 
 State Evidence:
-NOT SUBMITTED
+SUBMITTED — 20/20
 
 360px QA Evidence:
-SELF-REPORTED — NOT VERIFIED
+SUBMITTED — 5/5
 
 Design Lead UX Review:
 MAY START — FIGMA ACCESS REQUIRED
@@ -310,12 +310,12 @@ EXP-ONB-008: 전문분야 선택 (12개 공식 전문분야)
 
 ### 제출 대상
 
-#### 1. 5개 기본 화면 스크린샷
-- EXP-ONB-002 프로필 기본정보
-- EXP-ONB-003 현재 근무기관
-- EXP-ONB-004 경력 관리
-- EXP-ONB-007 교육 이력
-- EXP-ONB-008 전문분야 선택
+#### 1. Figma 기본 화면 Embed 5개 포함
+- EXP-ONB-002 프로필 기본정보 (node-id: 18:4)
+- EXP-ONB-003 현재 근무기관 (node-id: 20:2)
+- EXP-ONB-004 경력 관리 (node-id: 20:15)
+- EXP-ONB-007 교육 이력 (node-id: 20:23)
+- EXP-ONB-008 전문분야 선택 (node-id: 20:30)
 
 #### 2. 화면별 핵심 상태 스크린샷
 - Default / Error / Loading / Saved

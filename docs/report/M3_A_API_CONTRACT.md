@@ -611,3 +611,31 @@ Response (Error):
 - [ ] No Anonymous/Public access
 - [ ] M3-5 profile image integration noted
 
+
+---
+
+## P0 Final Corrections Applied (P0-03, P0-04, Additions)
+
+### P0-03: RPC-Based State Transitions
+- ✅ Renamed endpoints:
+  - saveProfile → Server Action calling save_own_profile RPC
+  - submitProfile → Server Action calling submit_profile RPC
+  - reviewExpertProfile → Server Action calling review_expert_profile RPC
+  - saveSpecialties → Server Action calling replace_profile_specialties RPC
+- ✅ No direct UPDATE on profiles table
+- ✅ RPC enforces state-based edit rights
+
+### P0-04: Server Action Security
+- ✅ User Session Client (not Service Role)
+- ✅ Admin actions: Authenticated + Hardened RPC
+- ✅ RPC: SECURITY DEFINER + SET search_path = ''
+- ✅ No Service Role bypass of RLS
+
+### P0-08: Profile Image & M3-5
+- ✅ submitProfile: Requires profileImagePath (not null)
+- ✅ Type: Storage path string (e.g., "{user_id}/avatar.jpg")
+- ✅ Not a public URL or file content
+- ✅ M3-5: Implements actual upload → storage path update
+
+---
+

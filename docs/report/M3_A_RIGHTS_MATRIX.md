@@ -394,3 +394,32 @@ SELECT EXISTS (
 - [ ] No Anonymous/Public policies in M3-A
 - [ ] M4 scope deferred to separate design
 
+
+---
+
+## P0 Final Corrections Applied (P0-03 to P0-05)
+
+### P0-03: Approval Field Protection via RPC
+- ✅ No direct RLS UPDATE on approval fields (cannot use OLD)
+- ✅ Three separate RPC functions:
+  - save_own_profile (owner editable fields only)
+  - submit_profile (state: draft/rejected → pending)
+  - review_expert_profile (admin: pending → approved/rejected)
+- ✅ No "WITH CHECK (approval_status = OLD.approval_status)"
+- ✅ State transitions enforced in RPC logic
+
+### P0-04: SECURITY DEFINER RPC
+- ✅ All RPC: SET search_path = '' for security
+- ✅ All object refs: Schema-qualified (public.profiles, etc.)
+- ✅ decision value: Allowlist ('approved', 'rejected')
+- ✅ Admin check: is_admin(auth.uid()) inside RPC
+- ✅ EXECUTE: Denied from public, granted to specific roles
+- ✅ Immutable inputs: No UPDATE to non-owned fields
+
+### P0-05: Remove Deny Policies
+- ✅ Deleted: All "deny_*" policies
+- ✅ Pattern: Only Allow policies (permissive)
+- ✅ Default: If no Allow policy matches, deny access
+
+---
+

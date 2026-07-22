@@ -346,3 +346,74 @@ T+5: Approval & Production readiness
 - Later phases will add **audit logging, stress testing, and 90% coverage**
 - Audit logging deferred because M3-A doesn't expose audit data
 
+
+---
+
+## P0 Final Security Tests Added (P0-03 to P0-08)
+
+### Test P0-03-1: Owner Cannot Direct UPDATE approval_status
+```
+Setup: User A logged in
+Action: Direct DB UPDATE profiles SET approval_status='pending'
+Expected: Fails (no RLS policy allows it)
+Verify: approval_status unchanged
+```
+
+### Test P0-03-2: submitProfile State Transition
+```
+Setup: User A profile in 'draft'
+Action: Call submitProfile()
+Expected: approval_status → 'pending'
+Verify: submitted_at set, User A cannot edit
+```
+
+### Test P0-03-3: submitProfile from rejected
+```
+Setup: User A profile in 'rejected'
+Action: Call submitProfile() (after re-editing)
+Expected: approval_status → 'pending'
+Verify: rejection_reason cleared, resubmit allowed
+```
+
+### Test P0-04-1: RPC SECURITY DEFINER Enforcement
+```
+Setup: User A tries to call admin RPC directly
+Action: Try review_expert_profile(...)
+Expected: is_admin() check fails, RPC returns error
+Verify: Admin access only via proper role
+```
+
+### Test P0-05-1: No Deny Policy Bypass
+```
+Setup: Multiple Allow policies on same table
+Action: User A attempts unauthorized access
+Expected: RLS defaults to deny (no explicit allow)
+Verify: Access denied
+```
+
+### Test P0-06-1: Specialties Atomic Replace Rollback
+```
+Setup: User A has [1, 2]
+Action: replace_profile_specialties([1, 2, 3, 4])
+Expected: Entire transaction rolls back
+Verify: User A still has [1, 2], no partial insert
+```
+
+### Test P0-07-1: Pending State Edit Restriction
+```
+Setup: User A profile in 'pending'
+Action: Try save_own_profile(data)
+Expected: PERMISSION_ERROR or validation error
+Verify: Cannot edit while pending
+```
+
+### Test P0-08-1: Profile Image Required for Submit
+```
+Setup: User A profile with profileImagePath=NULL
+Action: Try submitProfile()
+Expected: VALIDATION_ERROR (required field)
+Verify: Cannot submit without image path
+```
+
+---
+

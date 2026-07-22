@@ -31,15 +31,18 @@ This table defines M3-A implementation scope (Owner Profile Management).
 
 | Field | Type | Nullable | Default | Validation | Access |
 |-------|------|----------|---------|-----------|--------|
-| **user_id** | UUID | ❌ | - | FK auth.users(id) | PK |
+| **id** | UUID | ❌ | gen_random_uuid() | PRIMARY KEY | Internal FK |
+| **user_id** | UUID | ❌ | - | UNIQUE, FK auth.users(id) | Owner Identity |
 | **display_name** | TEXT | ❌ | - | 1-50 chars | Owner UPDATE |
 | **profession** | TEXT | ❌ | - | 1-50 chars | Owner UPDATE |
 | **bio** | TEXT | ✅ | NULL | max 100 chars | Owner UPDATE |
 | **description** | TEXT | ✅ | NULL | max 500 chars | Owner UPDATE |
-| **profile_image_path** | TEXT | ✅ | NULL | URL or NULL | M3-5 (Draft: NULL; Submit: Required) |
+| **profile_image_path** | TEXT | ✅ | NULL | Storage path ({user_id}/avatar.jpg) or NULL | M3-5 (Draft: NULL; Submit: Required) |
 | **approval_status** | TEXT | ❌ | 'draft' | draft\|pending\|approved\|rejected | Admin only |
-| **submitted_at** | TIMESTAMP | ✅ | NULL | - | Auto (when→pending) |
-| **reviewed_at** | TIMESTAMP | ✅ | NULL | - | Auto (when→approved/rejected) |
+| **submitted_at** | TIMESTAMPTZ | ✅ | NULL | - | Auto (when→pending) |
+| **reviewed_at** | TIMESTAMPTZ | ✅ | NULL | - | Auto (when→approved/rejected) |
+| **created_at** | TIMESTAMPTZ | ❌ | now() | - | Auto |
+| **updated_at** | TIMESTAMPTZ | ❌ | now() | - | Trigger or explicit |
 | **reviewed_by** | UUID | ✅ | NULL | FK admin_users(user_id) | Admin only |
 | **rejection_reason** | TEXT | ✅ | NULL | max 500 chars | Admin only |
 
@@ -374,4 +377,53 @@ These belong to M4 (Public Profile & Search).
 8. 📋 P0 RLS Tests
 9. 📋 CTO Implementation Review
 10. 📋 CEO Production Approval
+
+
+---
+
+## P0 Final Corrections Applied (P0-01 ~ P0-08)
+
+### P0-01: Profiles PK Structure
+- ✅ id UUID PRIMARY KEY (preserved)
+- ✅ user_id UUID UNIQUE (owner identity)
+- ✅ Child tables FK: profile_id (not user_id)
+
+### P0-02: SQL Types
+- ✅ gen_random_uuid() for UUID defaults
+- ✅ TIMESTAMPTZ for all timestamps
+- ✅ profile_image_path: Private storage path ({user_id}/avatar.jpg)
+
+### P0-03: Approval Field Protection via RPC
+- ✅ save_own_profile RPC (owner editable fields)
+- ✅ submit_profile RPC (state: draft/rejected → pending)
+- ✅ review_expert_profile RPC (admin: pending → approved/rejected)
+
+### P0-04: SECURITY DEFINER RPC
+- ✅ SET search_path = ''
+- ✅ Schema-qualified object references
+- ✅ decision value allowlist
+- ✅ is_admin() verification
+- ✅ Public EXECUTE denied
+
+### P0-05: Remove Deny Policies
+- ✅ Deleted all "deny_*" policies
+- ✅ Rely on permissive policies only
+
+### P0-06: Specialties FK & Atomic Transaction
+- ✅ FK REFERENCES public.specialties(id)
+- ✅ UNIQUE (profile_id, specialty_id)
+- ✅ replace_profile_specialties RPC (atomic 1-3)
+
+### P0-07: State-based Edit Rights
+- ✅ draft: Owner can edit
+- ✅ pending: Owner cannot edit
+- ✅ approved: Owner cannot edit
+- ✅ rejected: Owner can re-edit + resubmit
+
+### P0-08: Profile Image & M3-5 Dependency
+- ✅ M3-A: Column + validation only
+- ✅ M3-5: Actual upload implementation
+- ✅ Test: Use mock storage path
+
+---
 

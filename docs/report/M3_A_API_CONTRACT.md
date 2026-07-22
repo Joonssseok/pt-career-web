@@ -1,215 +1,204 @@
-# M3-A API Contract
+# M3-A API Contract — CTO P0 Corrections
 
-**Status**: DESIGN ONLY — No implementation until CTO approval  
+**Status**: CTO TECHNICAL APPROVAL — P0 CORRECTIONS APPLIED  
 **Date**: 2026-07-23  
-**Framework**: Next.js Server Actions + Supabase Client  
-**Database**: Supabase PostgreSQL with RLS
+**Scope**: M3-A Owner Management + Admin Review  
+**Framework**: Next.js Server Actions (not HTTP routes)  
+**Database**: Supabase with RLS enforcement
 
 ---
 
 ## Overview
 
-This document defines API contracts for M3-A profile completion flow.
+All M3-A operations use **Next.js Server Actions** (secure server-side functions).
 
-Implementation will use Next.js Server Actions (secure server-side operations) with Supabase client library for database access.
+**No HTTP Status codes** — All responses use `ActionResult<T>` pattern.
 
-**Important**: All contracts include RLS enforcement at database level.
+**RLS Enforcement**: Database RLS policies enforce all access control.
 
 ---
 
-## 1. Profile Basic Info
+## Standard Response Format
 
-### Save Profile Information
-
-**Endpoint**: Server Action `saveProfile(data)`
-
-**Request**
 ```typescript
+type ActionResult<T> =
+  | { ok: true; data: T }
+  | {
+      ok: false;
+      error: {
+        code:
+          | "VALIDATION_ERROR"
+          | "AUTH_ERROR"
+          | "PERMISSION_ERROR"
+          | "NOT_FOUND"
+          | "CONFLICT"
+          | "DB_ERROR";
+        message: string;
+        field?: string;
+      };
+    };
+```
+
+---
+
+## 1. Profile Management
+
+### Save/Update Profile
+
+**Server Action**: `saveProfile(data)`
+
+```typescript
+Request:
 {
   displayName: string (1-50 chars, required)
   profession: string (1-50 chars, required)
-  bio?: string (max 500 chars)
-  description?: string (max 1000 chars)
+  bio?: string (max 100 chars)
+  description?: string (max 500 chars)
+  profileImagePath?: string (required if submitting; null if draft)
 }
-```
 
-**Response Success (200)**
-```typescript
+Response (Success):
 {
-  success: true
+  ok: true,
   data: {
-    id: uuid
+    userId: uuid
     displayName: string
     profession: string
     bio: string | null
     description: string | null
+    profileImagePath: string | null
+    approvalStatus: "draft" | "pending" | "approved" | "rejected"
+    submittedAt: timestamp | null
     updatedAt: timestamp
   }
 }
-```
 
-**Response Error**
-```typescript
+Response (Error):
 {
-  success: false
+  ok: false,
   error: {
-    code: "VALIDATION_ERROR" | "AUTH_ERROR" | "DB_ERROR"
-    message: string
-    field?: string (for validation errors)
+    code: "VALIDATION_ERROR" | "AUTH_ERROR" | "DB_ERROR",
+    message: string,
+    field?: "displayName" | "profession" | "bio" | "description"
   }
 }
 ```
 
-**Validation**
+**Validation**:
 - displayName: required, 1-50 chars
 - profession: required, 1-50 chars
-- bio: optional, max 500 chars
-- description: optional, max 1000 chars
+- bio: optional, max 100 chars
+- description: optional, max 500 chars
+- profileImagePath: null in draft, required for submission
 
-**RLS Enforcement**
-- Only owner can update own profile
-- Admin can read all profiles
+**RLS Enforced**: Only own profile can update
 
-**Side Effects**
-- Updates `experts.display_name`, `.profession`, `.bio`, `.description`
-- Logs action to audit table
+**Side Effects**: Updates `profiles` table
 
 ---
 
-## 2. Workplace Information
+### Submit Profile for Review
 
-### Save Workplace
+**Server Action**: `submitProfile()`
 
-**Endpoint**: Server Action `saveWorkplace(data)`
-
-**Request**
 ```typescript
+Request:
 {
-  centerName: string (1-100 chars, required)
-  websiteUrl?: string (valid URL or null)
-  isPublic: boolean (default: false)
+  // No parameters — uses auth.uid()
+}
+
+Response (Success):
+{
+  ok: true,
+  data: {
+    userId: uuid
+    approvalStatus: "pending"
+    submittedAt: timestamp
+  }
+}
+
+Response (Error):
+{
+  ok: false,
+  error: {
+    code: "VALIDATION_ERROR" | "PERMISSION_ERROR" | "DB_ERROR",
+    message: string
+  }
 }
 ```
 
-**Response Success (200)**
+**Pre-Flight Validation**:
+```
+✓ displayName: not empty
+✓ profession: not empty
+✓ At least 1 specialty selected
+✓ approvalStatus: currently "draft"
+✓ profileImagePath: not null
+```
+
+**State Transition**: `draft` → `pending`
+
+**RLS Enforced**: Only own profile can submit
+
+---
+
+## 2. Workplace Management
+
+### Save Workplace
+
+**Server Action**: `saveWorkplace(data)`
+
 ```typescript
+Request:
 {
-  success: true
+  centerName: string (1-100 chars, required)
+  websiteUrl?: string (valid URL or null)
+  workplaceRegion?: string (region code or null, if AD-05B approved)
+  contactValue?: string (phone/email or null)
+  contactType?: "personal" | "official"
+}
+
+Response (Success):
+{
+  ok: true,
   data: {
     id: uuid
     userId: uuid
     centerName: string
     websiteUrl: string | null
-    isPublic: boolean
-    createdAt: timestamp
+    workplaceRegion: string | null
+    contactValue: string | null
+    contactType: string | null
     updatedAt: timestamp
   }
 }
-```
 
-**Response Error**
-```typescript
+Response (Error):
 {
-  success: false
+  ok: false,
   error: {
-    code: "VALIDATION_ERROR" | "LIMIT_ERROR" | "AUTH_ERROR" | "DB_ERROR"
+    code: "VALIDATION_ERROR" | "CONFLICT" | "DB_ERROR",
     message: string
   }
 }
 ```
 
-**Validation**
+**Validation**:
 - centerName: required, 1-100 chars
-- websiteUrl: optional, valid URL format
-- isPublic: boolean, depends on CEO AD-04 decision
+- websiteUrl: optional, valid URL
+- workplaceRegion: optional (depends on CEO AD-05B decision)
+- contactValue: optional, format based on type
+- contactType: optional
 
-**RLS Enforcement**
-- Only owner can INSERT/UPDATE own workplace (1 per user limit)
-- Admin can update approval-related fields
-- Public visibility controlled by RLS policy
+**Constraint Enforced**: UNIQUE (user_id) — only 1 per user
 
-**Side Effects**
-- Creates/updates `workplaces` table entry
-- Triggers approval workflow if isPublic = true
+**RLS Enforced**: Only own workplace
 
----
-
-### Save Workplace Region
-
-**Endpoint**: Server Action `saveWorkplaceRegion(data)` — **if CEO AD-05B approved**
-
-**Request**
-```typescript
-{
-  workplaceId: uuid
-  workplaceRegion?: string (province + district code, or null)
-  isLocationPublic: boolean (default: false)
-}
-```
-
-**Response Success (200)**
-```typescript
-{
-  success: true
-  data: {
-    id: uuid
-    workplaceId: uuid
-    workplaceRegion: string | null
-    isLocationPublic: boolean
-    updatedAt: timestamp
-  }
-}
-```
-
-**Validation**
-- workplaceRegion: valid region code or null
-- isLocationPublic: depends on CEO AD-05B decision
-
-**RLS Enforcement**
-- Only owner can update own workplace region
-- Search access: only if isLocationPublic = true AND profile approved
-
-**Dependency**: CEO AD-05B approval required
-
----
-
-### Save Workplace Contacts
-
-**Endpoint**: Server Action `saveWorkplaceContact(data)`
-
-**Request**
-```typescript
-{
-  workplaceId: uuid
-  contactType: "phone" | "email" | "other"
-  contactValue: string (valid format based on type)
-  isPublic: boolean (default: false)
-}
-```
-
-**Response Success (200)**
-```typescript
-{
-  success: true
-  data: {
-    id: uuid
-    workplaceId: uuid
-    contactType: string
-    contactValue: string
-    isPublic: boolean
-    createdAt: timestamp
-  }
-}
-```
-
-**Validation**
-- contactType: must be in enum
-- contactValue: valid email/phone format based on type
-- isPublic: depends on CEO AD-04 decision
-
-**RLS Enforcement**
-- Only owner can manage own workplace contacts
-- Public visibility depends on isPublic flag + profile approval
+**Policy Notes**:
+- `contactValue`: "personal" always private (M3-A, M4)
+- `contactValue`: "official" private in M3-A, M4 based on TM-04B decision
+- `workplaceRegion`: private in M3-A, public in M4 if toggle ON + approved
+- `website_url`: private in M3-A, public in M4 if toggle ON + approved
 
 ---
 
@@ -217,23 +206,21 @@ Implementation will use Next.js Server Actions (secure server-side operations) w
 
 ### Add Experience
 
-**Endpoint**: Server Action `addExperience(data)`
+**Server Action**: `addExperience(data)`
 
-**Request**
 ```typescript
+Request:
 {
   companyName: string (1-100 chars, required)
   position: string (1-100 chars, required)
-  startDate: string (YYYY-MM format)
-  endDate?: string (YYYY-MM format or null if current)
-  isCurrently: boolean (default: false)
+  startDate: string (YYYY-MM format, required)
+  endDate?: string (YYYY-MM format or null)
+  isCurrent: boolean (default: false)
 }
-```
 
-**Response Success (201)**
-```typescript
+Response (Success):
 {
-  success: true
+  ok: true,
   data: {
     id: uuid
     userId: uuid
@@ -241,105 +228,102 @@ Implementation will use Next.js Server Actions (secure server-side operations) w
     position: string
     startDate: string
     endDate: string | null
-    isCurrently: boolean
+    isCurrent: boolean
     createdAt: timestamp
+  }
+}
+
+Response (Error):
+{
+  ok: false,
+  error: {
+    code: "VALIDATION_ERROR" | "AUTH_ERROR" | "DB_ERROR",
+    message: string,
+    field?: string
   }
 }
 ```
 
-**Validation**
+**Validation**:
 - companyName: required, 1-100 chars
 - position: required, 1-100 chars
-- startDate: required, valid date format
+- startDate: required, valid date
 - endDate: optional, valid date or null
-- isCurrently: if true, endDate must be null
+- If isCurrent=true, endDate must be null
 
-**RLS Enforcement**
-- Only owner can INSERT own experiences
-- Public: SELECT if profile approved
+**RLS Enforced**: Only own experiences
 
 ---
 
 ### Update Experience
 
-**Endpoint**: Server Action `updateExperience(id, data)`
+**Server Action**: `updateExperience(id, data)`
 
-**Request**
 ```typescript
+Request:
 {
   id: uuid
   companyName?: string
   position?: string
   startDate?: string
   endDate?: string | null
-  isCurrently?: boolean
+  isCurrent?: boolean
 }
+
+Response: Same as Add
+
+**Validation**: Same as Add
+
+**RLS Enforced**: Only own experience
 ```
-
-**Response Success (200)**
-```typescript
-{
-  success: true
-  data: {
-    id: uuid
-    ...updated fields
-    updatedAt: timestamp
-  }
-}
-```
-
-**Validation**
-- Same as Add Experience
-- Only owner can update
-- endDate/isCurrently validation
-
-**RLS Enforcement**
-- Owner UPDATE policy on experiences table
 
 ---
 
 ### Delete Experience
 
-**Endpoint**: Server Action `deleteExperience(id)`
+**Server Action**: `deleteExperience(id)`
 
-**Request**
 ```typescript
+Request:
 {
   id: uuid
 }
-```
 
-**Response Success (204)**
-```typescript
+Response (Success):
 {
-  success: true
+  ok: true,
+  data: { deletedId: uuid }
+}
+
+Response (Error):
+{
+  ok: false,
+  error: { ... }
 }
 ```
 
-**RLS Enforcement**
-- Only owner can DELETE own experiences
+**RLS Enforced**: Only own experience
 
 ---
 
-## 4. Education/Certification Management
+## 4. Certification Management
 
 ### Add Certification
 
-**Endpoint**: Server Action `addCertification(data)`
+**Server Action**: `addCertification(data)`
 
-**Request**
 ```typescript
+Request:
 {
-  name: string (1-100 chars, required) // Datalist: 8 common certs
+  name: string (1-100 chars, required)
+    // Datalist: ISSA CPT, NASM-CPT, ACE CPT, IFBB Pro Card, etc.
   issuer: string (1-100 chars, required)
-  issueDate?: string (YYYY-MM format)
+  issueDate?: string (YYYY-MM format or null)
 }
-```
 
-**Response Success (201)**
-```typescript
+Response (Success):
 {
-  success: true
+  ok: true,
   data: {
     id: uuid
     userId: uuid
@@ -349,81 +333,44 @@ Implementation will use Next.js Server Actions (secure server-side operations) w
     createdAt: timestamp
   }
 }
+
+Response (Error):
+{
+  ok: false,
+  error: { ... }
+}
 ```
 
-**Common Certifications (Datalist)**
-```
-- ISSA CPT
-- NASM-CPT
-- ACE CPT
-- IFBB Pro Card
-- 필라테스 자격증
-- 요가 자격증
-- 헬스케어 운동사
-- 스포츠 마사지 자격증
-```
-
-**Validation**
+**Validation**:
 - name: required, 1-100 chars
 - issuer: required, 1-100 chars
 - issueDate: optional, valid date
 
-**RLS Enforcement**
-- Only owner can INSERT own certifications
+**RLS Enforced**: Only own certifications
 
 ---
 
 ### Update Certification
 
-**Endpoint**: Server Action `updateCertification(id, data)`
+**Server Action**: `updateCertification(id, data)`
 
-**Request**
 ```typescript
-{
-  id: uuid
-  name?: string
-  issuer?: string
-  issueDate?: string | null
-}
-```
+Same structure as Add
 
-**Response Success (200)**
-```typescript
-{
-  success: true
-  data: {
-    id: uuid
-    ...updated fields
-    updatedAt: timestamp
-  }
-}
+**RLS Enforced**: Only own certification
 ```
-
-**RLS Enforcement**
-- Owner UPDATE policy
 
 ---
 
 ### Delete Certification
 
-**Endpoint**: Server Action `deleteCertification(id)`
+**Server Action**: `deleteCertification(id)`
 
-**Request**
 ```typescript
-{
-  id: uuid
-}
-```
+Same as Experience delete
 
-**Response Success (204)**
-```typescript
-{
-  success: true
-}
+**RLS Enforced**: Only own certification
 ```
-
-**RLS Enforcement**
-- Owner DELETE policy
 
 ---
 
@@ -431,259 +378,236 @@ Implementation will use Next.js Server Actions (secure server-side operations) w
 
 ### Save Specialties
 
-**Endpoint**: Server Action `saveSpecialties(data)`
+**Server Action**: `saveSpecialties(data)`
 
-**Request**
 ```typescript
+Request:
 {
   specialtyIds: number[] (1-3 elements, required)
-  // Each ID: 1-12 (official specialties only)
+    // Each: 1-12 (official list)
 }
-```
 
-**Response Success (200)**
-```typescript
+Response (Success):
 {
-  success: true
+  ok: true,
   data: {
     userId: uuid
     specialties: [
-      {
-        id: uuid
-        userId: uuid
-        specialtyId: number
-        createdAt: timestamp
-      }
+      { id: uuid, specialtyId: number }
     ],
     count: number (1-3)
   }
 }
+
+Response (Error):
+{
+  ok: false,
+  error: {
+    code: "VALIDATION_ERROR" | "DB_ERROR",
+    message: string
+  }
+}
 ```
 
-**Official Specialties**
-```
-1. 근력강화·바디프로필
-2. 다이어트·체형관리
-3. 만성질환·특수집단 운동
-4. 산전·산후 운동
-5. 소아·청소년 운동
-6. 스포츠 퍼포먼스
-7. 시니어·낙상예방
-8. 자세교정·통증관리
-9. 재활운동·수술 후 회복
-10. 종목별 트레이닝
-11. 체력향상·컨디셔닝
-12. 필라테스·요가·유연성
-```
-
-**Validation**
+**Validation**:
 - specialtyIds: required array
-- Length: 1-3 elements
-- Each ID: must be in 1-12 range
+- Length: 1-3
+- Each ID: 1-12 range
 - No duplicates
 
-**RLS Enforcement**
-- Only owner can INSERT/DELETE own specialties
-- Selection limit (1-3) enforced in app + RLS
+**Transaction Behavior**:
+```
+If result would be 0 or 4+ elements:
+  Entire transaction rolls back
+  Returns VALIDATION_ERROR
+Otherwise:
+  Replaces entire selection atomically
+```
 
-**Side Effects**
-- Deletes all old specialties (DELETE then INSERT)
-- Updates `expert_specialties` table
+**RLS Enforced**: Only own specialties
+
+**DB Constraints**: UNIQUE (user_id, specialty_id)
 
 ---
 
-## 6. Profile Submit/Complete
+## 6. Approval Workflow (Admin Only)
 
-### Submit Profile for Review
+### Review Profile (Admin RPC)
 
-**Endpoint**: Server Action `submitProfile()`
+**Server Action**: `reviewExpertProfile(targetUserId, decision, rejectionReason)`
 
-**Request**
 ```typescript
+Request:
 {
-  // No parameters - operates on auth.uid()
+  targetUserId: uuid
+  decision: "approved" | "rejected"
+  rejectionReason?: string (if rejected, max 500 chars)
 }
-```
 
-**Response Success (200)**
-```typescript
+Response (Success):
 {
-  success: true
+  ok: true,
   data: {
-    profileStatus: "submitted" | "pending_review"
-    submittedAt: timestamp
-    message: "Profile submitted for review"
+    userId: uuid
+    approvalStatus: string
+    reviewedAt: timestamp
+    reviewedBy: uuid
+    rejectionReason: string | null
+  }
+}
+
+Response (Error):
+{
+  ok: false,
+  error: {
+    code: "AUTH_ERROR" | "PERMISSION_ERROR" | "NOT_FOUND" | "DB_ERROR",
+    message: "Only admin can review profiles" | ...
   }
 }
 ```
 
-**Validation Pre-Flight**
-```
-- displayName: not empty
-- profession: not empty
-- At least 1 specialty selected
-- All required fields populated
-```
+**Permission Check**: `is_admin(auth.uid())`
 
-**Side Effects**
-- Sets profile status to "pending_review"
-- Creates submission record (audit log)
-- Triggers admin notification workflow (email/webhook)
+**State Transition**:
+- Only from `pending` state
+- `pending` → `approved` OR `pending` → `rejected`
 
----
+**RLS Enforced**: Via RPC (not RLS policy)
 
-## 7. Validation Endpoints
-
-### Pre-Submission Validation
-
-**Endpoint**: Server Action `validateProfile()`
-
-**Request**
-```typescript
-{
-  // No parameters - validates auth.uid() profile
-}
-```
-
-**Response**
-```typescript
-{
-  isValid: boolean
-  errors: {
-    displayName?: string
-    profession?: string
-    specialties?: string
-    [field]?: string
-  }
-}
-```
-
-**Validation Rules**
-```
-✓ displayName: 1-50 chars
-✓ profession: 1-50 chars
-✓ specialties: 1-3 selected
-✓ workplace: optional but if provided, validate centerName
-✓ No incomplete required fields
-```
+**Side Effects**:
+- Sets `approval_status`
+- Sets `reviewed_at` (auto)
+- Sets `reviewed_by` (auto)
+- Sets `rejection_reason` (if rejected)
 
 ---
 
-## 8. Profile Retrieval (Read)
+## 7. Data Retrieval (Read)
 
-### Get Current User Profile
+### Get Own Profile
 
-**Endpoint**: Server Action `getCurrentProfile()`
+**Server Action**: `getOwnProfile()`
 
-**Request**
 ```typescript
+Request:
 {
-  // No parameters - uses auth.uid()
+  // No parameters — uses auth.uid()
 }
-```
 
-**Response Success (200)**
-```typescript
+Response (Success):
 {
-  success: true
+  ok: true,
   data: {
-    id: uuid
+    userId: uuid
     displayName: string
     profession: string
     bio: string | null
     description: string | null
     profileImagePath: string | null
     approvalStatus: "draft" | "pending" | "approved" | "rejected"
+    submittedAt: timestamp | null
+    reviewedAt: timestamp | null
+    rejectionReason: string | null
     workplace?: {
       id: uuid
       centerName: string
       websiteUrl: string | null
-      isPublic: boolean
-      workplaceRegion?: string | null
-      isLocationPublic?: boolean
+      workplaceRegion: string | null
+      contactValue: string | null
+      contactType: string | null
     }
     experiences: Experience[]
     certifications: Certification[]
-    specialties: Specialty[]
-    createdAt: timestamp
-    updatedAt: timestamp
+    specialties: SpecialtyInfo[]
   }
+}
+
+Response (Error):
+{
+  ok: false,
+  error: { code: "AUTH_ERROR" | "NOT_FOUND" }
 }
 ```
 
-**RLS Enforcement**
-- Owner can read own full profile
-- Admin can read all fields
-- Others: can only read approved profile data based on toggles
+**RLS Enforced**: Owner SELECT own profile
 
 ---
 
-## 9. Error Handling
+## Error Codes & Meanings
 
-### Standard Error Responses
-
-```typescript
-type ApiError = {
-  success: false
-  error: {
-    code: string
-    message: string
-    details?: {
-      field?: string
-      constraint?: string
-      value?: any
-    }
-  }
-}
-```
-
-### Error Codes
-
-| Code | Meaning | HTTP |
+| Code | Meaning | When |
 |------|---------|------|
-| `VALIDATION_ERROR` | Input validation failed | 400 |
-| `AUTH_ERROR` | User not authenticated | 401 |
-| `PERMISSION_ERROR` | User lacks permission (RLS denied) | 403 |
-| `NOT_FOUND` | Resource not found | 404 |
-| `LIMIT_ERROR` | Resource limit exceeded (e.g., 1 workplace) | 409 |
-| `DB_ERROR` | Database error | 500 |
-| `SERVICE_ERROR` | Service unavailable | 503 |
-
-### RLS Denial Behavior
-
-When RLS policy denies access:
-```
-- SELECT: Returns empty result (no data)
-- INSERT/UPDATE/DELETE: Returns PERMISSION_ERROR (403)
-```
+| `VALIDATION_ERROR` | Input invalid | Missing field, format wrong, constraint violated |
+| `AUTH_ERROR` | Not authenticated | No auth session |
+| `PERMISSION_ERROR` | RLS denied access | User lacks permission |
+| `NOT_FOUND` | Resource missing | ID doesn't exist |
+| `CONFLICT` | Unique constraint | Duplicate workplace per user, etc. |
+| `DB_ERROR` | Database error | Connection, transaction failure |
 
 ---
 
-## 10. Deployment Checklist
+## P0 Corrections Applied
 
-- [ ] All endpoints use Next.js Server Actions (not exposed API routes)
-- [ ] Supabase client initialized with auth session
-- [ ] RLS policies created and tested
-- [ ] Input validation on client AND server
-- [ ] Error handling covers all error codes
-- [ ] Audit logging implemented (who, what, when)
-- [ ] Rate limiting configured (prevent abuse)
-- [ ] CORS properly configured (if applicable)
-- [ ] TypeScript types defined for all requests/responses
+### 1. ✅ M3-A Scope Only
+- No Anonymous/Public endpoints
+- Owner CRUD + Admin Review only
+- Public profile retrieval deferred to M4
+
+### 2. ✅ Server Action Format
+- `ActionResult<T>` pattern (not HTTP status)
+- No separate 200/201/204 semantics
+- Consistent error object structure
+
+### 3. ✅ Canonical Types
+- Owner identity: `userId` (not `id`)
+- Profiles table: no `experts` table
+- All responses use consistent naming
+
+### 4. ✅ Profile Image Handling
+- Null in draft state
+- Required for pending submission
+- Actual upload deferred to M3-5
+
+### 5. ✅ Specialties Atomic Replace
+- Single transaction
+- 1-3 selection enforced
+- 0 or 4+ rolls back entire transaction
+
+### 6. ✅ Admin Review via RPC
+- `reviewExpertProfile()` separate action
+- Not exposed as generic UPDATE
+- Permission check in function
+
+### 7. ✅ Contact Simplification
+- Consolidated into workplaces
+- personal/official types
+- M4 decides public exposure
+
+---
+
+## Testing Validation
+
+- [ ] Server Action responses use ActionResult pattern
+- [ ] Validation errors include field names
+- [ ] Permission errors on cross-user access
+- [ ] Profile submission requires image path
+- [ ] Specialties enforce 1-3 selection
+- [ ] Admin review only from pending state
+- [ ] All RLS policies tested
+
+---
+
+## Deployment Checklist
+
+- [ ] All Server Actions created
+- [ ] ActionResult type defined
+- [ ] Input validation on server
+- [ ] RLS policies integrated
+- [ ] Error handling covers all codes
+- [ ] Admin review RPC secure
 - [ ] Pnpm check & build passing
-- [ ] CTO code review passed
-- [ ] Security review completed (auth, RLS, data exposure)
-- [ ] Local testing on clean rebuild completed
-
----
-
-## 11. Testing Plan Integration
-
-See `M3_A_TEST_PLAN.md` for:
-- Owner isolation tests
-- Admin read access tests
-- Approval workflow tests
-- Public visibility tests
-- RLS enforcement tests
-- API error handling tests
+- [ ] CTO code review approved
+- [ ] No HTTP routes in M3-A (deferred to M4)
+- [ ] No Anonymous/Public access
+- [ ] M3-5 profile image integration noted
 

@@ -1,345 +1,377 @@
-# M3-A Schema Decision Table
+# M3-A Schema Decision Table — CTO P0 Corrections Applied
 
-**Status**: CTO TECHNICAL APPROVAL REQUIRED  
+**Status**: CTO TECHNICAL APPROVAL — P0 CORRECTIONS APPLIED  
 **Date**: 2026-07-23  
-**Dependencies**: CEO AD-04 / AD-05A / AD-05B Decisions
+**Canonical Table**: public.profiles  
+**Owner Identity**: profiles.user_id = auth.uid()  
+**MVP Scope**: Owner CRUD + Admin Review  
+**Public/Search**: Deferred to M4
 
 ---
 
 ## Overview
 
-이 표는 M3-A에서 구현할 데이터 구조, 권한, 검색 노출을 정의합니다.
+This table defines M3-A implementation scope (Owner Profile Management).
 
-CEO 정책 결정(AD-04, AD-05A, AD-05B)에 따라 최종 확정됩니다.
+**M3-A Scope**: Expert can manage own profile, Admin can review and approve/reject.
 
----
+**M4 Scope**: Public profile retrieval, search, location-based filtering (separate schema).
 
-## TM-01: 프로필 기본정보
-
-| 항목 | 값 |
-|------|-----|
-| **Requirement** | 전문가 프로필 기본 정보 저장 |
-| **Source** | TM-01 (Design Spec) |
-| **Table** | experts (확장) |
-| **Columns** | display_name, profession, bio, description, profile_image_path |
-| **Type** | TEXT, TEXT, TEXT, TEXT, TEXT |
-| **Nullable** | ❌, ❌, ✅, ✅, ✅ |
-| **Default** | - | - | NULL | NULL | NULL |
-| **Validation** | length: 1-50 | required | max: 500 | max: 1000 | max: 255 |
-| **Privacy Class** | Visible to: Owner, Admin, Public (approved) |
-| **Owner Access** | SELECT, INSERT, UPDATE |
-| **Admin Access** | SELECT, UPDATE (审核用) |
-| **Public Exposure** | When approved |
-| **Search Usage** | ❌ Not searchable |
-| **RLS Required** | ✅ owner_select_self_only, owner_update_self_only |
-| **Index Required** | ❌ (profile lookup via auth) |
-| **Migration Risk** | LOW (new columns to existing table) |
-| **Rollback** | ALTER TABLE experts DROP COLUMN ... |
+**Canonical Rules**:
+- Base table: `profiles` (not `experts`)
+- Owner identity: `user_id` (not `id`)
+- No Anonymous/Public SELECT in M3-A tables
+- Public Projection deferred to M4
 
 ---
 
-## TM-02: 근무기관 정보
+## P0 Canonical Profile Table Extension
 
-| 항목 | 값 |
-|------|-----|
-| **Requirement** | 현재 근무 기관 정보 저장 |
-| **Source** | TM-02 (Design Spec) |
-| **Table** | workplaces (NEW) |
-| **Columns** | id, user_id, center_name, website_url, created_at, updated_at |
-| **Type** | UUID, UUID, TEXT, TEXT, TIMESTAMP, TIMESTAMP |
-| **Nullable** | ❌, ❌, ❌, ✅, ❌, ❌ |
-| **Default** | gen_uuid() | - | - | NULL | now() | now() |
-| **Validation** | - | FK: experts(id) | max: 100 | valid URL or NULL | - | - |
-| **Privacy Class** | Stored: Private (until toggle) | Public: if AD-04 toggle ON + approved |
-| **Owner Access** | SELECT, INSERT, UPDATE (1 record) |
-| **Admin Access** | SELECT, UPDATE (approval) |
-| **Public Exposure** | ✅ Conditional (AD-04 policy) |
-| **Search Usage** | ❌ Not searchable |
-| **RLS Required** | ✅ owner_select_self_only, owner_update_self_only, approved_profile_public_access |
-| **Index Required** | ✅ workplaces(user_id) |
-| **Migration Risk** | MEDIUM (new table, foreign key) |
-| **Rollback** | DROP TABLE workplaces CASCADE |
+**Table**: public.profiles (existing)
 
----
+| Field | Type | Nullable | Default | Validation | Access |
+|-------|------|----------|---------|-----------|--------|
+| **user_id** | UUID | ❌ | - | FK auth.users(id) | PK |
+| **display_name** | TEXT | ❌ | - | 1-50 chars | Owner UPDATE |
+| **profession** | TEXT | ❌ | - | 1-50 chars | Owner UPDATE |
+| **bio** | TEXT | ✅ | NULL | max 100 chars | Owner UPDATE |
+| **description** | TEXT | ✅ | NULL | max 500 chars | Owner UPDATE |
+| **profile_image_path** | TEXT | ✅ | NULL | URL or NULL | M3-5 (Draft: NULL; Submit: Required) |
+| **approval_status** | TEXT | ❌ | 'draft' | draft\|pending\|approved\|rejected | Admin only |
+| **submitted_at** | TIMESTAMP | ✅ | NULL | - | Auto (when→pending) |
+| **reviewed_at** | TIMESTAMP | ✅ | NULL | - | Auto (when→approved/rejected) |
+| **reviewed_by** | UUID | ✅ | NULL | FK admin_users(user_id) | Admin only |
+| **rejection_reason** | TEXT | ✅ | NULL | max 500 chars | Admin only |
 
-## TM-03: 공식 연락처 (미정)
-
-| 항목 | 값 |
-|------|-----|
-| **Status** | PENDING — Policy decision in TM-04B |
-| **TM-04A** | 저장 구조 (Contact type) |
-| **TM-04B** | 공개 제어 (Public exposure) |
-
----
-
-## TM-04A: 공식 연락처 저장
-
-| 항목 | 값 |
-|------|-----|
-| **Requirement** | 근무지 대표 연락처 저장 |
-| **Source** | TM-04A (from Design Spec) |
-| **Table** | workplace_contacts (NEW) |
-| **Columns** | id, workplace_id, contact_type, contact_value |
-| **Type** | UUID, UUID, TEXT (enum), TEXT |
-| **Nullable** | ❌, ❌, ❌, ❌ |
-| **Default** | gen_uuid() | - | - | - |
-| **Validation** | - | FK: workplaces(id) | IN ('phone', 'email', 'other') | valid format |
-| **Privacy Class** | Determined by TM-04B policy |
-| **Owner Access** | SELECT, INSERT, UPDATE, DELETE |
-| **Admin Access** | SELECT |
-| **Public Exposure** | ✅ Conditional (TM-04B) |
-| **Search Usage** | ❌ Never |
-| **RLS Required** | ✅ Based on TM-04B policy decision |
-| **Index Required** | ✅ workplace_contacts(workplace_id) |
-| **Migration Risk** | MEDIUM (new table) |
-| **Rollback** | DROP TABLE workplace_contacts CASCADE |
-
----
-
-## TM-04B: 공식 연락처 공개 제어
-
-| 항목 | 값 |
-|------|-----|
-| **Requirement** | 공식 연락처 공개 여부 관리 |
-| **Source** | TM-04B (Policy pending) |
-| **Table** | workplace_contacts (column: is_public) |
-| **Column** | is_public |
-| **Type** | BOOLEAN |
-| **Nullable** | ❌ |
-| **Default** | FALSE |
-| **Validation** | - |
-| **Privacy Class** | ✅ Toggle controlled |
-| **Owner Access** | SELECT, UPDATE |
-| **Admin Access** | SELECT |
-| **Public Exposure** | ✅ if is_public = TRUE + profile approved |
-| **Search Usage** | ❌ Never |
-| **RLS Required** | ✅ owner_update_self_only, approved_profile_public_access |
-| **Index Required** | ❌ |
-| **Migration Risk** | LOW (add column to workplace_contacts) |
-| **Rollback** | ALTER TABLE workplace_contacts DROP COLUMN is_public |
-
----
-
-## TM-06: 거주지역 저장 (조건부)
-
-**Policy Status**: CEO AD-05A Decision Required
-
-### Option A: MVP EXCLUDE (CTO 권고)
-
+**Canonical Approval States**:
 ```
-Status: APPROVED TO EXCLUDE
-No table, no columns, no RLS
+draft:       신규 생성, Owner 편집 가능
+pending:     제출됨, Owner 편집 불가, Admin 검토 가능
+approved:    승인됨, Owner 읽기 전용, M4에서 공개 조건 평가
+rejected:    반려됨, Owner 편집 가능, 상태는 'rejected' 유지, 재제출 시 → pending
 ```
 
-### Option B: If CEO Requires
+---
 
-| 항목 | 값 |
-|------|-----|
-| **Requirement** | 거주 지역 저장 (Optional) |
-| **Source** | TM-06 (if included) |
-| **Table** | expert_residence (NEW) |
-| **Column** | residence_region |
-| **Type** | TEXT (province + district) |
-| **Nullable** | ✅ |
-| **Default** | NULL |
-| **Validation** | Valid region code or NULL |
-| **Privacy Class** | ALWAYS PRIVATE |
-| **Owner Access** | SELECT, INSERT, UPDATE |
-| **Admin Access** | SELECT (minimal) |
-| **Public Exposure** | ❌ NEVER |
-| **Search Usage** | ❌ NEVER |
-| **RLS Required** | ✅ owner_select_self_only |
-| **Index Required** | ❌ |
-| **Migration Risk** | MEDIUM (new table) |
-| **Rollback** | DROP TABLE expert_residence CASCADE |
+## Workspace & Contact (Simple)
 
-**Decision**: Awaiting CEO (default: EXCLUDE)
+**Table**: public.workplaces (NEW)
+
+| Field | Type | Nullable | Default | Validation | Constraint |
+|-------|------|----------|---------|-----------|-----------|
+| **id** | UUID | ❌ | gen_uuid() | - | PK |
+| **user_id** | UUID | ❌ | - | FK profiles(user_id) | **UNIQUE** (1 workplace per user) |
+| **center_name** | TEXT | ❌ | - | 1-100 chars | - |
+| **website_url** | TEXT | ✅ | NULL | valid URL or NULL | - |
+| **workplace_region** | TEXT | ✅ | NULL | Valid region code | - |
+| **is_location_public** | BOOLEAN | ❌ | FALSE | - | - |
+| **contact_value** | TEXT | ✅ | NULL | Email/Phone/URL | - |
+| **contact_type** | TEXT | ✅ | NULL | personal\|official | - |
+| **created_at** | TIMESTAMP | ❌ | now() | - | - |
+| **updated_at** | TIMESTAMP | ❌ | now() | - | - |
+
+**Validation**:
+```
+center_name:    Required, 1-100 chars
+website_url:    Optional, valid URL format
+workplace_region: Optional (AD-05B if approved)
+contact_value:  Optional, format based on type
+is_location_public: Requires approval_status='approved' in M4 to expose
+```
+
+**Constraint**:
+```sql
+UNIQUE (user_id)  -- M3-A must enforce single workplace
+```
+
+**Note**: TM-04A/04B consolidated into single table for MVP.
+- personal contact: always private (M3-A, M4)
+- official contact: M4 based on TM-04B policy (pending CEO decision)
 
 ---
 
-## TM-08: 근무지역 저장
+## Experience (CRUD)
 
-| 항목 | 값 |
-|------|-----|
-| **Requirement** | 대표 근무 지역 저장 |
-| **Source** | TM-08 (Design Spec) |
-| **Table** | workplaces (column: workplace_region) |
-| **Column** | workplace_region |
-| **Type** | TEXT (province + district) |
-| **Nullable** | ✅ |
-| **Default** | NULL |
-| **Validation** | Valid region code or NULL |
-| **Privacy Class** | Stored: Private | Public: if TM-09 toggle ON + approved |
-| **Owner Access** | SELECT, UPDATE |
-| **Admin Access** | SELECT |
-| **Public Exposure** | ✅ Conditional (TM-09) |
-| **Search Usage** | ✅ if is_location_public = TRUE + approved |
-| **RLS Required** | ✅ owner_select_self_only, owner_update_self_only, approved_location_search_access |
-| **Index Required** | ✅ workplaces(workplace_region) for search |
-| **Migration Risk** | MEDIUM (add column to workplaces) |
-| **Rollback** | ALTER TABLE workplaces DROP COLUMN workplace_region |
+**Table**: public.experiences (NEW)
+
+| Field | Type | Nullable | Default | Validation |
+|-------|------|----------|---------|-----------|
+| **id** | UUID | ❌ | gen_uuid() | PK |
+| **user_id** | UUID | ❌ | - | FK profiles(user_id) |
+| **company_name** | TEXT | ❌ | - | 1-100 chars |
+| **position** | TEXT | ❌ | - | 1-100 chars |
+| **start_date** | DATE | ❌ | - | YYYY-MM format |
+| **end_date** | DATE | ✅ | NULL | YYYY-MM or NULL |
+| **is_current** | BOOLEAN | ❌ | FALSE | If TRUE, end_date must be NULL |
+| **created_at** | TIMESTAMP | ❌ | now() | - |
+| **updated_at** | TIMESTAMP | ❌ | now() | - |
+
+**M3-A Access**: Owner CRUD, Admin SELECT only
+
+**Public Exposure (M4)**: Only if profile.approval_status='approved'
 
 ---
 
-## TM-09: 근무지역 공개 제어
+## Certification (CRUD)
 
-| 항목 | 값 |
-|------|-----|
-| **Requirement** | 근무 지역 공개 여부 관리 |
-| **Source** | TM-09 (AD-05B Policy) |
-| **Table** | workplaces (column: is_location_public) |
-| **Column** | is_location_public |
-| **Type** | BOOLEAN |
-| **Nullable** | ❌ |
-| **Default** | FALSE |
-| **Validation** | - |
-| **Privacy Class** | ✅ Toggle controlled |
-| **Owner Access** | SELECT, UPDATE |
-| **Admin Access** | SELECT |
-| **Public Exposure** | ✅ if is_location_public = TRUE + profile approved |
-| **Search Usage** | ✅ if is_location_public = TRUE + profile approved |
-| **RLS Required** | ✅ owner_update_self_only, approved_location_search_access |
-| **Index Required** | ❌ |
-| **Migration Risk** | LOW (add column to workplaces) |
-| **Rollback** | ALTER TABLE workplaces DROP COLUMN is_location_public |
+**Table**: public.certifications (NEW)
+
+| Field | Type | Nullable | Default | Validation |
+|-------|------|----------|---------|-----------|
+| **id** | UUID | ❌ | gen_uuid() | PK |
+| **user_id** | UUID | ❌ | - | FK profiles(user_id) |
+| **name** | TEXT | ❌ | - | 1-100 chars (datalist: 8 common) |
+| **issuer** | TEXT | ❌ | - | 1-100 chars |
+| **issue_date** | DATE | ✅ | NULL | YYYY-MM or NULL |
+| **created_at** | TIMESTAMP | ❌ | now() | - |
+
+**M3-A Access**: Owner CRUD, Admin SELECT only
+
+**Public Exposure (M4)**: Only if profile.approval_status='approved'
 
 ---
 
-## TM-04: 경력 정보
+## Profile Specialties (Canonical)
 
-| 항목 | 값 |
-|------|-----|
-| **Requirement** | 과거 근무 경력 저장 |
-| **Source** | TM-04 (Design Spec) |
-| **Table** | experiences (NEW) |
-| **Columns** | id, user_id, company_name, position, start_date, end_date, is_current, created_at, updated_at |
-| **Type** | UUID, UUID, TEXT, TEXT, DATE, DATE, BOOLEAN, TIMESTAMP, TIMESTAMP |
-| **Nullable** | ❌, ❌, ❌, ❌, ❌, ✅, ❌, ❌, ❌ |
-| **Default** | gen_uuid() | - | - | - | - | NULL | FALSE | now() | now() |
-| **Validation** | - | FK | max: 100 | max: 100 | valid date | valid date or NULL | - | - | - |
-| **Privacy Class** | Private (draft/pending) → Public if approved |
-| **Owner Access** | SELECT, INSERT, UPDATE, DELETE |
-| **Admin Access** | SELECT |
-| **Public Exposure** | ✅ if profile approved |
-| **Search Usage** | ❌ Not searchable |
-| **RLS Required** | ✅ owner_full_crud, admin_select_only |
-| **Index Required** | ✅ experiences(user_id) |
-| **Migration Risk** | MEDIUM (new table) |
-| **Rollback** | DROP TABLE experiences CASCADE |
+**Table**: public.profile_specialties (NEW)
 
----
+| Field | Type | Nullable | Default | Validation | Constraint |
+|-------|------|----------|---------|-----------|-----------|
+| **id** | UUID | ❌ | gen_uuid() | PK | - |
+| **user_id** | UUID | ❌ | - | FK profiles(user_id) | - |
+| **specialty_id** | INT | ❌ | - | FK specialties(id) 1-12 | **UNIQUE (user_id, specialty_id)** |
+| **created_at** | TIMESTAMP | ❌ | now() | - | - |
 
-## TM-07: 교육 이력
+**Constraints**:
+```sql
+UNIQUE (user_id, specialty_id)  -- No duplicate selections
+CHECK (1 <= specialty_id <= 12) -- Official list only
+```
 
-| 항목 | 값 |
-|------|-----|
-| **Requirement** | 자격증·교육 이력 저장 |
-| **Source** | TM-07 (Design Spec) |
-| **Table** | certifications (NEW) |
-| **Columns** | id, user_id, name, issuer, issue_date, created_at, updated_at |
-| **Type** | UUID, UUID, TEXT, TEXT, DATE, TIMESTAMP, TIMESTAMP |
-| **Nullable** | ❌, ❌, ❌, ❌, ✅, ❌, ❌ |
-| **Default** | gen_uuid() | - | - | - | NULL | now() | now() |
-| **Validation** | - | FK | max: 100 | max: 100 | valid date or NULL | - | - |
-| **Privacy Class** | Private → Public if approved |
-| **Owner Access** | SELECT, INSERT, UPDATE, DELETE |
-| **Admin Access** | SELECT |
-| **Public Exposure** | ✅ if profile approved |
-| **Search Usage** | ❌ Not searchable |
-| **RLS Required** | ✅ owner_full_crud, admin_select_only |
-| **Index Required** | ✅ certifications(user_id) |
-| **Migration Risk** | MEDIUM (new table) |
-| **Rollback** | DROP TABLE certifications CASCADE |
+**M3-A Operation**:
+```
+Save call replaces entire selection in single transaction.
+If result would be 0 or 4+, entire transaction rolls back.
+Client enforces 1-3 selection limit.
+RLS enforces single transaction replacement.
+```
+
+**Public Exposure (M4)**:
+- Only if profile.approval_status='approved'
+- Not searchable separately (search against approved profile query)
 
 ---
 
-## TM-10: 전문분야
+## Specialties Reference (Master Data)
 
-| 항목 | 값 |
-|------|-----|
-| **Requirement** | 공식 전문분야 12개 중 1-3개 선택 |
-| **Source** | TM-10 (Design Spec) |
-| **Table** | expert_specialties (NEW) |
-| **Columns** | id, user_id, specialty_id, created_at |
-| **Type** | UUID, UUID, INT, TIMESTAMP |
-| **Nullable** | ❌, ❌, ❌, ❌ |
-| **Default** | gen_uuid() | - | - | now() |
-| **Validation** | - | FK | IN (1-12) | - |
-| **Privacy Class** | Public (always visible) |
-| **Owner Access** | SELECT, INSERT, DELETE (1-3 selection limit) |
-| **Admin Access** | SELECT |
-| **Public Exposure** | ✅ Always public |
-| **Search Usage** | ✅ Searchable |
-| **RLS Required** | ✅ owner_insert_delete_self_only, selection_limit_1_3 |
-| **Index Required** | ✅ expert_specialties(user_id), expert_specialties(specialty_id) |
-| **Migration Risk** | MEDIUM (new table, reference data) |
-| **Rollback** | DROP TABLE expert_specialties CASCADE |
+**Table**: public.specialties (existing or static)
 
----
+| ID | Name |
+|----|------|
+| 1 | 근력강화·바디프로필 |
+| 2 | 다이어트·체형관리 |
+| 3 | 만성질환·특수집단 운동 |
+| 4 | 산전·산후 운동 |
+| 5 | 소아·청소년 운동 |
+| 6 | 스포츠 퍼포먼스 |
+| 7 | 시니어·낙상예방 |
+| 8 | 자세교정·통증관리 |
+| 9 | 재활운동·수술 후 회복 |
+| 10 | 종목별 트레이닝 |
+| 11 | 체력향상·컨디셔닝 |
+| 12 | 필라테스·요가·유연성 |
 
-## TM-11: 프로필 승인 상태 (관리)
-
-| 항목 | 값 |
-|------|-----|
-| **Requirement** | 전문가 프로필 승인 상태 관리 |
-| **Source** | TM-11 (from AD policies) |
-| **Table** | experts (column: approval_status) |
-| **Column** | approval_status |
-| **Type** | TEXT (enum) |
-| **Nullable** | ❌ |
-| **Default** | 'pending' |
-| **Validation** | IN ('pending', 'approved', 'rejected', 'suspended') |
-| **Privacy Class** | Admin only |
-| **Owner Access** | SELECT (read-only) |
-| **Admin Access** | SELECT, UPDATE |
-| **Public Exposure** | ❌ Not exposed (state-based control) |
-| **Search Usage** | ✅ Filter: approved only |
-| **RLS Required** | ✅ admin_update_only, public_approved_only_exposure |
-| **Index Required** | ✅ experts(approval_status) |
-| **Migration Risk** | LOW (add column to experts) |
-| **Rollback** | ALTER TABLE experts DROP COLUMN approval_status |
+No insert/update after seeding. (Immutable master data)
 
 ---
 
-## Summary Table
+## M3-A RLS Policies (Canonical)
 
-| TM | Table | Status | MVP | RLS | Policy Dep |
-|----|-------|--------|-----|-----|-----------|
-| TM-01 | experts (cols) | ✅ Ready | ✅ | ✅ | - |
-| TM-02 | workplaces | ✅ Ready | ✅ | ✅ | - |
-| TM-04A | workplace_contacts | ✅ Ready | ✅ | ✅ | TM-04B |
-| TM-04B | workplace_contacts.is_public | ✅ Ready | ✅ | ✅ | - |
-| TM-06 | expert_residence | ⏳ Conditional | ❌ MVP | ✅ | AD-05A |
-| TM-07 | certifications | ✅ Ready | ✅ | ✅ | - |
-| TM-08 | workplaces.workplace_region | ✅ Ready | ✅ | ✅ | - |
-| TM-09 | workplaces.is_location_public | ✅ Ready | ✅ | ✅ | AD-05B |
-| TM-10 | expert_specialties | ✅ Ready | ✅ | ✅ | - |
-| TM-11 | experts.approval_status | ✅ Ready | ✅ | ✅ | - |
+### Owner Access Pattern
+
+```sql
+-- Owner: SELECT own row
+CREATE POLICY owner_select_profiles
+  ON profiles
+  FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Owner: UPDATE own row (except approval fields)
+CREATE POLICY owner_update_profiles
+  ON profiles
+  FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Owner: Full CRUD on experiences
+CREATE POLICY owner_crud_experiences
+  ON experiences
+  FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Owner: Full CRUD on certifications
+CREATE POLICY owner_crud_certifications
+  ON certifications
+  FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Owner: INSERT/DELETE specialties (single transaction)
+CREATE POLICY owner_manage_specialties
+  ON profile_specialties
+  FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Owner: CRUD own workplace (1 max via UNIQUE)
+CREATE POLICY owner_crud_workplace
+  ON workplaces
+  FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+```
+
+### Admin Access Pattern
+
+```sql
+-- Admin: SELECT all rows (for review)
+CREATE POLICY admin_select_profiles
+  ON profiles
+  FOR SELECT
+  USING (is_admin(auth.uid()));
+
+CREATE POLICY admin_select_experiences
+  ON experiences
+  FOR SELECT
+  USING (is_admin(auth.uid()));
+
+CREATE POLICY admin_select_certifications
+  ON certifications
+  FOR SELECT
+  USING (is_admin(auth.uid()));
+
+CREATE POLICY admin_select_specialties
+  ON profile_specialties
+  FOR SELECT
+  USING (is_admin(auth.uid()));
+
+CREATE POLICY admin_select_workplaces
+  ON workplaces
+  FOR SELECT
+  USING (is_admin(auth.uid()));
+
+-- Admin: Update approval fields only (via RPC, not RLS)
+-- (Handled by reviewExpertProfile(profileId, decision) RPC)
+```
+
+### is_admin() Definition
+
+```sql
+-- Reuse existing verified function
+SELECT EXISTS (
+  SELECT 1
+  FROM public.admin_users
+  WHERE admin_users.user_id = $1
+);
+```
 
 ---
 
-## CEO Policy Dependencies
+## P0 Corrections Applied
 
-### AD-04 (Business Information Public Exposure)
-- **If APPROVE**: Implement TM-04B toggle for center_name + website_url public exposure
-- **If REJECT**: Both always private
+### 1. Canonical Table
+- ✅ Base table: `profiles` (not `experts`)
+- ✅ Owner key: `user_id` (not `id`)
+- ✅ No experts table creation
 
-### AD-05A (Residential Location)
-- **If OPTION A (MVP EXCLUDE)**: Skip TM-06 entirely
-- **If OPTION B (INCLUDE)**: Implement TM-06 with RLS owner-only access
+### 2. Public/Private Separation
+- ✅ M3-A: No Anonymous/Public SELECT
+- ✅ M4: Public Projection deferred (separate schema design)
+- ✅ Draft/Pending: Always private
+- ✅ Approved: Visibility depends on toggles + M4 logic
 
-### AD-05B (Workplace Location Public Visibility)
-- **If APPROVE**: Implement TM-08 + TM-09 with toggle + approval gating
-- **If REJECT**: workplace_region stored but never public, never searchable
+### 3. Approval States
+- ✅ Unified states: draft, pending, approved, rejected
+- ✅ Deleted states: submitted, pending_review, suspended (Later)
+- ✅ State transitions documented
+
+### 4. Specialties Policy
+- ✅ Deleted public exposure in M3-A
+- ✅ Specialties follow approval_status
+- ✅ M4 decides public search visibility
+
+### 5. Single Workplace
+- ✅ UNIQUE (user_id) constraint (not RLS COUNT)
+- ✅ Concurrent request safe
+
+### 6. Contact Simplification
+- ✅ Consolidated into workplaces table
+- ✅ Removed separate `workplace_contacts` table
+- ✅ MVP fields: contact_type, contact_value, is_location_public
+
+### 7. Residential Region
+- ✅ Removed expert_residence table
+- ✅ AD-05A = OPTION A (MVP EXCLUDE)
+- ✅ If future CEO decision: add later
+
+### 8. Admin UPDATE Restrictions
+- ✅ RLS SELECT for Admin only
+- ✅ Status changes via reviewExpertProfile() RPC (separate)
+- ✅ Admin cannot UPDATE user data
+
+### 9. is_admin() Reuse
+- ✅ Using existing public.is_admin()
+- ✅ No new duplicate functions
+
+---
+
+## M4 Deferred Scope
+
+**Do NOT implement in M3-A**:
+
+```text
+- Anonymous/Public SELECT policies
+- Public profile projection
+- Search indexes on specialties/region
+- Distance-based sorting
+- Public profile view/RPC
+- Notification on submission
+- Email to admin
+- Webhook triggers
+```
+
+These belong to M4 (Public Profile & Search).
+
+---
+
+## Summary: M3-A vs M4
+
+| Feature | M3-A | M4 |
+|---------|------|-----|
+| **Owner Profile CRUD** | ✅ | - |
+| **Admin Review/Approve** | ✅ | - |
+| **Draft → Pending → Approved** | ✅ | - |
+| **Rejected → Re-edit** | ✅ | - |
+| **Anonymous SELECT** | ❌ | ✅ |
+| **Public Profile Projection** | ❌ | ✅ |
+| **Specialty Search** | ❌ | ✅ |
+| **Location Search** | ❌ | ✅ |
+| **Toggle → Public Exposure** | ❌ | ✅ |
+| **Notifications** | ❌ | ✅ |
 
 ---
 
 ## Next Steps
 
-1. ✅ CEO AD-04 / AD-05A / AD-05B Decision
-2. ✅ CTO Technical Approval of this table
-3. 📋 Create RLS Policy SQL (based on approval)
-4. 📋 Create Migration SQL (based on approval)
-5. 📋 Create API Contracts
-6. 📋 Execute Local Migration + Test
+1. ✅ CTO P0 Corrections Applied
+2. ⏳ CEO AD-04/AD-05A/AD-05B Decision
+3. ⏳ CTO Technical Approval (Schema/RLS/API)
+4. ⏳ CEO DB·RLS Change Approval
+5. 📋 Feature Branch + Local Migration
+6. 📋 RLS Policy Implementation
+7. 📋 Server Actions (M3-A scope only)
+8. 📋 P0 RLS Tests
+9. 📋 CTO Implementation Review
+10. 📋 CEO Production Approval
 

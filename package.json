@@ -23,12 +23,14 @@
     "react-dom": "^19.2.1"
   },
   "devDependencies": {
+    "@sparticuz/chromium": "^149.0.0",
     "@types/node": "^20.0.0",
     "@types/react": "^19.2.1",
     "@types/react-dom": "^19.2.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.31",
     "prettier": "^3.6.2",
+    "puppeteer": "^25.3.0",
     "tailwindcss": "^4.1.14",
     "typescript": "^5.9.3"
   },

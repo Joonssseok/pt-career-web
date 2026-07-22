@@ -62,7 +62,7 @@ rejected:    반려됨, Owner 편집 가능, 상태는 'rejected' 유지, 재제
 
 | Field | Type | Nullable | Default | Validation | Constraint |
 |-------|------|----------|---------|-----------|-----------|
-| **id** | UUID | ❌ | gen_uuid() | - | PK |
+| **id** | UUID | ❌ | gen_random_uuid() | - | PK |
 | **user_id** | UUID | ❌ | - | FK profiles(user_id) | **UNIQUE** (1 workplace per user) |
 | **center_name** | TEXT | ❌ | - | 1-100 chars | - |
 | **website_url** | TEXT | ✅ | NULL | valid URL or NULL | - |
@@ -99,7 +99,7 @@ UNIQUE (user_id)  -- M3-A must enforce single workplace
 
 | Field | Type | Nullable | Default | Validation |
 |-------|------|----------|---------|-----------|
-| **id** | UUID | ❌ | gen_uuid() | PK |
+| **id** | UUID | ❌ | gen_random_uuid() | PK |
 | **user_id** | UUID | ❌ | - | FK profiles(user_id) |
 | **company_name** | TEXT | ❌ | - | 1-100 chars |
 | **position** | TEXT | ❌ | - | 1-100 chars |
@@ -121,7 +121,7 @@ UNIQUE (user_id)  -- M3-A must enforce single workplace
 
 | Field | Type | Nullable | Default | Validation |
 |-------|------|----------|---------|-----------|
-| **id** | UUID | ❌ | gen_uuid() | PK |
+| **id** | UUID | ❌ | gen_random_uuid() | PK |
 | **user_id** | UUID | ❌ | - | FK profiles(user_id) |
 | **name** | TEXT | ❌ | - | 1-100 chars (datalist: 8 common) |
 | **issuer** | TEXT | ❌ | - | 1-100 chars |
@@ -140,7 +140,7 @@ UNIQUE (user_id)  -- M3-A must enforce single workplace
 
 | Field | Type | Nullable | Default | Validation | Constraint |
 |-------|------|----------|---------|-----------|-----------|
-| **id** | UUID | ❌ | gen_uuid() | PK | - |
+| **id** | UUID | ❌ | gen_random_uuid() | PK | - |
 | **user_id** | UUID | ❌ | - | FK profiles(user_id) | - |
 | **specialty_id** | INT | ❌ | - | FK specialties(id) 1-12 | **UNIQUE (user_id, specialty_id)** |
 | **created_at** | TIMESTAMP | ❌ | now() | - | - |
@@ -375,55 +375,3 @@ These belong to M4 (Public Profile & Search).
 6. 📋 RLS Policy Implementation
 7. 📋 Server Actions (M3-A scope only)
 8. 📋 P0 RLS Tests
-9. 📋 CTO Implementation Review
-10. 📋 CEO Production Approval
-
-
----
-
-## P0 Final Corrections Applied (P0-01 ~ P0-08)
-
-### P0-01: Profiles PK Structure
-- ✅ id UUID PRIMARY KEY (preserved)
-- ✅ user_id UUID UNIQUE (owner identity)
-- ✅ Child tables FK: profile_id (not user_id)
-
-### P0-02: SQL Types
-- ✅ gen_random_uuid() for UUID defaults
-- ✅ TIMESTAMPTZ for all timestamps
-- ✅ profile_image_path: Private storage path ({user_id}/avatar.jpg)
-
-### P0-03: Approval Field Protection via RPC
-- ✅ save_own_profile RPC (owner editable fields)
-- ✅ submit_profile RPC (state: draft/rejected → pending)
-- ✅ review_expert_profile RPC (admin: pending → approved/rejected)
-
-### P0-04: SECURITY DEFINER RPC
-- ✅ SET search_path = ''
-- ✅ Schema-qualified object references
-- ✅ decision value allowlist
-- ✅ is_admin() verification
-- ✅ Public EXECUTE denied
-
-### P0-05: Remove Deny Policies
-- ✅ Deleted all "deny_*" policies
-- ✅ Rely on permissive policies only
-
-### P0-06: Specialties FK & Atomic Transaction
-- ✅ FK REFERENCES public.specialties(id)
-- ✅ UNIQUE (profile_id, specialty_id)
-- ✅ replace_profile_specialties RPC (atomic 1-3)
-
-### P0-07: State-based Edit Rights
-- ✅ draft: Owner can edit
-- ✅ pending: Owner cannot edit
-- ✅ approved: Owner cannot edit
-- ✅ rejected: Owner can re-edit + resubmit
-
-### P0-08: Profile Image & M3-5 Dependency
-- ✅ M3-A: Column + validation only
-- ✅ M3-5: Actual upload implementation
-- ✅ Test: Use mock storage path
-
----
-

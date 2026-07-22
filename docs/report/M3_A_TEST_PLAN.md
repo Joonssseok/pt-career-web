@@ -38,7 +38,7 @@ Verify: All fields present, matches database
 
 ```
 Setup: User A logged in
-Action: Call saveProfile({ displayName: "New Name", ... })
+Action: Call save_own_profile({ displayName: "New Name", ... })
 Expected: Profile updated in database
 Verify: Updated data matches request
 ```
@@ -61,7 +61,7 @@ Expected: RLS denies access (empty result or error)
 Verify: User B's data not returned
 ```
 
-### Test 5: Owner Cannot Update Other User Profile
+### Test 5: Owner Cannot Update Other User Experience
 
 ```
 Setup: User A logged in, User B exists
@@ -85,7 +85,7 @@ Verify: Multiple users' data present
 Setup: Admin logged in
 Action: Try to call generic updateProfile() for User A
 Expected: RLS blocks UPDATE (admin SELECT-only in RLS)
-Verify: Admin must use reviewExpertProfile() RPC instead
+Verify: Admin must use review_expert_profile RPC call: ) RPC instead
 ```
 
 ### Test 8: Draft Profile Remains Private
@@ -171,7 +171,7 @@ Verify: UNIQUE (user_id, specialty_id) constraint
 
 ```
 Setup: User A draft profile with profileImagePath=NULL
-Action: Try to call submitProfile()
+Action: Try to call submit_profile RPC call: )
 Expected: VALIDATION_ERROR (missing required field)
 Verify: Cannot submit without profile image path
 ```
@@ -185,7 +185,7 @@ Verify: Cannot submit without profile image path
 ```
 Setup: User A submitted (pending)
 Action:
-  1. Admin calls reviewExpertProfile(userA, 'approved')
+  1. Admin calls review_expert_profile RPC call: userA, 'approved')
   2. Verify: approval_status='approved', reviewed_at set
   3. Verify: User A can now read approved status
   4. Verify: User A cannot edit (not pending anymore)
@@ -197,7 +197,7 @@ Expected: Workflow transitions correctly
 ```
 Setup: User A submitted (pending)
 Action:
-  1. Admin calls reviewExpertProfile(userA, 'rejected', reason)
+  1. Admin calls review_expert_profile RPC call: userA, 'rejected', reason)
   2. Verify: approval_status='rejected', rejection_reason set
   3. User A can re-edit profile
   4. User A submits again (transition to pending)
@@ -358,62 +358,3 @@ Action: Direct DB UPDATE profiles SET approval_status='pending'
 Expected: Fails (no RLS policy allows it)
 Verify: approval_status unchanged
 ```
-
-### Test P0-03-2: submitProfile State Transition
-```
-Setup: User A profile in 'draft'
-Action: Call submitProfile()
-Expected: approval_status → 'pending'
-Verify: submitted_at set, User A cannot edit
-```
-
-### Test P0-03-3: submitProfile from rejected
-```
-Setup: User A profile in 'rejected'
-Action: Call submitProfile() (after re-editing)
-Expected: approval_status → 'pending'
-Verify: rejection_reason cleared, resubmit allowed
-```
-
-### Test P0-04-1: RPC SECURITY DEFINER Enforcement
-```
-Setup: User A tries to call admin RPC directly
-Action: Try review_expert_profile(...)
-Expected: is_admin() check fails, RPC returns error
-Verify: Admin access only via proper role
-```
-
-### Test P0-05-1: No Deny Policy Bypass
-```
-Setup: Multiple Allow policies on same table
-Action: User A attempts unauthorized access
-Expected: RLS defaults to deny (no explicit allow)
-Verify: Access denied
-```
-
-### Test P0-06-1: Specialties Atomic Replace Rollback
-```
-Setup: User A has [1, 2]
-Action: replace_profile_specialties([1, 2, 3, 4])
-Expected: Entire transaction rolls back
-Verify: User A still has [1, 2], no partial insert
-```
-
-### Test P0-07-1: Pending State Edit Restriction
-```
-Setup: User A profile in 'pending'
-Action: Try save_own_profile(data)
-Expected: PERMISSION_ERROR or validation error
-Verify: Cannot edit while pending
-```
-
-### Test P0-08-1: Profile Image Required for Submit
-```
-Setup: User A profile with profileImagePath=NULL
-Action: Try submitProfile()
-Expected: VALIDATION_ERROR (required field)
-Verify: Cannot submit without image path
-```
-
----
-

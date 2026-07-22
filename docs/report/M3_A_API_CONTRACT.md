@@ -45,7 +45,7 @@ type ActionResult<T> =
 
 ### Save/Update Profile
 
-**Server Action**: `saveProfile(data)`
+*Server Action (via RPC)
 
 ```typescript
 Request:
@@ -99,7 +99,7 @@ Response (Error):
 
 ### Submit Profile for Review
 
-**Server Action**: `submitProfile()`
+*Server Action (via RPC)
 
 ```typescript
 Request:
@@ -434,7 +434,7 @@ Otherwise:
 
 ### Review Profile (Admin RPC)
 
-**Server Action**: `reviewExpertProfile(targetUserId, decision, rejectionReason)`
+*Server Action (via RPC)
 
 ```typescript
 Request:
@@ -577,65 +577,4 @@ Response (Error):
 - `reviewExpertProfile()` separate action
 - Not exposed as generic UPDATE
 - Permission check in function
-
-### 7. ✅ Contact Simplification
-- Consolidated into workplaces
-- personal/official types
-- M4 decides public exposure
-
----
-
-## Testing Validation
-
-- [ ] Server Action responses use ActionResult pattern
-- [ ] Validation errors include field names
-- [ ] Permission errors on cross-user access
-- [ ] Profile submission requires image path
-- [ ] Specialties enforce 1-3 selection
-- [ ] Admin review only from pending state
-- [ ] All RLS policies tested
-
----
-
-## Deployment Checklist
-
-- [ ] All Server Actions created
-- [ ] ActionResult type defined
-- [ ] Input validation on server
-- [ ] RLS policies integrated
-- [ ] Error handling covers all codes
-- [ ] Admin review RPC secure
-- [ ] Pnpm check & build passing
-- [ ] CTO code review approved
-- [ ] No HTTP routes in M3-A (deferred to M4)
-- [ ] No Anonymous/Public access
-- [ ] M3-5 profile image integration noted
-
-
----
-
-## P0 Final Corrections Applied (P0-03, P0-04, Additions)
-
-### P0-03: RPC-Based State Transitions
-- ✅ Renamed endpoints:
-  - saveProfile → Server Action calling save_own_profile RPC
-  - submitProfile → Server Action calling submit_profile RPC
-  - reviewExpertProfile → Server Action calling review_expert_profile RPC
-  - saveSpecialties → Server Action calling replace_profile_specialties RPC
-- ✅ No direct UPDATE on profiles table
-- ✅ RPC enforces state-based edit rights
-
-### P0-04: Server Action Security
-- ✅ User Session Client (not Service Role)
-- ✅ Admin actions: Authenticated + Hardened RPC
-- ✅ RPC: SECURITY DEFINER + SET search_path = ''
-- ✅ No Service Role bypass of RLS
-
-### P0-08: Profile Image & M3-5
-- ✅ submitProfile: Requires profileImagePath (not null)
-- ✅ Type: Storage path string (e.g., "{user_id}/avatar.jpg")
-- ✅ Not a public URL or file content
-- ✅ M3-5: Implements actual upload → storage path update
-
----
 

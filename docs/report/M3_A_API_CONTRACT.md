@@ -574,7 +574,7 @@ Response (Error):
 - 0 or 4+ rolls back entire transaction
 
 ### 6. ✅ Admin Review via RPC
-- `reviewExpertProfile()` separate action
+- `review_expert_profile()` separate action
 - Not exposed as generic UPDATE
 - Permission check in function
 

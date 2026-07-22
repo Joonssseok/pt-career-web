@@ -63,7 +63,7 @@ rejected:    반려됨, Owner 편집 가능, 상태는 'rejected' 유지, 재제
 | Field | Type | Nullable | Default | Validation | Constraint |
 |-------|------|----------|---------|-----------|-----------|
 | **id** | UUID | ❌ | gen_random_uuid() | - | PK |
-| **user_id** | UUID | ❌ | - | FK profiles(user_id) | **UNIQUE** (1 workplace per user) |
+| **user_id** | UUID | ❌ | - | FK profiles(id) | **UNIQUE** (1 workplace per user) |
 | **center_name** | TEXT | ❌ | - | 1-100 chars | - |
 | **website_url** | TEXT | ✅ | NULL | valid URL or NULL | - |
 | **workplace_region** | TEXT | ✅ | NULL | Valid region code | - |
@@ -100,7 +100,7 @@ UNIQUE (user_id)  -- M3-A must enforce single workplace
 | Field | Type | Nullable | Default | Validation |
 |-------|------|----------|---------|-----------|
 | **id** | UUID | ❌ | gen_random_uuid() | PK |
-| **user_id** | UUID | ❌ | - | FK profiles(user_id) |
+| **user_id** | UUID | ❌ | - | FK profiles(id) |
 | **company_name** | TEXT | ❌ | - | 1-100 chars |
 | **position** | TEXT | ❌ | - | 1-100 chars |
 | **start_date** | DATE | ❌ | - | YYYY-MM format |
@@ -122,7 +122,7 @@ UNIQUE (user_id)  -- M3-A must enforce single workplace
 | Field | Type | Nullable | Default | Validation |
 |-------|------|----------|---------|-----------|
 | **id** | UUID | ❌ | gen_random_uuid() | PK |
-| **user_id** | UUID | ❌ | - | FK profiles(user_id) |
+| **user_id** | UUID | ❌ | - | FK profiles(id) |
 | **name** | TEXT | ❌ | - | 1-100 chars (datalist: 8 common) |
 | **issuer** | TEXT | ❌ | - | 1-100 chars |
 | **issue_date** | DATE | ✅ | NULL | YYYY-MM or NULL |
@@ -141,14 +141,13 @@ UNIQUE (user_id)  -- M3-A must enforce single workplace
 | Field | Type | Nullable | Default | Validation | Constraint |
 |-------|------|----------|---------|-----------|-----------|
 | **id** | UUID | ❌ | gen_random_uuid() | PK | - |
-| **user_id** | UUID | ❌ | - | FK profiles(user_id) | - |
+| **user_id** | UUID | ❌ | - | FK profiles(id) | - |
 | **specialty_id** | INT | ❌ | - | FK specialties(id) 1-12 | **UNIQUE (user_id, specialty_id)** |
 | **created_at** | TIMESTAMP | ❌ | now() | - | - |
 
 **Constraints**:
 ```sql
 UNIQUE (user_id, specialty_id)  -- No duplicate selections
-CHECK (1 <= specialty_id <= 12) -- Official list only
 ```
 
 **M3-A Operation**:
@@ -265,7 +264,7 @@ CREATE POLICY admin_select_workplaces
   USING (is_admin(auth.uid()));
 
 -- Admin: Update approval fields only (via RPC, not RLS)
--- (Handled by reviewExpertProfile(profileId, decision) RPC)
+-- (Handled by review_expert_profile(profileId, decision) RPC)
 ```
 
 ### is_admin() Definition
@@ -320,7 +319,7 @@ SELECT EXISTS (
 
 ### 8. Admin UPDATE Restrictions
 - ✅ RLS SELECT for Admin only
-- ✅ Status changes via reviewExpertProfile() RPC (separate)
+- ✅ Status changes via review_expert_profile() RPC (separate)
 - ✅ Admin cannot UPDATE user data
 
 ### 9. is_admin() Reuse

@@ -308,10 +308,11 @@ AD-04: 기관정보 공개 범위
 - 공식 연락처: 별도 정책 (AD-04 아님)
 - 개인 연락처: 항상 비공개
 
-AD-05A: 거주지역 저장 단위
-- 저장 단위: 시·도 + 시·군·구
-- CTO 권고: DB Master > Static > API
-- 기술 선택: 정책 결정 후 별도 비교
+AD-05A: 거주지역 저장 및 공개 정책
+- 상태: CEO DECISION PENDING
+- CTO 1순위 권고: MVP 미수집 (근무지역으로 충분)
+- 포함 선택 시: 선택 입력 + 시·도·시군구 + 완전 비공개 + 검색 미사용
+- 기술방식: Schema Decision 단계에서 결정 (DB Master vs Static vs API)
 
 AD-05B: 근무지역 공개 범위
 - Toggle: 전문가 제어
@@ -391,7 +392,7 @@ Deferred to Post-Decision Phase:
 
 ```text
 M2.1 Evidence Collection:
-✅ CTO APPROVED
+✅ READY FOR CTO FINAL APPROVAL
 
 CTO Final Review Corrections (5/5):
 ✅ M21-01. Remote Pending 설명 수정

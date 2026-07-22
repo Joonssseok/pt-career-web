@@ -9,16 +9,16 @@
 
 ## Executive Summary
 
-M3-1 Core UI: ✅ CTO PASS (5 screens, mock data, full CRUD for exp/edu)  
-M3-1 Final QA Evidence: Attachment verification pending (360px screenshots + automation)
+M3-1 Core UI: ✅ CODE-LEVEL PASS (5 screens, mock data, full CRUD for exp/edu)  
+M3-1 Production Runtime QA: 🔧 FAIL → FIX IN PROGRESS (Clean Build completed, 5/5 routes PASS verified)
 
 M3-A database implementation requires **3 policy decisions** before development can proceed:
 
-- **AD-04**: How to control public exposure of business information
-- **AD-05A**: How to store residential location data
-- **AD-05B**: How to manage workplace location public visibility
+- **AD-04**: How to control public exposure of business information (센터명 + 공식 홈페이지)
+- **AD-05A**: How to store residential location data (CTO 1순위 권고: MVP 미수집)
+- **AD-05B**: How to manage workplace location public visibility (단일 대표 근무지역)
 
-All decisions are **CTO-vetted recommendations** based on user privacy, compliance, and platform goals. Decision timeline: **This week** to unblock M3-A development.
+All decisions are **CTO-vetted recommendations** based on user privacy, compliance, and platform goals.
 
 ---
 
@@ -84,8 +84,8 @@ Rationale:
 
 ### Impact
 - ✅ Privacy-first (always hidden from public)
-- ✅ Operational value (platform can use for internal targeting)
 - ✅ Compliant (not searchable, not visible to others)
+- ✅ Optional collection (only if CEO chooses Option B)
 
 ### Decision Requested (CEO CHOOSES ONE)
 
@@ -241,13 +241,20 @@ All three decisions follow **privacy-by-default principles**:
 
 ## Next Steps
 
-**By EOD 2026-07-22**, please confirm:
+Please confirm the following decisions:
 
 ```
 [ ] AD-04 approved?     YES / NO
 [ ] AD-05A approved?    YES / NO
 [ ] AD-05B approved?    YES / NO
 ```
+
+**Decision Process**:
+1. CEO reviews and approves 3 policies
+2. CTO designs Schema Decision Table
+3. CTO technical review
+4. CEO DB·RLS change approval
+5. Dev team local migration + testing
 
 Reply to: CTO  
 Questions: Clarify any aspect of these policies.

@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { replaceProfileSpecialties } from '@/app/actions/specialties';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 
 export default function SpecialtiesStep() {
+  const router = useRouter();
   // Mock data: 3개 선택
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([
     '필라테스·요가·유연성',
@@ -63,15 +66,25 @@ export default function SpecialtiesStep() {
 
     setFormState('loading');
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // TODO: Convert specialty names to UUIDs via API lookup
+    // For now, use placeholder UUIDs
+    const specialtyUUIDs = selectedSpecialties.map(
+      (_, i) => `00000000-0000-0000-0000-00000000000${i}`
+    );
 
-    setFormState('saved');
+    const result = await replaceProfileSpecialties(specialtyUUIDs);
 
-    // Reset to default after 2 seconds
-    setTimeout(() => {
-      setFormState('default');
-    }, 2000);
+    if (result.ok) {
+      setFormState('saved');
+      setTimeout(() => {
+        router.push('/expert/onboarding/complete');
+      }, 1000);
+    } else {
+      setFormState('error');
+      setTimeout(() => {
+        setFormState('default');
+      }, 3000);
+    }
   };
 
   return (
@@ -192,7 +205,7 @@ export default function SpecialtiesStep() {
         <div className="flex gap-3 pt-4">
           <Link
             href="/expert/onboarding/education"
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="min-h-[44px] px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
           >
             이전
           </Link>
@@ -203,7 +216,7 @@ export default function SpecialtiesStep() {
               selectedSpecialties.length > MAX_SELECTION ||
               formState === 'loading'
             }
-            className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {formState === 'loading'
               ? '저장 중...'

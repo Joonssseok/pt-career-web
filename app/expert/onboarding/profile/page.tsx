@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { saveOwnProfile } from '@/app/actions/profile';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 
 export default function ProfileStep() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     displayName: '홍길동',
     profession: '필라테스 강사',
@@ -79,17 +82,25 @@ export default function ProfileStep() {
     }
 
     setFormState('loading');
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setFormState('saved');
     setErrors({});
 
-    // Reset to default after 2 seconds
-    setTimeout(() => {
-      setFormState('default');
-    }, 2000);
+    const result = await saveOwnProfile({
+      displayName: formData.displayName,
+      profession: formData.profession,
+      bio: formData.bio,
+      description: formData.description,
+      profileImagePath: formData.profileImagePath,
+    });
+
+    if (result.ok) {
+      setFormState('saved');
+      setTimeout(() => {
+        router.push('/expert/onboarding/workplace');
+      }, 1000);
+    } else {
+      setErrors({ submit: result.error });
+      setFormState('error');
+    }
   };
 
   const getInputClass = (fieldName: string) => {
@@ -236,37 +247,38 @@ export default function ProfileStep() {
           </p>
         </div>
 
-        {/* Profile Image Path */}
-        <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">
+        {/* Profile Image Upload */}
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <p className="text-sm font-medium text-gray-900 mb-2">
             프로필 사진 (선택)
-          </label>
+          </p>
+          <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+            <p className="text-sm text-gray-600">
+              📸 프로필 사진 업로드
+            </p>
+            <p className="text-xs text-gray-500 mt-2">
+              이 기능은 M3-5에서 구현됩니다
+            </p>
+          </div>
           <input
-            type="text"
+            type="hidden"
             name="profileImagePath"
             value={formData.profileImagePath}
-            onChange={handleChange}
-            placeholder="profile-images/{user_id}/avatar.jpg"
-            disabled={formState === 'loading'}
-            className={getInputClass('profileImagePath')}
           />
-          <p className="text-xs text-gray-500 mt-1">
-            💡 업로드는 M3-5에서 구현됩니다
-          </p>
         </div>
 
         {/* Navigation */}
         <div className="flex gap-3 pt-4">
           <Link
             href="/expert/onboarding"
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="min-h-[44px] px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 flex items-center justify-center"
           >
             이전
           </Link>
           <button
             type="submit"
             disabled={formState === 'loading' || formState === 'saved'}
-            className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {formState === 'loading' ? '저장 중...' : '다음: 근무기관'}
           </button>

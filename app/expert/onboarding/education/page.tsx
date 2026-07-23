@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { saveCertifications } from '@/app/actions/certification';
 
 type Certification = {
   id: string;
@@ -11,6 +13,7 @@ type Certification = {
 };
 
 export default function EducationStep() {
+  const router = useRouter();
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [newCert, setNewCert] = useState({
     name: '',
@@ -83,9 +86,25 @@ export default function EducationStep() {
     e.preventDefault();
 
     setFormState('loading');
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setFormState('saved');
-    setTimeout(() => setFormState('default'), 2000);
+
+    const result = await saveCertifications({
+      certifications: certifications.map((cert) => ({
+        id: cert.id,
+        certName: cert.name,
+        issuer: cert.issuer,
+        issueDate: cert.issueDate,
+      })),
+    });
+
+    if (result.ok) {
+      setFormState('saved');
+      setTimeout(() => {
+        router.push('/expert/onboarding/specialties');
+      }, 1000);
+    } else {
+      setFormState('default');
+      alert(result.error);
+    }
   };
 
   return (

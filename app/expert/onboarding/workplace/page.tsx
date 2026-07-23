@@ -8,7 +8,6 @@ export default function WorkplaceStep() {
     centerName: '',
     websiteUrl: '',
     officialContact: '',
-    residenceRegion: '',
     workplaceRegion: '',
     isLocationPublic: false,
   });
@@ -130,28 +129,8 @@ export default function WorkplaceStep() {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="text-xs text-gray-500 mt-1">
-            💡 개인 연락처: 항상 비공개 / 공식 연락처: 공개 정책 미확정 (TM-04A/04B)
+            💡 개인 연락처: 항상 비공개 / 공식 연락처: M3-A에서는 비공개 저장 (M4에서 공개 정책 적용)
           </p>
-        </div>
-
-        {/* Residence Region */}
-        <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">
-            거주지역
-          </label>
-          <select
-            name="residenceRegion"
-            value={formData.residenceRegion}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">거주지역을 선택해주세요</option>
-            {regions.map((region) => (
-              <option key={region} value={region}>
-                {region}
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Workplace Region */}

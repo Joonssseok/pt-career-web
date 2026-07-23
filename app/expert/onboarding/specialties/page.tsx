@@ -192,7 +192,7 @@ export default function SpecialtiesStep() {
         <div className="flex gap-3 pt-4">
           <Link
             href="/expert/onboarding/education"
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="min-h-[44px] px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
           >
             이전
           </Link>
@@ -203,7 +203,7 @@ export default function SpecialtiesStep() {
               selectedSpecialties.length > MAX_SELECTION ||
               formState === 'loading'
             }
-            className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {formState === 'loading'
               ? '저장 중...'

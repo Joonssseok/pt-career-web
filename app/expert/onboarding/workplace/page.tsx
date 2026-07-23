@@ -8,7 +8,6 @@ export default function WorkplaceStep() {
     centerName: '',
     websiteUrl: '',
     officialContact: '',
-    residenceRegion: '',
     workplaceRegion: '',
     isLocationPublic: false,
   });
@@ -57,7 +56,7 @@ export default function WorkplaceStep() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.centerName.trim() || !formData.workplaceRegion) {
+    if (!formData.centerName.trim()) {
       return;
     }
 
@@ -130,49 +129,31 @@ export default function WorkplaceStep() {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="text-xs text-gray-500 mt-1">
-            💡 공식 문의처는 항상 비공개로 관리됩니다
+            💡 개인 연락처: 항상 비공개 / 공식 연락처: M3-A에서는 비공개 저장 (M4에서 공개 정책 적용)
           </p>
-        </div>
-
-        {/* Residence Region */}
-        <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">
-            거주지역
-          </label>
-          <select
-            name="residenceRegion"
-            value={formData.residenceRegion}
-            onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">거주지역을 선택해주세요</option>
-            {regions.map((region) => (
-              <option key={region} value={region}>
-                {region}
-              </option>
-            ))}
-          </select>
         </div>
 
         {/* Workplace Region */}
         <div>
           <label className="block text-sm font-medium text-gray-900 mb-2">
-            주요 근무지역 <span className="text-red-500">*</span>
+            주요 근무지역
           </label>
           <select
             name="workplaceRegion"
             value={formData.workplaceRegion}
             onChange={handleChange}
-            required
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <option value="">근무지역을 선택해주세요</option>
+            <option value="">근무지역을 선택해주세요 (선택사항)</option>
             {regions.map((region) => (
               <option key={region} value={region}>
                 {region}
               </option>
             ))}
           </select>
+          <p className="text-xs text-gray-500 mt-1">
+            ⏳ 근무지역 공개 정책은 운영팀 검토 중입니다 (AD-05B)
+          </p>
         </div>
 
         {/* Location Public Flag */}
@@ -200,13 +181,13 @@ export default function WorkplaceStep() {
         <div className="flex gap-3 pt-4">
           <Link
             href="/expert/onboarding/profile"
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            className="min-h-[44px] px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
           >
             이전
           </Link>
           <button
             type="submit"
-            className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center"
           >
             다음: 경력
           </button>

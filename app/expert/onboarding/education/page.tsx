@@ -3,21 +3,22 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-export default function EducationStep() {
-  const [certifications, setCertifications] = useState<Array<{
-    id: string;
-    name: string;
-    issuer: string;
-    issueDate: string;
-  }>>([]);
+type Certification = {
+  id: string;
+  name: string;
+  issuer: string;
+  issueDate: string;
+};
 
+export default function EducationStep() {
+  const [certifications, setCertifications] = useState<Certification[]>([]);
   const [newCert, setNewCert] = useState({
     name: '',
     issuer: '',
     issueDate: '',
   });
-
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<typeof newCert | null>(null);
   const [formState, setFormState] = useState<'default' | 'loading' | 'saved'>('default');
 
   const commonCerts = [
@@ -48,13 +49,30 @@ export default function EducationStep() {
     }
   };
 
-  const handleEditCertification = (id: string, updatedCert: typeof newCert) => {
-    setCertifications(
-      certifications.map((cert) =>
-        cert.id === id ? { ...cert, ...updatedCert } : cert
-      )
-    );
+  const handleEditStart = (cert: Certification) => {
+    setEditingId(cert.id);
+    setEditForm({
+      name: cert.name,
+      issuer: cert.issuer,
+      issueDate: cert.issueDate,
+    });
+  };
+
+  const handleEditSave = (id: string) => {
+    if (editForm) {
+      setCertifications(
+        certifications.map((cert) =>
+          cert.id === id ? { ...cert, ...editForm } : cert
+        )
+      );
+      setEditingId(null);
+      setEditForm(null);
+    }
+  };
+
+  const handleEditCancel = () => {
     setEditingId(null);
+    setEditForm(null);
   };
 
   const handleDeleteCertification = (id: string) => {
@@ -63,15 +81,6 @@ export default function EducationStep() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (certifications.length === 0) {
-      // Allow empty certifications (optional)
-      setFormState('loading');
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      setFormState('saved');
-      setTimeout(() => setFormState('default'), 2000);
-      return;
-    }
 
     setFormState('loading');
     await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -159,7 +168,7 @@ export default function EducationStep() {
           <button
             type="button"
             onClick={handleAddCertification}
-            className="w-full px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            className="w-full min-h-[44px] px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-medium flex items-center justify-center"
           >
             + 자격증 추가
           </button>
@@ -168,103 +177,93 @@ export default function EducationStep() {
         {/* State Messages */}
         {formState === 'loading' && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <p className="text-sm text-blue-900 font-medium">
-              ⏳ 저장 중입니다...
-            </p>
+            <p className="text-sm text-blue-900 font-medium">⏳ 저장 중입니다...</p>
           </div>
         )}
 
         {formState === 'saved' && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-sm text-green-900 font-medium">
-              ✓ 저장되었습니다!
-            </p>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {certifications.length === 0 && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <p className="text-sm text-yellow-900">
-              💡 자격증을 추가하지 않아도 다음 단계로 진행할 수 있습니다.
-            </p>
+            <p className="text-sm text-green-900 font-medium">✓ 저장되었습니다!</p>
           </div>
         )}
 
         {/* List Certifications */}
         {certifications.length > 0 && (
           <div className="space-y-3">
-            <h3 className="font-medium text-gray-900">추가된 자격증</h3>
+            <h3 className="font-medium text-gray-900">추가된 자격증 ({certifications.length})</h3>
             {certifications.map((cert) => (
-              <div
-                key={cert.id}
-                className="bg-white border border-gray-200 rounded-lg p-4 space-y-3"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900">{cert.name}</p>
-                    <p className="text-sm text-gray-600">발급처: {cert.issuer}</p>
-                    {cert.issueDate && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        {cert.issueDate}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setEditingId(cert.id)}
-                      className="text-blue-500 hover:text-blue-700 text-sm font-medium"
-                    >
-                      수정
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteCertification(cert.id)}
-                      className="text-red-500 hover:text-red-700 text-sm font-medium"
-                    >
-                      삭제
-                    </button>
-                  </div>
-                </div>
-
-                {/* Edit Mode */}
-                {editingId === cert.id && (
-                  <div className="border-t pt-3 space-y-3">
+              <div key={cert.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                {editingId === cert.id ? (
+                  // Edit Mode
+                  <div className="space-y-3">
                     <input
                       type="text"
-                      value={cert.name}
+                      value={editForm?.name || ''}
                       onChange={(e) =>
-                        handleEditCertification(cert.id, {
+                        setEditForm({
+                          ...editForm!,
                           name: e.target.value,
-                          issuer: cert.issuer,
-                          issueDate: cert.issueDate,
                         })
                       }
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                       placeholder="자격증명"
                     />
                     <input
                       type="text"
-                      value={cert.issuer}
+                      value={editForm?.issuer || ''}
                       onChange={(e) =>
-                        handleEditCertification(cert.id, {
-                          name: cert.name,
+                        setEditForm({
+                          ...editForm!,
                           issuer: e.target.value,
-                          issueDate: cert.issueDate,
                         })
                       }
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                       placeholder="발급처"
                     />
                     <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={() => setEditingId(null)}
-                        className="text-xs px-2 py-1 bg-gray-200 text-gray-900 rounded"
+                        onClick={() => handleEditSave(cert.id)}
+                        className="min-h-[44px] px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 flex items-center justify-center"
                       >
-                        완료
+                        저장
                       </button>
+                      <button
+                        type="button"
+                        onClick={handleEditCancel}
+                        className="min-h-[44px] px-4 py-2 bg-gray-300 text-gray-900 text-sm rounded hover:bg-gray-400 flex items-center justify-center"
+                      >
+                        취소
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  // View Mode
+                  <div>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">{cert.name}</p>
+                        <p className="text-sm text-gray-600">발급처: {cert.issuer}</p>
+                        {cert.issueDate && (
+                          <p className="text-xs text-gray-500 mt-1">{cert.issueDate}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleEditStart(cert)}
+                          className="min-h-[44px] min-w-[44px] px-3 py-2 text-blue-500 hover:text-blue-700 font-medium flex items-center justify-center"
+                        >
+                          수정
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCertification(cert.id)}
+                          className="min-h-[44px] min-w-[44px] px-3 py-2 text-red-500 hover:text-red-700 font-medium flex items-center justify-center"
+                        >
+                          삭제
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -277,15 +276,16 @@ export default function EducationStep() {
         <div className="flex gap-3 pt-4">
           <Link
             href="/expert/onboarding/experience"
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+            className="min-h-[44px] px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
           >
             이전
           </Link>
           <button
             type="submit"
-            className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            disabled={formState === 'loading'}
+            className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 flex items-center justify-center"
           >
-            다음: 전문분야
+            {formState === 'loading' ? '저장 중...' : '다음: 전문분야'}
           </button>
         </div>
       </form>

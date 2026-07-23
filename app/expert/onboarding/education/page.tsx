@@ -1,10 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import {
+  addCertification,
+  updateCertification,
+  deleteCertification,
+  getCertifications,
+} from '@/actions/certification';
 
 type Certification = {
   id: string;
+  name: string;
+  issuer: string;
+  issueDate: string | null;
+};
+
+type NewCert = {
   name: string;
   issuer: string;
   issueDate: string;
@@ -12,14 +24,16 @@ type Certification = {
 
 export default function EducationStep() {
   const [certifications, setCertifications] = useState<Certification[]>([]);
-  const [newCert, setNewCert] = useState({
+  const [newCert, setNewCert] = useState<NewCert>({
     name: '',
     issuer: '',
     issueDate: '',
   });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<typeof newCert | null>(null);
+  const [editForm, setEditForm] = useState<NewCert | null>(null);
   const [formState, setFormState] = useState<'default' | 'loading' | 'saved'>('default');
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [serverError, setServerError] = useState<string>('');
 
   const commonCerts = [
     'ISSA CPT',
@@ -32,20 +46,63 @@ export default function EducationStep() {
     '스포츠 마사지 자격증',
   ];
 
-  const handleAddCertification = () => {
+  // Load initial certifications
+  useEffect(() => {
+    const loadCertifications = async () => {
+      try {
+        const result = await getCertifications();
+        if (result.ok) {
+          setCertifications(
+            result.data.map((cert) => ({
+              id: cert.id,
+              name: cert.name,
+              issuer: cert.issuer,
+              issueDate: cert.issueDate,
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Failed to load certifications:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    loadCertifications();
+  }, []);
+
+  const handleAddCertification = async () => {
     if (newCert.name.trim() && newCert.issuer.trim()) {
-      setCertifications([
-        ...certifications,
-        {
-          id: Date.now().toString(),
-          ...newCert,
-        },
-      ]);
-      setNewCert({
-        name: '',
-        issuer: '',
-        issueDate: '',
-      });
+      try {
+        const result = await addCertification({
+          name: newCert.name,
+          issuer: newCert.issuer,
+          issueDate: newCert.issueDate || undefined,
+        });
+
+        if (result.ok) {
+          setCertifications([
+            ...certifications,
+            {
+              id: result.data.id,
+              name: result.data.name,
+              issuer: result.data.issuer,
+              issueDate: result.data.issueDate,
+            },
+          ]);
+          setNewCert({
+            name: '',
+            issuer: '',
+            issueDate: '',
+          });
+          setServerError('');
+        } else {
+          setServerError(result.error.message);
+        }
+      } catch (error) {
+        console.error('Add certification error:', error);
+        setServerError('자격증 추가 실패');
+      }
     }
   };
 
@@ -54,19 +111,42 @@ export default function EducationStep() {
     setEditForm({
       name: cert.name,
       issuer: cert.issuer,
-      issueDate: cert.issueDate,
+      issueDate: cert.issueDate || '',
     });
   };
 
-  const handleEditSave = (id: string) => {
+  const handleEditSave = async (id: string) => {
     if (editForm) {
-      setCertifications(
-        certifications.map((cert) =>
-          cert.id === id ? { ...cert, ...editForm } : cert
-        )
-      );
-      setEditingId(null);
-      setEditForm(null);
+      try {
+        const result = await updateCertification(id, {
+          name: editForm.name,
+          issuer: editForm.issuer,
+          issueDate: editForm.issueDate || null,
+        });
+
+        if (result.ok) {
+          setCertifications(
+            certifications.map((cert) =>
+              cert.id === id
+                ? {
+                    id: result.data.id,
+                    name: result.data.name,
+                    issuer: result.data.issuer,
+                    issueDate: result.data.issueDate,
+                  }
+                : cert
+            )
+          );
+          setEditingId(null);
+          setEditForm(null);
+          setServerError('');
+        } else {
+          setServerError(result.error.message);
+        }
+      } catch (error) {
+        console.error('Update certification error:', error);
+        setServerError('자격증 수정 실패');
+      }
     }
   };
 
@@ -75,17 +155,23 @@ export default function EducationStep() {
     setEditForm(null);
   };
 
-  const handleDeleteCertification = (id: string) => {
-    setCertifications(certifications.filter((cert) => cert.id !== id));
+  const handleDeleteCertification = async (id: string) => {
+    try {
+      const result = await deleteCertification(id);
+      if (result.ok) {
+        setCertifications(certifications.filter((cert) => cert.id !== id));
+        setServerError('');
+      } else {
+        setServerError(result.error.message);
+      }
+    } catch (error) {
+      console.error('Delete certification error:', error);
+      setServerError('자격증 삭제 실패');
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    setFormState('loading');
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setFormState('saved');
-    setTimeout(() => setFormState('default'), 2000);
   };
 
   return (
@@ -101,6 +187,15 @@ export default function EducationStep() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* State Messages */}
+        {serverError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm text-red-900 font-medium">
+              ⚠️ {serverError}
+            </p>
+          </div>
+        )}
+
         {/* Add New Certification */}
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
           <h3 className="font-medium text-gray-900">자격증 추가</h3>

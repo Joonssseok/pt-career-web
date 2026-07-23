@@ -1,29 +1,63 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { saveProfile, getOwnProfile } from '@/actions/profile';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 
 export default function ProfileStep() {
   const [formData, setFormData] = useState({
-    displayName: '홍길동',
-    profession: '필라테스 강사',
-    bio: '10년 경력의 필라테스 강사입니다',
-    description: '소비자 중심의 맞춤형 운동 프로그램 제공',
+    displayName: '',
+    profession: '',
+    bio: '',
+    description: '',
     profileImagePath: '',
   });
 
   const [formState, setFormState] = useState<FormState>('default');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isInitializing, setIsInitializing] = useState(true);
 
+  // M3-A: 12개 공식 전문분야 (Screen Spec)
   const professions = [
-    '필라테스 강사',
-    '개인 트레이너',
-    '스포츠 코치',
-    '재활운동 전문가',
-    '기타',
+    '웹개발',
+    '모바일',
+    '데이터',
+    '인프라',
+    'DevOps',
+    '보안',
+    '클라우드',
+    'AI/ML',
+    '게임',
+    '임베디드',
+    'PM',
+    '디자인',
   ];
+
+  // Load initial profile data
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const result = await getOwnProfile();
+        if (result.ok) {
+          setFormData({
+            displayName: result.data.displayName || '',
+            profession: result.data.profession || '',
+            bio: result.data.bio || '',
+            description: result.data.description || '',
+            profileImagePath: result.data.profileImagePath || '',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load profile:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -49,20 +83,20 @@ export default function ProfileStep() {
 
     if (!formData.displayName.trim()) {
       newErrors.displayName = '이름을 입력해주세요';
-    } else if (formData.displayName.length > 50) {
-      newErrors.displayName = '이름은 50자 이내여야 합니다';
+    } else if (formData.displayName.length > 100) {
+      newErrors.displayName = '이름은 100자 이내여야 합니다';
     }
 
     if (!formData.profession) {
       newErrors.profession = '직군을 선택해주세요';
     }
 
-    if (formData.bio.length > 100) {
-      newErrors.bio = '한 줄 소개는 100자 이내여야 합니다';
+    if (formData.bio.length > 150) {
+      newErrors.bio = '한 줄 소개는 150자 이내여야 합니다';
     }
 
-    if (formData.description.length > 500) {
-      newErrors.description = '상세 소개는 500자 이내여야 합니다';
+    if (formData.description.length > 1000) {
+      newErrors.description = '상세 소개는 1000자 이내여야 합니다';
     }
 
     return newErrors;
@@ -80,16 +114,33 @@ export default function ProfileStep() {
 
     setFormState('loading');
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Call Server Action to save profile
+      const result = await saveProfile({
+        displayName: formData.displayName,
+        profession: formData.profession,
+        bio: formData.bio,
+        description: formData.description,
+        profileImagePath: formData.profileImagePath,
+      });
 
-    setFormState('saved');
-    setErrors({});
+      if (result.ok) {
+        setFormState('saved');
+        setErrors({});
 
-    // Reset to default after 2 seconds
-    setTimeout(() => {
-      setFormState('default');
-    }, 2000);
+        // Reset to default after 2 seconds
+        setTimeout(() => {
+          setFormState('default');
+        }, 2000);
+      } else {
+        setErrors({ submit: result.error.message });
+        setFormState('error');
+      }
+    } catch (error) {
+      console.error('Save profile error:', error);
+      setErrors({ submit: 'Failed to save profile' });
+      setFormState('error');
+    }
   };
 
   const getInputClass = (fieldName: string) => {
@@ -152,7 +203,7 @@ export default function ProfileStep() {
             value={formData.displayName}
             onChange={handleChange}
             placeholder="홍길동"
-            maxLength={50}
+            maxLength={100}
             disabled={formState === 'loading'}
             className={getInputClass('displayName')}
           />
@@ -160,7 +211,7 @@ export default function ProfileStep() {
             <p className="text-xs text-red-500 mt-1">{errors.displayName}</p>
           )}
           <p className="text-xs text-gray-500 mt-1">
-            {formData.displayName.length}/50
+            {formData.displayName.length}/100
           </p>
         </div>
 
@@ -198,8 +249,8 @@ export default function ProfileStep() {
             name="bio"
             value={formData.bio}
             onChange={handleChange}
-            placeholder="예: 10년 경력의 필라테스 강사입니다"
-            maxLength={100}
+            placeholder="예: 10년 경력의 웹개발자입니다"
+            maxLength={150}
             disabled={formState === 'loading'}
             className={getInputClass('bio')}
           />
@@ -207,7 +258,7 @@ export default function ProfileStep() {
             <p className="text-xs text-red-500 mt-1">{errors.bio}</p>
           )}
           <p className="text-xs text-gray-500 mt-1">
-            {formData.bio.length}/100
+            {formData.bio.length}/150
           </p>
         </div>
 
@@ -220,9 +271,9 @@ export default function ProfileStep() {
             name="description"
             value={formData.description}
             onChange={handleChange}
-            placeholder="자신의 경력, 전문성, 교육 철학 등을 소개해주세요"
+            placeholder="자신의 경력, 전문성, 개발 철학 등을 소개해주세요"
             rows={5}
-            maxLength={500}
+            maxLength={1000}
             disabled={formState === 'loading'}
             className={getInputClass('description')}
           />
@@ -232,7 +283,7 @@ export default function ProfileStep() {
             </p>
           )}
           <p className="text-xs text-gray-500 mt-1">
-            {formData.description.length}/500
+            {formData.description.length}/1000
           </p>
         </div>
 

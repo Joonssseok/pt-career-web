@@ -377,6 +377,7 @@ AS $$
 DECLARE
   v_user_id UUID;
   v_profile_id UUID;
+  v_approval_status TEXT;
   v_count INT;
   v_result JSONB;
   v_spec_id INT;
@@ -404,6 +405,21 @@ BEGIN
       'error', jsonb_build_object(
         'code', 'NOT_FOUND',
         'message', 'Profile not found'
+      )
+    );
+  END IF;
+
+  -- P0-02: Check approval status (can only edit draft or rejected)
+  SELECT approval_status INTO v_approval_status
+  FROM public.profiles
+  WHERE id = v_profile_id;
+
+  IF v_approval_status NOT IN ('draft', 'rejected') THEN
+    RETURN jsonb_build_object(
+      'ok', FALSE,
+      'error', jsonb_build_object(
+        'code', 'PERMISSION_ERROR',
+        'message', 'Cannot modify specialties in ' || v_approval_status || ' state'
       )
     );
   END IF;
@@ -488,21 +504,7 @@ GRANT EXECUTE ON FUNCTION public.replace_profile_specialties(INT[]) TO authentic
 
 -- ============================================================================
 -- 5. Helper: is_admin(user_id) — Check if user is admin
--- (Assumes public.admin_users table exists with user_id column)
+-- (P0-06: Function is defined in M2 migration, not redefined in M3-A)
+-- Removed: CREATE OR REPLACE FUNCTION public.is_admin(...)
+-- Removed: GRANT EXECUTE ON FUNCTION public.is_admin(UUID) TO authenticated, anon;
 -- ============================================================================
-
-CREATE OR REPLACE FUNCTION public.is_admin(p_user_id UUID)
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = ''
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.admin_users
-    WHERE admin_users.user_id = p_user_id
-  );
-$$;
-
-GRANT EXECUTE ON FUNCTION public.is_admin(UUID) TO authenticated, anon;

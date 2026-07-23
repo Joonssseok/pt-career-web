@@ -1,50 +1,58 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { saveSpecialties, getSpecialties, getAllSpecialties } from '@/actions/specialties';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 
 export default function SpecialtiesStep() {
-  // Mock data: 3개 선택
-  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([
-    '필라테스·요가·유연성',
-    '자세교정·통증관리',
-    '체력향상·컨디셔닝',
-  ]);
-
+  const [selectedSpecialties, setSelectedSpecialties] = useState<number[]>([]);
+  const [specialtyOptions, setSpecialtyOptions] = useState<Array<{ id: number; name: string }>>([]);
   const [formState, setFormState] = useState<FormState>('default');
   const [showWarning, setShowWarning] = useState(false);
-
-  const specialties = [
-    '근력강화·바디프로필',
-    '다이어트·체형관리',
-    '만성질환·특수집단 운동',
-    '산전·산후 운동',
-    '소아·청소년 운동',
-    '스포츠 퍼포먼스',
-    '시니어·낙상예방',
-    '자세교정·통증관리',
-    '재활운동·수술 후 회복',
-    '종목별 트레이닝',
-    '체력향상·컨디셔닝',
-    '필라테스·요가·유연성',
-  ];
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [serverError, setServerError] = useState<string>('');
 
   const MIN_SELECTION = 1;
   const MAX_SELECTION = 3;
 
-  const toggleSpecialty = (specialty: string) => {
+  // Load specialties list and user's selected specialties
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Load all specialty options
+        const optionsResult = await getAllSpecialties();
+        if (optionsResult.ok) {
+          setSpecialtyOptions(optionsResult.data);
+        }
+
+        // Load user's selected specialties
+        const selectedResult = await getSpecialties();
+        if (selectedResult.ok) {
+          setSelectedSpecialties(selectedResult.data.map((s) => s.specialtyId));
+        }
+      } catch (error) {
+        console.error('Failed to load specialties:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  const toggleSpecialty = (specialtyId: number) => {
     setSelectedSpecialties((prev) => {
-      if (prev.includes(specialty)) {
+      if (prev.includes(specialtyId)) {
         setShowWarning(false);
-        return prev.filter((s) => s !== specialty);
+        return prev.filter((s) => s !== specialtyId);
       }
 
       // Try to add if under max
       if (prev.length < MAX_SELECTION) {
         setShowWarning(false);
-        return [...prev, specialty];
+        return [...prev, specialtyId];
       }
 
       // Show warning if over max
@@ -62,16 +70,27 @@ export default function SpecialtiesStep() {
     }
 
     setFormState('loading');
+    setServerError('');
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const result = await saveSpecialties(selectedSpecialties);
 
-    setFormState('saved');
+      if (result.ok) {
+        setFormState('saved');
 
-    // Reset to default after 2 seconds
-    setTimeout(() => {
+        // Reset to default after 2 seconds
+        setTimeout(() => {
+          setFormState('default');
+        }, 2000);
+      } else {
+        setServerError(result.error.message);
+        setFormState('default');
+      }
+    } catch (error) {
+      console.error('Save specialties error:', error);
+      setServerError('전문분야 저장 실패');
       setFormState('default');
-    }, 2000);
+    }
   };
 
   return (
@@ -115,6 +134,15 @@ export default function SpecialtiesStep() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* State Messages */}
+        {serverError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm text-red-900 font-medium">
+              ⚠️ {serverError}
+            </p>
+          </div>
+        )}
+
         {/* Selection Count */}
         <div
           className={`border rounded-lg p-4 ${
@@ -135,14 +163,14 @@ export default function SpecialtiesStep() {
 
         {/* Specialties Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {specialties.map((specialty) => (
+          {specialtyOptions.map((specialty) => (
             <button
-              key={specialty}
+              key={specialty.id}
               type="button"
-              onClick={() => toggleSpecialty(specialty)}
+              onClick={() => toggleSpecialty(specialty.id)}
               disabled={formState === 'loading'}
               className={`p-4 rounded-lg border-2 text-left transition-all ${
-                selectedSpecialties.includes(specialty)
+                selectedSpecialties.includes(specialty.id)
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 bg-white hover:border-gray-300'
               } ${
@@ -154,16 +182,16 @@ export default function SpecialtiesStep() {
               <div className="flex items-center gap-3">
                 <div
                   className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                    selectedSpecialties.includes(specialty)
+                    selectedSpecialties.includes(specialty.id)
                       ? 'border-blue-500 bg-blue-500'
                       : 'border-gray-300'
                   }`}
                 >
-                  {selectedSpecialties.includes(specialty) && (
+                  {selectedSpecialties.includes(specialty.id) && (
                     <span className="text-white text-sm">✓</span>
                   )}
                 </div>
-                <span className="text-gray-900 font-medium">{specialty}</span>
+                <span className="text-gray-900 font-medium">{specialty.name}</span>
               </div>
             </button>
           ))}
@@ -176,14 +204,17 @@ export default function SpecialtiesStep() {
               선택된 전문분야:
             </p>
             <div className="flex flex-wrap gap-2">
-              {selectedSpecialties.map((specialty) => (
-                <span
-                  key={specialty}
-                  className="px-3 py-1 bg-blue-100 text-blue-900 rounded-full text-sm font-medium"
-                >
-                  {specialty}
-                </span>
-              ))}
+              {selectedSpecialties.map((specialtyId) => {
+                const specialty = specialtyOptions.find((s) => s.id === specialtyId);
+                return (
+                  <span
+                    key={specialtyId}
+                    className="px-3 py-1 bg-blue-100 text-blue-900 rounded-full text-sm font-medium"
+                  >
+                    {specialty?.name || `Specialty ${specialtyId}`}
+                  </span>
+                );
+              })}
             </div>
           </div>
         )}

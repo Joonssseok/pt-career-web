@@ -1,10 +1,24 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import {
+  addExperience,
+  updateExperience,
+  deleteExperience,
+  getExperiences,
+} from '@/actions/experience';
 
 type Experience = {
   id: string;
+  companyName: string;
+  position: string;
+  startDate: string;
+  endDate: string | null;
+  isCurrent: boolean;
+};
+
+type NewExperience = {
   companyName: string;
   position: string;
   startDate: string;
@@ -14,7 +28,7 @@ type Experience = {
 
 export default function ExperienceStep() {
   const [experiences, setExperiences] = useState<Experience[]>([]);
-  const [newExperience, setNewExperience] = useState({
+  const [newExperience, setNewExperience] = useState<NewExperience>({
     companyName: '',
     position: '',
     startDate: '',
@@ -22,25 +36,76 @@ export default function ExperienceStep() {
     isCurrently: false,
   });
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<typeof newExperience | null>(null);
+  const [editForm, setEditForm] = useState<NewExperience | null>(null);
   const [formState, setFormState] = useState<'default' | 'loading' | 'saved'>('default');
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [serverError, setServerError] = useState<string>('');
 
-  const handleAddExperience = () => {
+  // Load initial experiences
+  useEffect(() => {
+    const loadExperiences = async () => {
+      try {
+        const result = await getExperiences();
+        if (result.ok) {
+          setExperiences(
+            result.data.map((exp) => ({
+              id: exp.id,
+              companyName: exp.companyName,
+              position: exp.position,
+              startDate: exp.startDate,
+              endDate: exp.endDate,
+              isCurrent: exp.isCurrent,
+            }))
+          );
+        }
+      } catch (error) {
+        console.error('Failed to load experiences:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    loadExperiences();
+  }, []);
+
+  const handleAddExperience = async () => {
     if (newExperience.companyName.trim() && newExperience.position.trim()) {
-      setExperiences([
-        ...experiences,
-        {
-          id: Date.now().toString(),
-          ...newExperience,
-        },
-      ]);
-      setNewExperience({
-        companyName: '',
-        position: '',
-        startDate: '',
-        endDate: '',
-        isCurrently: false,
-      });
+      try {
+        const result = await addExperience({
+          companyName: newExperience.companyName,
+          position: newExperience.position,
+          startDate: newExperience.startDate,
+          endDate: newExperience.endDate || undefined,
+          isCurrent: newExperience.isCurrently,
+        });
+
+        if (result.ok) {
+          setExperiences([
+            ...experiences,
+            {
+              id: result.data.id,
+              companyName: result.data.companyName,
+              position: result.data.position,
+              startDate: result.data.startDate,
+              endDate: result.data.endDate,
+              isCurrent: result.data.isCurrent,
+            },
+          ]);
+          setNewExperience({
+            companyName: '',
+            position: '',
+            startDate: '',
+            endDate: '',
+            isCurrently: false,
+          });
+          setServerError('');
+        } else {
+          setServerError(result.error.message);
+        }
+      } catch (error) {
+        console.error('Add experience error:', error);
+        setServerError('경력 추가 실패');
+      }
     }
   };
 
@@ -55,15 +120,42 @@ export default function ExperienceStep() {
     });
   };
 
-  const handleEditSave = (id: string) => {
+  const handleEditSave = async (id: string) => {
     if (editForm) {
-      setExperiences(
-        experiences.map((exp) =>
-          exp.id === id ? { ...exp, ...editForm } : exp
-        )
-      );
-      setEditingId(null);
-      setEditForm(null);
+      try {
+        const result = await updateExperience(id, {
+          companyName: editForm.companyName,
+          position: editForm.position,
+          startDate: editForm.startDate,
+          endDate: editForm.endDate || null,
+          isCurrent: editForm.isCurrently,
+        });
+
+        if (result.ok) {
+          setExperiences(
+            experiences.map((exp) =>
+              exp.id === id
+                ? {
+                    id: result.data.id,
+                    companyName: result.data.companyName,
+                    position: result.data.position,
+                    startDate: result.data.startDate,
+                    endDate: result.data.endDate,
+                    isCurrent: result.data.isCurrent,
+                  }
+                : exp
+            )
+          );
+          setEditingId(null);
+          setEditForm(null);
+          setServerError('');
+        } else {
+          setServerError(result.error.message);
+        }
+      } catch (error) {
+        console.error('Update experience error:', error);
+        setServerError('경력 수정 실패');
+      }
     }
   };
 
@@ -72,17 +164,23 @@ export default function ExperienceStep() {
     setEditForm(null);
   };
 
-  const handleDeleteExperience = (id: string) => {
-    setExperiences(experiences.filter((exp) => exp.id !== id));
+  const handleDeleteExperience = async (id: string) => {
+    try {
+      const result = await deleteExperience(id);
+      if (result.ok) {
+        setExperiences(experiences.filter((exp) => exp.id !== id));
+        setServerError('');
+      } else {
+        setServerError(result.error.message);
+      }
+    } catch (error) {
+      console.error('Delete experience error:', error);
+      setServerError('경력 삭제 실패');
+    }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    setFormState('loading');
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setFormState('saved');
-    setTimeout(() => setFormState('default'), 2000);
   };
 
   return (
@@ -98,6 +196,15 @@ export default function ExperienceStep() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* State Messages */}
+        {serverError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm text-red-900 font-medium">
+              ⚠️ {serverError}
+            </p>
+          </div>
+        )}
+
         {/* Add New Experience */}
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
           <h3 className="font-medium text-gray-900">경력 추가</h3>

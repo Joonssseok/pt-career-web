@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { saveWorkplace, getWorkplace } from '@/actions/workplace';
 
 export default function WorkplaceStep() {
   const [formData, setFormData] = useState({
@@ -12,6 +13,8 @@ export default function WorkplaceStep() {
     workplaceRegion: '',
     isLocationPublic: false,
   });
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [serverError, setServerError] = useState<string>('');
 
   const regions = [
     '서울',
@@ -32,6 +35,31 @@ export default function WorkplaceStep() {
     '경남',
     '제주',
   ];
+
+  // Load initial workplace data
+  useEffect(() => {
+    const loadWorkplace = async () => {
+      try {
+        const result = await getWorkplace();
+        if (result.ok && result.data) {
+          setFormData({
+            centerName: result.data.centerName || '',
+            websiteUrl: result.data.websiteUrl || '',
+            officialContact: result.data.contactValue || '',
+            residenceRegion: '',
+            workplaceRegion: result.data.workplaceRegion || '',
+            isLocationPublic: result.data.isLocationPublic || false,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to load workplace:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    loadWorkplace();
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -58,16 +86,37 @@ export default function WorkplaceStep() {
     e.preventDefault();
 
     if (!formData.centerName.trim()) {
+      setServerError('센터명을 입력해주세요');
       return;
     }
 
     setFormState('loading');
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setFormState('saved');
+    setServerError('');
 
-    setTimeout(() => {
+    try {
+      const result = await saveWorkplace({
+        centerName: formData.centerName,
+        websiteUrl: formData.websiteUrl,
+        workplaceRegion: formData.workplaceRegion,
+        contactType: formData.officialContact ? 'official' : undefined,
+        contactValue: formData.officialContact || undefined,
+      });
+
+      if (result.ok) {
+        setFormState('saved');
+
+        setTimeout(() => {
+          setFormState('default');
+        }, 2000);
+      } else {
+        setServerError(result.error.message);
+        setFormState('default');
+      }
+    } catch (error) {
+      console.error('Save workplace error:', error);
+      setServerError('근무기관 저장 실패');
       setFormState('default');
-    }, 2000);
+    }
   };
 
   return (
@@ -85,6 +134,31 @@ export default function WorkplaceStep() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        {/* State Messages */}
+        {serverError && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm text-red-900 font-medium">
+              ⚠️ {serverError}
+            </p>
+          </div>
+        )}
+
+        {formState === 'loading' && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-900 font-medium">
+              ⏳ 저장 중입니다...
+            </p>
+          </div>
+        )}
+
+        {formState === 'saved' && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p className="text-sm text-green-900 font-medium">
+              ✓ 저장되었습니다!
+            </p>
+          </div>
+        )}
+
         {/* Center Name */}
         <div>
           <label className="block text-sm font-medium text-gray-900 mb-2">

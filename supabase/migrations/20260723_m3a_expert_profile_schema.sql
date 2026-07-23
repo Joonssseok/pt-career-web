@@ -99,7 +99,8 @@ CREATE INDEX IF NOT EXISTS idx_profile_specialties_specialty_id ON public.profil
 -- 6. Verify specialties reference table exists (static master data)
 -- ============================================================================
 
--- Specialties master data (if not already present)
+-- P0-05: Specialties master data — ensure official 12 specialties
+-- ON CONFLICT DO UPDATE ensures existing entries are corrected to official values
 INSERT INTO public.specialties (id, name) VALUES
   (1, '근력강화·바디프로필'),
   (2, '다이어트·체형관리'),
@@ -113,7 +114,7 @@ INSERT INTO public.specialties (id, name) VALUES
   (10, '종목별 트레이닝'),
   (11, '체력향상·컨디셔닝'),
   (12, '필라테스·요가·유연성')
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;
 
 -- ============================================================================
 -- 7. Grant default privileges (Optional: for future migrations)

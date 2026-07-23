@@ -26,7 +26,14 @@ CREATE POLICY owner_update_profiles
   ON public.profiles
   FOR UPDATE
   USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (
+    auth.uid() = user_id
+    -- P0-01: Prevent direct modification of approval fields
+    AND NEW.approval_status = OLD.approval_status
+    AND NEW.reviewed_at = OLD.reviewed_at
+    AND NEW.reviewed_by = OLD.reviewed_by
+    AND NEW.rejection_reason = OLD.rejection_reason
+  );
 
 -- Admin: SELECT all profiles (read-only for review)
 CREATE POLICY admin_select_profiles
@@ -51,6 +58,8 @@ CREATE POLICY owner_crud_workplace
     auth.uid() = (
       SELECT user_id FROM public.profiles WHERE id = profile_id
     )
+    -- P0-02: Can only CRUD in draft or rejected state
+    AND (SELECT approval_status FROM public.profiles WHERE id = profile_id) IN ('draft', 'rejected')
   );
 
 -- Admin: SELECT all workplaces (read-only)
@@ -78,6 +87,8 @@ CREATE POLICY owner_crud_experiences
     auth.uid() = (
       SELECT user_id FROM public.profiles WHERE id = profile_id
     )
+    -- P0-02: Can only CRUD in draft or rejected state
+    AND (SELECT approval_status FROM public.profiles WHERE id = profile_id) IN ('draft', 'rejected')
   );
 
 -- Admin: SELECT all experiences (read-only)
@@ -105,6 +116,8 @@ CREATE POLICY owner_crud_certifications
     auth.uid() = (
       SELECT user_id FROM public.profiles WHERE id = profile_id
     )
+    -- P0-02: Can only CRUD in draft or rejected state
+    AND (SELECT approval_status FROM public.profiles WHERE id = profile_id) IN ('draft', 'rejected')
   );
 
 -- Admin: SELECT all certifications (read-only)
@@ -132,6 +145,8 @@ CREATE POLICY owner_crud_specialties
     auth.uid() = (
       SELECT user_id FROM public.profiles WHERE id = profile_id
     )
+    -- P0-02: Can only CRUD in draft or rejected state
+    AND (SELECT approval_status FROM public.profiles WHERE id = profile_id) IN ('draft', 'rejected')
   );
 
 -- Admin: SELECT all specialties (read-only)
@@ -142,13 +157,3 @@ CREATE POLICY admin_select_specialties
     public.is_admin(auth.uid())
   );
 
--- ============================================================================
--- Verification: Check RLS is enabled on all tables
--- ============================================================================
-
--- SELECT schemaname, tablename, rowsecurity
--- FROM pg_tables
--- WHERE schemaname = 'public'
---   AND tablename IN ('profiles', 'workplaces', 'experiences', 'certifications', 'profile_specialties');
-
--- Expected output: all should have rowsecurity = true

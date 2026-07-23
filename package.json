@@ -12,7 +12,8 @@
     "start": "next start",
     "lint": "next lint",
     "check": "tsc --noEmit",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "jest --passWithNoTests"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",
@@ -24,14 +25,18 @@
   },
   "devDependencies": {
     "@sparticuz/chromium": "^149.0.0",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
     "@types/react": "^19.2.1",
     "@types/react-dom": "^19.2.1",
     "autoprefixer": "^10.4.20",
+    "jest": "^30.4.2",
     "postcss": "^8.4.31",
     "prettier": "^3.6.2",
     "puppeteer": "^25.3.0",
     "tailwindcss": "^4.1.14",
+    "ts-jest": "^29.4.12",
     "typescript": "^5.9.3"
   },
   "packageManager": "pnpm@10.4.1"

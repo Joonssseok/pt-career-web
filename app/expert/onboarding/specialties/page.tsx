@@ -1,50 +1,56 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
+  getSpecialties,
+  replaceProfileSpecialties,
+} from '@/app/actions/specialties';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
+type Specialty = { id: string; name: string; sort_order: number };
+
+const DEFAULT_SELECTED_NAMES = [
+  '필라테스·요가·유연성',
+  '자세교정·통증관리',
+  '체력향상·컨디셔닝',
+];
 
 export default function SpecialtiesStep() {
-  // Mock data: 3개 선택
-  const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([
-    '필라테스·요가·유연성',
-    '자세교정·통증관리',
-    '체력향상·컨디셔닝',
-  ]);
+  const router = useRouter();
+  const [specialties, setSpecialties] = useState<Specialty[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const [formState, setFormState] = useState<FormState>('default');
   const [showWarning, setShowWarning] = useState(false);
 
-  const specialties = [
-    '근력강화·바디프로필',
-    '다이어트·체형관리',
-    '만성질환·특수집단 운동',
-    '산전·산후 운동',
-    '소아·청소년 운동',
-    '스포츠 퍼포먼스',
-    '시니어·낙상예방',
-    '자세교정·통증관리',
-    '재활운동·수술 후 회복',
-    '종목별 트레이닝',
-    '체력향상·컨디셔닝',
-    '필라테스·요가·유연성',
-  ];
+  useEffect(() => {
+    getSpecialties().then((result) => {
+      if (!result.ok) return;
+      setSpecialties(result.specialties);
+      setSelectedIds(
+        result.specialties
+          .filter((s) => DEFAULT_SELECTED_NAMES.includes(s.name))
+          .map((s) => s.id)
+      );
+    });
+  }, []);
 
   const MIN_SELECTION = 1;
   const MAX_SELECTION = 3;
 
-  const toggleSpecialty = (specialty: string) => {
-    setSelectedSpecialties((prev) => {
-      if (prev.includes(specialty)) {
+  const toggleSpecialty = (id: string) => {
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) {
         setShowWarning(false);
-        return prev.filter((s) => s !== specialty);
+        return prev.filter((s) => s !== id);
       }
 
       // Try to add if under max
       if (prev.length < MAX_SELECTION) {
         setShowWarning(false);
-        return [...prev, specialty];
+        return [...prev, id];
       }
 
       // Show warning if over max
@@ -56,22 +62,26 @@ export default function SpecialtiesStep() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (selectedSpecialties.length < MIN_SELECTION) {
+    if (selectedIds.length < MIN_SELECTION) {
       setShowWarning(true);
       return;
     }
 
     setFormState('loading');
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    const result = await replaceProfileSpecialties(selectedIds);
 
-    setFormState('saved');
-
-    // Reset to default after 2 seconds
-    setTimeout(() => {
-      setFormState('default');
-    }, 2000);
+    if (result.ok) {
+      setFormState('saved');
+      setTimeout(() => {
+        router.push('/expert/onboarding/complete');
+      }, 1000);
+    } else {
+      setFormState('error');
+      setTimeout(() => {
+        setFormState('default');
+      }, 3000);
+    }
   };
 
   return (
@@ -118,15 +128,15 @@ export default function SpecialtiesStep() {
         {/* Selection Count */}
         <div
           className={`border rounded-lg p-4 ${
-            selectedSpecialties.length === 0
+            selectedIds.length === 0
               ? 'bg-yellow-50 border-yellow-200'
               : 'bg-blue-50 border-blue-200'
           }`}
         >
           <p className="text-sm font-medium">
-            선택됨: {selectedSpecialties.length}/{MAX_SELECTION}개
+            선택됨: {selectedIds.length}/{MAX_SELECTION}개
           </p>
-          {selectedSpecialties.length === 0 && (
+          {selectedIds.length === 0 && (
             <p className="text-xs text-yellow-700 mt-1">
               최소 1개를 선택해야 다음 단계로 진행할 수 있습니다.
             </p>
@@ -137,12 +147,12 @@ export default function SpecialtiesStep() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {specialties.map((specialty) => (
             <button
-              key={specialty}
+              key={specialty.id}
               type="button"
-              onClick={() => toggleSpecialty(specialty)}
+              onClick={() => toggleSpecialty(specialty.id)}
               disabled={formState === 'loading'}
               className={`p-4 rounded-lg border-2 text-left transition-all ${
-                selectedSpecialties.includes(specialty)
+                selectedIds.includes(specialty.id)
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 bg-white hover:border-gray-300'
               } ${
@@ -154,36 +164,40 @@ export default function SpecialtiesStep() {
               <div className="flex items-center gap-3">
                 <div
                   className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-                    selectedSpecialties.includes(specialty)
+                    selectedIds.includes(specialty.id)
                       ? 'border-blue-500 bg-blue-500'
                       : 'border-gray-300'
                   }`}
                 >
-                  {selectedSpecialties.includes(specialty) && (
+                  {selectedIds.includes(specialty.id) && (
                     <span className="text-white text-sm">✓</span>
                   )}
                 </div>
-                <span className="text-gray-900 font-medium">{specialty}</span>
+                <span className="text-gray-900 font-medium">
+                  {specialty.name}
+                </span>
               </div>
             </button>
           ))}
         </div>
 
         {/* Summary */}
-        {selectedSpecialties.length > 0 && (
+        {selectedIds.length > 0 && (
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <p className="text-sm font-medium text-gray-900 mb-2">
               선택된 전문분야:
             </p>
             <div className="flex flex-wrap gap-2">
-              {selectedSpecialties.map((specialty) => (
-                <span
-                  key={specialty}
-                  className="px-3 py-1 bg-blue-100 text-blue-900 rounded-full text-sm font-medium"
-                >
-                  {specialty}
-                </span>
-              ))}
+              {specialties
+                .filter((s) => selectedIds.includes(s.id))
+                .map((specialty) => (
+                  <span
+                    key={specialty.id}
+                    className="px-3 py-1 bg-blue-100 text-blue-900 rounded-full text-sm font-medium"
+                  >
+                    {specialty.name}
+                  </span>
+                ))}
             </div>
           </div>
         )}
@@ -192,18 +206,18 @@ export default function SpecialtiesStep() {
         <div className="flex gap-3 pt-4">
           <Link
             href="/expert/onboarding/education"
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="min-h-[44px] px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
           >
             이전
           </Link>
           <button
             type="submit"
             disabled={
-              selectedSpecialties.length === 0 ||
-              selectedSpecialties.length > MAX_SELECTION ||
+              selectedIds.length === 0 ||
+              selectedIds.length > MAX_SELECTION ||
               formState === 'loading'
             }
-            className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+            className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {formState === 'loading'
               ? '저장 중...'

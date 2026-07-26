@@ -1,18 +1,18 @@
 import Link from 'next/link';
+import { SiteHeader } from '@/components/SiteHeader';
+
+export const dynamic = 'force-dynamic';
 
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col bg-white">
       {/* Navigation */}
-      <nav className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-6">
-        <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">PT Career</h1>
-        <Link
-          href="/login"
-          className="text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors"
-        >
-          로그인
-        </Link>
-      </nav>
+      <SiteHeader
+        className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-6"
+        left={
+          <h1 className="text-xl font-bold text-slate-900 sm:text-2xl">PT Career</h1>
+        }
+      />
 
       {/* Hero Section */}
       <section className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:px-6 sm:py-12">

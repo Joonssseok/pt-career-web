@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { getSpecialties } from '@/app/actions/specialties';
+import { SiteHeader } from '@/components/SiteHeader';
 import { ExpertCard, type ExpertListItem } from './ExpertCard';
 import { ExpertFilters } from './ExpertFilters';
 
@@ -55,12 +56,17 @@ async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
 export default function ExpertsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <main className="min-h-screen bg-white">
-      <nav className="flex items-center gap-3 px-4 py-4 sm:px-6 border-b border-gray-100">
-        <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
-          ← 홈
-        </Link>
-        <h1 className="text-lg font-semibold text-gray-900">내 주변 전문가 찾기</h1>
-      </nav>
+      <SiteHeader
+        className="flex items-center justify-between px-4 py-4 sm:px-6 border-b border-gray-100"
+        left={
+          <div className="flex items-center gap-3">
+            <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
+              ← 홈
+            </Link>
+            <h1 className="text-lg font-semibold text-gray-900">내 주변 전문가 찾기</h1>
+          </div>
+        }
+      />
 
       <div className="px-4 py-4 sm:px-6 max-w-2xl mx-auto space-y-4">
         <Suspense fallback={null}>

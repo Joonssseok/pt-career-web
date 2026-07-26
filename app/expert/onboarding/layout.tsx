@@ -1,8 +1,19 @@
-'use client';
-
 import { ReactNode } from 'react';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
 
-export default function OnboardingLayout({ children }: { children: ReactNode }) {
+export const dynamic = 'force-dynamic';
+
+export default async function OnboardingLayout({ children }: { children: ReactNode }) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login?next=/expert/onboarding');
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <OnboardingHeader />

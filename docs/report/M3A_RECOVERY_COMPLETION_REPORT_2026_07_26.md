@@ -7,12 +7,17 @@
 
 ---
 
+## PR 재구성 이력
+
+최초 PR #5는 `feat/m3a-recovery`(로컬 `main` + PR #4 병합 브랜치)에서 열렸는데, `origin/main` 대비 35커밋 중 30개가 로컬에만 있던 과거 커밋(PR #4의 BLOCKER 판정 이력 전체 + 자체 작성 CEO/CTO "승인" 문서 커밋)이라 main 히스토리에 실제로 없었던 승인 흔적이 남는 문제가 지적됨. `origin/main` 위에 이번 수정만 커밋 1개로 재구성한 `feat/m3a-recovery-clean`으로 교체 — PR #5는 close, **PR #6**으로 재오픈. 아래 Baseline은 PR #6 기준으로 갱신.
+
 ## Baseline
 
-- Base: 로컬 `main` (`33b0de2`) — `origin/main`(`8970ce7`)보다 21커밋 앞선 상태(fast-forward, 분기 아님). CEO 승인 문서 21건이 GitHub에는 아직 없음.
-- 작업 브랜치: `feat/m3a-recovery` = 로컬 `main` + `feat/m3a-local-implementation-final`(PR #4) 병합 + 아래 수정
-- Head SHA: `a4a7f38`
-- Changed files: `git diff --stat main...feat/m3a-recovery` 기준 마이그레이션 10개 삭제/2개 신설, Server Action 5개 이전+재작성, 온보딩 페이지 2개 수정, 테스트 1개 재작성, tsconfig/jest.config 수정 (아래 상세)
+- Base: `origin/main` (`8970ce7`) — GitHub 공개 기준, 로컬 전용 커밋 없음
+- 작업 브랜치: `feat/m3a-recovery-clean` (origin/main 위에 이번 수정만 커밋 1개)
+- Head SHA: `818a489`
+- Changed files: 26개 (마이그레이션 4개 삭제/2개 신설, Server Action 5개 신설, 온보딩 페이지 5개 수정, 테스트 1개 신설, `tsconfig.json`/`jest.config.js`/`package.json`/`pnpm-lock.yaml` 수정) — `git diff --stat origin/main feat/m3a-recovery-clean`로 직접 확인됨
+- 로컬 `main`이 `origin/main`보다 21커밋 앞서 있는 문제는 이번 PR 범위에서 다루지 않고 별도 이슈로 분리 (미결정 사항 참고)
 
 ---
 
@@ -78,7 +83,7 @@
 ## 확인이 필요한 미결정 사항 (임의 결정 금지)
 
 1. **Docker 복구**: 재부팅으로 소켓 파일 잠금은 풀렸으나 데몬이 아직 준비되지 않음. 준비되는 대로 `supabase start && supabase db reset && pnpm test`를 이어서 실행해야 합니다.
-2. **로컬 `main`(21커밋) vs `origin/main` 처리**: 이번 PR을 `origin/main` 기준으로 올릴지, 그 21개 커밋을 먼저 별도로 push할지 결정 필요.
+2. **로컬 `main`(21커밋) vs `origin/main` 처리**: 이번 PR(#6)은 `origin/main` 기준으로 정리해 이 문제와 분리됨. 그 21개 커밋을 별도로 push할지는 여전히 별도 결정 필요.
 3. **workplaces 공개 정책(AD-05B)** 확정 시 스키마에 컬럼 추가 여부.
 4. **child table 상태 게이트 강화 여부** (위 리스크 3) — 새 정책으로 승인되면 별도 migration 필요.
 

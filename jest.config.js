@@ -14,12 +14,16 @@ export default {
     }],
   },
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@/lib/(.*)$': '<rootDir>/lib/$1',
+    '^@/components/(.*)$': '<rootDir>/components/$1',
+    '^@/types/(.*)$': '<rootDir>/types/$1',
+    '^@/(.*)$': '<rootDir>/$1',
   },
   collectCoverageFrom: [
-    'src/**/*.{ts,tsx}',
-    '!src/**/*.d.ts',
-    '!src/**/*.stories.tsx',
+    'app/**/*.{ts,tsx}',
+    'lib/**/*.{ts,tsx}',
+    '!**/*.d.ts',
+    '!**/*.stories.tsx',
   ],
   testTimeout: 30000,
 };

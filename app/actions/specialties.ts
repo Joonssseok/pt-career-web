@@ -1,10 +1,21 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@/lib/supabase/server';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+export async function getSpecialties() {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('specialties')
+    .select('id, name, sort_order')
+    .eq('is_active', true)
+    .order('sort_order');
+
+  if (error) {
+    return { ok: false as const, error: error.message, specialties: [] };
+  }
+
+  return { ok: true as const, error: '', specialties: data };
+}
 
 export async function replaceProfileSpecialties(specialtyIds: string[]) {
   try {
@@ -12,6 +23,7 @@ export async function replaceProfileSpecialties(specialtyIds: string[]) {
       return { ok: false, error: 'Must select 1-3 specialties' };
     }
 
+    const supabase = await createClient();
     const { data: result, error } = await supabase.rpc(
       'replace_profile_specialties',
       {

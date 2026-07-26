@@ -1,10 +1,6 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { createClient } from '@/lib/supabase/server';
 
 export async function saveOwnProfile(data: {
   displayName: string;
@@ -14,12 +10,14 @@ export async function saveOwnProfile(data: {
   profileImagePath: string;
 }) {
   try {
+    const supabase = await createClient();
+
     const { data: result, error } = await supabase.rpc('save_own_profile', {
       p_display_name: data.displayName,
       p_profession: data.profession,
-      p_bio: data.bio,
-      p_description: data.description,
-      p_profile_image_path: data.profileImagePath,
+      p_headline: data.bio,
+      p_introduction: data.description,
+      p_profile_image_path: data.profileImagePath || null,
     });
 
     if (error) {
@@ -39,6 +37,7 @@ export async function saveOwnProfile(data: {
 
 export async function submitProfile() {
   try {
+    const supabase = await createClient();
     const { data: result, error } = await supabase.rpc('submit_profile');
 
     if (error) {

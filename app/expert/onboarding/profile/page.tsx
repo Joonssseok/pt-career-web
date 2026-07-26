@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { saveOwnProfile } from '@/app/actions/profile';
+import { OFFICIAL_PROFESSIONS } from '@/lib/constants/professions';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 
@@ -20,13 +21,7 @@ export default function ProfileStep() {
   const [formState, setFormState] = useState<FormState>('default');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const professions = [
-    '필라테스 강사',
-    '개인 트레이너',
-    '스포츠 코치',
-    '재활운동 전문가',
-    '기타',
-  ];
+  const professions = OFFICIAL_PROFESSIONS;
 
   const handleChange = (
     e: React.ChangeEvent<

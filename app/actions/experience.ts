@@ -1,10 +1,7 @@
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
+import { createClient } from '@/lib/supabase/server';
+import { getOwnProfileId } from '@/lib/supabase/profile';
 
 export async function saveExperience(data: {
   experiences: Array<{
@@ -17,30 +14,42 @@ export async function saveExperience(data: {
   }>;
 }) {
   try {
-    const { data: profile } = await supabase.auth.getUser();
-    if (!profile.user) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
       return { ok: false, error: 'Not authenticated' };
     }
 
-    // Delete all existing experiences
+    const profileId = await getOwnProfileId(supabase, user.id);
+    if (!profileId) {
+      return { ok: false, error: 'Profile not found' };
+    }
+
     const { error: deleteError } = await supabase
       .from('experiences')
       .delete()
-      .eq('profile_id', profile.user.id);
+      .eq('profile_id', profileId);
 
     if (deleteError) {
       return { ok: false, error: deleteError.message };
     }
 
-    // Insert new experiences
+    if (data.experiences.length === 0) {
+      return { ok: true, error: '' };
+    }
+
     const { error: insertError } = await supabase.from('experiences').insert(
-      data.experiences.map((exp) => ({
-        profile_id: profile.user!.id,
-        company_name: exp.companyName,
+      data.experiences.map((exp, index) => ({
+        profile_id: profileId,
+        organization_name: exp.companyName,
         position: exp.position,
         start_date: exp.startDate || null,
-        end_date: exp.endDate || null,
-        is_currently_working: exp.isCurrentlyWorking,
+        end_date: exp.isCurrentlyWorking ? null : exp.endDate || null,
+        is_current: exp.isCurrentlyWorking,
+        display_order: index,
       }))
     );
 

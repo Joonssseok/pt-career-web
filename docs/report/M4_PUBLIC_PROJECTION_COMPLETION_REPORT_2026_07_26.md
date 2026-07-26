@@ -1,9 +1,11 @@
 # M4 — Public Projection (View/RPC) + 목록/상세/탐색 완료 보고 (CTO 검수 요청)
 
-**Status**: 코드 구현 완료 + 로컬 DB 실행 검증 완료 + 브라우저(curl 기반 실제 렌더링) 검증 완료 (전 항목 실행 증거 확보). Remote 미적용 (별도 확인 대기).
+**Status**: 코드 구현 + 로컬 검증 + **Remote(`oqrxdvwlsbwkhihsvqvt`) 적용 및 재검증 완료** (전 항목 실행 증거 확보).
 **Date**: 2026-07-26
-**Authority**: Claude Code (M4 구현 지시서 실행)
+**Authority**: Claude Code (M4 구현 지시서 + Remote 적용 지시서 실행, 오너 승인 "그렇게 진행해")
 **선행 문서**: [M4_BASELINE_FINDINGS_2026_07_26.md](M4_BASELINE_FINDINGS_2026_07_26.md), [P0_ANON_COLUMN_EXPOSURE_REPORT_2026_07_26.md](P0_ANON_COLUMN_EXPOSURE_REPORT_2026_07_26.md)
+
+> 이 보고서는 최초 로컬 구현 완료 시점에 작성되었고, 아래 "Remote 적용" 절 이하는 그 이후 오너 승인을 받아 remote에 실제 적용하고 재검증한 내용을 이어서 추가한 것입니다.
 
 ---
 
@@ -92,12 +94,50 @@ MVP 범위 외(예약/결제/후기/채팅/AI추천/OG메타데이터/지도검�
 
 ---
 
-## 여전히 남은 리스크
+## 여전히 남은 리스크 (로컬 구현 시점 기준)
 
-1. **Remote 미적용.** 이번 마이그레이션은 로컬에만 적용했습니다. Remote는 여전히 PR #8 상태(anon이 licenses/workplaces에 컬럼 단위 SELECT만 보유)입니다. Remote 적용은 이전 원격 마이그레이션 작업과 동일하게 **백업 → 버전 충돌 확인 → 적용 → 재검증** 절차를 거쳐야 하며, 별도 지시를 기다립니다.
-2. **Claude Browser pane 시각 확인 미완료.** 이번 세션에서 pane이 프레임을 컴포지팅하지 않아 스크린샷을 얻지 못했습니다. 실제 서버 응답(HTML)은 curl로 완전히 검증했지만, 레이아웃이 실제로 어떻게 "보이는지"는 확인하지 못했습니다.
-3. **`profiles.region` 컬럼은 계속 미사용 상태입니다.** 온보딩 UI가 이 컬럼을 채운 적이 없고(실제로 채워지는 건 `workplaces.region`), 이번 M4도 이 컬럼을 건드리지 않았습니다 — 스키마에 죽은 컬럼으로 남아 있습니다. 삭제 여부는 정책 판단이라 결정하지 않았습니다.
-4. **`/experts` 목록에 페이지네이션 UI가 없습니다.** RPC는 limit/offset을 지원하지만, 프런트엔드는 첫 50건만 가져오고 "더보기"는 구현하지 않았습니다(지시서에 명시된 범위가 아니었습니다).
+1. **Claude Browser pane 시각 확인 미완료.** 이번 세션에서 pane이 프레임을 컴포지팅하지 않아 스크린샷을 얻지 못했습니다. 실제 서버 응답(HTML)은 curl로 완전히 검증했지만, 레이아웃이 실제로 어떻게 "보이는지"는 확인하지 못했습니다.
+2. **`profiles.region` 컬럼은 계속 미사용 상태입니다.** 온보딩 UI가 이 컬럼을 채운 적이 없고(실제로 채워지는 건 `workplaces.region`), 이번 M4도 이 컬럼을 건드리지 않았습니다 — 스키마에 죽은 컬럼으로 남아 있습니다. 삭제 여부는 정책 판단이라 결정하지 않았습니다.
+3. **`/experts` 목록에 페이지네이션 UI가 없습니다.** RPC는 limit/offset을 지원하지만, 프런트엔드는 첫 50건만 가져오고 "더보기"는 구현하지 않았습니다(지시서에 명시된 범위가 아니었습니다).
+
+---
+
+## Remote 적용 (2026-07-26, 오너 승인 "그렇게 진행해")
+
+### 절차 및 백업
+
+- 백업: `backup_pre_m4_migration_20260726.sql`(schema), `backup_pre_m4_migration_20260726_data.sql`(data) — 로컬에만 존재, git 미추적.
+  - **발견 및 수정**: 기존 `.gitignore`가 `backup_pre_remote_migration_*.sql` 패턴만 커버하고 있어서, 이번에 새로 만든 `backup_pre_m4_migration_*.sql`은 커밋 대상에서 안 걸러지고 있었습니다. 실제 커밋되기 전에 발견해서 `.gitignore`에 `backup_pre_*_migration_*.sql` 패턴을 추가해 앞으로의 모든 백업 파일명 패턴을 커버하도록 고쳤습니다.
+- 버전 충돌 사전 확인 (`supabase migration list`): 5개 매칭 + `20260728000000`만 local-only, remote-only 미매칭 없음 — 예상과 정확히 일치.
+- `supabase db push --linked`: 적용 성공 (`Finished supabase db push.`). 중간에 나온 경고(`failed to cache migrations catalog... pgdelta-target-ca.crt ENOENT`)는 CLI의 부가 캐싱 기능 실패로, 실제 마이그레이션 적용과 무관함을 `supabase migration list` 재확인으로 검증.
+
+### Remote 재검증 중 발견 & 수정한 이슈 1건
+
+**`is_admin`에 anon이 여전히 EXECUTE 가능한 상태였습니다.** 로컬에서는 `REVOKE EXECUTE ... FROM PUBLIC`만으로 anon이 완전히 차단됐지만(로컬은 PUBLIC 기본 권한 외에 anon에 대한 별도 grant가 없었기 때문), remote는 이 함수에 PUBLIC과 무관한 **anon 직접 grant**가 이미 있었던 것으로 보입니다(4개 canonical RPC에서 이미 확인했던 것과 동일한 프로젝트 초기화 시점의 blanket grant 패턴). 실제 anon 키로 `/rest/v1/rpc/is_admin` 호출 시 42501이 아니라 `false`가 정상 반환되는 것으로 확인 → 즉시 후속 마이그레이션(`REVOKE EXECUTE ON FUNCTION public.is_admin(uuid) FROM anon;`)을 remote에 적용하고 재확인(42501로 전환 확인). 로컬 마이그레이션 파일도 `20260728000100_m4_fix_is_admin_anon_direct_grant.sql`로 동일하게 추가(로컬에서는 no-op이지만 파리티 유지 목적).
+
+### Remote 재검증 증거
+
+| 항목 | 결과 | 근거 |
+|---|---|---|
+| 뷰/RPC 존재 | **PASS** | `public_expert_list`, `public_expert_detail` 존재 확인, `public_license_summaries`는 정상적으로 없음(DROP됨) 확인, `search_public_experts` 함수 존재 확인 |
+| anon 6개 base table 권한 회수 | **PASS** | `information_schema.table_privileges`에서 anon 관련 행 0건 |
+| anon 직접 base table 접근 | **PASS (42501 x6)** | `profiles/workplaces/licenses/experiences/educations/profile_specialties` 전부 실제 anon 키로 GET → 전부 `42501 permission denied` |
+| anon 뷰/RPC 접근 | **PASS** | `public_expert_list`/`public_expert_detail`/`search_public_experts` 전부 실제 anon 키로 정상 데이터 반환. 실사용 승인 프로필 1건(`Expert B Public`, `is_public=true, verification_status='approved'`)이 처음으로 `/experts`에 노출되는 것을 확인 — 지시서에서 예고한 의도된 동작과 일치. 민감 컬럼(암호화된 자격증번호, 정확 주소/좌표, 전화번호)은 응답 어디에도 없음 |
+| 존재하지 않는 id 상세 조회 | **PASS** | `public_expert_detail`에 랜덤 UUID 조회 → 빈 배열(에러 아님), 존재 여부 노출 없음 |
+| `is_admin`/canonical RPC 4종 anon EXECUTE 차단 | **PASS (수정 후)** | `is_admin`은 위에서 발견한 gap을 고친 뒤 42501 확인. `save_own_profile/submit_profile/review_expert_profile/replace_profile_specialties` 4종은 애초부터 42501로 정상 차단 확인 |
+| `service_role` 트리거 경로 회귀 재확인 | **PASS** | 로컬에서 발견했던 회귀(`is_admin`을 PUBLIC에서만 회수하고 `service_role` 재부여를 빠뜨리는 문제)가 remote에서도 재현되는지, `profiles`에 대한 실제 service_role no-op UPDATE(트리거 경로 강제 실행)로 재확인 — 정상 동작, 에러 없음 |
+| `get_advisors(security)` 재확인 | **참고 (아래 설명 참조)** | ERROR 1건(2개 뷰), WARN 다수 — 전부 의도된 설계이거나 M4 범위 밖. 자세한 내용은 바로 아래 참조 |
+
+### `get_advisors` ERROR 1건에 대한 설명 — 의도된 설계, 새 취약점 아님
+
+`public_expert_list`/`public_expert_detail` 둘 다 **"Security Definer View" (ERROR 등급)**로 잡힙니다. 이는 Supabase 린터가 `security_invoker`가 설정되지 않은(=기본값, owner-executed) 모든 뷰를 일괄적으로 ERROR로 표시하기 때문입니다 — 뷰가 실제로 안전하게 설계됐는지는 판단하지 않습니다.
+
+이 보고서 앞부분("owner-executed 설계 결정")에서 이미 설명했듯, 이 두 뷰가 owner-executed인 것은 **의도된 선택**입니다: anon이 이제 base table에 아무 권한도 없으므로, `security_invoker=true`로 바꾸면 anon 조회 시 전부 permission denied가 납니다. 뷰 자체의 `WHERE p.is_public = true AND p.verification_status = 'approved'` 조건이 RLS를 대신해서 노출 범위를 제한하고, 뷰의 SELECT 목록이 고정되어 있어 임의 컬럼 접근이나 base table 우회 경로가 없습니다. 즉 "이 린트를 고치면"(→ `security_invoker=true` 적용) 이번 M4의 핵심 기능 자체가 깨집니다. **의도적으로 두는 것을 권장**하며, CTO께서 직접 `get_advisors`를 재확인하실 때 이 ERROR가 새로 생긴 취약점처럼 보일 수 있어 미리 설명드립니다.
+
+나머지 WARN들:
+- `is_profile_public_approved`를 anon/authenticated가 실행 가능 — 의도됨(`share_events` 여전히 필요, 본 보고서 앞부분에 설명).
+- `is_admin`/4개 canonical RPC를 authenticated가 실행 가능 — 의도됨(각 RPC의 존재 목적 자체가 authenticated 사용자의 자기 프로필 조작).
+- `auth_otp_long_expiry`, `auth_leaked_password_protection` — Auth 설정 문제로 스키마와 무관, M4 범위 밖(M4 baseline findings에서도 이미 out-of-scope로 명시).
 
 ---
 
@@ -105,12 +145,12 @@ MVP 범위 외(예약/결제/후기/채팅/AI추천/OG메타데이터/지도검�
 
 | # | 항목 | 옵션 |
 |---|---|---|
-| 1 | Remote 적용 시점 | (a) 지금 바로 진행 (b) 별도 승인 후 진행 |
-| 2 | `profiles.region` 죽은 컬럼 | (a) 그대로 둠 (b) 별도 마이그레이션으로 DROP |
-| 3 | `/experts` 페이지네이션("더보기") | (a) 이번 범위에 추가 구현 (b) 다음 마일스톤으로 이월 |
+| 1 | `profiles.region` 죽은 컬럼 | (a) 그대로 둠 (b) 별도 마이그레이션으로 DROP |
+| 2 | `/experts` 페이지네이션("더보기") | (a) 이번 범위에 추가 구현 (b) 다음 마일스톤으로 이월 |
+| 3 | `get_advisors`의 "Security Definer View" ERROR 처리 | (a) 위 설명대로 의도된 것으로 수용하고 그대로 둠 (b) 다른 방식(예: RLS 기반 재설계) 검토 요청 |
 
 ---
 
 ## 다음 단계
 
-미결정 사항 확인 후, (승인 시) Remote 백업 → 적용 → 재검증 절차 진행.
+Remote 적용은 완료되어 실사용자에게 `/experts`가 노출되기 시작했습니다. 위 미결정 사항 확인 부탁드립니다. PR #9 병합 및 Vercel 배포는 아직 진행하지 않았습니다 — 별도 지시 시 진행하겠습니다.

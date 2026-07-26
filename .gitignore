@@ -1,5 +1,6 @@
 # DB backups (contain live auth/user data — never commit)
 backup_pre_remote_migration_*.sql
+backup_pre_*_migration_*.sql
 
 # Dependencies
 node_modules/

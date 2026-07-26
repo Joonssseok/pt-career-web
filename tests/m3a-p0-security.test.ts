@@ -82,10 +82,11 @@ describe('M3-A P0 Security', () => {
   });
 
   describe('Anonymous access', () => {
-    it('cannot SELECT profiles', async () => {
+    it('cannot SELECT profiles (base table — M4 revoked all anon table grants; public read only via views)', async () => {
       const { data, error } = await anonClient.from('profiles').select('*');
-      expect(error).toBeNull();
-      expect(data).toEqual([]); // RLS filters to zero rows for anon (no public+approved profiles exist yet)
+      expect(error).not.toBeNull();
+      expect(error?.code).toBe('42501');
+      expect(data).toBeNull();
     });
 
     it('cannot INSERT into profiles', async () => {

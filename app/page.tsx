@@ -1,9 +1,12 @@
 import Link from 'next/link';
 import { SiteHeader } from '@/components/SiteHeader';
+import { getNextOnboardingStep } from '@/lib/auth/get-next-onboarding-step';
 
 export const dynamic = 'force-dynamic';
 
-export default function Home() {
+export default async function Home() {
+  const expertEntryHref = await getNextOnboardingStep();
+
   return (
     <main className="flex min-h-screen flex-col bg-white">
       {/* Navigation */}
@@ -43,7 +46,7 @@ export default function Home() {
 
             {/* Create Profile Button */}
             <Link
-              href="/signup"
+              href={expertEntryHref}
               className="block w-full py-3 sm:py-4 px-4 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-slate-50 transition-colors text-center"
             >
               전문가 프로필 만들기

@@ -475,3 +475,11 @@ CREATE POLICY deny_update ON public.share_events FOR UPDATE TO public
   USING (false);
 CREATE POLICY deny_delete ON public.share_events FOR DELETE TO public
   USING (false);
+
+-- ============================================================================
+-- Table/sequence grants (RLS narrows rows; roles still need base privileges)
+-- ============================================================================
+
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;

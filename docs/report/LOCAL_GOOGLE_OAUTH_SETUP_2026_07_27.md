@@ -1,6 +1,6 @@
-# 로컬 Supabase Google OAuth 설정 완료 보고 (CTO 검수 요청 + 오너 조치 필요)
+# 로컬 Supabase Google OAuth 설정 완료 보고 (CTO 검수 요청)
 
-**Status**: 1절(config.toml) + env 파일 위치 확인 완료, 로컬 검증(재기동/회귀 테스트) 완료. **2절(Google Cloud Console 작업)은 오너 조치 대기 중** — 실제 Google 계정 로그인 재현은 이 조치 완료 후 진행 가능.
+**Status**: 완료. **실제 Google 계정으로 로컬 로그인 → 콜백 → `/my` 도착까지 실제로 재현 확인** (오너 직접 확인, mock 없음).
 **Date**: 2026-07-27
 **Authority**: Claude Code (로컬 Supabase Google OAuth 설정 지시서 실행)
 **작업 브랜치**: `chore/local-google-oauth-setup` (base: `main`)
@@ -70,24 +70,25 @@ git check-ignore -v supabase/.env → .gitignore:68:.env*  supabase/.env (정상
 
 ---
 
-## 5. 오너 조치 필요 — 아직 완료되지 않음
+## 5. 오너 조치 완료 + 실제 Google 로그인 재현
 
-지시서 2절의 Google Cloud Console 작업은 Claude Code가 대신 할 수 없는 부분이라 **아직 진행되지 않았습니다.** 아래를 진행해 주세요:
+오너가 Google Cloud Console에서 기존 운영 OAuth 클라이언트의 리디렉션 URI에 로컬 콜백(`http://127.0.0.1:54321/auth/v1/callback`)을 추가 등록하고, Client ID/Secret을 채팅으로 전달 — **채팅에 그대로 노출된 값을 즉시 `supabase/.env`에 기록**했고, 그 이후 어떤 보고서·커밋·응답에도 값 자체를 다시 노출하지 않았습니다(4절 재확인 결과 동일).
 
-1. Google Cloud Console → **APIs & Services → Credentials**에서 이 프로젝트가 운영에서 쓰는 OAuth 2.0 클라이언트를 찾습니다.
-2. 그 클라이언트의 **승인된 리디렉션 URI**에 다음을 추가로 등록합니다(기존 운영용 URI는 그대로 둠):
-   ```
-   http://127.0.0.1:54321/auth/v1/callback
-   ```
-3. 운영과 완전히 분리하고 싶으면 로컬 전용 클라이언트를 새로 만들어도 됩니다(그 경우 Client ID/Secret이 운영과 달라집니다).
-4. 발급받은 값을 **`supabase/.env` 파일에 직접** 입력합니다(이 문서/채팅에는 절대 붙여넣지 마세요):
-   ```
-   SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=<실제 값>
-   SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=<실제 값>
-   ```
-5. 값을 넣은 뒤 `supabase stop && supabase start`로 재기동하면 반영됩니다.
+### 1차 시도 — 목적지 오류 발견 및 수정
 
-**이 값이 채워지면 알려주세요** — 그러면 이어서 실제 Google 계정으로 `/login` → "Google로 계속하기" → 실제 동의 화면 → 콜백 → `/my`(또는 `next`) 도착까지 실제로 재현하고, 지난 PR #10/#11/#12에서 이메일 세션으로만 검증했던 케이스들도 진짜 Google 세션으로 한 번 더 확인하겠습니다.
+값을 채운 뒤 오너가 실제 Google 계정(`qhammt70@gmail.com`)으로 `http://localhost:3000/login`에서 로그인 시도 → **로그인 자체는 성공**했으나 `/my`가 아니라 홈 화면(`/`)으로 이동. `auth.users` 테이블을 직접 조회해 `provider=google`로 실제 세션이 생성된 것을 확인했으므로 인증 자체는 문제없었고, **순수 리디렉션 설정 문제**였습니다.
+
+**원인**: `supabase/config.toml`의 `additional_redirect_urls`가 `https://127.0.0.1:3000`만 등록되어 있었는데(스킴도 https, 호스트도 127.0.0.1), 안내드린 접속 주소는 `http://localhost:3000`이었습니다. 앱의 OAuth 콜백 리디렉션(`${origin}/auth/callback?next=/my`)이 허용 목록의 어떤 항목과도 일치하지 않아 Supabase Auth가 콜백 경로를 무시하고 `site_url`(경로 없는 `http://127.0.0.1:3000`, 즉 홈)로 대체 리디렉션한 것입니다. **제가 드린 접속 안내(`localhost`)와 기존 설정(`127.0.0.1`)의 불일치가 원인이었습니다.**
+
+### 조치
+```toml
+additional_redirect_urls = ["https://127.0.0.1:3000", "http://127.0.0.1:3000/**", "http://localhost:3000/**"]
+```
+와일드카드(`/**`)로 두 호스트명(`127.0.0.1`/`localhost`) 모두, 임의 경로(콜백의 `next` 쿼리 포함)까지 허용하도록 확장. `supabase stop && supabase start`로 재기동 후 `pnpm test` 43/43 재확인(회귀 없음).
+
+### 2차 시도 — 완전 성공
+
+동일 계정으로 재시도 → **`/my`로 정확히 도착 확인**(오너 직접 확인). 추가로 홈 화면 nav가 "마이페이지"로 정상 표시되고(PR #10), "전문가 프로필 만들기" 클릭 시 이 계정에 `profiles` 행이 아직 없는 것을 DB로 직접 확인한 뒤(`profile_id IS NULL`) `/expert/onboarding`으로 정확히 이동하는 것까지(PR #11 로직) 오너가 실제 Google 세션으로 확인 — **"전부 완벽하다"** 는 답변을 받았습니다.
 
 ---
 
@@ -95,13 +96,15 @@ git check-ignore -v supabase/.env → .gitignore:68:.env*  supabase/.env (정상
 
 | 완료 기준 | 상태 |
 |---|---|
-| 실제 Google 계정으로 로그인 → 콜백 → `/my` 도착 확인 | **대기 중** — 오너의 Client ID/Secret 입력 필요 |
-| Client ID/Secret 미커밋 확인 | **충족** (4절) |
-| 기존 43개 테스트 회귀 없음 | **충족** |
-| 오너 조치 대기 중이면 그 사실 명시 + 나머지 먼저 진행 | **충족** — 이번 문서 자체가 그 처리 |
+| 실제 Google 계정으로 로그인 → 콜백 → `/my` 도착 확인 | **충족** — 실제 재현, 오너 직접 확인 |
+| Client ID/Secret 미커밋 확인 | **충족** (4절, 최종 재확인 동일) |
+| 기존 43개 테스트 회귀 없음 | **충족** (redirect URL 수정 후 재확인 포함) |
+| PR #10/#11/#12 케이스 실제 Google 세션으로 재확인 | **충족** — nav 로그인 상태 표시, 온보딩 목적지 분기 모두 실제 Google 세션 기준으로 확인 |
 
 ---
 
 ## 다음 단계
 
-커밋/푸시 후 PR 생성하겠습니다(config.toml 변경만 포함, 시크릿 없음). 오너가 Google Cloud Console 작업 + `supabase/.env` 값 입력을 완료하면 알려주시면 실제 Google 로그인 재현을 이어서 진행하겠습니다.
+## 다음 단계
+
+완료. `additional_redirect_urls` 수정분을 PR #13에 추가 커밋 후 푸시합니다(config.toml 변경만 포함, 시크릿 없음). 병합은 이전과 동일하게 확인 후 진행합니다.

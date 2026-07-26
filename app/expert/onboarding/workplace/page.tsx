@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { saveWorkplace } from '@/app/actions/workplace';
+import { REGIONS } from '@/lib/constants/regions';
 
 export default function WorkplaceStep() {
   const router = useRouter();
@@ -15,25 +16,7 @@ export default function WorkplaceStep() {
     isLocationPublic: false,
   });
 
-  const regions = [
-    '서울',
-    '부산',
-    '대구',
-    '인천',
-    '광주',
-    '대전',
-    '울산',
-    '세종',
-    '경기',
-    '강원',
-    '충북',
-    '충남',
-    '전북',
-    '전남',
-    '경북',
-    '경남',
-    '제주',
-  ]; // Used only for workplaceRegion
+  const regions = REGIONS;
 
   const handleChange = (
     e: React.ChangeEvent<

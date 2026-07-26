@@ -6,7 +6,7 @@ export async function getSpecialties() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('specialties')
-    .select('id, name, sort_order')
+    .select('id, name, slug, sort_order')
     .eq('is_active', true)
     .order('sort_order');
 

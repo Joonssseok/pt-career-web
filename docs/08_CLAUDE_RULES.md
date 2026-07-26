@@ -57,7 +57,20 @@ MVP에 추가하지 말 것:
 - 교육 판매
 - 채용
 
-## 6. Claude Code 검수 프롬프트
+## 6. 보고서 제출 워크플로우
+
+지시서를 받아 작업을 수행한 뒤에는 CTO 승인/검수용 보고서를 작성하여 다음 절차를 따른다.
+
+- **저장 위치**
+  - 일반 작업 보고서: `docs/report/`
+  - 디자인 관련 보고서: `docs/report/design-report/`
+- **업로드**
+  - 로컬에 파일을 저장한 뒤, 반드시 GitHub(`origin`)에도 동기화한다. 로컬에만 두고 끝내지 않는다.
+  - `git add` / `git commit`은 바로 진행하되, `git push`는 매번 사용자에게 커밋 내용을 보여주고 확인을 받은 후 실행한다.
+  - push 전 `git status`/`git log`로 원격과의 diff를 확인해 충돌 없이 동기화되는지 점검한다.
+- **형식**: 기존 `docs/report/` 문서들(`CTO_CONDITIONAL_APPROVAL.md` 등)의 스타일을 따른다 — Status/Date/Authority 헤더, 표, Decision 섹션 등.
+
+## 7. Claude Code 검수 프롬프트
 
 ```text
 이 프로젝트는 PT Career MVP다.

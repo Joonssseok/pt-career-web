@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { saveExperience } from '@/app/actions/experience';
 
 type Experience = {
   id: string;
@@ -13,6 +15,7 @@ type Experience = {
 };
 
 export default function ExperienceStep() {
+  const router = useRouter();
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [newExperience, setNewExperience] = useState({
     companyName: '',
@@ -80,9 +83,27 @@ export default function ExperienceStep() {
     e.preventDefault();
 
     setFormState('loading');
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setFormState('saved');
-    setTimeout(() => setFormState('default'), 2000);
+
+    const result = await saveExperience({
+      experiences: experiences.map((exp) => ({
+        id: exp.id,
+        companyName: exp.companyName,
+        position: exp.position,
+        startDate: exp.startDate,
+        endDate: exp.endDate,
+        isCurrentlyWorking: exp.isCurrently,
+      })),
+    });
+
+    if (result.ok) {
+      setFormState('saved');
+      setTimeout(() => {
+        router.push('/expert/onboarding/education');
+      }, 1000);
+    } else {
+      setFormState('default');
+      alert(result.error);
+    }
   };
 
   return (

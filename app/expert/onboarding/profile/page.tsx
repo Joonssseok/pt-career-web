@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { saveOwnProfile } from '@/app/actions/profile';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 
 export default function ProfileStep() {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     displayName: '홍길동',
     profession: '필라테스 강사',
@@ -79,17 +82,25 @@ export default function ProfileStep() {
     }
 
     setFormState('loading');
-
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setFormState('saved');
     setErrors({});
 
-    // Reset to default after 2 seconds
-    setTimeout(() => {
-      setFormState('default');
-    }, 2000);
+    const result = await saveOwnProfile({
+      displayName: formData.displayName,
+      profession: formData.profession,
+      bio: formData.bio,
+      description: formData.description,
+      profileImagePath: formData.profileImagePath,
+    });
+
+    if (result.ok) {
+      setFormState('saved');
+      setTimeout(() => {
+        router.push('/expert/onboarding/workplace');
+      }, 1000);
+    } else {
+      setErrors({ submit: result.error });
+      setFormState('error');
+    }
   };
 
   const getInputClass = (fieldName: string) => {

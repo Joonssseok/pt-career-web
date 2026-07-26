@@ -2,10 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { replaceProfileSpecialties } from '@/app/actions/specialties';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 
 export default function SpecialtiesStep() {
+  const router = useRouter();
   // Mock data: 3개 선택
   const [selectedSpecialties, setSelectedSpecialties] = useState<string[]>([
     '필라테스·요가·유연성',
@@ -63,15 +66,25 @@ export default function SpecialtiesStep() {
 
     setFormState('loading');
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // TODO: Convert specialty names to UUIDs via API lookup
+    // For now, use placeholder UUIDs
+    const specialtyUUIDs = selectedSpecialties.map(
+      (_, i) => `00000000-0000-0000-0000-00000000000${i}`
+    );
 
-    setFormState('saved');
+    const result = await replaceProfileSpecialties(specialtyUUIDs);
 
-    // Reset to default after 2 seconds
-    setTimeout(() => {
-      setFormState('default');
-    }, 2000);
+    if (result.ok) {
+      setFormState('saved');
+      setTimeout(() => {
+        router.push('/expert/onboarding/complete');
+      }, 1000);
+    } else {
+      setFormState('error');
+      setTimeout(() => {
+        setFormState('default');
+      }, 3000);
+    }
   };
 
   return (

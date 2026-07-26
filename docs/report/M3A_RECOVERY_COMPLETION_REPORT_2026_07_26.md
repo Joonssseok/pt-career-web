@@ -58,7 +58,7 @@
 | `npx tsc --noEmit` | **PASS (0 errors)** | 664→ 실제 소스 포함 후 재실행, 출력 없음(exit 0) 직접 확인 |
 | `pnpm build` | **PASS** | `next build` 16/16 정적 페이지 생성 성공, 온보딩 5개 화면 전부 라우트에 포함됨을 출력으로 확인 |
 | `pnpm test` (구문 확인용) | 신규 테스트 파일이 ts-jest로 정상 파싱/트랜스파일됨을 확인 (연결 정보 없어 전부 "supabaseKey is required"로 실패 — **DB 연동 결과 아님, 구문 검증일 뿐**) | 터미널 출력 |
-| `supabase db reset` | **미실행** | Docker Desktop이 "Docker Inference" 소켓 파일(`C:\Users\User\AppData\Local\Docker\run\dockerInference`) 손상으로 크래시. Factory reset, `EnableDockerAI` 비활성화 모두 시도했으나 동일 오류 재발 — 파일이 OS 레벨에서 잠겨 관리자 권한 삭제 또는 재부팅 필요 (이 세션에서는 권한 부족으로 복구 불가, 사용자 재부팅 대기 중) |
+| `supabase db reset` | **미실행** | Docker Desktop이 "Docker Inference" 소켓 파일(`C:\Users\User\AppData\Local\Docker\run\dockerInference`) 손상으로 크래시 반복. 사용자 재부팅 후 해당 파일은 사라졌고(잠금 해제) 동일 크래시는 재발하지 않았으나, 이 보고서 작성 시점까지 Docker 데몬이 아직 응답하지 않는 상태(재초기화 진행 중으로 추정) — 계속 확인 중 |
 | JWT 기반 P0 보안 테스트 실행 | **미실행** (위와 동일 사유로 차단) | - |
 | 5개 화면 persistence 재확인 | **미실행** (실행 중인 로컬 DB 필요) | - |
 
@@ -77,7 +77,7 @@
 
 ## 확인이 필요한 미결정 사항 (임의 결정 금지)
 
-1. **Docker 복구**: 사용자가 관리자 권한으로 `C:\Users\User\AppData\Local\Docker\run\dockerInference` 삭제 또는 Docker Desktop "Reset to factory defaults" 필요. 복구되는 대로 `supabase start && supabase db reset && pnpm test`를 이어서 실행해야 합니다.
+1. **Docker 복구**: 재부팅으로 소켓 파일 잠금은 풀렸으나 데몬이 아직 준비되지 않음. 준비되는 대로 `supabase start && supabase db reset && pnpm test`를 이어서 실행해야 합니다.
 2. **로컬 `main`(21커밋) vs `origin/main` 처리**: 이번 PR을 `origin/main` 기준으로 올릴지, 그 21개 커밋을 먼저 별도로 push할지 결정 필요.
 3. **workplaces 공개 정책(AD-05B)** 확정 시 스키마에 컬럼 추가 여부.
 4. **child table 상태 게이트 강화 여부** (위 리스크 3) — 새 정책으로 승인되면 별도 migration 필요.

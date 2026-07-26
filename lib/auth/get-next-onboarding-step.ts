@@ -14,9 +14,17 @@ export async function getNextOnboardingStep(): Promise<NextOnboardingStep> {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, verification_status')
     .eq('user_id', user.id)
     .maybeSingle();
 
-  return profile ? '/my' : '/expert/onboarding';
+  if (!profile) {
+    return '/expert/onboarding';
+  }
+
+  if (profile.verification_status === 'draft') {
+    return '/expert/onboarding';
+  }
+
+  return '/my';
 }

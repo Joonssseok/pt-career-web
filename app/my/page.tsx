@@ -13,6 +13,14 @@ export default async function MyPage() {
     redirect('/login?next=/my')
   }
 
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('verification_status')
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  const isDraft = profile?.verification_status === 'draft'
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-8">
@@ -34,6 +42,20 @@ export default async function MyPage() {
                 <strong>상태:</strong> 인증됨
               </p>
             </div>
+
+            {isDraft && (
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded">
+                <p className="text-sm text-orange-800 mb-3">
+                  전문가 프로필 작성 중입니다.
+                </p>
+                <Link
+                  href="/expert/onboarding"
+                  className="block text-center bg-orange-600 text-white py-2 rounded-lg font-medium hover:bg-orange-700 transition"
+                >
+                  이어서 작성하기
+                </Link>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">

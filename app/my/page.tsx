@@ -20,6 +20,14 @@ export default async function MyPage() {
     .maybeSingle()
 
   const isDraft = profile?.verification_status === 'draft'
+  const isPending = profile?.verification_status === 'pending'
+  const isRejected = profile?.verification_status === 'rejected'
+
+  let rejectionReason: string | null = null
+  if (isRejected) {
+    const { data } = await supabase.rpc('get_own_rejection_reason')
+    rejectionReason = data
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -53,6 +61,33 @@ export default async function MyPage() {
                   className="block text-center bg-orange-600 text-white py-2 rounded-lg font-medium hover:bg-orange-700 transition"
                 >
                   이어서 작성하기
+                </Link>
+              </div>
+            )}
+
+            {isPending && (
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded">
+                <p className="text-sm text-blue-800">
+                  전문가 프로필을 제출했습니다. 관리자 검토 중입니다.
+                </p>
+              </div>
+            )}
+
+            {isRejected && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded">
+                <p className="text-sm text-red-800 mb-2">
+                  제출한 프로필이 반려되었습니다.
+                </p>
+                {rejectionReason && (
+                  <p className="text-sm text-red-700 mb-3">
+                    <strong>사유:</strong> {rejectionReason}
+                  </p>
+                )}
+                <Link
+                  href="/expert/onboarding"
+                  className="block text-center bg-red-600 text-white py-2 rounded-lg font-medium hover:bg-red-700 transition"
+                >
+                  수정하고 다시 제출하기
                 </Link>
               </div>
             )}

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,7 +72,7 @@ export default async function ExpertDetailPage({
             {expert.profile_image_path ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={expert.profile_image_path}
+                src={getProfilePhotoUrl(expert.profile_image_path) ?? undefined}
                 alt={expert.display_name ?? '전문가'}
                 className="w-full h-full object-cover"
               />

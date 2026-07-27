@@ -73,3 +73,7 @@
 - 전문가가 명함 QR을 센터에 붙일 수 있게 제공
 - 센터별 전문가 묶음 페이지
 - 지역별 전문가 지도 랜딩페이지
+
+## 기술 부채
+
+- Database 제네릭 타입 전역 연결 — admin.ts, profile.ts, LoadMoreExperts.tsx, experts/page.tsx 등 8개 파일 영향, string|null 타입 에러 다수 발생 예상, 별도 작업 필요

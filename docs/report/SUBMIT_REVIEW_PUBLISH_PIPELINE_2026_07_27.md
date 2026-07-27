@@ -1,6 +1,6 @@
 # 제출→검토→공개 파이프라인 완성 완료 보고 (CTO 검수 요청)
 
-**Status**: 코드 구현 완료 + 로컬 실행 검증 완료 (실제 세션으로 전체 파이프라인 종단 검증, mock 없음). 검증 중 회귀급 버그 1건을 발견해 즉시 수정·재검증까지 완료. **CTO 재검토에서 migration 충돌 블로커 1건을 추가로 발견 — 수정 완료.** **Remote 적용 완료** (오너 확인 후 백업→적용→재검증 절차대로 진행).
+**Status**: 코드 구현 완료 + 로컬 실행 검증 완료 (실제 세션으로 전체 파이프라인 종단 검증, mock 없음). 검증 중 회귀급 버그 1건을 발견해 즉시 수정·재검증까지 완료. **CTO 재검토에서 migration 충돌 블로커 1건을 추가로 발견 — 수정 완료.** **Remote 적용 완료** (오너 확인 후 백업→적용→재검증 절차대로 진행). **PR #16 main 병합 완료.** **Storage DELETE 정책 보안 수정(P0) remote 적용 완료.**
 **Date**: 2026-07-27
 **Authority**: Claude Code (제출→검토→공개 파이프라인 완성 지시서 실행 + CTO 재검토 반영)
 **작업 브랜치**: `feat/submit-review-publish-pipeline` (base: `main` — PR #15 병합 완료 후 리타겟)
@@ -31,6 +31,39 @@
    - Supabase 보안 어드바이저(`get_advisors`) 실행 — 새로 발견된 크리티컬 이슈 없음. `SECURITY DEFINER` 함수가 `anon`/`authenticated`에서 호출 가능하다는 WARN들은 이 프로젝트가 M4 내내 써온 "RPC 게이트키핑" 패턴에서 의도된 설계이고, ERROR 2건(`public_expert_list`/`public_expert_detail` view의 SECURITY DEFINER)은 이 PR 이전부터 있던 사항으로 이번 변경과 무관.
 
 **결론**: PR #16의 두 migration이 프로덕션에 정상 적용되었고, 코드(main에 아직 미병합)와 DB 상태가 이제 나란히 준비된 상태입니다. PR #16 병합은 별도 확인 후 진행 예정.
+
+---
+
+## PR #16 병합 (2026-07-27)
+
+`gh pr merge 16 --merge`로 `feat/submit-review-publish-pipeline` → `main` 병합 완료 (merge commit `734c68d`). 병합 전 `git merge-base origin/main feat/submit-review-publish-pipeline` 확인 결과 이미 origin/main 최신 커밋(PR #15 병합분 포함)을 전부 포함하고 있어 별도 리베이스 불필요.
+
+---
+
+## Storage DELETE 정책 보안 수정 (2026-07-27, P0)
+
+CTO 지시서(Storage 삭제 정책 보안 수정)에 따라, 이 PR에서 로컬 파리티로 재현하며 발견했던 기존 remote 보안 구멍을 수정했습니다.
+
+**문제**: `auth_delete_simple_profile`/`auth_delete_simple_evidence` 두 DELETE 정책에 본인 폴더 제한이 빠져 있어, 로그인만 하면 다른 사용자의 프로필 사진/증빙 파일을 삭제할 수 있었음 (SELECT/INSERT/UPDATE는 전부 `auth.uid()::text = (storage.foldername(name))[1]` 제한이 있었는데 DELETE만 누락).
+
+**수정**: `supabase/migrations/20260728060000_fix_storage_delete_policy_path_restriction.sql`에서 두 정책을 `DROP` 후 동일한 본인 폴더 조건을 추가해 `auth_delete_own_profile_images`/`auth_delete_own_evidence_files`로 재생성.
+
+**로컬 검증**:
+- `supabase db reset` 적용 후, 실제 REST API로 두 계정을 만들어(mock 없음) 직접 테스트: profile-images/evidence-files 양쪽 버킷에서 "B가 A의 파일 삭제 시도 → 403 Access denied", "A가 본인 파일 삭제 → 200 성공" 확인.
+- `pnpm test` 43개 중 2개 실패(`workplaces.profile_id` unique 제약 누락 관련) — 이번 migration을 빼고 재실행해도 동일하게 실패하는 것을 교차 확인, 이번 변경과 무관한 기존 이슈로 결론.
+- `tsc --noEmit` 통과, `pnpm build` 성공.
+
+**Remote 적용**:
+1. 백업: `backup_pre_storage_delete_policy_fix_20260727.sql`(스키마, 1647줄), `_data.sql`(데이터, 411줄).
+2. `supabase migration list --linked` — `20260728060000` 하나만 미적용, 드리프트 없음 확인.
+3. `supabase db push --linked` 적용 — "Finished supabase db push" 정상 완료 (오너 승인 후 실행).
+4. 재검증 (Supabase MCP `pg_policies` 직접 조회):
+   - `auth_delete_own_profile_images`: `(bucket_id = 'profile-images' AND auth.uid()::text = (storage.foldername(name))[1])` — 본인 폴더 조건 반영 확인.
+   - `auth_delete_own_evidence_files`: 동일 조건으로 evidence-files에 반영 확인.
+   - 기존 SELECT/INSERT/UPDATE 정책(`auth_select_with_path_restriction_*`, `auth_insert_with_path_restriction_*`, `auth_update_own_*`) 및 `admin_select_any_profile_image` 전부 변경 없이 그대로 남아있음 확인 — 총 14개 정책, 이름 2개만 교체(`_simple_` → `_own_`).
+   - `get_advisors(security)` 재실행 — 새로 발생한 이슈 없음. 기존 ERROR 2건(`public_expert_list`/`public_expert_detail` view SECURITY DEFINER)은 이 변경과 무관, WARN들은 M4부터 이어진 RPC 게이트키핑 설계.
+
+**완료 기준 충족 확인**: 다른 사용자 파일 삭제 불가(실제 확인) / 본인 삭제·업로드·조회 회귀 없음 / 관리자 조회(`admin_select_any_profile_image`) 회귀 없음 / 테스트·빌드 회귀 없음 — 전부 충족.
 
 ---
 

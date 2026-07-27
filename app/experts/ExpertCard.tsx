@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
 
 export type ExpertListItem = {
   id: string;
@@ -22,7 +23,7 @@ export function ExpertCard({ expert }: { expert: ExpertListItem }) {
         {expert.profile_image_path ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={expert.profile_image_path}
+            src={getProfilePhotoUrl(expert.profile_image_path) ?? undefined}
             alt={expert.display_name ?? '전문가'}
             className="w-full h-full object-cover"
           />

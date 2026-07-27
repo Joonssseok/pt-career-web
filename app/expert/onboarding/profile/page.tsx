@@ -5,8 +5,18 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { saveOwnProfile } from '@/app/actions/profile';
 import { OFFICIAL_PROFESSIONS } from '@/lib/constants/professions';
+import { createClient } from '@/lib/supabase/client';
+import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const EXT_BY_TYPE: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
 
 export default function ProfileStep() {
   const router = useRouter();
@@ -20,8 +30,59 @@ export default function ProfileStep() {
 
   const [formState, setFormState] = useState<FormState>('default');
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [imageUploading, setImageUploading] = useState(false);
 
   const professions = OFFICIAL_PROFESSIONS;
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setErrors((prev) => ({ ...prev, image: 'jpg, png, webp 파일만 업로드할 수 있습니다' }));
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setErrors((prev) => ({ ...prev, image: '5MB 이하의 파일만 업로드할 수 있습니다' }));
+      return;
+    }
+
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.image;
+      return next;
+    });
+    setImageUploading(true);
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setErrors((prev) => ({ ...prev, image: '로그인이 필요합니다' }));
+        return;
+      }
+
+      const ext = EXT_BY_TYPE[file.type];
+      const path = `${user.id}/photo.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile-images')
+        .upload(path, file, { upsert: true, contentType: file.type });
+
+      if (uploadError) {
+        setErrors((prev) => ({ ...prev, image: `업로드에 실패했습니다: ${uploadError.message}` }));
+        return;
+      }
+
+      setFormData((prev) => ({ ...prev, profileImagePath: path }));
+    } finally {
+      setImageUploading(false);
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -245,21 +306,42 @@ export default function ProfileStep() {
         {/* Profile Image Upload */}
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <p className="text-sm font-medium text-gray-900 mb-2">
-            프로필 사진 (선택)
+            프로필 사진 <span className="text-red-500">*</span>
           </p>
-          <div className="bg-white border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <p className="text-sm text-gray-600">
-              📸 프로필 사진 업로드
-            </p>
-            <p className="text-xs text-gray-500 mt-2">
-              이 기능은 M3-5에서 구현됩니다
-            </p>
-          </div>
-          <input
-            type="hidden"
-            name="profileImagePath"
-            value={formData.profileImagePath}
-          />
+          <label className="block bg-white border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 transition-colors">
+            {formData.profileImagePath ? (
+              <div className="flex flex-col items-center gap-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getProfilePhotoUrl(formData.profileImagePath) ?? undefined}
+                  alt="프로필 사진 미리보기"
+                  className="w-20 h-20 rounded-full object-cover"
+                />
+                <p className="text-xs text-blue-600 font-medium">
+                  ✓ 업로드 완료 — 다른 사진으로 변경하려면 다시 클릭
+                </p>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-gray-600">
+                  {imageUploading ? '⏳ 업로드 중...' : '📸 프로필 사진 업로드'}
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  jpg, png, webp / 5MB 이하
+                </p>
+              </>
+            )}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleImageChange}
+              disabled={imageUploading || formState === 'loading'}
+              className="hidden"
+            />
+          </label>
+          {errors.image && (
+            <p className="text-xs text-red-500 mt-2">{errors.image}</p>
+          )}
         </div>
 
         {/* Navigation */}

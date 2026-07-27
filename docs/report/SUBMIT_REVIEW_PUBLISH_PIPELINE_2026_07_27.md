@@ -65,6 +65,8 @@ CTO 지시서(Storage 삭제 정책 보안 수정)에 따라, 이 PR에서 로�
 
 **완료 기준 충족 확인**: 다른 사용자 파일 삭제 불가(실제 확인) / 본인 삭제·업로드·조회 회귀 없음 / 관리자 조회(`admin_select_any_profile_image`) 회귀 없음 / 테스트·빌드 회귀 없음 — 전부 충족.
 
+**코드 반영 및 병합**: PR #16이 이미 병합되어 낡은 상태였던 브랜치 대신, `main` 기준 새 브랜치 `fix/storage-delete-policy-path-restriction`을 만들어 마이그레이션 파일과 본 보고서 갱신분을 커밋·푸시, [PR #17](https://github.com/Joonssseok/pt-career-web/pull/17)로 올려 오너 확인 후 병합 완료 (merge commit `deeef9d`). DB(이미 적용됨)와 코드(main) 상태가 이제 일치합니다.
+
 ---
 
 ## 지시서가 지적한 문제 재확인 (수정 없이 그대로 확인됨)

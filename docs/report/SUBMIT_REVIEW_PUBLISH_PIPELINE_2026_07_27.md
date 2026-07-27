@@ -1,9 +1,17 @@
 # 제출→검토→공개 파이프라인 완성 완료 보고 (CTO 검수 요청)
 
-**Status**: 코드 구현 완료 + 로컬 실행 검증 완료 (실제 세션으로 전체 파이프라인 종단 검증, mock 없음). 검증 중 회귀급 버그 1건을 발견해 즉시 수정·재검증까지 완료. DB 변경 있음 — **Remote 미적용, 오너 확인 후 기존 절차대로 진행 예정**.
+**Status**: 코드 구현 완료 + 로컬 실행 검증 완료 (실제 세션으로 전체 파이프라인 종단 검증, mock 없음). 검증 중 회귀급 버그 1건을 발견해 즉시 수정·재검증까지 완료. **CTO 재검토에서 migration 충돌 블로커 1건을 추가로 발견 — 수정 완료.** DB 변경 있음 — **Remote 미적용, 오너 확인 후 기존 절차대로 진행 예정**.
 **Date**: 2026-07-27
-**Authority**: Claude Code (제출→검토→공개 파이프라인 완성 지시서 실행)
-**작업 브랜치**: `feat/submit-review-publish-pipeline` (base: `fix/onboarding-draft-resume` — PR #15 미병합 상태라 그 위에서 작업)
+**Authority**: Claude Code (제출→검토→공개 파이프라인 완성 지시서 실행 + CTO 재검토 반영)
+**작업 브랜치**: `feat/submit-review-publish-pipeline` (base: `main` — PR #15 병합 완료 후 리타겟)
+
+---
+
+## CTO 재검토 반영 (2026-07-27)
+
+1. **병합 순서**: PR #15를 먼저 병합(`37bcfb1`)한 뒤 PR #16의 base를 `main`으로 옮기고 최신 `main`을 머지 — 충돌 없음, 완료.
+2. **Migration 충돌 블로커**: `20260728040000`이 `CREATE POLICY`로 만드는 storage 정책 12개(`auth_select_with_path_restriction_profile` 등, 1절에서 "remote 파리티"로 그대로 재현한 것들) 전부 remote에 **이미 같은 이름으로 존재**해서, 그대로 `db push`하면 "policy already exists"로 실패했을 것 — CTO가 remote를 직접 조회해 정확히 지적. 각 정책 앞에 `DROP POLICY IF EXISTS`를 추가해 로컬(정책 없음)/remote(정책 있음) 양쪽에서 멱등적으로 적용되도록 수정, 로컬 `db reset` + `pnpm test` 43/43 재확인 완료.
+3. **이 PR과 무관한 기존 보안 구멍(`auth_delete_simple_profile`/`auth_delete_simple_evidence`, 본인 폴더 제한 없이 로그인 사용자 누구나 삭제 가능)**: CTO 권고대로 이번 PR 범위에서 손대지 않았습니다 — 별도 지시서로 처리 예정.
 
 ---
 

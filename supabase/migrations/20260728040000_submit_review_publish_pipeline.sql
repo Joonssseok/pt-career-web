@@ -28,54 +28,72 @@ ON CONFLICT (id) DO NOTHING;
 -- evidence-files는 이번 온보딩 범위에 업로드 UI가 없어 당장 영향은 없다.
 -- remote에 이미 존재하는 정책이라 파리티를 위해 그대로 재현하고, 실제 사용
 --여부는 별도로 확인이 필요하다.
+--
+-- remote 적용 전 재검토 중 발견: 이 12개 정책은 이름까지 remote에 이미
+-- 존재한다(로컬에만 없었을 뿐 — 1절 버킷과 동일한 사정). CREATE POLICY는
+-- IF NOT EXISTS를 지원하지 않으므로, DROP POLICY IF EXISTS를 각각 선행시켜
+-- 이 migration이 로컬(정책 없음)과 remote(정책 이미 있음) 양쪽에서 동일하게
+-- 멱등적으로 적용되도록 한다. 내용은 변경 없이 이름만 재사용(재생성).
 -- ============================================================================
 
+DROP POLICY IF EXISTS auth_select_with_path_restriction_profile ON storage.objects;
 CREATE POLICY auth_select_with_path_restriction_profile ON storage.objects
   FOR SELECT TO authenticated
   USING (bucket_id = 'profile-images' AND auth.uid()::text = (storage.foldername(name))[1]);
 
+DROP POLICY IF EXISTS auth_insert_with_path_restriction_profile ON storage.objects;
 CREATE POLICY auth_insert_with_path_restriction_profile ON storage.objects
   FOR INSERT TO authenticated
   WITH CHECK (bucket_id = 'profile-images' AND auth.uid()::text = (storage.foldername(name))[1]);
 
+DROP POLICY IF EXISTS auth_update_own_profile_images ON storage.objects;
 CREATE POLICY auth_update_own_profile_images ON storage.objects
   FOR UPDATE TO authenticated
   USING (bucket_id = 'profile-images' AND auth.uid()::text = (storage.foldername(name))[1])
   WITH CHECK (bucket_id = 'profile-images' AND auth.uid()::text = (storage.foldername(name))[1]);
 
+DROP POLICY IF EXISTS auth_delete_simple_profile ON storage.objects;
 CREATE POLICY auth_delete_simple_profile ON storage.objects
   FOR DELETE TO authenticated
   USING (bucket_id = 'profile-images');
 
+DROP POLICY IF EXISTS admin_select_profile_images ON storage.objects;
 CREATE POLICY admin_select_profile_images ON storage.objects
   FOR SELECT TO authenticated
   USING (bucket_id = 'profile-images' AND (auth.jwt() ->> 'app_metadata') LIKE '%super_admin%');
 
+DROP POLICY IF EXISTS anon_deny_select_profile_images ON storage.objects;
 CREATE POLICY anon_deny_select_profile_images ON storage.objects
   FOR SELECT TO anon
   USING (false);
 
+DROP POLICY IF EXISTS auth_select_with_path_restriction_evidence ON storage.objects;
 CREATE POLICY auth_select_with_path_restriction_evidence ON storage.objects
   FOR SELECT TO authenticated
   USING (bucket_id = 'evidence-files' AND auth.uid()::text = (storage.foldername(name))[1]);
 
+DROP POLICY IF EXISTS auth_insert_with_path_restriction_evidence ON storage.objects;
 CREATE POLICY auth_insert_with_path_restriction_evidence ON storage.objects
   FOR INSERT TO authenticated
   WITH CHECK (bucket_id = 'evidence-files' AND auth.uid()::text = (storage.foldername(name))[1]);
 
+DROP POLICY IF EXISTS auth_update_own_evidence_files ON storage.objects;
 CREATE POLICY auth_update_own_evidence_files ON storage.objects
   FOR UPDATE TO authenticated
   USING (bucket_id = 'evidence-files' AND auth.uid()::text = (storage.foldername(name))[1])
   WITH CHECK (bucket_id = 'evidence-files' AND auth.uid()::text = (storage.foldername(name))[1]);
 
+DROP POLICY IF EXISTS auth_delete_simple_evidence ON storage.objects;
 CREATE POLICY auth_delete_simple_evidence ON storage.objects
   FOR DELETE TO authenticated
   USING (bucket_id = 'evidence-files');
 
+DROP POLICY IF EXISTS admin_select_evidence_files ON storage.objects;
 CREATE POLICY admin_select_evidence_files ON storage.objects
   FOR SELECT TO authenticated
   USING (bucket_id = 'evidence-files' AND (auth.jwt() ->> 'app_metadata') LIKE '%super_admin%');
 
+DROP POLICY IF EXISTS anon_deny_select_evidence_files ON storage.objects;
 CREATE POLICY anon_deny_select_evidence_files ON storage.objects
   FOR SELECT TO anon
   USING (false);

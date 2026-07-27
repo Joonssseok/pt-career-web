@@ -7,6 +7,7 @@ export async function saveCertifications(data: {
   certifications: Array<{
     id?: string;
     certName: string;
+    category?: string;
     issuer?: string;
     issueDate?: string;
   }>;
@@ -43,6 +44,7 @@ export async function saveCertifications(data: {
       data.certifications.map((cert) => ({
         profile_id: profileId,
         license_name: cert.certName,
+        category: cert.category || null,
         issuing_organization: cert.issuer || null,
         acquired_date: cert.issueDate || null,
       }))

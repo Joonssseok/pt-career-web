@@ -57,6 +57,7 @@ Fields:
 - id
 - profile_id
 - license_name
+- category (TEXT, nullable, 기본값 없음 — 국가면허 | 국가자격 | 민간자격 | 교육수료 | 세미나수료 | 교육활동 | 봉사활동. 2026-07-28 결정(10_DECISION_LOG.md) — 서열화 없는 구분 표시용. 기존 행은 비워두고 전문가가 직접 채움)
 - issuing_organization
 - acquired_date
 - license_number_encrypted

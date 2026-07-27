@@ -91,6 +91,7 @@ PT Career MVP는 운동·재활 전문가의 경력과 자격을 투명하게 �
   ↓
 자격 입력 (최소 1개)
   ├─ 자격명
+  ├─ 카테고리 (국가면허/국가자격/민간자격/교육수료/세미나수료/교육활동/봉사활동 — 텍스트 라벨, 서열화 없음)
   ├─ 발급기관
   ├─ 취득일
   ├─ 증빙 파일 업로드 (비공개 저장)
@@ -101,6 +102,7 @@ PT Career MVP는 운동·재활 전문가의 경력과 자격을 투명하게 �
   ├─ 과정명
   ├─ 기간
   └─ 설명
+  (학회/교육기관 연계 자동 매칭은 MVP 범위 아님 — 지금은 이 필드에 직접 입력, P1에서 자동 매칭 검토)
   ↓
 근무기관 입력 (최소 1개)
   ├─ 센터명
@@ -172,7 +174,7 @@ PT Career MVP는 운동·재활 전문가의 경력과 자격을 투명하게 �
 | **로그인** | 전문가/관리자 | 인증 | Login | auth.users | — | Supabase Auth 연동 |
 | **프로필 등록** | 전문가 | 기본 정보 입력 | ProfileForm | profiles | 비공개 상태 저장 (is_public=false) | 프로필 작성 완료 |
 | **경력 입력** | 전문가 | 경력 입력 | ExperienceForm | experiences | 본인만 수정 | 최소 1개 |
-| **자격 입력** | 전문가 | 자격 등록 | LicenseForm | licenses | 증빙파일 비공개 (document_url_private) | 최소 1개 + 증빙 파일 |
+| **자격 입력** | 전문가 | 자격 등록 | LicenseForm | licenses | 증빙파일 비공개 (document_url_private) | 최소 1개 + 증빙 파일 + 카테고리 선택(텍스트 라벨)* |
 | **근무기관** | 전문가 | 센터 정보 | WorkplaceForm | workplaces | 본인만 수정 | 최소 1개 |
 | **교육 이력** | 전문가 | 교육 정보 | EducationForm | educations | 본인만 수정 | 선택사항 |
 | **전문분야 선택** | 전문가 | 분야 지정 | SpecialtyForm | profile_specialties | 최대 3개 | 최소 1개 |
@@ -189,6 +191,8 @@ PT Career MVP는 운동·재활 전문가의 경력과 자격을 투명하게 �
 | **프로필 공개** | 자동 | 승인 후 공개 | — | profiles (is_public=true) | RLS 자동 적용 | 목록에 노출 |
 
 **총 Must 기능**: 21개
+
+\* licenses.category (국가면허/국가자격/민간자격/교육수료/세미나수료/교육활동/봉사활동) — 2026-07-28 결정(10_DECISION_LOG.md)으로 licenses 테이블에 추가된 컬럼. 기존 "자격 입력" 기능의 스키마 확장일 뿐 새 기능이 아니므로 Must 기능 수(21개)에는 영향 없음. 자격 간 서열화를 하지 않고 카테고리 구분만 표시(텍스트 라벨) — 카테고리별 Badge 디자인 차별화는 P1로 연기(11_BACKLOG.md). 실제 컬럼 반영은 06_DATABASE_DESIGN.md/migration 별도 작업 필요.
 
 ---
 
@@ -291,7 +295,7 @@ auth.users (Supabase Auth)
   ↓
   profiles (is_public, verification_status)
   ├─ workplaces (센터 정보, 좌표)
-  ├─ licenses (자격, 증빙파일 비공개)
+  ├─ licenses (자격, 증빙파일 비공개, category 신규)
   ├─ experiences (경력)
   ├─ educations (교육)
   └─ profile_specialties (전문분야, N:M)
@@ -377,6 +381,7 @@ licenses:
   - license_name (자격명, 예: "물리치료사")
   - issuing_organization (발급기관)
   - acquired_date (취득일)
+  - category (자격 카테고리 — 국가면허/국가자격/민간자격/교육수료/세미나수료/교육활동/봉사활동, 텍스트 라벨로만 구분 표시, 서열화 없음)
 
 experiences:
   - organization_name (조직명)

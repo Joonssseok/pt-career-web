@@ -8,15 +8,27 @@ import { saveCertifications } from '@/app/actions/certification';
 type Certification = {
   id: string;
   name: string;
+  category: string;
   issuer: string;
   issueDate: string;
 };
+
+const LICENSE_CATEGORIES = [
+  '국가면허',
+  '국가자격',
+  '민간자격',
+  '교육수료',
+  '세미나수료',
+  '교육활동',
+  '봉사활동',
+];
 
 export default function EducationStep() {
   const router = useRouter();
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [newCert, setNewCert] = useState({
     name: '',
+    category: '',
     issuer: '',
     issueDate: '',
   });
@@ -46,6 +58,7 @@ export default function EducationStep() {
       ]);
       setNewCert({
         name: '',
+        category: '',
         issuer: '',
         issueDate: '',
       });
@@ -56,6 +69,7 @@ export default function EducationStep() {
     setEditingId(cert.id);
     setEditForm({
       name: cert.name,
+      category: cert.category,
       issuer: cert.issuer,
       issueDate: cert.issueDate,
     });
@@ -91,6 +105,7 @@ export default function EducationStep() {
       certifications: certifications.map((cert) => ({
         id: cert.id,
         certName: cert.name,
+        category: cert.category,
         issuer: cert.issuer,
         issueDate: cert.issueDate,
       })),
@@ -146,6 +161,29 @@ export default function EducationStep() {
                 <option key={cert} value={cert} />
               ))}
             </datalist>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-2 block">
+              카테고리
+            </label>
+            <select
+              value={newCert.category}
+              onChange={(e) =>
+                setNewCert({
+                  ...newCert,
+                  category: e.target.value,
+                })
+              }
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">선택 안 함</option>
+              {LICENSE_CATEGORIES.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -261,7 +299,12 @@ export default function EducationStep() {
                   <div>
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">{cert.name}</p>
+                        <p className="font-medium text-gray-900">
+                          {cert.name}
+                          {cert.category && (
+                            <span className="ml-2 text-xs text-gray-500">{cert.category}</span>
+                          )}
+                        </p>
                         <p className="text-sm text-gray-600">발급처: {cert.issuer}</p>
                         {cert.issueDate && (
                           <p className="text-xs text-gray-500 mt-1">{cert.issueDate}</p>

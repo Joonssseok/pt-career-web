@@ -1,6 +1,6 @@
 # 제출→검토→공개 파이프라인 완성 완료 보고 (CTO 검수 요청)
 
-**Status**: 코드 구현 완료 + 로컬 실행 검증 완료 (실제 세션으로 전체 파이프라인 종단 검증, mock 없음). 검증 중 회귀급 버그 1건을 발견해 즉시 수정·재검증까지 완료. **CTO 재검토에서 migration 충돌 블로커 1건을 추가로 발견 — 수정 완료.** DB 변경 있음 — **Remote 미적용, 오너 확인 후 기존 절차대로 진행 예정**.
+**Status**: 코드 구현 완료 + 로컬 실행 검증 완료 (실제 세션으로 전체 파이프라인 종단 검증, mock 없음). 검증 중 회귀급 버그 1건을 발견해 즉시 수정·재검증까지 완료. **CTO 재검토에서 migration 충돌 블로커 1건을 추가로 발견 — 수정 완료.** **Remote 적용 완료** (오너 확인 후 백업→적용→재검증 절차대로 진행).
 **Date**: 2026-07-27
 **Authority**: Claude Code (제출→검토→공개 파이프라인 완성 지시서 실행 + CTO 재검토 반영)
 **작업 브랜치**: `feat/submit-review-publish-pipeline` (base: `main` — PR #15 병합 완료 후 리타겟)
@@ -12,6 +12,25 @@
 1. **병합 순서**: PR #15를 먼저 병합(`37bcfb1`)한 뒤 PR #16의 base를 `main`으로 옮기고 최신 `main`을 머지 — 충돌 없음, 완료.
 2. **Migration 충돌 블로커**: `20260728040000`이 `CREATE POLICY`로 만드는 storage 정책 12개(`auth_select_with_path_restriction_profile` 등, 1절에서 "remote 파리티"로 그대로 재현한 것들) 전부 remote에 **이미 같은 이름으로 존재**해서, 그대로 `db push`하면 "policy already exists"로 실패했을 것 — CTO가 remote를 직접 조회해 정확히 지적. 각 정책 앞에 `DROP POLICY IF EXISTS`를 추가해 로컬(정책 없음)/remote(정책 있음) 양쪽에서 멱등적으로 적용되도록 수정, 로컬 `db reset` + `pnpm test` 43/43 재확인 완료.
 3. **이 PR과 무관한 기존 보안 구멍(`auth_delete_simple_profile`/`auth_delete_simple_evidence`, 본인 폴더 제한 없이 로그인 사용자 누구나 삭제 가능)**: CTO 권고대로 이번 PR 범위에서 손대지 않았습니다 — 별도 지시서로 처리 예정.
+
+---
+
+## Remote 적용 (2026-07-27)
+
+기존 절차(백업 → 버전 충돌 사전 확인 → 적용 → 재검증)대로 진행했습니다.
+
+1. **백업**: `supabase db dump --linked`로 스키마/데이터 각각 백업.
+   - `backup_pre_submit_review_publish_migration_20260727.sql` (스키마, 1590줄)
+   - `backup_pre_submit_review_publish_migration_20260727_data.sql` (데이터, 381줄)
+2. **버전 충돌 사전 확인**: `supabase migration list --linked` 결과, `20260728030000`까지는 local=remote 완전 일치, 미적용은 `20260728040000`/`20260728050000` 두 개뿐 — 드리프트 없음 확인.
+3. **적용**: `supabase db push --linked`로 두 migration 적용 — "Finished supabase db push" 정상 완료. (적용 후 나온 pgdelta 캐시 관련 경고는 인증서 파일 경로 문제로 인한 카탈로그 캐싱 실패일 뿐, migration 적용 자체와는 무관 — 실제 적용 여부는 아래 재검증으로 별도 확인.)
+4. **적용 후 재검증** (Supabase MCP로 remote 직접 조회):
+   - `supabase migration list --linked` 재실행 → `20260728040000`, `20260728050000` 모두 local=remote 일치로 전환됨.
+   - `pg_policies`에서 `storage.objects`의 정책 14개(기존 12개 파리티 + 신규 2개: `public_select_public_approved_profile_images`, `admin_select_any_profile_image`) 전부 존재 확인.
+   - `pg_proc`에서 `is_user_profile_public_approved`, `get_own_rejection_reason`, `review_expert_profile` 전부 존재 확인, `review_expert_profile`의 실제 소스코드를 조회해 `is_public` 수정이 반영된 버전임을 확인.
+   - Supabase 보안 어드바이저(`get_advisors`) 실행 — 새로 발견된 크리티컬 이슈 없음. `SECURITY DEFINER` 함수가 `anon`/`authenticated`에서 호출 가능하다는 WARN들은 이 프로젝트가 M4 내내 써온 "RPC 게이트키핑" 패턴에서 의도된 설계이고, ERROR 2건(`public_expert_list`/`public_expert_detail` view의 SECURITY DEFINER)은 이 PR 이전부터 있던 사항으로 이번 변경과 무관.
+
+**결론**: PR #16의 두 migration이 프로덕션에 정상 적용되었고, 코드(main에 아직 미병합)와 DB 상태가 이제 나란히 준비된 상태입니다. PR #16 병합은 별도 확인 후 진행 예정.
 
 ---
 

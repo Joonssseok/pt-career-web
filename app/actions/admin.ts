@@ -2,6 +2,101 @@
 
 import { createClient } from '@/lib/supabase/server';
 
+export type AdminDashboardStats = {
+  total_signups: number;
+  draft_count: number;
+  pending_count: number;
+  approved_count: number;
+  rejected_count: number;
+  public_count: number;
+};
+
+export type AdminReviewKpis = {
+  pending_count: number;
+  approved_count: number;
+  rejected_count: number;
+  avg_processing_hours: number | null;
+};
+
+export type AdminAuditLogEntry = {
+  id: string;
+  created_at: string;
+  action_type: 'profile_approved' | 'profile_rejected';
+  memo: string | null;
+  target_profile_id: string | null;
+  target_display_name: string | null;
+  admin_user_id: string;
+  admin_email: string | null;
+};
+
+export type AdminUserOption = {
+  user_id: string;
+  email: string | null;
+  role: string;
+};
+
+export async function getAdminDashboardStats() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('get_admin_dashboard_stats');
+
+  if (error) {
+    console.error('[getAdminDashboardStats] Supabase error:', error);
+    return { ok: false as const, error: error.message, stats: null };
+  }
+
+  return { ok: true as const, error: '', stats: (data?.[0] ?? null) as AdminDashboardStats | null };
+}
+
+export async function getAdminReviewKpis() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('get_admin_review_kpis');
+
+  if (error) {
+    console.error('[getAdminReviewKpis] Supabase error:', error);
+    return { ok: false as const, error: error.message, kpis: null };
+  }
+
+  return { ok: true as const, error: '', kpis: (data?.[0] ?? null) as AdminReviewKpis | null };
+}
+
+export async function getAdminAuditLog(filters: {
+  from?: string;
+  to?: string;
+  actionType?: 'profile_approved' | 'profile_rejected';
+  adminUserId?: string;
+  limit?: number;
+  offset?: number;
+}) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('get_admin_audit_log', {
+    p_from: filters.from || null,
+    p_to: filters.to || null,
+    p_action_type: filters.actionType || null,
+    p_admin_user_id: filters.adminUserId || null,
+    p_limit: filters.limit ?? 20,
+    p_offset: filters.offset ?? 0,
+  });
+
+  if (error) {
+    console.error('[getAdminAuditLog] Supabase error:', error);
+    return { ok: false as const, error: error.message, entries: [] as AdminAuditLogEntry[] };
+  }
+
+  return { ok: true as const, error: '', entries: (data ?? []) as AdminAuditLogEntry[] };
+}
+
+export async function getAdminUsersList() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('get_admin_users_list');
+
+  if (error) {
+    console.error('[getAdminUsersList] Supabase error:', error);
+    return { ok: false as const, error: error.message, admins: [] as AdminUserOption[] };
+  }
+
+  return { ok: true as const, error: '', admins: (data ?? []) as AdminUserOption[] };
+}
+
 export async function reviewExpertProfile(
   targetUserId: string,
   decision: 'approved' | 'rejected',

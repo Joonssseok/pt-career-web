@@ -3,6 +3,34 @@
 import { createClient } from '@/lib/supabase/server';
 import { getOwnProfileId } from '@/lib/supabase/profile';
 
+export async function getOwnWorkplace() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false as const, error: 'Not authenticated', workplace: null };
+  }
+
+  const profileId = await getOwnProfileId(supabase, user.id);
+  if (!profileId) {
+    return { ok: true as const, error: '', workplace: null };
+  }
+
+  const { data: workplace, error } = await supabase
+    .from('workplaces')
+    .select('center_name, website_url, external_contact_url, region, is_location_public')
+    .eq('profile_id', profileId)
+    .maybeSingle();
+
+  if (error) {
+    return { ok: false as const, error: error.message, workplace: null };
+  }
+
+  return { ok: true as const, error: '', workplace };
+}
+
 export async function saveWorkplace(data: {
   centerName: string;
   websiteUrl?: string;

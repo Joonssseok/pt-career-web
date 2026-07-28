@@ -3,6 +3,45 @@
 import { createClient } from '@/lib/supabase/server';
 import { getOwnProfileId } from '@/lib/supabase/profile';
 
+export async function getOwnCertifications() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false as const, error: 'Not authenticated', certifications: [] };
+  }
+
+  const profileId = await getOwnProfileId(supabase, user.id);
+  if (!profileId) {
+    return { ok: true as const, error: '', certifications: [] };
+  }
+
+  const { data, error } = await supabase
+    .from('licenses')
+    .select('id, license_name, category, issuing_organization, acquired_date')
+    .eq('profile_id', profileId)
+    .order('created_at');
+
+  if (error) {
+    return { ok: false as const, error: error.message, certifications: [] };
+  }
+
+  return {
+    ok: true as const,
+    error: '',
+    certifications: data.map((lic) => ({
+      id: lic.id,
+      name: lic.license_name,
+      category: lic.category ?? '',
+      issuer: lic.issuing_organization ?? '',
+      // DB stores a full DATE; the <input type="month"> UI needs "YYYY-MM".
+      issueDate: lic.acquired_date?.slice(0, 7) ?? '',
+    })),
+  };
+}
+
 export async function saveCertifications(data: {
   certifications: Array<{
     id?: string;

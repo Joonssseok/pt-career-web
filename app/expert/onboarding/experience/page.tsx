@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { saveExperience } from '@/app/actions/experience';
+import { getOwnExperiences, saveExperience } from '@/app/actions/experience';
 
 type Experience = {
   id: string;
@@ -17,6 +17,13 @@ type Experience = {
 export default function ExperienceStep() {
   const router = useRouter();
   const [experiences, setExperiences] = useState<Experience[]>([]);
+
+  useEffect(() => {
+    getOwnExperiences().then((result) => {
+      if (!result.ok) return;
+      setExperiences(result.experiences);
+    });
+  }, []);
   const [newExperience, setNewExperience] = useState({
     companyName: '',
     position: '',

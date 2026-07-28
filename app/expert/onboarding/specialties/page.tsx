@@ -4,18 +4,13 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
+  getOwnSelectedSpecialtyIds,
   getSpecialties,
   replaceProfileSpecialties,
 } from '@/app/actions/specialties';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 type Specialty = { id: string; name: string; sort_order: number };
-
-const DEFAULT_SELECTED_NAMES = [
-  '필라테스·요가·유연성',
-  '자세교정·통증관리',
-  '체력향상·컨디셔닝',
-];
 
 export default function SpecialtiesStep() {
   const router = useRouter();
@@ -26,15 +21,15 @@ export default function SpecialtiesStep() {
   const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
-    getSpecialties().then((result) => {
-      if (!result.ok) return;
-      setSpecialties(result.specialties);
-      setSelectedIds(
-        result.specialties
-          .filter((s) => DEFAULT_SELECTED_NAMES.includes(s.name))
-          .map((s) => s.id)
-      );
-    });
+    Promise.all([getSpecialties(), getOwnSelectedSpecialtyIds()]).then(
+      ([specialtiesResult, selectedResult]) => {
+        if (!specialtiesResult.ok) return;
+        setSpecialties(specialtiesResult.specialties);
+        if (selectedResult.ok) {
+          setSelectedIds(selectedResult.specialtyIds);
+        }
+      }
+    );
   }, []);
 
   const MIN_SELECTION = 1;

@@ -62,13 +62,20 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON public.public_ex
 | `information_schema.role_table_grants`에서 두 뷰의 `authenticated` 권한이 SELECT만 남음 | ✅ 확인 |
 | `get_advisors(security)` 재실행 — 신규 이슈 없음 | ✅ 확인 (기존부터 있던 무관한 사전 이슈만 표시) |
 
-## 5. 회귀 확인 (제한사항 명시)
+## 5. 회귀 확인
 
-- **코드 리뷰로 대체 확인**: `app/experts/[id]/page.tsx`의 `ExpertDetail` 타입은 licenses에서 `license_name`/`issuing_organization`/`acquired_date`만 구조 분해하며, `category` 필드를 소비하는 UI 코드가 없음을 확인했습니다. 즉 이번 변경은 순수 추가(additive)이며 기존 프론트엔드 동작에 영향이 없습니다 (지시서 1절에서 언급한 대로 UI 반영은 이번 범위 밖).
-- **`tests/p0-anon-column-grants.test.ts` 검토**: 이 테스트가 두 공개 뷰를 다루는 유일한 테스트 파일이나, `anon`의 SELECT 동작만 검증하고 `authenticated`의 쓰기 권한이나 `category` 필드는 검증하지 않아 이번 변경으로 인한 회귀 위험이 없음을 코드 검토로 확인했습니다.
-- **로컬 `db reset`/실제 브라우저 확인 불가 사유(솔직히 명시)**:
-  - 로컬 검증: 이번 세션에서 Docker Desktop이 실행되어 있지 않아 `supabase db reset`을 통한 로컬 테스트 스위트 실행은 수행하지 못했습니다.
-  - 브라우저 확인: 현재 프로덕션 `profiles` 테이블에는 `is_public = true AND verification_status = 'approved'`인 행이 **0건**입니다(직전 작업에서 유일한 테스트 데이터였던 Expert A Draft를 삭제했고, 김준석 계정은 아직 `pending` 상태이기 때문). 따라서 지시서가 요구한 "실제 승인된 공개 프로필로 `/experts/[id]` 접속 확인"은 현재 프로덕션에 대상 데이터가 없어 실행할 수 없었습니다. 위 SQL 레벨 검증과 코드 리뷰로 대체했습니다.
+이번 마이그레이션 파일(`20260728120000_security_reaudit_fixes.sql`)을 로컬 Supabase 스택에도 그대로 적용하여 추가로 검증했습니다 (최초 작성 시점에는 Docker Desktop 미실행으로 보류했던 부분 — Docker Desktop 재기동 후 재실행).
+
+| 검증 단계 | 결과 |
+|---|---|
+| `supabase db reset` (전체 마이그레이션 재적용, 신규 파일 포함) | ✅ 에러 없이 전체 재적용 성공 |
+| `pnpm test -- p0-anon-column-grants` (공개 뷰 다루는 유일한 테스트) | ✅ 15/15 통과 |
+| 전체 테스트 스위트 (`jest`, 4개 파일) | ✅ 43/43 통과 |
+| `npm run check` (`tsc --noEmit`) | ✅ 에러 없음 |
+| `npm run build` (`next build`) | ✅ 컴파일/정적 페이지 생성 성공, 신규 경고 없음 |
+
+- **코드 리뷰로 추가 확인**: `app/experts/[id]/page.tsx`의 `ExpertDetail` 타입은 licenses에서 `license_name`/`issuing_organization`/`acquired_date`만 구조 분해하며, `category` 필드를 소비하는 UI 코드가 없음을 확인했습니다. 즉 이번 변경은 순수 추가(additive)이며 기존 프론트엔드 동작에 영향이 없습니다 (지시서 1절에서 언급한 대로 UI 반영은 이번 범위 밖).
+- **브라우저 실제 확인 관련 남은 제한사항**: 프로덕션 `profiles` 테이블에는 여전히 `is_public = true AND verification_status = 'approved'`인 행이 **0건**입니다(직전 작업에서 유일한 테스트 데이터였던 Expert A Draft를 삭제했고, 김준석 계정은 아직 `pending` 상태이기 때문). 지시서가 요구한 "실제 승인된 공개 프로필로 `/experts/[id]` 접속 확인"은 프로덕션에 대상 데이터가 없어 여전히 실행 불가능하며, 위 로컬 테스트 스위트(동일 시나리오를 시딩해 검증) + 코드 리뷰로 대체했습니다.
 
 ---
 
@@ -77,4 +84,5 @@ REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER ON public.public_ex
 - [x] `public_expert_detail` license 필드에 `category` 포함
 - [x] 죽은 storage 정책 2건 삭제, 정상 정책 2건은 유지
 - [x] 공개 뷰 2개의 `authenticated` 권한이 SELECT만 남음
-- [x] 코드 리뷰 기준 기존 프론트엔드 회귀 없음 (로컬 테스트 스위트/실계정 브라우저 확인은 위 5절 사유로 미실행 — 재감사 필요 시 Docker 기동 후 `supabase db reset && pnpm test -- p0-anon-column-grants` 및 승인된 프로필 생성 후 재확인 권장)
+- [x] 로컬 `db reset` + 전체 테스트 스위트(43개) + `tsc` + `build` 회귀 없음 확인
+- [x] 코드 리뷰 기준 기존 프론트엔드 회귀 없음 (실계정 브라우저 확인만 프로덕션에 승인된 공개 프로필이 없어 미실행 — 위 5절 참고)

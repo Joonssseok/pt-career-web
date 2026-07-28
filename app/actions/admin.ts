@@ -16,6 +16,7 @@ export async function reviewExpertProfile(
     });
 
     if (error) {
+      console.error('[reviewExpertProfile] Supabase error:', error);
       return { ok: false, error: error.message };
     }
 
@@ -26,6 +27,7 @@ export async function reviewExpertProfile(
 
     return { ok: false, error: 'Unexpected response' };
   } catch (err) {
+    console.error('[reviewExpertProfile] threw:', err);
     return { ok: false, error: String(err) };
   }
 }

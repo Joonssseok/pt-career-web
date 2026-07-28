@@ -25,6 +25,7 @@ export async function getOwnExperiences() {
     .order('display_order');
 
   if (error) {
+    console.error('[getOwnExperiences] Supabase error:', error);
     return { ok: false as const, error: error.message, experiences: [] };
   }
 
@@ -74,6 +75,7 @@ export async function saveExperience(data: {
       .eq('profile_id', profileId);
 
     if (deleteError) {
+      console.error('[saveExperience] delete error:', deleteError);
       return { ok: false, error: deleteError.message };
     }
 
@@ -94,11 +96,13 @@ export async function saveExperience(data: {
     );
 
     if (insertError) {
+      console.error('[saveExperience] insert error:', insertError);
       return { ok: false, error: insertError.message };
     }
 
     return { ok: true, error: '' };
   } catch (err) {
+    console.error('[saveExperience] threw:', err);
     return { ok: false, error: String(err) };
   }
 }

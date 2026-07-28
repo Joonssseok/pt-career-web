@@ -1,7 +1,10 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
+import { ShareButton } from './ShareButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,13 +41,7 @@ type ExpertDetail = {
   }[];
 };
 
-export default async function ExpertDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-
+const fetchExpert = cache(async (id: string): Promise<ExpertDetail | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('public_expert_detail')
@@ -53,10 +50,53 @@ export default async function ExpertDetailPage({
     .maybeSingle();
 
   if (error || !data) {
-    notFound();
+    return null;
   }
 
-  const expert = data as ExpertDetail;
+  return data as ExpertDetail;
+});
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const expert = await fetchExpert(id);
+
+  if (!expert) {
+    return {};
+  }
+
+  const title = [expert.display_name, expert.profession].filter(Boolean).join(' · ') || 'PT Career 전문가';
+  const description =
+    expert.headline ?? '경력과 자격으로 검증된 물리치료사, 트레이너, 재활 전문가를 찾아보세요.';
+  const imageUrl = getProfilePhotoUrl(expert.profile_image_path);
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'profile',
+      ...(imageUrl ? { images: [{ url: imageUrl }] } : {}),
+    },
+  };
+}
+
+export default async function ExpertDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  const expert = await fetchExpert(id);
+
+  if (!expert) {
+    notFound();
+  }
 
   return (
     <main className="min-h-screen bg-white pb-12">
@@ -180,6 +220,12 @@ export default async function ExpertDetailPage({
             </ul>
           </section>
         )}
+
+        <ShareButton
+          profileId={expert.id}
+          displayName={expert.display_name}
+          headline={expert.headline}
+        />
 
         {expert.workplace_website_url && (
           <a

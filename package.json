@@ -25,6 +25,7 @@
     "react-dom": "^19.2.1"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/jest": "^29.5.8",
     "@types/node": "^20.0.0",
     "@types/react": "^19.2.1",
@@ -37,5 +38,12 @@
     "ts-jest": "^29.1.1",
     "typescript": "^5.9.3"
   },
-  "packageManager": "pnpm@10.4.1"
+  "packageManager": "pnpm@10.4.1",
+  "browserslist": [
+    "chrome >= 111",
+    "edge >= 111",
+    "firefox >= 128",
+    "safari >= 16.4",
+    "ios_saf >= 16.4"
+  ]
 }

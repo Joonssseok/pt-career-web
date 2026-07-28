@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -70,7 +71,10 @@ export default function RootLayout({
           .mt-6 { margin-top: 1.5rem; }
         `}</style>
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <SiteFooter />
+      </body>
     </html>
   );
 }

@@ -20,6 +20,12 @@ type ExpertDetail = {
   workplace_region: string | null;
   workplace_center_name: string | null;
   workplace_website_url: string | null;
+  workplace_address: string | null;
+  workplace_address_detail: string | null;
+  workplace_phone: string | null;
+  workplace_external_contact_url: string | null;
+  workplace_latitude: number | null;
+  workplace_longitude: number | null;
   specialties: { slug: string; name: string; is_primary: boolean }[];
   experiences: {
     organization_name: string;
@@ -221,6 +227,40 @@ export default async function ExpertDetailPage({
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {(expert.workplace_address || expert.workplace_phone || expert.workplace_external_contact_url) && (
+          <section>
+            <h2 className="text-sm font-semibold text-gray-900 mb-2">문의하기</h2>
+            <div className="space-y-3">
+              {expert.workplace_address && (
+                <p className="text-sm text-gray-700">
+                  {expert.workplace_address}
+                  {expert.workplace_address_detail ? ` ${expert.workplace_address_detail}` : ''}
+                </p>
+              )}
+
+              {expert.workplace_phone && (
+                <a
+                  href={`tel:${expert.workplace_phone}`}
+                  className="block w-full min-h-[44px] px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-center"
+                >
+                  전화 걸기
+                </a>
+              )}
+
+              {expert.workplace_external_contact_url && (
+                <a
+                  href={expert.workplace_external_contact_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full min-h-[44px] px-4 py-3 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-slate-50 transition-colors text-center"
+                >
+                  외부 문의(카카오톡 등)
+                </a>
+              )}
+            </div>
           </section>
         )}
 

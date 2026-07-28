@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { saveWorkplace } from '@/app/actions/workplace';
+import { getOwnWorkplace, saveWorkplace } from '@/app/actions/workplace';
 import { REGIONS } from '@/lib/constants/regions';
 
 export default function WorkplaceStep() {
@@ -17,6 +17,20 @@ export default function WorkplaceStep() {
   });
 
   const regions = REGIONS;
+
+  useEffect(() => {
+    getOwnWorkplace().then((result) => {
+      if (!result.ok || !result.workplace) return;
+      const w = result.workplace;
+      setFormData({
+        centerName: w.center_name ?? '',
+        websiteUrl: w.website_url ?? '',
+        officialContact: w.external_contact_url ?? '',
+        workplaceRegion: w.region ?? '',
+        isLocationPublic: w.is_location_public ?? false,
+      });
+    });
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<

@@ -1,6 +1,34 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { getOwnProfileId } from '@/lib/supabase/profile';
+
+export async function getOwnSelectedSpecialtyIds() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false as const, error: 'Not authenticated', specialtyIds: [] };
+  }
+
+  const profileId = await getOwnProfileId(supabase, user.id);
+  if (!profileId) {
+    return { ok: true as const, error: '', specialtyIds: [] };
+  }
+
+  const { data, error } = await supabase
+    .from('profile_specialties')
+    .select('specialty_id')
+    .eq('profile_id', profileId);
+
+  if (error) {
+    return { ok: false as const, error: error.message, specialtyIds: [] };
+  }
+
+  return { ok: true as const, error: '', specialtyIds: data.map((row) => row.specialty_id) };
+}
 
 export async function getSpecialties() {
   const supabase = await createClient();

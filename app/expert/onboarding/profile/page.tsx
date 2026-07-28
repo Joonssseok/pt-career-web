@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { saveOwnProfile } from '@/app/actions/profile';
+import { getOwnProfile, saveOwnProfile } from '@/app/actions/profile';
 import { OFFICIAL_PROFESSIONS } from '@/lib/constants/professions';
 import { createClient } from '@/lib/supabase/client';
 import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
@@ -21,16 +21,30 @@ const EXT_BY_TYPE: Record<string, string> = {
 export default function ProfileStep() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    displayName: '홍길동',
-    profession: '필라테스 강사',
-    bio: '10년 경력의 필라테스 강사입니다',
-    description: '소비자 중심의 맞춤형 운동 프로그램 제공',
+    displayName: '',
+    profession: '',
+    bio: '',
+    description: '',
     profileImagePath: '',
   });
 
   const [formState, setFormState] = useState<FormState>('default');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageUploading, setImageUploading] = useState(false);
+
+  useEffect(() => {
+    getOwnProfile().then((result) => {
+      if (!result.ok || !result.profile) return;
+      const p = result.profile;
+      setFormData({
+        displayName: p.display_name ?? '',
+        profession: p.profession ?? '',
+        bio: p.headline ?? '',
+        description: p.introduction ?? '',
+        profileImagePath: p.profile_image_path ?? '',
+      });
+    });
+  }, []);
 
   const professions = OFFICIAL_PROFESSIONS;
 

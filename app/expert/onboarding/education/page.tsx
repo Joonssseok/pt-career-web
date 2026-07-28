@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { saveCertifications } from '@/app/actions/certification';
+import { getOwnCertifications, saveCertifications } from '@/app/actions/certification';
 
 type Certification = {
   id: string;
@@ -35,6 +35,13 @@ export default function EducationStep() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<typeof newCert | null>(null);
   const [formState, setFormState] = useState<'default' | 'loading' | 'saved'>('default');
+
+  useEffect(() => {
+    getOwnCertifications().then((result) => {
+      if (!result.ok) return;
+      setCertifications(result.certifications);
+    });
+  }, []);
 
   const commonCerts = [
     'ISSA CPT',

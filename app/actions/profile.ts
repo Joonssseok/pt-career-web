@@ -1,6 +1,35 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { getOwnProfileId } from '@/lib/supabase/profile';
+
+export async function getOwnProfile() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { ok: false as const, error: 'Not authenticated', profile: null };
+  }
+
+  const profileId = await getOwnProfileId(supabase, user.id);
+  if (!profileId) {
+    return { ok: true as const, error: '', profile: null };
+  }
+
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('display_name, profession, headline, introduction, profile_image_path')
+    .eq('id', profileId)
+    .maybeSingle();
+
+  if (error) {
+    return { ok: false as const, error: error.message, profile: null };
+  }
+
+  return { ok: true as const, error: '', profile };
+}
 
 export async function saveOwnProfile(data: {
   displayName: string;

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import type { Metadata } from 'next';
@@ -110,10 +111,12 @@ export default async function ExpertDetailPage({
         <div className="flex gap-4 items-start">
           <div className="w-20 h-20 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center text-3xl text-gray-400">
             {expert.profile_image_path ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={getProfilePhotoUrl(expert.profile_image_path) ?? undefined}
+              <Image
+                src={getProfilePhotoUrl(expert.profile_image_path) ?? ''}
                 alt={expert.display_name ?? '전문가'}
+                width={80}
+                height={80}
+                priority
                 className="w-full h-full object-cover"
               />
             ) : (

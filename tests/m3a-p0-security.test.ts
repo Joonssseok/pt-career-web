@@ -175,8 +175,14 @@ describe('M3-A P0 Security', () => {
       await adminApi.from('profiles').update({ profile_image_path: null }).eq('id', ownerProfileId);
       const noImage = await ownerClient.rpc('submit_profile');
       expect(noImage.data?.[0]?.ok).toBe(false);
+    });
 
+    it('submit_profile requires at least one experience or license once the image is set', async () => {
       await adminApi.from('profiles').update({ profile_image_path: '/img.jpg' }).eq('id', ownerProfileId);
+      const noExpOrLicense = await ownerClient.rpc('submit_profile');
+      expect(noExpOrLicense.data?.[0]?.ok).toBe(false);
+
+      await adminApi.from('experiences').insert({ profile_id: ownerProfileId, organization_name: 'Test Gym' });
       const submitted = await ownerClient.rpc('submit_profile');
       expect(submitted.data?.[0]?.ok).toBe(true);
 

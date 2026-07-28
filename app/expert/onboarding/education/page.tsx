@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getOwnCertifications, saveCertifications } from '@/app/actions/certification';
+import { createClient } from '@/lib/supabase/client';
+import { getEvidenceFileUrl } from '@/lib/storage/evidence-file-url';
 
 type Certification = {
   id: string;
@@ -11,6 +13,7 @@ type Certification = {
   category: string;
   issuer: string;
   issueDate: string;
+  documentPath: string;
 };
 
 const LICENSE_CATEGORIES = [
@@ -23,6 +26,14 @@ const LICENSE_CATEGORIES = [
   '봉사활동',
 ];
 
+const MAX_EVIDENCE_BYTES = 10 * 1024 * 1024;
+const ALLOWED_EVIDENCE_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+const EVIDENCE_EXT_BY_TYPE: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'application/pdf': 'pdf',
+};
+
 export default function EducationStep() {
   const router = useRouter();
   const [certifications, setCertifications] = useState<Certification[]>([]);
@@ -31,10 +42,13 @@ export default function EducationStep() {
     category: '',
     issuer: '',
     issueDate: '',
+    documentPath: '',
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<typeof newCert | null>(null);
   const [formState, setFormState] = useState<'default' | 'loading' | 'saved'>('default');
+  const [fileUploading, setFileUploading] = useState(false);
+  const [fileError, setFileError] = useState('');
 
   useEffect(() => {
     getOwnCertifications().then((result) => {
@@ -54,6 +68,55 @@ export default function EducationStep() {
     '스포츠 마사지 자격증',
   ];
 
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!ALLOWED_EVIDENCE_TYPES.includes(file.type)) {
+      setFileError('jpg, png, pdf 파일만 업로드할 수 있습니다');
+      return;
+    }
+    if (file.size > MAX_EVIDENCE_BYTES) {
+      setFileError('10MB 이하의 파일만 업로드할 수 있습니다');
+      return;
+    }
+
+    setFileError('');
+    setFileUploading(true);
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setFileError('로그인이 필요합니다');
+        return;
+      }
+
+      const ext = EVIDENCE_EXT_BY_TYPE[file.type];
+      // Random filename, not tied to a license row id — saveCertifications
+      // deletes and re-inserts every license row on each save, so a path
+      // keyed by the (unstable) license id would break on re-save.
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('evidence-files')
+        .upload(path, file, { contentType: file.type });
+
+      if (uploadError) {
+        setFileError(`업로드에 실패했습니다: ${uploadError.message}`);
+        return;
+      }
+
+      setNewCert((prev) => ({ ...prev, documentPath: path }));
+    } finally {
+      setFileUploading(false);
+    }
+  };
+
   const handleAddCertification = () => {
     if (newCert.name.trim() && newCert.issuer.trim()) {
       setCertifications([
@@ -68,6 +131,7 @@ export default function EducationStep() {
         category: '',
         issuer: '',
         issueDate: '',
+        documentPath: '',
       });
     }
   };
@@ -79,6 +143,7 @@ export default function EducationStep() {
       category: cert.category,
       issuer: cert.issuer,
       issueDate: cert.issueDate,
+      documentPath: cert.documentPath,
     });
   };
 
@@ -115,6 +180,7 @@ export default function EducationStep() {
         category: cert.category,
         issuer: cert.issuer,
         issueDate: cert.issueDate,
+        documentPath: cert.documentPath,
       })),
     });
 
@@ -229,6 +295,39 @@ export default function EducationStep() {
             </div>
           </div>
 
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-2 block">
+              증빙 파일 (선택)
+            </label>
+            {newCert.documentPath ? (
+              <div className="flex items-center justify-between bg-white border border-gray-300 rounded-lg px-4 py-2">
+                <span className="text-sm text-blue-600 font-medium">✓ 업로드 완료</span>
+                <button
+                  type="button"
+                  onClick={() => setNewCert((prev) => ({ ...prev, documentPath: '' }))}
+                  className="text-xs text-red-500 hover:text-red-700"
+                >
+                  제거
+                </button>
+              </div>
+            ) : (
+              <label className="block bg-white border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-400 transition-colors">
+                <span className="text-sm text-gray-600">
+                  {fileUploading ? '⏳ 업로드 중...' : '📎 증빙 파일 업로드'}
+                </span>
+                <p className="text-xs text-gray-500 mt-1">jpg, png, pdf / 10MB 이하</p>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,application/pdf"
+                  onChange={handleFileChange}
+                  disabled={fileUploading}
+                  className="hidden"
+                />
+              </label>
+            )}
+            {fileError && <p className="text-xs text-red-500 mt-1">{fileError}</p>}
+          </div>
+
           <button
             type="button"
             onClick={handleAddCertification}
@@ -315,6 +414,16 @@ export default function EducationStep() {
                         <p className="text-sm text-gray-600">발급처: {cert.issuer}</p>
                         {cert.issueDate && (
                           <p className="text-xs text-gray-500 mt-1">{cert.issueDate}</p>
+                        )}
+                        {cert.documentPath && (
+                          <a
+                            href={getEvidenceFileUrl(cert.documentPath) ?? undefined}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block text-xs text-blue-600 hover:text-blue-800 mt-1"
+                          >
+                            📎 증빙 파일 보기
+                          </a>
                         )}
                       </div>
                       <div className="flex gap-2">

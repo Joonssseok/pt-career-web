@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect, notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
+import { getEvidenceFileUrl } from '@/lib/storage/evidence-file-url';
 import { ReviewActions } from './ReviewActions';
 
 export const dynamic = 'force-dynamic';
@@ -155,6 +156,19 @@ export default async function AdminProfileDetailPage({
                   <span className="font-medium">{l.license_name}</span>
                   {l.issuing_organization && <span className="text-gray-500"> · {l.issuing_organization}</span>}
                   <span className="ml-2 text-xs text-gray-400">({l.verification_status})</span>
+                  <br />
+                  {l.document_path_private ? (
+                    <a
+                      href={getEvidenceFileUrl(l.document_path_private) ?? undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      📎 증빙 파일 보기
+                    </a>
+                  ) : (
+                    <span className="text-xs text-gray-400">증빙 파일 없음</span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -183,11 +197,6 @@ export default async function AdminProfileDetailPage({
           ) : (
             <p className="text-sm text-gray-400">없음</p>
           )}
-        </section>
-
-        <section className="bg-white rounded-lg border border-gray-200 p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-2">증빙 파일</h3>
-          <p className="text-sm text-gray-400">없음 (업로드 기능 미구현)</p>
         </section>
 
         <ReviewActions targetUserId={profile.user_id} />

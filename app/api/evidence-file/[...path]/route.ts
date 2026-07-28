@@ -12,6 +12,9 @@ export async function GET(
   const { data, error } = await supabase.storage.from('evidence-files').download(path);
 
   if (error || !data) {
+    if (error) {
+      console.error('[evidence-file] download error:', error);
+    }
     return new NextResponse(null, { status: 404 });
   }
 

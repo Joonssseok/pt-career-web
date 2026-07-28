@@ -25,6 +25,7 @@ export async function getOwnProfile() {
     .maybeSingle();
 
   if (error) {
+    console.error('[getOwnProfile] Supabase error:', error);
     return { ok: false as const, error: error.message, profile: null };
   }
 
@@ -50,6 +51,7 @@ export async function saveOwnProfile(data: {
     });
 
     if (error) {
+      console.error('[saveOwnProfile] Supabase error:', error);
       return { ok: false, error: error.message };
     }
 
@@ -60,6 +62,7 @@ export async function saveOwnProfile(data: {
 
     return { ok: false, error: 'Unexpected response' };
   } catch (err) {
+    console.error('[saveOwnProfile] threw:', err);
     return { ok: false, error: String(err) };
   }
 }
@@ -70,6 +73,7 @@ export async function submitProfile() {
     const { data: result, error } = await supabase.rpc('submit_profile');
 
     if (error) {
+      console.error('[submitProfile] Supabase error:', error);
       return { ok: false, error: error.message };
     }
 
@@ -80,6 +84,7 @@ export async function submitProfile() {
 
     return { ok: false, error: 'Unexpected response' };
   } catch (err) {
+    console.error('[submitProfile] threw:', err);
     return { ok: false, error: String(err) };
   }
 }

@@ -24,6 +24,7 @@ export async function getOwnSelectedSpecialtyIds() {
     .eq('profile_id', profileId);
 
   if (error) {
+    console.error('[getOwnSelectedSpecialtyIds] Supabase error:', error);
     return { ok: false as const, error: error.message, specialtyIds: [] };
   }
 
@@ -39,6 +40,7 @@ export async function getSpecialties() {
     .order('sort_order');
 
   if (error) {
+    console.error('[getSpecialties] Supabase error:', error);
     return { ok: false as const, error: error.message, specialties: [] };
   }
 
@@ -60,6 +62,7 @@ export async function replaceProfileSpecialties(specialtyIds: string[]) {
     );
 
     if (error) {
+      console.error('[replaceProfileSpecialties] Supabase error:', error);
       return { ok: false, error: error.message };
     }
 
@@ -70,6 +73,7 @@ export async function replaceProfileSpecialties(specialtyIds: string[]) {
 
     return { ok: false, error: 'Unexpected response' };
   } catch (err) {
+    console.error('[replaceProfileSpecialties] threw:', err);
     return { ok: false, error: String(err) };
   }
 }

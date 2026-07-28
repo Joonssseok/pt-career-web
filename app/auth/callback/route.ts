@@ -55,6 +55,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.redirect(new URL(redirectUrl, request.url))
   } catch (err) {
+    console.error('[AUTH_CALLBACK] threw:', err)
     return NextResponse.redirect(
       new URL('/login?error=server_error', request.url)
     )

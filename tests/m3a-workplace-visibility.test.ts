@@ -12,6 +12,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { safeCleanup } from './helpers/cleanup';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'http://127.0.0.1:54321';
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
@@ -55,8 +56,10 @@ describe('M3-A Workplace Visibility (AD-05B)', () => {
   });
 
   afterAll(async () => {
-    await adminApi.from('profiles').delete().eq('id', ownerProfileId);
-    await adminApi.auth.admin.deleteUser(ownerId);
+    await safeCleanup([
+      () => adminApi.from('profiles').delete().eq('id', ownerProfileId),
+      () => adminApi.auth.admin.deleteUser(ownerId),
+    ]);
   });
 
   afterEach(async () => {

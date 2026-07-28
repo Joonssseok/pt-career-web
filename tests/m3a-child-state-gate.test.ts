@@ -14,6 +14,7 @@
  */
 
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { safeCleanup } from './helpers/cleanup';
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'http://127.0.0.1:54321';
 const ANON_KEY = process.env.SUPABASE_ANON_KEY || '';
@@ -71,10 +72,12 @@ describe('M3-A Child State Gate (experiences)', () => {
   });
 
   afterAll(async () => {
-    await adminApi.from('profiles').delete().in('user_id', [ownerId, adminId]);
-    await adminApi.from('admin_users').delete().eq('user_id', adminId);
-    await adminApi.auth.admin.deleteUser(ownerId);
-    await adminApi.auth.admin.deleteUser(adminId);
+    await safeCleanup([
+      () => adminApi.from('profiles').delete().in('user_id', [ownerId, adminId]),
+      () => adminApi.from('admin_users').delete().eq('user_id', adminId),
+      () => adminApi.auth.admin.deleteUser(ownerId),
+      () => adminApi.auth.admin.deleteUser(adminId),
+    ]);
   });
 
   it('owner CAN insert an experience row while their profile is draft', async () => {

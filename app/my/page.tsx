@@ -187,15 +187,14 @@ async function ProfileStatusSection({
         </Link>
         <div className="pt-2 border-t border-green-200 space-y-2">
           <p className="text-xs text-gray-600">
-            승인되어 공개 중인 프로필은 현재 온보딩 화면에서 저장할 수 없습니다. 온보딩
-            화면에서 내용을 바꾸고 저장을 시도하면 &ldquo;수정할 수 없는 상태&rdquo; 오류가
-            표시됩니다. 정보를 변경하고 싶다면 관리자에게 문의해주세요.
+            정보를 수정하고 저장하면 프로필이 다시 관리자 검토 상태로 전환되며, 재승인 전까지
+            공개가 중단됩니다.
           </p>
           <Link
-            href="/expert/onboarding"
+            href="/expert/edit"
             className="block text-center min-h-[44px] flex items-center justify-center border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition"
           >
-            입력했던 내용 확인하기
+            수정하기
           </Link>
         </div>
       </div>

@@ -47,13 +47,39 @@ export async function GET(request: NextRequest) {
 
     console.log('[AUTH_CALLBACK] Exchange success: true')
 
+    const termsConsent = request.cookies.get('pt_terms_consent')?.value === '1'
+    if (termsConsent) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (user) {
+        const { data: existing } = await supabase
+          .from('profiles')
+          .select('terms_agreed_at')
+          .eq('user_id', user.id)
+          .maybeSingle()
+
+        if (!existing?.terms_agreed_at) {
+          await supabase
+            .from('profiles')
+            .upsert(
+              { user_id: user.id, terms_agreed_at: new Date().toISOString() },
+              { onConflict: 'user_id' }
+            )
+        }
+      }
+    }
+
     // Determine redirect URL
     let redirectUrl = '/my'
     if (nextUrl && validateRedirectUrl(nextUrl)) {
       redirectUrl = nextUrl
     }
 
-    return NextResponse.redirect(new URL(redirectUrl, request.url))
+    const response = NextResponse.redirect(new URL(redirectUrl, request.url))
+    response.cookies.delete('pt_terms_consent')
+    return response
   } catch (err) {
     console.error('[AUTH_CALLBACK] threw:', err)
     return NextResponse.redirect(

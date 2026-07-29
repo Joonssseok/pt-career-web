@@ -20,7 +20,9 @@ export async function getOwnWorkplace() {
 
   const { data: workplace, error } = await supabase
     .from('workplaces')
-    .select('center_name, website_url, external_contact_url, region, is_location_public')
+    .select(
+      'center_name, website_url, external_contact_url, region, is_location_public, address, address_detail, phone, latitude, longitude'
+    )
     .eq('profile_id', profileId)
     .maybeSingle();
 
@@ -38,6 +40,11 @@ export async function saveWorkplace(data: {
   officialContact?: string;
   workplaceRegion?: string;
   isLocationPublic: boolean;
+  address?: string;
+  addressDetail?: string;
+  phone?: string;
+  latitude?: number;
+  longitude?: number;
 }) {
   try {
     const supabase = await createClient();
@@ -64,6 +71,11 @@ export async function saveWorkplace(data: {
           external_contact_url: data.officialContact || null,
           region: data.workplaceRegion || null,
           is_location_public: data.isLocationPublic,
+          address: data.address || null,
+          address_detail: data.addressDetail || null,
+          phone: data.phone || null,
+          latitude: data.latitude ?? null,
+          longitude: data.longitude ?? null,
         },
         { onConflict: 'profile_id' }
       );

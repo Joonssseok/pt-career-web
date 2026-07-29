@@ -69,7 +69,7 @@ export default function SpecialtiesStep() {
     if (result.ok) {
       setFormState('saved');
       setTimeout(() => {
-        router.push('/expert/onboarding/complete');
+        router.push('/expert/onboarding/preview');
       }, 1000);
     } else {
       setFormState('error');
@@ -81,6 +81,7 @@ export default function SpecialtiesStep() {
 
   return (
     <div className="space-y-6">
+      <p className="text-sm text-gray-500">6 / 6 · 전문분야</p>
       <div className="flex items-center gap-4">
         <span className="text-4xl">⭐</span>
         <div>
@@ -200,7 +201,7 @@ export default function SpecialtiesStep() {
         {/* Navigation */}
         <div className="flex gap-3 pt-4">
           <Link
-            href="/expert/onboarding/education"
+            href="/expert/onboarding/workplace"
             className="min-h-[44px] px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
           >
             이전
@@ -214,9 +215,7 @@ export default function SpecialtiesStep() {
             }
             className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
-            {formState === 'loading'
-              ? '저장 중...'
-              : '프로필 설정 완료'}
+            {formState === 'loading' ? '저장 중...' : '다음: 미리보기'}
           </button>
         </div>
       </form>

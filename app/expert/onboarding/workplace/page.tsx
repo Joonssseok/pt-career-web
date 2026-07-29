@@ -14,6 +14,11 @@ export default function WorkplaceStep() {
     officialContact: '',
     workplaceRegion: '',
     isLocationPublic: false,
+    address: '',
+    addressDetail: '',
+    phone: '',
+    latitude: '',
+    longitude: '',
   });
 
   const regions = REGIONS;
@@ -28,6 +33,11 @@ export default function WorkplaceStep() {
         officialContact: w.external_contact_url ?? '',
         workplaceRegion: w.region ?? '',
         isLocationPublic: w.is_location_public ?? false,
+        address: w.address ?? '',
+        addressDetail: w.address_detail ?? '',
+        phone: w.phone ?? '',
+        latitude: w.latitude != null ? String(w.latitude) : '',
+        longitude: w.longitude != null ? String(w.longitude) : '',
       });
     });
   }, []);
@@ -53,6 +63,7 @@ export default function WorkplaceStep() {
 
   const [formState, setFormState] = useState<'default' | 'loading' | 'saved' | 'error'>('default');
   const [errorMsg, setErrorMsg] = useState('');
+  const [coordError, setCoordError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +71,18 @@ export default function WorkplaceStep() {
     if (!formData.centerName.trim()) {
       return;
     }
+
+    const latitude = formData.latitude.trim() ? Number(formData.latitude) : undefined;
+    const longitude = formData.longitude.trim() ? Number(formData.longitude) : undefined;
+
+    if (
+      (latitude !== undefined && Number.isNaN(latitude)) ||
+      (longitude !== undefined && Number.isNaN(longitude))
+    ) {
+      setCoordError('좌표는 숫자로 입력해주세요');
+      return;
+    }
+    setCoordError('');
 
     setFormState('loading');
     setErrorMsg('');
@@ -70,12 +93,17 @@ export default function WorkplaceStep() {
       officialContact: formData.officialContact || undefined,
       workplaceRegion: formData.workplaceRegion || undefined,
       isLocationPublic: formData.isLocationPublic,
+      address: formData.address || undefined,
+      addressDetail: formData.addressDetail || undefined,
+      phone: formData.phone || undefined,
+      latitude,
+      longitude,
     });
 
     if (result.ok) {
       setFormState('saved');
       setTimeout(() => {
-        router.push('/expert/onboarding/experience');
+        router.push('/expert/onboarding/specialties');
       }, 1000);
     } else {
       setErrorMsg(result.error);
@@ -88,6 +116,7 @@ export default function WorkplaceStep() {
 
   return (
     <div className="space-y-6">
+      <p className="text-sm text-gray-500">5 / 6 · 근무기관</p>
       <div className="flex items-center gap-4">
         <span className="text-4xl">🏢</span>
         <div>
@@ -131,6 +160,75 @@ export default function WorkplaceStep() {
             required
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
+        </div>
+
+        {/* Location */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-900 mb-3">
+            💡 개인 연락처는 공개하지 않습니다.
+          </p>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                주소
+              </label>
+              <input
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                placeholder="예: 서울특별시 강남구 테헤란로 123"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div>
+              <input
+                type="text"
+                name="addressDetail"
+                value={formData.addressDetail}
+                onChange={handleChange}
+                placeholder="상세주소 (선택)"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                type="text"
+                name="latitude"
+                value={formData.latitude}
+                onChange={handleChange}
+                placeholder="위도 (선택, 예: 37.3915)"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="text"
+                name="longitude"
+                value={formData.longitude}
+                onChange={handleChange}
+                placeholder="경도 (선택, 예: 127.1120)"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            {coordError && <p className="text-xs text-red-500">{coordError}</p>}
+          </div>
+        </div>
+
+        {/* Institution Phone */}
+        <div>
+          <label className="block text-sm font-medium text-gray-900 mb-2">
+            기관 전화
+          </label>
+          <input
+            type="text"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            placeholder="예: 02-1234-5678"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            소속기관의 공식 연락처만 입력해주세요
+          </p>
         </div>
 
         {/* Website URL */}
@@ -213,7 +311,7 @@ export default function WorkplaceStep() {
         {/* Navigation */}
         <div className="flex gap-3 pt-4">
           <Link
-            href="/expert/onboarding/profile"
+            href="/expert/onboarding/certification"
             className="min-h-[44px] px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
           >
             이전
@@ -222,7 +320,7 @@ export default function WorkplaceStep() {
             type="submit"
             className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center justify-center"
           >
-            다음: 경력
+            다음: 전문분야
           </button>
         </div>
       </form>

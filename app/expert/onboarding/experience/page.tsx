@@ -115,6 +115,7 @@ export default function ExperienceStep() {
 
   return (
     <div className="space-y-6">
+      <p className="text-sm text-gray-500">2 / 6 · 경력</p>
       <div className="flex items-center gap-4">
         <span className="text-4xl">📋</span>
         <div>
@@ -312,7 +313,7 @@ export default function ExperienceStep() {
         {/* Navigation */}
         <div className="flex gap-3 pt-4">
           <Link
-            href="/expert/onboarding/workplace"
+            href="/expert/onboarding/profile"
             className="min-h-[44px] px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
           >
             이전

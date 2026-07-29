@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { agreeToTerms } from '@/app/actions/terms'
 import Link from 'next/link'
 
 export default function SignUpForm() {
@@ -13,10 +14,15 @@ export default function SignUpForm() {
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [agreedTerms, setAgreedTerms] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   const handleGoogleSignUp = async () => {
+    if (!agreedTerms) {
+      setError('필수 약관에 동의해주세요')
+      return
+    }
     setOauthLoading(true)
     setError('')
 
@@ -46,6 +52,11 @@ export default function SignUpForm() {
     setError('')
     setMessage('')
 
+    if (!agreedTerms) {
+      setError('필수 약관에 동의해주세요')
+      return
+    }
+
     if (!email || !password || !confirmPassword) {
       setError('모든 필드를 입력해주세요')
       return
@@ -64,7 +75,7 @@ export default function SignUpForm() {
     setLoading(true)
 
     try {
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -75,6 +86,13 @@ export default function SignUpForm() {
       if (signUpError) {
         setError(signUpError.message)
       } else {
+        // Local/dev Supabase with autoconfirm returns a session immediately;
+        // record consent now. With email confirmation required (production),
+        // there's no session yet -- the onboarding start screen's own
+        // agreeToTerms() gate (PR #24) catches it after the user confirms.
+        if (signUpData.session) {
+          await agreeToTerms()
+        }
         setMessage(
           '회원가입이 완료되었습니다. 이메일을 확인하여 계정을 활성화해주세요.'
         )
@@ -105,10 +123,34 @@ export default function SignUpForm() {
             </div>
           )}
 
+          {/* Terms Agreement */}
+          <div className="mb-4">
+            <label className="flex items-start gap-3 cursor-pointer min-h-[44px]">
+              <input
+                type="checkbox"
+                checked={agreedTerms}
+                onChange={(e) => setAgreedTerms(e.target.checked)}
+                className="mt-1"
+              />
+              <span className="text-sm text-gray-700">
+                필수 약관에 동의합니다
+              </span>
+            </label>
+            <div className="text-xs text-gray-500 mt-1 ml-7 space-x-2">
+              <Link href="/terms" target="_blank" className="underline hover:text-gray-700">
+                이용약관 보기
+              </Link>
+              <span>·</span>
+              <Link href="/privacy" target="_blank" className="underline hover:text-gray-700">
+                개인정보처리방침 보기
+              </Link>
+            </div>
+          </div>
+
           {/* Google OAuth - 기본 CTA */}
           <button
             onClick={handleGoogleSignUp}
-            disabled={oauthLoading}
+            disabled={oauthLoading || !agreedTerms}
             className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed transition flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -184,7 +226,7 @@ export default function SignUpForm() {
 
             <button
               type="submit"
-              disabled={loading || oauthLoading}
+              disabled={loading || oauthLoading || !agreedTerms}
               className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
             >
               {loading ? '가입 중...' : '이메일로 가입'}

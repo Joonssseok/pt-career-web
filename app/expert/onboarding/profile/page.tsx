@@ -165,7 +165,7 @@ export default function ProfileStep() {
     if (result.ok) {
       setFormState('saved');
       setTimeout(() => {
-        router.push('/expert/onboarding/workplace');
+        router.push('/expert/onboarding/experience');
       }, 1000);
     } else {
       setErrors({ submit: result.error });
@@ -184,6 +184,7 @@ export default function ProfileStep() {
 
   return (
     <div className="space-y-6">
+      <p className="text-sm text-gray-500">1 / 6 · 기본 정보</p>
       <div className="flex items-center gap-4">
         <span className="text-4xl">👤</span>
         <div>
@@ -371,7 +372,7 @@ export default function ProfileStep() {
             disabled={formState === 'loading' || formState === 'saved'}
             className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
           >
-            {formState === 'loading' ? '저장 중...' : '다음: 근무기관'}
+            {formState === 'loading' ? '저장 중...' : '다음: 경력'}
           </button>
         </div>
       </form>

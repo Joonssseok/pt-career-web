@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { agreeToTerms } from '@/app/actions/terms'
 import Link from 'next/link'
 
 export default function SignUpForm() {
@@ -26,7 +27,6 @@ export default function SignUpForm() {
     setError('')
 
     try {
-      document.cookie = 'pt_terms_consent=1; path=/; max-age=2592000'
       const redirectTo = `${window.location.origin}/auth/callback?next=/my`
 
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
@@ -75,8 +75,7 @@ export default function SignUpForm() {
     setLoading(true)
 
     try {
-      document.cookie = 'pt_terms_consent=1; path=/; max-age=2592000'
-      const { error: signUpError } = await supabase.auth.signUp({
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -87,6 +86,13 @@ export default function SignUpForm() {
       if (signUpError) {
         setError(signUpError.message)
       } else {
+        // Local/dev Supabase with autoconfirm returns a session immediately;
+        // record consent now. With email confirmation required (production),
+        // there's no session yet -- the onboarding start screen's own
+        // agreeToTerms() gate (PR #24) catches it after the user confirms.
+        if (signUpData.session) {
+          await agreeToTerms()
+        }
         setMessage(
           '회원가입이 완료되었습니다. 이메일을 확인하여 계정을 활성화해주세요.'
         )

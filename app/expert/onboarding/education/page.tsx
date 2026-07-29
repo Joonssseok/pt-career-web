@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getOwnEducations, saveEducation } from '@/app/actions/education';
+import { getOwnProfile } from '@/app/actions/profile';
 
 type Education = {
   id: string;
@@ -16,11 +17,17 @@ type Education = {
 export default function EducationStep() {
   const router = useRouter();
   const [educations, setEducations] = useState<Education[]>([]);
+  const [isApproved, setIsApproved] = useState(false);
 
   useEffect(() => {
     getOwnEducations().then((result) => {
       if (!result.ok) return;
       setEducations(result.educations);
+    });
+    getOwnProfile().then((result) => {
+      if (result.ok && result.profile) {
+        setIsApproved(result.profile.verification_status === 'approved');
+      }
     });
   }, []);
 
@@ -126,6 +133,14 @@ export default function EducationStep() {
           선택 항목
         </span>
       </div>
+      {isApproved && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-sm text-yellow-900 font-medium">확인 필요</p>
+          <p className="text-sm text-yellow-800 mt-1">
+            수정 후 저장하면 프로필이 다시 관리자 검토 상태로 전환됩니다.
+          </p>
+        </div>
+      )}
       <div className="flex items-center gap-4">
         <span className="text-4xl">📚</span>
         <div>

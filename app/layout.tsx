@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import { SiteFooter } from "@/components/SiteFooter";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -33,6 +34,7 @@ export default function RootLayout({
     <html lang="ko">
       <body>
         {children}
+        <SiteFooter />
         <Analytics />
       </body>
     </html>

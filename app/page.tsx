@@ -54,13 +54,6 @@ export default async function Home() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="border-t border-slate-200 px-4 py-6 sm:px-6 sm:py-8 text-center">
-        <p className="text-sm text-slate-500">
-          © 2026 PT Career. 신뢰할 수 있는 전문가 찾기
-        </p>
-      </footer>
     </main>
   );
 }

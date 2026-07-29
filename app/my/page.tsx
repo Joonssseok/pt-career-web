@@ -5,6 +5,7 @@ import { getOwnWorkplace } from '@/app/actions/workplace'
 import { getOwnExperiences } from '@/app/actions/experience'
 import { getOwnCertifications } from '@/app/actions/certification'
 import { getOwnSelectedSpecialtyIds, getSpecialties } from '@/app/actions/specialties'
+import { DeletionBanner } from './DeletionBanner'
 
 type ProfileSummary = {
   displayName: string | null
@@ -52,7 +53,7 @@ export default async function MyPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, display_name, profession, headline, verification_status')
+    .select('id, display_name, profession, headline, verification_status, deletion_requested_at')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -79,6 +80,10 @@ export default async function MyPage() {
             </div>
           )}
 
+          {profile?.deletion_requested_at && (
+            <DeletionBanner deletionRequestedAt={profile.deletion_requested_at} />
+          )}
+
           {profile && <ProfileStatusSection profile={profile} />}
 
           <form
@@ -96,6 +101,12 @@ export default async function MyPage() {
               로그아웃
             </button>
           </form>
+
+          <div className="text-center">
+            <Link href="/my/delete-account" className="text-xs text-gray-400 hover:text-gray-600">
+              회원 탈퇴
+            </Link>
+          </div>
         </div>
       </div>
     </div>

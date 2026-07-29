@@ -25,6 +25,7 @@ export async function getOwnWorkplace() {
     .maybeSingle();
 
   if (error) {
+    console.error('[getOwnWorkplace] Supabase error:', error);
     return { ok: false as const, error: error.message, workplace: null };
   }
 
@@ -68,11 +69,13 @@ export async function saveWorkplace(data: {
       );
 
     if (error) {
+      console.error('[saveWorkplace] Supabase error:', error);
       return { ok: false, error: error.message };
     }
 
     return { ok: true, error: '' };
   } catch (err) {
+    console.error('[saveWorkplace] threw:', err);
     return { ok: false, error: String(err) };
   }
 }

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import type { Metadata } from 'next';
@@ -19,6 +20,12 @@ type ExpertDetail = {
   workplace_region: string | null;
   workplace_center_name: string | null;
   workplace_website_url: string | null;
+  workplace_address: string | null;
+  workplace_address_detail: string | null;
+  workplace_phone: string | null;
+  workplace_external_contact_url: string | null;
+  workplace_latitude: number | null;
+  workplace_longitude: number | null;
   specialties: { slug: string; name: string; is_primary: boolean }[];
   experiences: {
     organization_name: string;
@@ -110,10 +117,12 @@ export default async function ExpertDetailPage({
         <div className="flex gap-4 items-start">
           <div className="w-20 h-20 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center text-3xl text-gray-400">
             {expert.profile_image_path ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={getProfilePhotoUrl(expert.profile_image_path) ?? undefined}
+              <Image
+                src={getProfilePhotoUrl(expert.profile_image_path) ?? ''}
                 alt={expert.display_name ?? '전문가'}
+                width={80}
+                height={80}
+                priority
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -218,6 +227,40 @@ export default async function ExpertDetailPage({
                 </li>
               ))}
             </ul>
+          </section>
+        )}
+
+        {(expert.workplace_address || expert.workplace_phone || expert.workplace_external_contact_url) && (
+          <section>
+            <h2 className="text-sm font-semibold text-gray-900 mb-2">문의하기</h2>
+            <div className="space-y-3">
+              {expert.workplace_address && (
+                <p className="text-sm text-gray-700">
+                  {expert.workplace_address}
+                  {expert.workplace_address_detail ? ` ${expert.workplace_address_detail}` : ''}
+                </p>
+              )}
+
+              {expert.workplace_phone && (
+                <a
+                  href={`tel:${expert.workplace_phone}`}
+                  className="block w-full min-h-[44px] px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-center"
+                >
+                  전화 걸기
+                </a>
+              )}
+
+              {expert.workplace_external_contact_url && (
+                <a
+                  href={expert.workplace_external_contact_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full min-h-[44px] px-4 py-3 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-slate-50 transition-colors text-center"
+                >
+                  외부 문의(카카오톡 등)
+                </a>
+              )}
+            </div>
           </section>
         )}
 

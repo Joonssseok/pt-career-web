@@ -7,6 +7,19 @@ import { submitProfile } from '@/app/actions/profile';
 
 type SubmitState = 'default' | 'loading' | 'error' | 'done';
 
+const ERROR_MESSAGE_MAP: Record<string, string> = {
+  'Not authenticated': '로그인이 필요합니다.',
+  'Profile not found': '프로필을 찾을 수 없습니다.',
+  'Profile status does not allow submission': '이미 제출되었거나 공개된 프로필입니다.',
+  'Profile image is required for submission': '공개하려면 프로필 사진을 등록해주세요.',
+  'At least one experience or license is required for submission':
+    '공개하려면 경력 또는 자격/면허를 최소 1개 이상 입력해주세요.',
+};
+
+function toUserMessage(rawError: string): string {
+  return ERROR_MESSAGE_MAP[rawError] ?? '제출 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+}
+
 export default function OnboardingCompletePage() {
   const router = useRouter();
   const [state, setState] = useState<SubmitState>('default');
@@ -22,7 +35,7 @@ export default function OnboardingCompletePage() {
         router.push('/my');
       }, 1500);
     } else {
-      setError(result.error);
+      setError(toUserMessage(result.error));
       setState('error');
     }
   };
@@ -63,9 +76,14 @@ export default function OnboardingCompletePage() {
       )}
 
       {state !== 'done' && state !== 'error' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
-          제출하면 관리자 검토를 거쳐 프로필이 공개됩니다. 검토 중에는 정보를
-          수정할 수 없습니다.
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900 space-y-1">
+          <p>
+            제출하면 관리자 검토를 거쳐 프로필이 공개됩니다. 검토 중에는 정보를
+            수정할 수 없습니다.
+          </p>
+          <p className="text-blue-700">
+            제출하려면 프로필 사진과, 경력 또는 자격/면허 중 최소 1개가 필요합니다.
+          </p>
         </div>
       )}
 

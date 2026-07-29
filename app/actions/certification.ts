@@ -25,6 +25,7 @@ export async function getOwnCertifications() {
     .order('created_at');
 
   if (error) {
+    console.error('[getOwnCertifications] Supabase error:', error);
     return { ok: false as const, error: error.message, certifications: [] };
   }
 
@@ -74,6 +75,7 @@ export async function saveCertifications(data: {
       .eq('profile_id', profileId);
 
     if (deleteError) {
+      console.error('[saveCertifications] delete error:', deleteError);
       return { ok: false, error: deleteError.message };
     }
 
@@ -93,11 +95,13 @@ export async function saveCertifications(data: {
     );
 
     if (insertError) {
+      console.error('[saveCertifications] insert error:', insertError);
       return { ok: false, error: insertError.message };
     }
 
     return { ok: true, error: '' };
   } catch (err) {
+    console.error('[saveCertifications] threw:', err);
     return { ok: false, error: String(err) };
   }
 }

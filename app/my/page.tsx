@@ -194,7 +194,13 @@ async function ProfileStatusSection({
             href="/expert/edit"
             className="block text-center min-h-[44px] flex items-center justify-center border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition"
           >
-            수정하기
+            기본 정보 수정하기
+          </Link>
+          <Link
+            href="/expert/onboarding"
+            className="block text-center min-h-[44px] flex items-center justify-center border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition"
+          >
+            경력·교육·자격·근무기관·전문분야 수정하기
           </Link>
         </div>
       </div>

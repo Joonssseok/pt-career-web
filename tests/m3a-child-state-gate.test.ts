@@ -1,9 +1,14 @@
 /**
  * M3-A Child State Gate — real JWT sessions against a live Postgres (local Supabase).
  *
- * Covers the RLS gap closed by supabase/migrations/20260727000100_m3a_child_state_gate.sql:
- * owners of `experiences` (and, identically, workplaces/educations/profile_specialties)
- * rows may only INSERT/UPDATE/DELETE while their parent profile is 'draft' or 'rejected'.
+ * Covers the RLS gap closed by supabase/migrations/20260727000100_m3a_child_state_gate.sql
+ * and later widened by 20260730000000_child_table_edit_expansion.sql: owners of
+ * `experiences` (and, identically, workplaces/educations/licenses/profile_specialties)
+ * rows may INSERT/UPDATE/DELETE while their parent profile is 'draft', 'rejected', or
+ * 'approved' -- only 'pending' (already under review) blocks writes. Writing to a
+ * child table while approved also demotes the parent profile back to 'pending' via
+ * the demote_profile_if_approved() trigger, mirroring save_own_profile()'s own
+ * approved -> pending transition (PR #34).
  *
  * service_role is used ONLY for fixture setup/cleanup (creating users, flipping
  * profiles.verification_status to simulate a review-flow state, deleting test auth
@@ -129,7 +134,7 @@ describe('M3-A Child State Gate (experiences)', () => {
     expect(data).toBeNull();
   });
 
-  it('owner CANNOT update or delete an existing experience row while their profile is approved', async () => {
+  it('owner CAN update an approved profile\'s experience row, which demotes the profile back to pending', async () => {
     // Bring the profile back to draft to legitimately create the row via ownerClient,
     // then flip to approved (service_role fixture only) before attempting mutation.
     await adminApi.from('profiles').update({ verification_status: 'draft' }).eq('id', ownerProfileId);
@@ -144,27 +149,38 @@ describe('M3-A Child State Gate (experiences)', () => {
 
     const flip = await adminApi
       .from('profiles')
-      .update({ verification_status: 'approved' })
+      .update({ verification_status: 'approved', is_public: true, approved_at: new Date().toISOString() })
       .eq('id', ownerProfileId);
     expect(flip.error).toBeNull();
 
     const updateAttempt = await ownerClient
       .from('experiences')
-      .update({ organization_name: 'Should Not Update' })
+      .update({ organization_name: 'Edited While Approved' })
       .eq('id', rowId)
       .select('id');
-    expect(updateAttempt.error).toBeNull(); // RLS silently matches zero rows, not an error
-    expect(updateAttempt.data).toEqual([]);
+    expect(updateAttempt.error).toBeNull();
+    expect(updateAttempt.data?.length).toBe(1);
 
-    // Confirm via service_role that the row was in fact untouched.
-    const { data: unchanged } = await adminApi
+    const { data: updatedRow } = await adminApi
       .from('experiences')
       .select('organization_name')
       .eq('id', rowId)
       .single();
-    expect(unchanged?.organization_name).toBe('Soon Approved Gym');
+    expect(updatedRow?.organization_name).toBe('Edited While Approved');
+
+    // The edit should have demoted the profile back to pending (mirrors
+    // save_own_profile()'s own approved -> pending transition).
+    const { data: demotedProfile } = await adminApi
+      .from('profiles')
+      .select('verification_status, is_public, approved_at')
+      .eq('id', ownerProfileId)
+      .single();
+    expect(demotedProfile?.verification_status).toBe('pending');
+    expect(demotedProfile?.is_public).toBe(false);
+    expect(demotedProfile?.approved_at).toBeNull();
 
     const deleteAttempt = await ownerClient.from('experiences').delete().eq('id', rowId).select('id');
+    // Now pending again, so the delete is blocked exactly like the 'pending' test above.
     expect(deleteAttempt.error).toBeNull();
     expect(deleteAttempt.data).toEqual([]);
 
@@ -173,6 +189,13 @@ describe('M3-A Child State Gate (experiences)', () => {
       .select('id')
       .eq('id', rowId);
     expect(stillThere?.length).toBe(1);
+
+    // Restore to approved for the next test (admin management), which expects
+    // an approved profile to already exist.
+    await adminApi
+      .from('profiles')
+      .update({ verification_status: 'approved', is_public: true, approved_at: new Date().toISOString() })
+      .eq('id', ownerProfileId);
   });
 
   it('admin can SELECT and manage experience rows regardless of profile status (via admin_all, not an RPC)', async () => {

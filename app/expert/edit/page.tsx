@@ -212,7 +212,11 @@ export default function ProfileEditPage() {
               ))}
             </select>
             <p className="text-xs text-gray-500 mt-1">
-              경력·교육·자격·근무기관·전문분야 수정은 다음 라운드에서 지원될 예정입니다.
+              경력·교육·자격·근무기관·전문분야는{' '}
+              <Link href="/expert/onboarding" className="underline hover:text-gray-700">
+                온보딩 화면
+              </Link>
+              에서 수정할 수 있습니다.
             </p>
           </div>
 

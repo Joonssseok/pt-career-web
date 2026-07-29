@@ -20,7 +20,7 @@ export async function getOwnProfile() {
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('display_name, profession, headline, introduction, profile_image_path')
+    .select('display_name, profession, headline, introduction, profile_image_path, verification_status')
     .eq('id', profileId)
     .maybeSingle();
 

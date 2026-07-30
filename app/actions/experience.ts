@@ -88,8 +88,9 @@ export async function saveExperience(data: {
         profile_id: profileId,
         organization_name: exp.companyName,
         position: exp.position,
-        start_date: exp.startDate || null,
-        end_date: exp.isCurrentlyWorking ? null : exp.endDate || null,
+        // <input type="month"> gives "YYYY-MM"; the DB column is a full DATE.
+        start_date: exp.startDate ? `${exp.startDate}-01` : null,
+        end_date: exp.isCurrentlyWorking ? null : exp.endDate ? `${exp.endDate}-01` : null,
         is_current: exp.isCurrentlyWorking,
         display_order: index,
       }))

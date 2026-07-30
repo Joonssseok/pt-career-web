@@ -275,7 +275,7 @@ export default function WorkplaceStep() {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="text-xs text-gray-500 mt-1">
-            💡 개인 연락처: 항상 비공개 / 공식 연락처: 공개 정책 미확정 (TM-04A/04B)
+            💡 개인 연락처: 항상 비공개 / 공식 연락처: 공개 정책 미확정
           </p>
         </div>
 
@@ -298,7 +298,7 @@ export default function WorkplaceStep() {
             ))}
           </select>
           <p className="text-xs text-gray-500 mt-1">
-            ⏳ 근무지역 공개 정책은 운영팀 검토 중입니다 (AD-05B)
+            ⏳ 근무지역 공개 정책은 운영팀 검토 중입니다
           </p>
         </div>
 

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 
 export const viewport: Viewport = {
@@ -33,6 +34,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body>
+        <SiteHeader />
         {children}
         <SiteFooter />
         <Analytics />

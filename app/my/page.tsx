@@ -5,6 +5,7 @@ import { getOwnWorkplace } from '@/app/actions/workplace'
 import { getOwnExperiences } from '@/app/actions/experience'
 import { getOwnCertifications } from '@/app/actions/certification'
 import { getOwnSelectedSpecialtyIds, getSpecialties } from '@/app/actions/specialties'
+import { AccountSidebar } from '@/components/AccountSidebar'
 import { DeletionBanner } from './DeletionBanner'
 
 type ProfileSummary = {
@@ -58,8 +59,9 @@ export default async function MyPage() {
     .maybeSingle()
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-2xl mx-auto px-4 py-8">
+    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
+      <AccountSidebar />
+      <div className="flex-1 min-w-0 max-w-2xl mx-auto px-4 py-8 w-full">
         <div className="bg-white rounded-lg shadow p-8 space-y-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">마이페이지</h1>

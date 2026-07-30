@@ -13,6 +13,12 @@ export async function SiteHeader() {
         PT Career
       </Link>
       <div className="flex items-center gap-4 sm:gap-6">
+        <Link
+          href="/experts"
+          className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          전문가 찾기
+        </Link>
         {user ? (
           <Link
             href="/my"

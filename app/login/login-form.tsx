@@ -75,7 +75,7 @@ export default function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow p-8">
-          <h1 className="text-2xl font-bold mb-6 text-center">로그인</h1>
+          <h1 className="text-page-title font-bold mb-6 text-center">로그인</h1>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">

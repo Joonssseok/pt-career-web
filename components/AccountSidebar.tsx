@@ -1,12 +1,6 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-
-const STATUS_META: Record<string, { label: string; className: string }> = {
-  draft: { label: '작성 중', className: 'bg-orange-50 text-orange-700 border-orange-200' },
-  pending: { label: '검토 중', className: 'bg-blue-50 text-blue-700 border-blue-200' },
-  approved: { label: '공개 중', className: 'bg-green-50 text-green-700 border-green-200' },
-  rejected: { label: '반려됨', className: 'bg-red-50 text-red-700 border-red-200' },
-};
+import { PROFILE_STATUS_META as STATUS_META } from '@/lib/constants/status-badges';
 
 const EDIT_SECTION_LINKS = [
   { value: 'basic', label: '기본 정보' },

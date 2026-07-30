@@ -12,7 +12,7 @@ export default async function Home() {
       <section className="flex-1 flex flex-col items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
         {/* Core Message */}
         <div className="max-w-md text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-4">
+          <h1 className="text-hero sm:text-4xl font-bold text-slate-900 leading-tight mb-4">
             신뢰는 소개되고,
             <br />
             전문성은 기록됩니다.

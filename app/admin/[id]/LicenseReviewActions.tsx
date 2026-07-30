@@ -3,17 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { reviewLicense } from '@/app/actions/admin';
+import { LICENSE_STATUS_META as STATUS_META } from '@/lib/constants/status-badges';
 
 type ReviewState = 'default' | 'loading' | 'error';
-
-// not_submitted/pending 모두 "아직 심사 전"이라는 점에서 동일하게 취급 —
-// 본인 화면(CertificationSection)의 "검토 대기" 표기와 의미를 맞춘다.
-const STATUS_META: Record<string, { label: string; className: string }> = {
-  not_submitted: { label: '미검토', className: 'bg-gray-50 text-gray-600 border-gray-200' },
-  pending: { label: '미검토', className: 'bg-gray-50 text-gray-600 border-gray-200' },
-  verified: { label: '인증됨', className: 'bg-green-50 text-green-700 border-green-200' },
-  rejected: { label: '반려됨', className: 'bg-red-50 text-red-700 border-red-200' },
-};
 
 export function LicenseReviewActions({
   licenseId,

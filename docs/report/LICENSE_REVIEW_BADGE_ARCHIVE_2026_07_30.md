@@ -113,38 +113,87 @@ GRANT EXECUTE ON FUNCTION public.review_license(uuid, text, text) TO authenticat
 
 실측: 자격증 화면에서 ACE-CPT 항목을 삭제 후 재저장 → `licenses` 테이블에서는 해당 행이 사라졌지만, 대응하는 PDF 파일은 `storage.objects`에 그대로 남아있고 "제출 서류함"에서 여전히 목록/다운로드 가능함을 확인했습니다. 기존 "📎 증빙 파일 보기" 링크(`getEvidenceFileUrl`, `/api/evidence-file/[...path]` 프록시)도 검증 상태와 무관하게 계속 노출됨을 재확인했습니다(코드 변경 없음 — 기존 RLS 경로 그대로).
 
-## 6. 감사 로그 — 실측 및 필터 확인
+## 6. 감사 로그 — 실측 및 필터 확인 (정정: FK 설명 오류 및 실제 회귀 수정)
 
 관리자 계정으로 `/admin`에 로그인해 확인:
 
 - NASM-CPT 인증 직후 감사 로그에 `자격증 인증`(녹색) 항목이 대상 프로필명·처리 관리자·시각과 함께 즉시 나타남.
 - 필터 드롭다운에서 "자격증 인증"을 선택하고 조회 → `profile_approved` 항목은 사라지고 `license_verified` 항목만 남는 것을 확인(필터 정상 동작).
 
-**발견한 부수 현상 (버그 아님)**: 이후 진행한 "리셋 사이클" 테스트(4절)에서 `save_own_licenses()`의 DELETE+INSERT가 원본 NASM-CPT 라이선스 행을 삭제했고, `admin_actions.target_license_id`의 기존 FK(`ON DELETE SET NULL`, 이번 작업 이전부터 존재)가 자동으로 해당 감사 로그 항목의 `target_license_id`를 NULL로 만들었습니다. DB로 직접 확인:
+### 정정: 이전 버전의 "ON DELETE SET NULL이 자동 처리했다"는 설명은 틀렸습니다
 
-```
-action_type: license_verified, target_license_id: null, target_profile_id: 8176cfba-...
+이 절의 최초 버전은 "`admin_actions.target_license_id`의 기존 FK(`ON DELETE SET NULL`)가 자동으로 NULL 처리했다"고 서술했습니다. **이 설명은 사실과 다릅니다.** 프로덕션 DB(`oqrxdvwlsbwkhihsvqvt`)의 `pg_constraint`를 직접 조회한 결과 `admin_actions_target_license_id_fkey`/`admin_actions_target_profile_id_fkey`는 실제로 `confdeltype = 'a'`(**NO ACTION**)이며, `ON DELETE SET NULL`이 아니었습니다. 로컬 DB는 `20260719000000_m2_baseline_reconstructed.sql`(스키마를 사후 재구성해 문서화한 마이그레이션)이 `ON DELETE SET NULL`로 잘못 재구성되어 있었던 탓에, `supabase db reset`으로 만든 로컬 환경만 우연히 프로덕션과 다르게 동작했던 것입니다. 이 drift는 `app/api/cron/purge-deleted-accounts/route.ts`에 이미 있던 주석("admin_actions has no ON DELETE rule for target_profile_id/target_license_id, so deleting the profile would fail with an FK violation unless these are cleared first")과 수동 nullify 코드로도 독립적으로 뒷받침됩니다 — 그 라우트가 프로필을 지우기 전에 `admin_actions`를 수동으로 먼저 비워두는 이유가 바로 이것이었습니다.
+
+### 재현 결과 (수정 전)
+
+로컬 제약을 프로덕션과 동일하게(`DROP CONSTRAINT` 후 `ON DELETE` 절 없이 재생성) 맞추고 시나리오를 그대로 재현했습니다:
+
+1. 실제 계정으로 자격증 2건(NASM-CPT, ACE-CPT) 등록.
+2. 관리자가 `review_license()`로 NASM-CPT만 인증 → `admin_actions.target_license_id`가 그 행을 참조.
+3. 사용자가 자격증 목록을 수정해 `save_own_licenses()` 호출(프로필 전체 단위 DELETE+INSERT).
+
+3단계에서 저장이 실제로 에러로 실패했습니다:
+
+```json
+{
+  "code": "23503",
+  "message": "update or delete on table \"licenses\" violates foreign key constraint \"admin_actions_target_license_id_fkey\" on table \"admin_actions\"",
+  "details": "Key (id)=(...) is still referenced from table \"admin_actions\"."
+}
 ```
 
-이 때문에 리셋 이후에는 감사 로그의 `target_license_name`이 비어 보입니다. `action_type`/관리자/시각/대상 프로필명은 그대로 유지되므로 감사 이력 자체는 손실되지 않지만, 라이선스명은 원본 라이선스 행이 나중에 재저장으로 교체되면 사라질 수 있습니다. 이는 기존 FK 설계와 지시서가 "harmless"로 명시한 `save_own_licenses()` DELETE+INSERT 패턴(변경 금지 대상)의 자연스러운 결과이며, 이번 작업이 새로 만든 결함이 아닙니다. 별도 조치 없이 사실만 기록합니다.
+`save_own_licenses()`에는 이 예외를 잡는 `EXCEPTION` 블록이 없어 처리되지 않은 Postgres 에러로 그대로 전파되며(`{ok:false, error:...}`가 아니라 RPC 호출 자체가 에러), 지시서가 우려한 시나리오가 실재하는 회귀임을 확인했습니다. `target_profile_id`도 같은 문제였습니다 — 같은 테스트 중 프로필을 참조하는 `admin_actions` 행이 있는 상태에서 계정(프로필)을 삭제하려 하자 동일하게 `23503`으로 막히는 것을 별도로 재현했습니다.
+
+### 수정: `20260730090000_admin_actions_fk_no_action_fix.sql` (신규)
+
+```sql
+ALTER TABLE public.admin_actions
+  DROP CONSTRAINT admin_actions_target_license_id_fkey;
+ALTER TABLE public.admin_actions
+  ADD CONSTRAINT admin_actions_target_license_id_fkey
+  FOREIGN KEY (target_license_id) REFERENCES public.licenses(id)
+  ON DELETE SET NULL;
+
+ALTER TABLE public.admin_actions
+  DROP CONSTRAINT admin_actions_target_profile_id_fkey;
+ALTER TABLE public.admin_actions
+  ADD CONSTRAINT admin_actions_target_profile_id_fkey
+  FOREIGN KEY (target_profile_id) REFERENCES public.profiles(id)
+  ON DELETE SET NULL;
+```
+
+`target_profile_id`도 지시서 요청대로 함께 확인해 같이 고쳤습니다 — `admin_user_id`(→`admin_users`)도 프로덕션에서 동일하게 NO ACTION으로 drift돼 있음을 발견했지만, 현재 코드베이스에 `admin_users` 행을 삭제하는 경로가 없어 이번 수정 범위에서는 제외했고(지시서 범위 밖), 필요 시 별도로 봐야 할 항목으로 남겨둡니다.
+
+### 재현 결과 (수정 후)
+
+같은 시나리오를 처음부터 다시 실행:
+
+- 3단계(`save_own_licenses()` 호출)가 **에러 없이 성공**(`{ok:true, error:''}`).
+- 감사 로그 조회 결과 `target_license_id`가 `null`로 자동 전환됨(`action_type`/`target_profile_id`/시각/관리자 정보는 그대로 유지) — FK 에러가 아니라 정상적인 SET NULL로 처리됨을 확인.
+- `target_profile_id` 경로도 별도로 재현: 이 FK 수정 후에는 `admin_actions`를 수동으로 먼저 비우지 않고 `auth.users` 행을 직접 삭제해도(→ `profiles`까지 CASCADE) 에러 없이 성공하고 `admin_actions.target_profile_id`가 자동으로 `null`이 되는 것을 확인했습니다. (`purge-deleted-accounts` 라우트의 기존 수동 nullify 코드는 이제 불필요해졌지만 무해한 중복이라 그대로 두었습니다 — 이번 지시서 범위 밖이라 손대지 않았습니다.)
+
+`target_license_name`/`target_display_name`이 이후 화면에서 비어 보이는 것은 원래 6절이 설명한 대로 여전히 "무해한 부수 현상"입니다 — 다만 그 원인은 "기존 FK가 자동으로 처리해서"가 아니라 "이번에 고친 FK가 처리해서"입니다.
 
 ## 7. 로컬 검증
+
+FK 수정 포함 최종 재검증:
 
 - `supabase db advisors --local --type security --level error --fail-on none` → **이슈 없음**.
 - `pnpm test` → **53/53 PASS**.
 - `tsc --noEmit` → 클린.
 - `pnpm build` → 성공.
-- 테스트 계정(`license-expert-check@example.com`, `license-admin-check@example.com`) 및 관련 `profiles`/`licenses`/`admin_actions`/Storage 파일 정리 완료.
+- 테스트 계정(`license-expert-check@example.com`/`license-admin-check@example.com`, `fk-repro-expert@example.com`/`fk-repro-admin@example.com`) 및 관련 `profiles`/`licenses`/`admin_actions`/Storage 파일 정리 완료.
 
 ## 8. 프로덕션 미적용 — 확인 요청
 
-이번 라운드 작업 계획(태스크 목록)에 "프로덕션 적용" 단계가 별도로 포함되어 있지 않았고, 지시서 본문에도 배포 지시가 없어 **로컬 검증까지만 진행**했습니다. 마이그레이션(`20260730080000_license_review.sql`)을 프로덕션에 적용할지, 이번 PR을 병합/배포할지는 별도로 확인 부탁드립니다.
+이번 라운드 작업 계획(태스크 목록)에 "프로덕션 적용" 단계가 별도로 포함되어 있지 않았고, 지시서 본문에도 배포 지시가 없어 **로컬 검증까지만 진행**했습니다. 마이그레이션(`20260730080000_license_review.sql`, `20260730090000_admin_actions_fk_no_action_fix.sql`)을 프로덕션에 적용할지, 이번 PR을 병합/배포할지는 별도로 확인 부탁드립니다. **특히 `20260730090000`은 프로덕션의 실제 결함(NO ACTION FK)을 고치는 마이그레이션이므로, `20260730080000`(license_review 기능)을 프로덕션에 적용하기로 결정하신다면 반드시 이 FK 수정도 함께/먼저 적용해야 합니다** — 그렇지 않으면 6절에서 재현한 저장 실패가 실사용자에게 그대로 발생합니다.
 
 ## 9. 변경 파일 목록
 
 | 파일 | 변경 |
 |---|---|
 | `supabase/migrations/20260730080000_license_review.sql` | 신규 — `review_license()` RPC, `get_admin_audit_log()` 확장 |
+| `supabase/migrations/20260730090000_admin_actions_fk_no_action_fix.sql` | 신규 — `admin_actions.target_license_id`/`target_profile_id` FK를 실제 프로덕션 상태(NO ACTION)에서 `ON DELETE SET NULL`로 수정 |
 | `app/actions/admin.ts` | `reviewLicense()` 추가, 타입 확장 |
 | `app/actions/certification.ts` | `getOwnCertifications()`에 `verification_status` 포함 |
 | `app/actions/evidence-files.ts` | 신규 — `listOwnEvidenceFiles()` |

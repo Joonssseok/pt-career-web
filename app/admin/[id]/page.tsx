@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
 import { getEvidenceFileUrl } from '@/lib/storage/evidence-file-url';
 import { ReviewActions } from './ReviewActions';
+import { LicenseReviewActions } from './LicenseReviewActions';
 
 export const dynamic = 'force-dynamic';
 
@@ -152,10 +153,9 @@ export default async function AdminProfileDetailPage({
           {licenses && licenses.length > 0 ? (
             <ul className="space-y-2 text-sm text-gray-700">
               {licenses.map((l) => (
-                <li key={l.id}>
+                <li key={l.id} className="border border-gray-100 rounded-lg p-3">
                   <span className="font-medium">{l.license_name}</span>
                   {l.issuing_organization && <span className="text-gray-500"> · {l.issuing_organization}</span>}
-                  <span className="ml-2 text-xs text-gray-400">({l.verification_status})</span>
                   <br />
                   {l.document_path_private ? (
                     <a
@@ -169,6 +169,7 @@ export default async function AdminProfileDetailPage({
                   ) : (
                     <span className="text-xs text-gray-400">증빙 파일 없음</span>
                   )}
+                  <LicenseReviewActions licenseId={l.id} verificationStatus={l.verification_status} />
                 </li>
               ))}
             </ul>

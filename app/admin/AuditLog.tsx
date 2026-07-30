@@ -8,7 +8,11 @@ const PAGE_SIZE = 20;
 const ACTION_LABEL: Record<string, string> = {
   profile_approved: '승인',
   profile_rejected: '반려',
+  license_verified: '자격증 인증',
+  license_rejected: '자격증 반려',
 };
+
+const APPROVAL_ACTION_TYPES = new Set(['profile_approved', 'license_verified']);
 
 export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
   const [entries, setEntries] = useState<AdminAuditLogEntry[]>([]);
@@ -25,7 +29,12 @@ export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
     const result = await getAdminAuditLog({
       from: from ? new Date(from).toISOString() : undefined,
       to: to ? new Date(to).toISOString() : undefined,
-      actionType: (actionType || undefined) as 'profile_approved' | 'profile_rejected' | undefined,
+      actionType: (actionType || undefined) as
+        | 'profile_approved'
+        | 'profile_rejected'
+        | 'license_verified'
+        | 'license_rejected'
+        | undefined,
       adminUserId: adminUserId || undefined,
       limit: PAGE_SIZE,
       offset,
@@ -75,6 +84,8 @@ export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
             <option value="">전체</option>
             <option value="profile_approved">승인</option>
             <option value="profile_rejected">반려</option>
+            <option value="license_verified">자격증 인증</option>
+            <option value="license_rejected">자격증 반려</option>
           </select>
         </label>
         <label className="text-xs text-gray-600 space-y-1">
@@ -116,7 +127,7 @@ export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
               <div className="flex items-center justify-between gap-2">
                 <span
                   className={
-                    e.action_type === 'profile_approved'
+                    APPROVAL_ACTION_TYPES.has(e.action_type)
                       ? 'text-green-700 font-medium'
                       : 'text-red-700 font-medium'
                   }
@@ -127,7 +138,12 @@ export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
                   {new Date(e.created_at).toLocaleString('ko-KR')}
                 </span>
               </div>
-              <p className="text-gray-900 mt-1">{e.target_display_name ?? '이름 미입력'}</p>
+              <p className="text-gray-900 mt-1">
+                {e.target_display_name ?? '이름 미입력'}
+                {e.target_license_name && (
+                  <span className="text-gray-500"> · {e.target_license_name}</span>
+                )}
+              </p>
               {e.memo && <p className="text-gray-600 mt-0.5">사유: {e.memo}</p>}
               <p className="text-xs text-gray-400 mt-1">처리: {e.admin_email ?? e.admin_user_id}</p>
             </div>

@@ -224,6 +224,12 @@ export default async function ExpertDetailPage({
                   {l.issuing_organization && (
                     <span className="text-gray-500"> · {l.issuing_organization}</span>
                   )}
+                  {/* get_public_licenses()가 verification_status='verified' AND
+                      is_public=true인 행만 반환하므로, 여기 나오는 항목은 전부
+                      관리자 인증을 거친 것이다. */}
+                  <span className="ml-2 inline-flex items-center gap-0.5 px-2 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-medium">
+                    ✓ 인증됨
+                  </span>
                 </li>
               ))}
             </ul>

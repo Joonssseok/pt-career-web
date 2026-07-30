@@ -63,6 +63,24 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      // Unlike evidence-files (intentionally retained forever, see
+      // LICENSE_REVIEW_BADGE_ARCHIVE report), gallery images are ordinary
+      // profile assets with no retention requirement -- clean them up on
+      // account deletion same as profile-images.
+      const { data: galleryFiles, error: galleryListError } = await supabase.storage
+        .from('profile-gallery')
+        .list(profile.user_id);
+      if (galleryListError) {
+        console.error(`[purge-deleted-accounts] profile-gallery list failed for ${profile.user_id}:`, galleryListError);
+      } else if (galleryFiles.length > 0) {
+        const { error: galleryRemoveError } = await supabase.storage
+          .from('profile-gallery')
+          .remove(galleryFiles.map((f) => `${profile.user_id}/${f.name}`));
+        if (galleryRemoveError) {
+          console.error(`[purge-deleted-accounts] profile-gallery remove failed for ${profile.user_id}:`, galleryRemoveError);
+        }
+      }
+
       // admin_actions has no ON DELETE rule for target_profile_id/target_license_id,
       // so deleting the profile would fail with an FK violation unless these are
       // cleared first. The log rows themselves (action_type/memo/created_at) stay.
@@ -93,8 +111,8 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      // experiences/educations/licenses/workplaces/profile_specialties/share_events
-      // all cascade from profiles.id.
+      // experiences/educations/licenses/workplaces/profile_specialties/share_events/
+      // profile_gallery_images all cascade from profiles.id.
       const { error: profileDeleteError } = await supabase
         .from('profiles')
         .delete()

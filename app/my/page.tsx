@@ -6,6 +6,7 @@ import { getOwnExperiences } from '@/app/actions/experience'
 import { getOwnCertifications } from '@/app/actions/certification'
 import { getOwnSelectedSpecialtyIds, getSpecialties } from '@/app/actions/specialties'
 import { AccountSidebar } from '@/components/AccountSidebar'
+import { EvidenceFileArchive } from '@/components/EvidenceFileArchive'
 import { DeletionBanner } from './DeletionBanner'
 
 type ProfileSummary = {
@@ -87,6 +88,8 @@ export default async function MyPage() {
           )}
 
           {profile && <ProfileStatusSection profile={profile} />}
+
+          <EvidenceFileArchive />
 
           <form
             action={async () => {

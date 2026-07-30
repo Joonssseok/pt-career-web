@@ -21,10 +21,11 @@ export type AdminReviewKpis = {
 export type AdminAuditLogEntry = {
   id: string;
   created_at: string;
-  action_type: 'profile_approved' | 'profile_rejected';
+  action_type: 'profile_approved' | 'profile_rejected' | 'license_verified' | 'license_rejected';
   memo: string | null;
   target_profile_id: string | null;
   target_display_name: string | null;
+  target_license_name: string | null;
   admin_user_id: string;
   admin_email: string | null;
 };
@@ -62,7 +63,7 @@ export async function getAdminReviewKpis() {
 export async function getAdminAuditLog(filters: {
   from?: string;
   to?: string;
-  actionType?: 'profile_approved' | 'profile_rejected';
+  actionType?: 'profile_approved' | 'profile_rejected' | 'license_verified' | 'license_rejected';
   adminUserId?: string;
   limit?: number;
   offset?: number;
@@ -123,6 +124,36 @@ export async function reviewExpertProfile(
     return { ok: false, error: 'Unexpected response' };
   } catch (err) {
     console.error('[reviewExpertProfile] threw:', err);
+    return { ok: false, error: String(err) };
+  }
+}
+
+export async function reviewLicense(
+  licenseId: string,
+  decision: 'verified' | 'rejected',
+  memo?: string
+) {
+  try {
+    const supabase = await createClient();
+    const { data: result, error } = await supabase.rpc('review_license', {
+      p_license_id: licenseId,
+      p_decision: decision,
+      p_memo: memo || null,
+    });
+
+    if (error) {
+      console.error('[reviewLicense] Supabase error:', error);
+      return { ok: false, error: error.message };
+    }
+
+    if (result && result.length > 0) {
+      const { ok, error: rpcError } = result[0];
+      return { ok, error: rpcError };
+    }
+
+    return { ok: false, error: 'Unexpected response' };
+  } catch (err) {
+    console.error('[reviewLicense] threw:', err);
     return { ok: false, error: String(err) };
   }
 }

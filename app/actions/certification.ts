@@ -20,7 +20,7 @@ export async function getOwnCertifications() {
 
   const { data, error } = await supabase
     .from('licenses')
-    .select('id, license_name, category, issuing_organization, acquired_date, document_path_private')
+    .select('id, license_name, category, issuing_organization, acquired_date, document_path_private, verification_status')
     .eq('profile_id', profileId)
     .order('created_at');
 
@@ -40,6 +40,7 @@ export async function getOwnCertifications() {
       // DB stores a full DATE; the <input type="month"> UI needs "YYYY-MM".
       issueDate: lic.acquired_date?.slice(0, 7) ?? '',
       documentPath: lic.document_path_private ?? '',
+      verificationStatus: lic.verification_status,
     })),
   };
 }

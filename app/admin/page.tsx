@@ -64,7 +64,7 @@ export default async function AdminDashboardPage() {
   return (
     <main className="min-h-screen bg-gray-50">
       <nav className="flex items-center justify-between px-4 py-4 sm:px-6 bg-white border-b border-gray-200">
-        <h1 className="text-lg font-semibold text-gray-900">관리자 대시보드</h1>
+        <h1 className="text-page-title font-semibold text-gray-900">관리자 대시보드</h1>
         <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
           홈으로
         </Link>

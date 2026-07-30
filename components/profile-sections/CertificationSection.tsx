@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { getOwnCertifications, saveCertifications } from '@/app/actions/certification';
 import { createClient } from '@/lib/supabase/client';
 import { getEvidenceFileUrl } from '@/lib/storage/evidence-file-url';
+import { LICENSE_STATUS_META } from '@/lib/constants/status-badges';
 
 type Certification = {
   id: string;
@@ -15,16 +16,6 @@ type Certification = {
   // 방금 추가해 아직 저장 전인 항목은 서버 상태가 없다 — undefined는
   // "검토 대기"(not_submitted와 동일한 의미)로 취급한다.
   verificationStatus?: string;
-};
-
-// not_submitted/pending 모두 "아직 심사 전"이라는 점에서 사용자 입장에선
-// 의미 차이가 없어 하나로 묶는다. components/AccountSidebar.tsx의
-// STATUS_META와 톤을 맞췄다.
-const LICENSE_STATUS_META: Record<string, { label: string; className: string }> = {
-  not_submitted: { label: '검토 대기', className: 'bg-blue-50 text-blue-700 border-blue-200' },
-  pending: { label: '검토 대기', className: 'bg-blue-50 text-blue-700 border-blue-200' },
-  verified: { label: '인증됨', className: 'bg-green-50 text-green-700 border-green-200' },
-  rejected: { label: '반려됨', className: 'bg-red-50 text-red-700 border-red-200' },
 };
 
 const LICENSE_CATEGORIES = [

@@ -130,7 +130,7 @@ export default async function ExpertDetailPage({
             )}
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl font-bold text-gray-900">
+            <h1 className="text-page-title font-bold text-gray-900">
               {expert.display_name ?? '이름 미공개'}
             </h1>
             {expert.profession && (

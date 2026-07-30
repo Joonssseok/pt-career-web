@@ -214,7 +214,7 @@ export default function EditForm() {
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
           <p className="text-sm font-medium text-blue-600">내 프로필 수정</p>
-          <h1 className="text-xl font-semibold text-gray-900 mt-1">프로필 정보를 수정하세요</h1>
+          <h1 className="text-page-title font-semibold text-gray-900 mt-1">프로필 정보를 수정하세요</h1>
           <p className="text-sm text-gray-600 mt-1">
             항목을 선택해 승인된 정보를 변경할 수 있습니다.
           </p>

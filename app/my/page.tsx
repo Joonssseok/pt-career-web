@@ -65,7 +65,7 @@ export default async function MyPage() {
       <div className="flex-1 min-w-0 max-w-2xl mx-auto px-4 py-8 w-full">
         <div className="bg-white rounded-lg shadow p-8 space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">마이페이지</h1>
+            <h1 className="text-page-title font-bold text-gray-900">마이페이지</h1>
             <p className="text-sm text-gray-500 mt-1">{user.email}</p>
           </div>
 

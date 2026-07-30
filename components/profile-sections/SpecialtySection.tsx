@@ -1,0 +1,212 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import {
+  getOwnSelectedSpecialtyIds,
+  getSpecialties,
+  replaceProfileSpecialties,
+} from '@/app/actions/specialties';
+
+type FormState = 'default' | 'error' | 'loading' | 'saved';
+type Specialty = { id: string; name: string; sort_order: number };
+
+type Props = {
+  // 저장 성공 시 호출. 다음 단계로 이동할지, 그 자리에 머물지는 호출부가 결정한다.
+  onSaved: () => void;
+  submitLabel: string;
+  savedMessage?: string;
+  leftNav?: React.ReactNode;
+};
+
+export default function SpecialtySection({
+  onSaved,
+  submitLabel,
+  savedMessage = '✓ 저장되었습니다!',
+  leftNav,
+}: Props) {
+  const [specialties, setSpecialties] = useState<Specialty[]>([]);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const [formState, setFormState] = useState<FormState>('default');
+  const [showWarning, setShowWarning] = useState(false);
+
+  useEffect(() => {
+    Promise.all([getSpecialties(), getOwnSelectedSpecialtyIds()]).then(
+      ([specialtiesResult, selectedResult]) => {
+        if (!specialtiesResult.ok) return;
+        setSpecialties(specialtiesResult.specialties);
+        if (selectedResult.ok) {
+          setSelectedIds(selectedResult.specialtyIds);
+        }
+      }
+    );
+  }, []);
+
+  const MIN_SELECTION = 1;
+  const MAX_SELECTION = 3;
+
+  const toggleSpecialty = (id: string) => {
+    setSelectedIds((prev) => {
+      if (prev.includes(id)) {
+        setShowWarning(false);
+        return prev.filter((s) => s !== id);
+      }
+
+      // Try to add if under max
+      if (prev.length < MAX_SELECTION) {
+        setShowWarning(false);
+        return [...prev, id];
+      }
+
+      // Show warning if over max
+      setShowWarning(true);
+      return prev;
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (selectedIds.length < MIN_SELECTION) {
+      setShowWarning(true);
+      return;
+    }
+
+    setFormState('loading');
+
+    const result = await replaceProfileSpecialties(selectedIds);
+
+    if (result.ok) {
+      setFormState('saved');
+      onSaved();
+    } else {
+      setFormState('error');
+      setTimeout(() => {
+        setFormState('default');
+      }, 3000);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* State Messages */}
+      {formState === 'loading' && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-900 font-medium">
+            ⏳ 저장 중입니다...
+          </p>
+        </div>
+      )}
+
+      {formState === 'saved' && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <p className="text-sm text-green-900 font-medium">{savedMessage}</p>
+        </div>
+      )}
+
+      {showWarning && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-sm text-red-900 font-medium">
+            ⚠️ 전문분야는 최소 {MIN_SELECTION}개, 최대 {MAX_SELECTION}
+            개까지 선택할 수 있습니다.
+          </p>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Selection Count */}
+        <div
+          className={`border rounded-lg p-4 ${
+            selectedIds.length === 0
+              ? 'bg-yellow-50 border-yellow-200'
+              : 'bg-blue-50 border-blue-200'
+          }`}
+        >
+          <p className="text-sm font-medium">
+            선택됨: {selectedIds.length}/{MAX_SELECTION}개
+          </p>
+          {selectedIds.length === 0 && (
+            <p className="text-xs text-yellow-700 mt-1">
+              최소 1개를 선택해야 다음 단계로 진행할 수 있습니다.
+            </p>
+          )}
+        </div>
+
+        {/* Specialties Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {specialties.map((specialty) => (
+            <button
+              key={specialty.id}
+              type="button"
+              onClick={() => toggleSpecialty(specialty.id)}
+              disabled={formState === 'loading'}
+              className={`p-4 rounded-lg border-2 text-left transition-all ${
+                selectedIds.includes(specialty.id)
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 bg-white hover:border-gray-300'
+              } ${
+                formState === 'loading'
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'cursor-pointer'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                    selectedIds.includes(specialty.id)
+                      ? 'border-blue-500 bg-blue-500'
+                      : 'border-gray-300'
+                  }`}
+                >
+                  {selectedIds.includes(specialty.id) && (
+                    <span className="text-white text-sm">✓</span>
+                  )}
+                </div>
+                <span className="text-gray-900 font-medium">
+                  {specialty.name}
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Summary */}
+        {selectedIds.length > 0 && (
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-gray-900 mb-2">
+              선택된 전문분야:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {specialties
+                .filter((s) => selectedIds.includes(s.id))
+                .map((specialty) => (
+                  <span
+                    key={specialty.id}
+                    className="px-3 py-1 bg-blue-100 text-blue-900 rounded-full text-sm font-medium"
+                  >
+                    {specialty.name}
+                  </span>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* Navigation */}
+        <div className="flex gap-3 pt-4">
+          {leftNav}
+          <button
+            type="submit"
+            disabled={
+              selectedIds.length === 0 ||
+              selectedIds.length > MAX_SELECTION ||
+              formState === 'loading'
+            }
+            className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            {formState === 'loading' ? '저장 중...' : submitLabel}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}

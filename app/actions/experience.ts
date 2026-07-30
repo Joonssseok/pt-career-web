@@ -64,44 +64,31 @@ export async function saveExperience(data: {
       return { ok: false, error: 'Not authenticated' };
     }
 
-    const profileId = await getOwnProfileId(supabase, user.id);
-    if (!profileId) {
-      return { ok: false, error: 'Profile not found' };
-    }
-
-    const { error: deleteError } = await supabase
-      .from('experiences')
-      .delete()
-      .eq('profile_id', profileId);
-
-    if (deleteError) {
-      console.error('[saveExperience] delete error:', deleteError);
-      return { ok: false, error: deleteError.message };
-    }
-
-    if (data.experiences.length === 0) {
-      return { ok: true, error: '' };
-    }
-
-    const { error: insertError } = await supabase.from('experiences').insert(
-      data.experiences.map((exp, index) => ({
-        profile_id: profileId,
+    // Delete + insert must happen inside one SECURITY DEFINER call: the delete
+    // sends an approved profile back to pending, which the owner_insert RLS
+    // policy would then reject, leaving the rows deleted and unreplaced.
+    const { data: result, error } = await supabase.rpc('save_own_experiences', {
+      p_experiences: data.experiences.map((exp) => ({
         organization_name: exp.companyName,
         position: exp.position,
         // <input type="month"> gives "YYYY-MM"; the DB column is a full DATE.
         start_date: exp.startDate ? `${exp.startDate}-01` : null,
         end_date: exp.isCurrentlyWorking ? null : exp.endDate ? `${exp.endDate}-01` : null,
         is_current: exp.isCurrentlyWorking,
-        display_order: index,
-      }))
-    );
+      })),
+    });
 
-    if (insertError) {
-      console.error('[saveExperience] insert error:', insertError);
-      return { ok: false, error: insertError.message };
+    if (error) {
+      console.error('[saveExperience] Supabase error:', error);
+      return { ok: false, error: error.message };
     }
 
-    return { ok: true, error: '' };
+    if (result && result.length > 0) {
+      const { ok, error: rpcError } = result[0];
+      return { ok, error: rpcError };
+    }
+
+    return { ok: false, error: 'Unexpected response' };
   } catch (err) {
     console.error('[saveExperience] threw:', err);
     return { ok: false, error: String(err) };

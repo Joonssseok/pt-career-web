@@ -64,43 +64,31 @@ export async function saveCertifications(data: {
       return { ok: false, error: 'Not authenticated' };
     }
 
-    const profileId = await getOwnProfileId(supabase, user.id);
-    if (!profileId) {
-      return { ok: false, error: 'Profile not found' };
-    }
-
-    const { error: deleteError } = await supabase
-      .from('licenses')
-      .delete()
-      .eq('profile_id', profileId);
-
-    if (deleteError) {
-      console.error('[saveCertifications] delete error:', deleteError);
-      return { ok: false, error: deleteError.message };
-    }
-
-    if (data.certifications.length === 0) {
-      return { ok: true, error: '' };
-    }
-
-    const { error: insertError } = await supabase.from('licenses').insert(
-      data.certifications.map((cert) => ({
-        profile_id: profileId,
+    // Delete + insert must happen inside one SECURITY DEFINER call: the delete
+    // sends an approved profile back to pending, which the owner_insert RLS
+    // policy would then reject, leaving the rows deleted and unreplaced.
+    const { data: result, error } = await supabase.rpc('save_own_licenses', {
+      p_licenses: data.certifications.map((cert) => ({
         license_name: cert.certName,
         category: cert.category || null,
         issuing_organization: cert.issuer || null,
         // <input type="month"> gives "YYYY-MM"; the DB column is a full DATE.
         acquired_date: cert.issueDate ? `${cert.issueDate}-01` : null,
         document_path_private: cert.documentPath || null,
-      }))
-    );
+      })),
+    });
 
-    if (insertError) {
-      console.error('[saveCertifications] insert error:', insertError);
-      return { ok: false, error: insertError.message };
+    if (error) {
+      console.error('[saveCertifications] Supabase error:', error);
+      return { ok: false, error: error.message };
     }
 
-    return { ok: true, error: '' };
+    if (result && result.length > 0) {
+      const { ok, error: rpcError } = result[0];
+      return { ok, error: rpcError };
+    }
+
+    return { ok: false, error: 'Unexpected response' };
   } catch (err) {
     console.error('[saveCertifications] threw:', err);
     return { ok: false, error: String(err) };

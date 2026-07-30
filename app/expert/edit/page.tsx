@@ -7,6 +7,11 @@ import { getOwnProfile, saveOwnProfile } from '@/app/actions/profile';
 import { OFFICIAL_PROFESSIONS } from '@/lib/constants/professions';
 import { createClient } from '@/lib/supabase/client';
 import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
+import ExperienceSection from '@/components/profile-sections/ExperienceSection';
+import EducationSection from '@/components/profile-sections/EducationSection';
+import CertificationSection from '@/components/profile-sections/CertificationSection';
+import WorkplaceSection from '@/components/profile-sections/WorkplaceSection';
+import SpecialtySection from '@/components/profile-sections/SpecialtySection';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 
@@ -18,7 +23,18 @@ const EXT_BY_TYPE: Record<string, string> = {
   'image/webp': 'webp',
 };
 
-const EDIT_SECTIONS = [{ value: 'basic', label: '기본 정보' }];
+const EDIT_SECTIONS = [
+  { value: 'basic', label: '기본 정보' },
+  { value: 'experience', label: '경력' },
+  { value: 'education', label: '교육' },
+  { value: 'certification', label: '자격·면허' },
+  { value: 'workplace', label: '근무기관' },
+  { value: 'specialty', label: '전문분야' },
+];
+
+// edit 화면에서는 저장 후 페이지 이동 없이 그 자리에 머문다.
+const SECTION_SUBMIT_LABEL = '저장 후 재검토 요청';
+const SECTION_SAVED_MESSAGE = '✓ 저장되었습니다. 재검토 대기열로 이동했습니다.';
 
 export default function ProfileEditPage() {
   const router = useRouter();
@@ -211,22 +227,15 @@ export default function ProfileEditPage() {
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-500 mt-1">
-              경력·교육·자격·근무기관·전문분야는{' '}
-              <Link href="/expert/onboarding" className="underline hover:text-gray-700">
-                온보딩 화면
-              </Link>
-              에서 수정할 수 있습니다.
-            </p>
           </div>
 
-          {formState === 'error' && errors.submit && (
+          {section === 'basic' && formState === 'error' && errors.submit && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-sm text-red-900 font-medium">⚠️ {errors.submit}</p>
             </div>
           )}
 
-          {formState === 'saved' && (
+          {section === 'basic' && formState === 'saved' && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <p className="text-sm text-green-900 font-medium">
                 ✓ 저장되었습니다. 재검토 대기열로 이동했습니다.
@@ -234,6 +243,47 @@ export default function ProfileEditPage() {
             </div>
           )}
 
+          {section === 'experience' && (
+            <ExperienceSection
+              submitLabel={SECTION_SUBMIT_LABEL}
+              savedMessage={SECTION_SAVED_MESSAGE}
+              onSaved={() => {}}
+            />
+          )}
+
+          {section === 'education' && (
+            <EducationSection
+              submitLabel={SECTION_SUBMIT_LABEL}
+              savedMessage={SECTION_SAVED_MESSAGE}
+              onSaved={() => {}}
+            />
+          )}
+
+          {section === 'certification' && (
+            <CertificationSection
+              submitLabel={SECTION_SUBMIT_LABEL}
+              savedMessage={SECTION_SAVED_MESSAGE}
+              onSaved={() => {}}
+            />
+          )}
+
+          {section === 'workplace' && (
+            <WorkplaceSection
+              submitLabel={SECTION_SUBMIT_LABEL}
+              savedMessage={SECTION_SAVED_MESSAGE}
+              onSaved={() => {}}
+            />
+          )}
+
+          {section === 'specialty' && (
+            <SpecialtySection
+              submitLabel={SECTION_SUBMIT_LABEL}
+              savedMessage={SECTION_SAVED_MESSAGE}
+              onSaved={() => {}}
+            />
+          )}
+
+          {section === 'basic' && (
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-gray-900 mb-2">
@@ -354,6 +404,7 @@ export default function ProfileEditPage() {
               </button>
             </div>
           </form>
+          )}
         </div>
       </div>
     </div>

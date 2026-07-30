@@ -89,7 +89,8 @@ export async function saveCertifications(data: {
         license_name: cert.certName,
         category: cert.category || null,
         issuing_organization: cert.issuer || null,
-        acquired_date: cert.issueDate || null,
+        // <input type="month"> gives "YYYY-MM"; the DB column is a full DATE.
+        acquired_date: cert.issueDate ? `${cert.issueDate}-01` : null,
         document_path_private: cert.documentPath || null,
       }))
     );

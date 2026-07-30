@@ -86,7 +86,8 @@ export async function saveEducation(data: {
         profile_id: profileId,
         education_name: edu.educationName,
         organization_name: edu.organizationName || null,
-        completion_date: edu.completionDate || null,
+        // <input type="month"> gives "YYYY-MM"; the DB column is a full DATE.
+        completion_date: edu.completionDate ? `${edu.completionDate}-01` : null,
         description: edu.description || null,
         display_order: index,
       }))

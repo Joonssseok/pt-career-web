@@ -1,0 +1,51 @@
+-- Backup: state before the security_invoker v2 migration (2026-07-30).
+-- Captured via pg_class/pg_policies/information_schema.column_privileges on
+-- production (oqrxdvwlsbwkhihsvqvt) immediately before this migration.
+--
+-- Confirmed facts at this point (re-verified directly, not assumed):
+--   - public_expert_list / public_expert_detail: owner=postgres, reloptions=NULL
+--     (security_invoker unset/false).
+--   - anon has ZERO SELECT policies on profiles/workplaces/experiences/
+--     educations/profile_specialties/licenses.
+--   - anon has ZERO column-level SELECT grants on any of those 6 tables.
+--   - authenticated's SELECT policies on profiles/experiences/educations/
+--     profile_specialties are own-row-only (PR #38); licenses' authenticated
+--     policy (auth_select_own) was already own-row-only before any of this
+--     week's work. workplaces' authenticated policy already has the correct
+--     is_location_public-gated public branch (PR #39) and is untouched here.
+--     This migration ADDS a second, additive auth_select_public policy to
+--     profiles/experiences/educations/profile_specialties (does not modify
+--     the existing own-row policies) -- discovered necessary during local
+--     testing of this migration, not part of the original work order. See
+--     the migration file's header comment for the full explanation.
+--
+-- Rollback (undo this migration, in order):
+--   1. ALTER VIEW public.public_expert_list RESET (security_invoker);
+--      ALTER VIEW public.public_expert_detail RESET (security_invoker);
+--   2. REVOKE SELECT (id, display_name, profession, headline, introduction,
+--        total_experience_years, profile_image_path, is_public,
+--        verification_status, deletion_requested_at) ON public.profiles FROM anon;
+--      REVOKE SELECT (profile_id, is_location_public, region, center_name,
+--        website_url, address, address_detail, phone, external_contact_url,
+--        latitude, longitude) ON public.workplaces FROM anon;
+--      REVOKE SELECT (profile_id, specialty_id, is_primary, display_order)
+--        ON public.profile_specialties FROM anon;
+--      REVOKE SELECT (profile_id, organization_name, "position", start_date,
+--        end_date, is_current, description, display_order)
+--        ON public.experiences FROM anon;
+--      REVOKE SELECT (profile_id, education_name, organization_name,
+--        completion_date, description, display_order)
+--        ON public.educations FROM anon;
+--      REVOKE SELECT (profile_id, license_name, issuing_organization,
+--        acquired_date, category, verification_status, is_public)
+--        ON public.licenses FROM anon;
+--   3. DROP POLICY IF EXISTS anon_select_public ON public.profiles;
+--      DROP POLICY IF EXISTS anon_select_public ON public.workplaces;
+--      DROP POLICY IF EXISTS anon_select_public ON public.experiences;
+--      DROP POLICY IF EXISTS anon_select_public ON public.educations;
+--      DROP POLICY IF EXISTS anon_select_public ON public.profile_specialties;
+--      DROP POLICY IF EXISTS anon_select_public ON public.licenses;
+--   4. DROP POLICY IF EXISTS auth_select_public ON public.profiles;
+--      DROP POLICY IF EXISTS auth_select_public ON public.experiences;
+--      DROP POLICY IF EXISTS auth_select_public ON public.educations;
+--      DROP POLICY IF EXISTS auth_select_public ON public.profile_specialties;

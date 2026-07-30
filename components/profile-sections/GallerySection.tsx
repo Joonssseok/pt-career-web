@@ -1,14 +1,16 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getOwnGalleryImages, saveGalleryImages } from '@/app/actions/gallery';
+import { getOwnGalleryImages, saveGalleryImages, setOwnGalleryImageVisibility } from '@/app/actions/gallery';
 import { createClient } from '@/lib/supabase/client';
 import { getGalleryImageUrl } from '@/lib/storage/gallery-image-url';
+import { VisibilityToggle } from './VisibilityToggle';
 
 type GalleryImage = {
   id: string;
   imagePath: string;
   caption: string;
+  ownerVisible: boolean;
 };
 
 const MAX_IMAGES = 10;
@@ -25,6 +27,8 @@ type Props = {
   submitLabel: string;
   savedMessage?: string;
   leftNav?: React.ReactNode;
+  // 프로필 마스터 토글이 꺼져 있으면 항목별 토글을 비활성화한다.
+  profileOwnerVisible?: boolean;
 };
 
 export default function GallerySection({
@@ -32,20 +36,43 @@ export default function GallerySection({
   submitLabel,
   savedMessage = '✓ 저장되었습니다!',
   leftNav,
+  profileOwnerVisible = true,
 }: Props) {
   const [images, setImages] = useState<GalleryImage[]>([]);
   const [formState, setFormState] = useState<'default' | 'loading' | 'saved'>('default');
   const [fileUploading, setFileUploading] = useState(false);
   const [fileError, setFileError] = useState('');
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
     getOwnGalleryImages().then((result) => {
       if (!result.ok) return;
       setImages(
-        result.images.map((img) => ({ id: img.id, imagePath: img.imagePath, caption: img.caption }))
+        result.images.map((img) => ({
+          id: img.id,
+          imagePath: img.imagePath,
+          caption: img.caption,
+          ownerVisible: img.ownerVisible,
+        }))
       );
     });
   }, []);
+
+  const handleToggleVisibility = async (id: string) => {
+    const target = images.find((img) => img.id === id);
+    if (!target) return;
+
+    const nextVisible = !target.ownerVisible;
+    setTogglingId(id);
+    setImages((prev) => prev.map((img) => (img.id === id ? { ...img, ownerVisible: nextVisible } : img)));
+
+    const result = await setOwnGalleryImageVisibility(id, nextVisible);
+    if (!result.ok) {
+      setImages((prev) => prev.map((img) => (img.id === id ? { ...img, ownerVisible: !nextVisible } : img)));
+      alert(result.error);
+    }
+    setTogglingId(null);
+  };
 
   const handleFilesChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -101,7 +128,7 @@ export default function GallerySection({
           return;
         }
 
-        uploaded.push({ id: crypto.randomUUID(), imagePath: path, caption: '' });
+        uploaded.push({ id: crypto.randomUUID(), imagePath: path, caption: '', ownerVisible: true });
       }
 
       setImages((prev) => [...prev, ...uploaded]);
@@ -135,7 +162,11 @@ export default function GallerySection({
     setFormState('loading');
 
     const result = await saveGalleryImages({
-      images: images.map((img) => ({ imagePath: img.imagePath, caption: img.caption })),
+      images: images.map((img) => ({
+        imagePath: img.imagePath,
+        caption: img.caption,
+        ownerVisible: img.ownerVisible,
+      })),
     });
 
     if (result.ok) {
@@ -149,6 +180,14 @@ export default function GallerySection({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {!profileOwnerVisible && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <p className="text-xs text-gray-500">
+            전체 비공개 상태입니다. 사이드바의 프로필 공개 설정을 켜야 항목별 공개 설정이 적용됩니다.
+          </p>
+        </div>
+      )}
+
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
         <h3 className="font-medium text-gray-900">갤러리 이미지 추가</h3>
         <p className="text-xs text-gray-500">
@@ -209,7 +248,13 @@ export default function GallerySection({
                   maxLength={200}
                   className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
                 />
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
+                  <VisibilityToggle
+                    visible={img.ownerVisible}
+                    onToggle={() => handleToggleVisibility(img.id)}
+                    disabled={!profileOwnerVisible}
+                    pending={togglingId === img.id}
+                  />
                   <button
                     type="button"
                     onClick={() => handleMove(index, -1)}

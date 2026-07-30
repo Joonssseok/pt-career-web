@@ -238,37 +238,39 @@ describe('M3-A P0 Security', () => {
 
   describe('Specialties (1-3, atomic)', () => {
     it('rejects 0 specialties', async () => {
-      const { data } = await otherClient.rpc('replace_profile_specialties', { p_specialty_ids: [] });
+      const { data } = await otherClient.rpc('replace_profile_specialties', { p_specialties: [] });
       expect(data?.[0]?.ok).toBe(false);
     });
 
     it('rejects more than 3 specialties', async () => {
-      const { data } = await otherClient.rpc('replace_profile_specialties', { p_specialty_ids: specialtyIds });
+      const { data } = await otherClient.rpc('replace_profile_specialties', {
+        p_specialties: specialtyIds.map((id) => ({ specialty_id: id })),
+      });
       expect(data?.[0]?.ok).toBe(false);
     });
 
     it('rejects duplicate specialty ids', async () => {
       const { data } = await otherClient.rpc('replace_profile_specialties', {
-        p_specialty_ids: [specialtyIds[0], specialtyIds[0]],
+        p_specialties: [{ specialty_id: specialtyIds[0] }, { specialty_id: specialtyIds[0] }],
       });
       expect(data?.[0]?.ok).toBe(false);
     });
 
     it('rejects a non-existent specialty id', async () => {
       const { data } = await otherClient.rpc('replace_profile_specialties', {
-        p_specialty_ids: ['00000000-0000-0000-0000-000000000000'],
+        p_specialties: [{ specialty_id: '00000000-0000-0000-0000-000000000000' }],
       });
       expect(data?.[0]?.ok).toBe(false);
     });
 
     it('accepts 1-3 valid ids and atomically replaces the previous set', async () => {
       const first = await otherClient.rpc('replace_profile_specialties', {
-        p_specialty_ids: [specialtyIds[0], specialtyIds[1]],
+        p_specialties: [{ specialty_id: specialtyIds[0] }, { specialty_id: specialtyIds[1] }],
       });
       expect(first.data?.[0]?.ok).toBe(true);
 
       const second = await otherClient.rpc('replace_profile_specialties', {
-        p_specialty_ids: [specialtyIds[2]],
+        p_specialties: [{ specialty_id: specialtyIds[2] }],
       });
       expect(second.data?.[0]?.ok).toBe(true);
 

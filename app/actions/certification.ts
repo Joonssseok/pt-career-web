@@ -20,7 +20,7 @@ export async function getOwnCertifications() {
 
   const { data, error } = await supabase
     .from('licenses')
-    .select('id, license_name, category, issuing_organization, acquired_date, document_path_private, verification_status')
+    .select('id, license_name, category, issuing_organization, acquired_date, document_path_private, verification_status, owner_visible')
     .eq('profile_id', profileId)
     .order('created_at');
 
@@ -41,6 +41,7 @@ export async function getOwnCertifications() {
       issueDate: lic.acquired_date?.slice(0, 7) ?? '',
       documentPath: lic.document_path_private ?? '',
       verificationStatus: lic.verification_status,
+      ownerVisible: lic.owner_visible,
     })),
   };
 }
@@ -53,6 +54,7 @@ export async function saveCertifications(data: {
     issuer?: string;
     issueDate?: string;
     documentPath?: string;
+    ownerVisible?: boolean;
   }>;
 }) {
   try {
@@ -68,6 +70,7 @@ export async function saveCertifications(data: {
     // Delete + insert must happen inside one SECURITY DEFINER call: the delete
     // sends an approved profile back to pending, which the owner_insert RLS
     // policy would then reject, leaving the rows deleted and unreplaced.
+    // owner_visible must be threaded through (see saveExperience for why).
     const { data: result, error } = await supabase.rpc('save_own_licenses', {
       p_licenses: data.certifications.map((cert) => ({
         license_name: cert.certName,
@@ -76,6 +79,7 @@ export async function saveCertifications(data: {
         // <input type="month"> gives "YYYY-MM"; the DB column is a full DATE.
         acquired_date: cert.issueDate ? `${cert.issueDate}-01` : null,
         document_path_private: cert.documentPath || null,
+        owner_visible: cert.ownerVisible ?? true,
       })),
     });
 
@@ -92,6 +96,32 @@ export async function saveCertifications(data: {
     return { ok: false, error: 'Unexpected response' };
   } catch (err) {
     console.error('[saveCertifications] threw:', err);
+    return { ok: false, error: String(err) };
+  }
+}
+
+// 항목별 공개/비공개 토글 — "저장" 버튼과 무관하게 즉시 확정된다.
+export async function setOwnLicenseVisibility(licenseId: string, visible: boolean) {
+  try {
+    const supabase = await createClient();
+    const { data: result, error } = await supabase.rpc('set_own_license_visibility', {
+      p_license_id: licenseId,
+      p_visible: visible,
+    });
+
+    if (error) {
+      console.error('[setOwnLicenseVisibility] Supabase error:', error);
+      return { ok: false, error: error.message };
+    }
+
+    if (result && result.length > 0) {
+      const { ok, error: rpcError } = result[0];
+      return { ok, error: rpcError };
+    }
+
+    return { ok: false, error: 'Unexpected response' };
+  } catch (err) {
+    console.error('[setOwnLicenseVisibility] threw:', err);
     return { ok: false, error: String(err) };
   }
 }

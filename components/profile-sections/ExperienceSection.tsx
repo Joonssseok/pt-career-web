@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getOwnExperiences, saveExperience } from '@/app/actions/experience';
+import { getOwnExperiences, saveExperience, setOwnExperienceVisibility } from '@/app/actions/experience';
+import { VisibilityToggle } from './VisibilityToggle';
 
 type Experience = {
   id: string;
@@ -10,6 +11,7 @@ type Experience = {
   startDate: string;
   endDate: string;
   isCurrently: boolean;
+  ownerVisible: boolean;
 };
 
 type Props = {
@@ -18,6 +20,8 @@ type Props = {
   submitLabel: string;
   savedMessage?: string;
   leftNav?: React.ReactNode;
+  // 프로필 마스터 토글이 꺼져 있으면 항목별 토글을 비활성화한다.
+  profileOwnerVisible?: boolean;
 };
 
 export default function ExperienceSection({
@@ -25,8 +29,10 @@ export default function ExperienceSection({
   submitLabel,
   savedMessage = '✓ 저장되었습니다!',
   leftNav,
+  profileOwnerVisible = true,
 }: Props) {
   const [experiences, setExperiences] = useState<Experience[]>([]);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
     getOwnExperiences().then((result) => {
@@ -34,6 +40,23 @@ export default function ExperienceSection({
       setExperiences(result.experiences);
     });
   }, []);
+
+  const handleToggleVisibility = async (id: string) => {
+    const target = experiences.find((exp) => exp.id === id);
+    if (!target) return;
+
+    const nextVisible = !target.ownerVisible;
+    setTogglingId(id);
+    // 낙관적 업데이트 — 즉시 반영하고, 실패 시 되돌린다.
+    setExperiences((prev) => prev.map((exp) => (exp.id === id ? { ...exp, ownerVisible: nextVisible } : exp)));
+
+    const result = await setOwnExperienceVisibility(id, nextVisible);
+    if (!result.ok) {
+      setExperiences((prev) => prev.map((exp) => (exp.id === id ? { ...exp, ownerVisible: !nextVisible } : exp)));
+      alert(result.error);
+    }
+    setTogglingId(null);
+  };
   const [newExperience, setNewExperience] = useState({
     companyName: '',
     position: '',
@@ -52,6 +75,7 @@ export default function ExperienceSection({
         {
           id: Date.now().toString(),
           ...newExperience,
+          ownerVisible: true,
         },
       ]);
       setNewExperience({
@@ -109,6 +133,7 @@ export default function ExperienceSection({
         startDate: exp.startDate,
         endDate: exp.endDate,
         isCurrentlyWorking: exp.isCurrently,
+        ownerVisible: exp.ownerVisible,
       })),
     });
 
@@ -123,6 +148,14 @@ export default function ExperienceSection({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {!profileOwnerVisible && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <p className="text-xs text-gray-500">
+            전체 비공개 상태입니다. 사이드바의 프로필 공개 설정을 켜야 항목별 공개 설정이 적용됩니다.
+          </p>
+        </div>
+      )}
+
       {/* Add New Experience */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
         <h3 className="font-medium text-gray-900">경력 추가</h3>
@@ -282,7 +315,13 @@ export default function ExperienceSection({
                           : ' ~ 현재'}
                       </p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
+                      <VisibilityToggle
+                        visible={exp.ownerVisible}
+                        onToggle={() => handleToggleVisibility(exp.id)}
+                        disabled={!profileOwnerVisible}
+                        pending={togglingId === exp.id}
+                      />
                       <button
                         type="button"
                         onClick={() => handleEditStart(exp)}

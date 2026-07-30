@@ -5,7 +5,9 @@ import {
   getOwnSelectedSpecialtyIds,
   getSpecialties,
   replaceProfileSpecialties,
+  setOwnSpecialtyVisibility,
 } from '@/app/actions/specialties';
+import { VisibilityToggle } from './VisibilityToggle';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 type Specialty = { id: string; name: string; sort_order: number };
@@ -16,6 +18,8 @@ type Props = {
   submitLabel: string;
   savedMessage?: string;
   leftNav?: React.ReactNode;
+  // 프로필 마스터 토글이 꺼져 있으면 항목별 토글을 비활성화한다.
+  profileOwnerVisible?: boolean;
 };
 
 export default function SpecialtySection({
@@ -23,9 +27,14 @@ export default function SpecialtySection({
   submitLabel,
   savedMessage = '✓ 저장되었습니다!',
   leftNav,
+  profileOwnerVisible = true,
 }: Props) {
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  // specialty_id -> owner_visible. 저장 시(replaceProfileSpecialties) 함께
+  // 전송해야 3-6절 함정(재저장 시 기본값 true로 리셋)을 피할 수 있다.
+  const [visibilityMap, setVisibilityMap] = useState<Record<string, boolean>>({});
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const [formState, setFormState] = useState<FormState>('default');
   const [showWarning, setShowWarning] = useState(false);
@@ -37,6 +46,11 @@ export default function SpecialtySection({
         setSpecialties(specialtiesResult.specialties);
         if (selectedResult.ok) {
           setSelectedIds(selectedResult.specialtyIds);
+          setVisibilityMap(
+            Object.fromEntries(
+              selectedResult.specialties.map((s) => [s.specialtyId, s.ownerVisible])
+            )
+          );
         }
       }
     );
@@ -55,6 +69,7 @@ export default function SpecialtySection({
       // Try to add if under max
       if (prev.length < MAX_SELECTION) {
         setShowWarning(false);
+        setVisibilityMap((prevMap) => ({ ...prevMap, [id]: prevMap[id] ?? true }));
         return [...prev, id];
       }
 
@@ -62,6 +77,19 @@ export default function SpecialtySection({
       setShowWarning(true);
       return prev;
     });
+  };
+
+  const handleToggleVisibility = async (id: string) => {
+    const nextVisible = !(visibilityMap[id] ?? true);
+    setTogglingId(id);
+    setVisibilityMap((prev) => ({ ...prev, [id]: nextVisible }));
+
+    const result = await setOwnSpecialtyVisibility(id, nextVisible);
+    if (!result.ok) {
+      setVisibilityMap((prev) => ({ ...prev, [id]: !nextVisible }));
+      alert(result.error);
+    }
+    setTogglingId(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,7 +102,9 @@ export default function SpecialtySection({
 
     setFormState('loading');
 
-    const result = await replaceProfileSpecialties(selectedIds);
+    const result = await replaceProfileSpecialties(
+      selectedIds.map((id) => ({ specialtyId: id, ownerVisible: visibilityMap[id] ?? true }))
+    );
 
     if (result.ok) {
       setFormState('saved');
@@ -109,6 +139,14 @@ export default function SpecialtySection({
           <p className="text-sm text-red-900 font-medium">
             ⚠️ 전문분야는 최소 {MIN_SELECTION}개, 최대 {MAX_SELECTION}
             개까지 선택할 수 있습니다.
+          </p>
+        </div>
+      )}
+
+      {!profileOwnerVisible && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <p className="text-xs text-gray-500">
+            전체 비공개 상태입니다. 사이드바의 프로필 공개 설정을 켜야 항목별 공개 설정이 적용됩니다.
           </p>
         </div>
       )}
@@ -182,9 +220,15 @@ export default function SpecialtySection({
                 .map((specialty) => (
                   <span
                     key={specialty.id}
-                    className="px-3 py-1 bg-blue-100 text-blue-900 rounded-full text-sm font-medium"
+                    className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-900 rounded-full text-sm font-medium"
                   >
                     {specialty.name}
+                    <VisibilityToggle
+                      visible={visibilityMap[specialty.id] ?? true}
+                      onToggle={() => handleToggleVisibility(specialty.id)}
+                      disabled={!profileOwnerVisible}
+                      pending={togglingId === specialty.id}
+                    />
                   </span>
                 ))}
             </div>

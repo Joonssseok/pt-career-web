@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { PROFILE_STATUS_META as STATUS_META } from '@/lib/constants/status-badges';
+import { ProfileVisibilityToggle } from '@/components/ProfileVisibilityToggle';
 
 const EDIT_SECTION_LINKS = [
   { value: 'basic', label: '기본 정보' },
@@ -26,7 +27,7 @@ export async function AccountSidebar() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, verification_status, created_at')
+    .select('id, verification_status, created_at, owner_visible')
     .eq('user_id', user.id)
     .maybeSingle();
 
@@ -47,6 +48,12 @@ export async function AccountSidebar() {
             statusMeta={statusMeta}
             joinedAtText={joinedAtText}
           />
+          {profile && (
+            <div className="flex items-center justify-between gap-2 py-2 border-y border-gray-100">
+              <p className="text-xs font-medium text-gray-600">프로필 전체 공개</p>
+              <ProfileVisibilityToggle initialVisible={profile.owner_visible} />
+            </div>
+          )}
           <EditSectionLinks />
           <PublicPreviewLink profileId={profile?.id ?? null} isApproved={isApproved} />
           <DeleteAccountLink />
@@ -61,6 +68,12 @@ export async function AccountSidebar() {
               className={`px-2.5 py-1 rounded-full text-xs font-medium border ${statusMeta.className}`}
             >
               {statusMeta.label}
+            </span>
+          )}
+          {profile && (
+            <span className="flex items-center gap-1.5 text-xs text-gray-500">
+              전체 공개
+              <ProfileVisibilityToggle initialVisible={profile.owner_visible} />
             </span>
           )}
           {EDIT_SECTION_LINKS.map((s) => (

@@ -6,6 +6,8 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
 import { ShareButton } from './ShareButton';
+import { GalleryCarousel } from '@/components/GalleryCarousel';
+import { GalleryFullScroll } from '@/components/GalleryFullScroll';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,6 +107,22 @@ export default async function ExpertDetailPage({
     notFound();
   }
 
+  // public_expert_detail 뷰를 건드리지 않고 별도 쿼리로 가져온다(지시서 2-5) --
+  // anon_select_public/authenticated_select_public RLS 정책이 이미 공개+승인
+  // 프로필의 갤러리만 걸러주므로 추가 SECURITY DEFINER 함수는 필요 없다.
+  const supabase = await createClient();
+  const { data: galleryRows } = await supabase
+    .from('profile_gallery_images')
+    .select('id, image_path, caption')
+    .eq('profile_id', id)
+    .order('display_order');
+
+  const galleryImages = (galleryRows ?? []).map((g) => ({
+    id: g.id,
+    imagePath: g.image_path,
+    caption: g.caption ?? '',
+  }));
+
   return (
     <main className="min-h-screen bg-white pb-12">
       <nav className="flex items-center gap-3 px-4 py-4 sm:px-6 border-b border-gray-100">
@@ -178,6 +196,9 @@ export default async function ExpertDetailPage({
             <p className="text-sm text-gray-700 whitespace-pre-wrap">{expert.introduction}</p>
           </section>
         )}
+
+        <GalleryCarousel images={galleryImages} />
+        <GalleryFullScroll images={galleryImages} />
 
         {expert.experiences.length > 0 && (
           <section>

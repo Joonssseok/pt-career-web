@@ -9,6 +9,7 @@ const EDIT_SECTION_LINKS = [
   { value: 'certification', label: '자격·면허' },
   { value: 'workplace', label: '근무기관' },
   { value: 'specialty', label: '전문분야' },
+  { value: 'gallery', label: '갤러리' },
 ];
 
 // 활성 라우트 프리픽스 (마이페이지/프로필 수정 맥락). 온보딩 마법사는 자체

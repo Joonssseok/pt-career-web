@@ -12,6 +12,7 @@ import EducationSection from '@/components/profile-sections/EducationSection';
 import CertificationSection from '@/components/profile-sections/CertificationSection';
 import WorkplaceSection from '@/components/profile-sections/WorkplaceSection';
 import SpecialtySection from '@/components/profile-sections/SpecialtySection';
+import GallerySection from '@/components/profile-sections/GallerySection';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 
@@ -30,12 +31,17 @@ const EDIT_SECTIONS = [
   { value: 'certification', label: '자격·면허' },
   { value: 'workplace', label: '근무기관' },
   { value: 'specialty', label: '전문분야' },
+  { value: 'gallery', label: '갤러리' },
 ];
 const VALID_SECTIONS = EDIT_SECTIONS.map((s) => s.value);
 
 // edit 화면에서는 저장 후 페이지 이동 없이 그 자리에 머문다.
 const SECTION_SUBMIT_LABEL = '저장 후 재검토 요청';
 const SECTION_SAVED_MESSAGE = '✓ 저장되었습니다. 재검토 대기열로 이동했습니다.';
+// 갤러리는 demote_profile_if_approved_trigger가 붙지 않아 재검토를 유발하지
+// 않고 즉시 공개되므로(CTO 확정 사항), 다른 섹션과 같은 문구를 쓰면 안 된다.
+const GALLERY_SUBMIT_LABEL = '저장';
+const GALLERY_SAVED_MESSAGE = '✓ 저장되었습니다. 바로 공개 프로필에 반영됩니다.';
 
 export default function EditForm() {
   const router = useRouter();
@@ -293,6 +299,14 @@ export default function EditForm() {
             <SpecialtySection
               submitLabel={SECTION_SUBMIT_LABEL}
               savedMessage={SECTION_SAVED_MESSAGE}
+              onSaved={() => {}}
+            />
+          )}
+
+          {section === 'gallery' && (
+            <GallerySection
+              submitLabel={GALLERY_SUBMIT_LABEL}
+              savedMessage={GALLERY_SAVED_MESSAGE}
               onSaved={() => {}}
             />
           )}

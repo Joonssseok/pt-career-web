@@ -1,7 +1,12 @@
 'use client';
 
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import { getOwnExperiences, saveExperience, setOwnExperienceVisibility } from '@/app/actions/experience';
+import {
+  getOwnExperiences,
+  saveExperience,
+  setOwnExperienceVisibility,
+  setOwnExperiencePeriodVisibility,
+} from '@/app/actions/experience';
 import { VisibilityToggle } from './VisibilityToggle';
 import { YearMonthSelect } from './YearMonthSelect';
 import type { SectionSaveHandle } from './types';
@@ -27,13 +32,31 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
 ) {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  // 경력 섹션 전체 마스터 스위치 -- 항목별 owner_visible(항목 자체를 보이거나
+  // 숨김)과 별개로, 보이는 항목에서 근무기간(시작~종료일)만 가릴지를 결정한다.
+  const [periodVisible, setPeriodVisible] = useState(true);
+  const [periodTogglePending, setPeriodTogglePending] = useState(false);
 
   useEffect(() => {
     getOwnExperiences().then((result) => {
       if (!result.ok) return;
       setExperiences(result.experiences);
+      setPeriodVisible(result.periodVisible);
     });
   }, []);
+
+  const handleTogglePeriodVisibility = async () => {
+    const nextVisible = !periodVisible;
+    setPeriodTogglePending(true);
+    setPeriodVisible(nextVisible);
+
+    const result = await setOwnExperiencePeriodVisibility(nextVisible);
+    if (!result.ok) {
+      setPeriodVisible(!nextVisible);
+      alert(result.error);
+    }
+    setPeriodTogglePending(false);
+  };
 
   const handleToggleVisibility = async (id: string) => {
     const target = experiences.find((exp) => exp.id === id);
@@ -139,6 +162,25 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
           </p>
         </div>
       )}
+
+      {/* 경력 섹션 전체 마스터 스위치 -- 항목별 공개/비공개(VisibilityToggle)와
+          별개로, 공개된 경력 항목에서 근무기간만 가릴지를 한 번에 제어한다. */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-gray-900">근무기간 공개</p>
+          <p className="text-xs text-gray-500 mt-1">
+            {periodVisible
+              ? '공개 프로필에 경력 항목의 근무기간(시작~종료일)이 표시됩니다.'
+              : '공개 프로필에서 경력 항목의 근무기간이 표시되지 않습니다. (항목 자체와 기관명·직책은 그대로 노출)'}
+          </p>
+        </div>
+        <VisibilityToggle
+          visible={periodVisible}
+          onToggle={handleTogglePeriodVisibility}
+          disabled={!profileOwnerVisible}
+          pending={periodTogglePending}
+        />
+      </div>
 
       {/* Add New Experience */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">

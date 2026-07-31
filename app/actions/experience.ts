@@ -1,7 +1,6 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { getOwnProfileId } from '@/lib/supabase/profile';
 
 export async function getOwnExperiences() {
   const supabase = await createClient();
@@ -10,23 +9,33 @@ export async function getOwnExperiences() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { ok: false as const, error: 'Not authenticated', experiences: [] };
+    return {
+      ok: false as const,
+      error: 'Not authenticated',
+      experiences: [],
+      periodVisible: true,
+    };
   }
 
-  const profileId = await getOwnProfileId(supabase, user.id);
-  if (!profileId) {
-    return { ok: true as const, error: '', experiences: [] };
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id, experience_period_visible')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (!profile) {
+    return { ok: true as const, error: '', experiences: [], periodVisible: true };
   }
 
   const { data, error } = await supabase
     .from('experiences')
     .select('id, organization_name, position, start_date, end_date, is_current, owner_visible')
-    .eq('profile_id', profileId)
+    .eq('profile_id', profile.id)
     .order('display_order');
 
   if (error) {
     console.error('[getOwnExperiences] Supabase error:', error);
-    return { ok: false as const, error: error.message, experiences: [] };
+    return { ok: false as const, error: error.message, experiences: [], periodVisible: true };
   }
 
   return {
@@ -42,6 +51,7 @@ export async function getOwnExperiences() {
       isCurrently: exp.is_current,
       ownerVisible: exp.owner_visible,
     })),
+    periodVisible: profile.experience_period_visible,
   };
 }
 
@@ -123,6 +133,33 @@ export async function setOwnExperienceVisibility(experienceId: string, visible: 
     return { ok: false, error: 'Unexpected response' };
   } catch (err) {
     console.error('[setOwnExperienceVisibility] threw:', err);
+    return { ok: false, error: String(err) };
+  }
+}
+
+// 경력 섹션 전체 마스터 스위치 — 항목별 owner_visible(항목 자체를 보이거나
+// 숨김)과 별개로, 보이는 항목에서 근무기간(start_date/end_date)만 가릴지를
+// 프로필 단위로 한 번에 제어한다. "저장" 버튼과 무관하게 즉시 확정된다.
+export async function setOwnExperiencePeriodVisibility(visible: boolean) {
+  try {
+    const supabase = await createClient();
+    const { data: result, error } = await supabase.rpc('set_own_experience_period_visibility', {
+      p_visible: visible,
+    });
+
+    if (error) {
+      console.error('[setOwnExperiencePeriodVisibility] Supabase error:', error);
+      return { ok: false, error: error.message };
+    }
+
+    if (result && result.length > 0) {
+      const { ok, error: rpcError } = result[0];
+      return { ok, error: rpcError };
+    }
+
+    return { ok: false, error: 'Unexpected response' };
+  } catch (err) {
+    console.error('[setOwnExperiencePeriodVisibility] threw:', err);
     return { ok: false, error: String(err) };
   }
 }

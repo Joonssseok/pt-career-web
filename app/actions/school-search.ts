@@ -1,5 +1,7 @@
 'use server';
 
+import universities from '@/lib/data/korean-universities.json';
+
 // 나이스(NEIS) 교육정보 개방 포털 학교기본정보 Open API 연동.
 // https://open.neis.go.kr/hub/schoolInfo -- KEY/Type/pIndex/pSize + SCHUL_NM(학교명)
 // 검색 파라미터를 받고, 응답은 schoolInfo[0]=head(RESULT), schoolInfo[1]=row(배열) 형태.
@@ -66,6 +68,54 @@ export async function searchSchools(query: string): Promise<SchoolSearchResult[]
     }));
   } catch (err) {
     console.error('[searchSchools] threw:', err);
+    return [];
+  }
+}
+
+// 대학교/대학원용 학교명 자동완성 -- NEIS "학교기본정보" 데이터셋은 초중등
+// 전용이라 대학교/대학원을 아예 다루지 않는다(별도 진단 완료). 대신 공공데이터
+// 포털 "전국대학및전문대학정보표준데이터"(data.go.kr, 데이터셋 15107736)에서
+// 대학구분명="대학"인 행(대학교/사이버대학/교육대학/산업대학/각종학교/기술대학
+// 등, 전문대학·대학원 프로그램 행은 제외)만 추려 정적 JSON으로 미리 번들링해
+// 둔 것을 메모리에서 필터링한다 -- 외부 네트워크 호출이 없으므로 키 발급/
+// 활용신청 대기, 파라미터 불일치 같은 NEIS에서 겪은 실패 지점 자체가 없다.
+// 대학원 레벨도 이 동일한 대학교 목록을 그대로 사용한다(소속 대학교명으로
+// 검색 -- 세부 대학원 프로그램명이 아님, 지시서 5-a 판단).
+//
+// 갱신 방법(연 1회 정도): data.go.kr/data/15107736/standard.do 접속 →
+// "한국대학교육협의회_대학및전문대학정보" 상세보기 → 그리드 탭 → CSV
+// 다운로드 → 대학구분명="대학"인 행만 추려 학교명/학교구분명/시도명/주소만
+// 남겨 lib/data/korean-universities.json으로 저장(스키마는 UniversityRecord
+// 참고). 2026-07-31 기준 262건.
+type UniversityRecord = {
+  name: string;
+  type: string;
+  region: string;
+  address: string;
+  branch: string;
+};
+
+const UNIVERSITIES = universities as UniversityRecord[];
+
+export async function searchUniversities(query: string): Promise<SchoolSearchResult[]> {
+  const trimmed = query.trim();
+  if (trimmed.length < 2) {
+    return [];
+  }
+
+  try {
+    const normalize = (s: string) => s.replace(/\s+/g, '').toLowerCase();
+    const needle = normalize(trimmed);
+
+    return UNIVERSITIES.filter((u) => normalize(u.name).includes(needle))
+      .slice(0, 20)
+      .map((u, idx) => ({
+        code: String(idx),
+        name: u.name,
+        address: u.address,
+      }));
+  } catch (err) {
+    console.error('[searchUniversities] threw:', err);
     return [];
   }
 }

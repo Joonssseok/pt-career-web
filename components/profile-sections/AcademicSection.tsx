@@ -7,7 +7,7 @@ import {
   setOwnAcademicRecordVisibility,
   type AcademicLevel,
 } from '@/app/actions/academic-record';
-import { searchSchools, type SchoolSearchResult } from '@/app/actions/school-search';
+import { searchSchools, searchUniversities, type SchoolSearchResult } from '@/app/actions/school-search';
 import { VisibilityToggle } from './VisibilityToggle';
 import { YearMonthSelect } from './YearMonthSelect';
 import type { SectionSaveHandle } from './types';
@@ -100,34 +100,37 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
     endDate: '',
   });
 
-  // 학교명 검색 자동완성 -- NEIS "학교기본정보" API는 초중등(고등학교/중학교)
-  // 데이터만 제공하고 대학교/대학원은 애초에 포함하지 않으므로(나이스 데이터셋
-  // 자체가 "초중등_학교기본정보"), 대학원/대학교 구분에서는 호출 자체를 하지
-  // 않는다 -- 어차피 항상 결과 없음으로 끝날 호출을 막아 불필요한 API 호출과
-  // 혼란스러운 "검색 결과 없음"을 방지한다. NEIS_API_KEY가 없을 때는 여전히
-  // searchSchools()가 빈 배열만 돌려주므로 그 경우도 자연히 자유 텍스트로
-  // 폴백된다(키가 나중에 추가되면 재배포 없이 자동으로 켜진다).
+  // 학교명 검색 자동완성 -- 구분에 따라 서로 다른 데이터 소스를 쓴다.
+  // 고등학교/중학교는 NEIS 학교기본정보(초중등 전용), 대학교/대학원은 정적으로
+  // 번들링한 전국대학정보(대학원도 소속 대학교명으로 검색 -- 세부 대학원
+  // 프로그램명이 아님)를 쓴다. 두 함수 모두 실패 시 조용히 빈 배열만 돌려주므로
+  // 결과가 없으면 자유 텍스트 입력으로 그대로 이어진다.
   const [schoolSuggestions, setSchoolSuggestions] = useState<SchoolSearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRequestId = useRef(0);
-  const isNeisEligibleLevel = newRecord.level === 'high_school' || newRecord.level === 'middle_school';
+  const searchFnForLevel =
+    newRecord.level === 'high_school' || newRecord.level === 'middle_school'
+      ? searchSchools
+      : newRecord.level === 'university' || newRecord.level === 'graduate'
+        ? searchUniversities
+        : null;
 
   useEffect(() => {
     const query = newRecord.schoolName;
-    if (!isNeisEligibleLevel || query.trim().length < 2) {
+    if (!searchFnForLevel || query.trim().length < 2) {
       setSchoolSuggestions([]);
       return;
     }
     const requestId = ++searchRequestId.current;
     const timer = setTimeout(() => {
-      searchSchools(query).then((results) => {
+      searchFnForLevel(query).then((results) => {
         if (requestId === searchRequestId.current) {
           setSchoolSuggestions(results);
         }
       });
     }, 300);
     return () => clearTimeout(timer);
-  }, [newRecord.schoolName, isNeisEligibleLevel]);
+  }, [newRecord.schoolName, searchFnForLevel]);
 
   const handleSelectSuggestion = (s: SchoolSearchResult) => {
     setNewRecord((prev) => ({ ...prev, schoolName: s.name }));
@@ -201,6 +204,8 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
 
   const showDegreeField = newRecord.level === 'graduate';
   const showMajorField = newRecord.level === 'graduate' || newRecord.level === 'university';
+  // 대학원은 세부 프로그램명이 아니라 소속 대학교명으로 검색·저장한다(지시서 5-a).
+  const schoolNameLabel = newRecord.level === 'graduate' ? '소속 대학교명' : '학교명';
 
   return (
     <div className="space-y-5">
@@ -253,7 +258,7 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
         )}
 
         <div className="relative">
-          <label className="text-xs font-medium text-gray-600 mb-2 block">학교명</label>
+          <label className="text-xs font-medium text-gray-600 mb-2 block">{schoolNameLabel}</label>
           <input
             type="text"
             placeholder="예: 서울대학교"

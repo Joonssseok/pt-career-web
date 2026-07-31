@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { getOwnEducations, saveEducation, setOwnEducationVisibility } from '@/app/actions/education';
 import { VisibilityToggle } from './VisibilityToggle';
+import { YearMonthSelect } from './YearMonthSelect';
 import type { SectionSaveHandle } from './types';
 
 type Education = {
@@ -171,16 +172,9 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
 
         <div>
           <label className="text-xs font-medium text-gray-600 mb-2 block">수료일</label>
-          <input
-            type="month"
+          <YearMonthSelect
             value={newEducation.completionDate}
-            onChange={(e) =>
-              setNewEducation({
-                ...newEducation,
-                completionDate: e.target.value,
-              })
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={(completionDate) => setNewEducation({ ...newEducation, completionDate })}
           />
         </div>
 

@@ -19,19 +19,30 @@ export function VisibilityToggle({
   // 화면 표시를 일치시키기 위함. 저장된 값 자체는 바뀌지 않는다(마스터를
   // 다시 켜면 이 항목의 이전 값이 그대로 복원된다).
   const displayVisible = disabled ? false : visible;
+  const label = pending ? '변경 중...' : displayVisible ? '공개' : '비공개';
 
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      disabled={disabled || pending}
-      className={`min-h-[32px] px-3 text-xs font-medium rounded-full border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-        displayVisible
-          ? 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100'
-          : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
-      }`}
-    >
-      {pending ? '변경 중...' : displayVisible ? '공개' : '비공개'}
-    </button>
+    <span className="inline-flex items-center gap-2">
+      <span className={`text-xs font-medium ${displayVisible ? 'text-green-700' : 'text-gray-500'}`}>
+        {label}
+      </span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={displayVisible}
+        aria-label={label}
+        onClick={onToggle}
+        disabled={disabled || pending}
+        className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+          displayVisible ? 'bg-green-500' : 'bg-gray-300'
+        }`}
+      >
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+            displayVisible ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
+      </button>
+    </span>
   );
 }

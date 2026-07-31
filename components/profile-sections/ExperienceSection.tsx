@@ -3,6 +3,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { getOwnExperiences, saveExperience, setOwnExperienceVisibility } from '@/app/actions/experience';
 import { VisibilityToggle } from './VisibilityToggle';
+import { YearMonthSelect } from './YearMonthSelect';
 import type { SectionSaveHandle } from './types';
 
 type Experience = {
@@ -171,31 +172,21 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <input
-            type="month"
-            placeholder="시작일"
-            value={newExperience.startDate}
-            onChange={(e) =>
-              setNewExperience({
-                ...newExperience,
-                startDate: e.target.value,
-              })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            type="month"
-            placeholder="종료일"
-            value={newExperience.endDate}
-            onChange={(e) =>
-              setNewExperience({
-                ...newExperience,
-                endDate: e.target.value,
-              })
-            }
-            disabled={newExperience.isCurrently}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-          />
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-2 block">시작일</label>
+            <YearMonthSelect
+              value={newExperience.startDate}
+              onChange={(startDate) => setNewExperience({ ...newExperience, startDate })}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-2 block">종료일</label>
+            <YearMonthSelect
+              value={newExperience.endDate}
+              onChange={(endDate) => setNewExperience({ ...newExperience, endDate })}
+              disabled={newExperience.isCurrently}
+            />
+          </div>
         </div>
 
         <label className="flex items-center gap-2 cursor-pointer">

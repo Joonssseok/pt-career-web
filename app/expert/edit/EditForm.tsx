@@ -590,7 +590,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                   />
                 </section>
 
-                <div className="sticky bottom-0 bg-white border-t border-gray-200 -mx-4 px-4 py-4 sm:mx-0 sm:rounded-lg sm:border sm:static space-y-3">
+                <div className="sticky bottom-0 z-30 bg-white border-t border-gray-200 -mx-4 px-4 py-4 sm:mx-0 sm:rounded-lg sm:border space-y-3">
                   {draftSaveState !== 'default' && (
                     <div
                       className={`p-3 rounded-lg border ${

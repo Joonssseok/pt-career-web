@@ -10,7 +10,7 @@ const SECTIONS = [
   { id: 'education', label: '교육' },
   { id: 'certification', label: '자격·면허' },
   { id: 'workplace', label: '근무기관' },
-  { id: 'gallery', label: '갤러리' },
+  { id: 'gallery', label: '상세정보 이미지' },
 ];
 
 const EDIT_PATH = '/expert/edit';

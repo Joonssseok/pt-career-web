@@ -1,32 +1,18 @@
 'use client';
 
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
-import {
-  getOwnSelectedSpecialtyIds,
-  getSpecialties,
-  replaceProfileSpecialties,
-  setOwnSpecialtyVisibility,
-} from '@/app/actions/specialties';
-import { VisibilityToggle } from './VisibilityToggle';
+import { getOwnSelectedSpecialtyIds, getSpecialties, replaceProfileSpecialties } from '@/app/actions/specialties';
 import type { SectionSaveHandle } from './types';
 
 type Specialty = { id: string; name: string; sort_order: number };
 
-type Props = {
-  // 프로필 마스터 토글이 꺼져 있으면 항목별 토글을 비활성화한다.
-  profileOwnerVisible?: boolean;
-};
-
-const SpecialtySection = forwardRef<SectionSaveHandle, Props>(function SpecialtySection(
-  { profileOwnerVisible = true },
-  ref
-) {
+const SpecialtySection = forwardRef<SectionSaveHandle, object>(function SpecialtySection(_props, ref) {
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  // specialty_id -> owner_visible. 저장 시(replaceProfileSpecialties) 함께
-  // 전송해야 3-6절 함정(재저장 시 기본값 true로 리셋)을 피할 수 있다.
+  // specialty_id -> owner_visible. 항목별 공개 토글 UI는 제거됐지만, 과거에
+  // 이미 저장된 값은 재저장 시 조용히 true로 리셋되지 않도록 그대로 보존해
+  // replaceProfileSpecialties에 함께 전송한다(3-6절 함정).
   const [visibilityMap, setVisibilityMap] = useState<Record<string, boolean>>({});
-  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const [showWarning, setShowWarning] = useState(false);
 
@@ -70,19 +56,6 @@ const SpecialtySection = forwardRef<SectionSaveHandle, Props>(function Specialty
     });
   };
 
-  const handleToggleVisibility = async (id: string) => {
-    const nextVisible = !(visibilityMap[id] ?? true);
-    setTogglingId(id);
-    setVisibilityMap((prev) => ({ ...prev, [id]: nextVisible }));
-
-    const result = await setOwnSpecialtyVisibility(id, nextVisible);
-    if (!result.ok) {
-      setVisibilityMap((prev) => ({ ...prev, [id]: !nextVisible }));
-      alert(result.error);
-    }
-    setTogglingId(null);
-  };
-
   const save = async (): Promise<{ ok: boolean; error?: string }> => {
     if (selectedIds.length === 0) {
       // 전문분야를 아직 선택하지 않은 사용자 — 아래 "선택됨: 0/3개" 안내가 이미
@@ -106,14 +79,6 @@ const SpecialtySection = forwardRef<SectionSaveHandle, Props>(function Specialty
           <p className="text-sm text-red-900 font-medium">
             ⚠️ 전문분야는 최소 {MIN_SELECTION}개, 최대 {MAX_SELECTION}
             개까지 선택할 수 있습니다.
-          </p>
-        </div>
-      )}
-
-      {!profileOwnerVisible && (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-          <p className="text-xs text-gray-500">
-            전체 비공개 상태입니다. 사이드바의 프로필 공개 설정을 켜야 항목별 공개 설정이 적용됩니다.
           </p>
         </div>
       )}
@@ -182,15 +147,9 @@ const SpecialtySection = forwardRef<SectionSaveHandle, Props>(function Specialty
                 .map((specialty) => (
                   <span
                     key={specialty.id}
-                    className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-900 rounded-full text-sm font-medium"
+                    className="px-3 py-1 bg-blue-100 text-blue-900 rounded-full text-sm font-medium"
                   >
                     {specialty.name}
-                    <VisibilityToggle
-                      visible={visibilityMap[specialty.id] ?? true}
-                      onToggle={() => handleToggleVisibility(specialty.id)}
-                      disabled={!profileOwnerVisible}
-                      pending={togglingId === specialty.id}
-                    />
                   </span>
                 ))}
             </div>

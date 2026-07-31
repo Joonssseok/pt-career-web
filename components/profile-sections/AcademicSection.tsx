@@ -100,16 +100,21 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
     endDate: '',
   });
 
-  // 학교명 검색 자동완성 -- NEIS_API_KEY가 없으면 searchSchools()가 항상 빈
-  // 배열을 돌려주므로 드롭다운이 그냥 뜨지 않고, 사용자는 자유 텍스트로 계속
-  // 입력할 수 있다(키가 나중에 추가되면 재배포 없이 자동으로 켜진다).
+  // 학교명 검색 자동완성 -- NEIS "학교기본정보" API는 초중등(고등학교/중학교)
+  // 데이터만 제공하고 대학교/대학원은 애초에 포함하지 않으므로(나이스 데이터셋
+  // 자체가 "초중등_학교기본정보"), 대학원/대학교 구분에서는 호출 자체를 하지
+  // 않는다 -- 어차피 항상 결과 없음으로 끝날 호출을 막아 불필요한 API 호출과
+  // 혼란스러운 "검색 결과 없음"을 방지한다. NEIS_API_KEY가 없을 때는 여전히
+  // searchSchools()가 빈 배열만 돌려주므로 그 경우도 자연히 자유 텍스트로
+  // 폴백된다(키가 나중에 추가되면 재배포 없이 자동으로 켜진다).
   const [schoolSuggestions, setSchoolSuggestions] = useState<SchoolSearchResult[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRequestId = useRef(0);
+  const isNeisEligibleLevel = newRecord.level === 'high_school' || newRecord.level === 'middle_school';
 
   useEffect(() => {
     const query = newRecord.schoolName;
-    if (query.trim().length < 2) {
+    if (!isNeisEligibleLevel || query.trim().length < 2) {
       setSchoolSuggestions([]);
       return;
     }
@@ -122,7 +127,7 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
       });
     }, 300);
     return () => clearTimeout(timer);
-  }, [newRecord.schoolName]);
+  }, [newRecord.schoolName, isNeisEligibleLevel]);
 
   const handleSelectSuggestion = (s: SchoolSearchResult) => {
     setNewRecord((prev) => ({ ...prev, schoolName: s.name }));

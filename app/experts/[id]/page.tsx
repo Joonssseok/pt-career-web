@@ -11,6 +11,13 @@ import { GalleryFullScroll } from '@/components/GalleryFullScroll';
 
 export const dynamic = 'force-dynamic';
 
+const ACADEMIC_LEVEL_LABELS: Record<string, string> = {
+  graduate: '대학원',
+  university: '대학교',
+  high_school: '고등학교',
+  middle_school: '중학교',
+};
+
 type ExpertDetail = {
   id: string;
   display_name: string | null;
@@ -29,6 +36,14 @@ type ExpertDetail = {
   workplace_latitude: number | null;
   workplace_longitude: number | null;
   specialties: { slug: string; name: string; is_primary: boolean }[];
+  academic_records: {
+    level: 'graduate' | 'university' | 'high_school' | 'middle_school';
+    degree: string | null;
+    school_name: string;
+    major: string | null;
+    start_date: string | null;
+    end_date: string | null;
+  }[];
   experiences: {
     organization_name: string;
     position: string | null;
@@ -197,6 +212,34 @@ export default async function ExpertDetailPage({
           </section>
         )}
 
+        {expert.academic_records.length > 0 && (
+          <section>
+            <h2 className="text-sm font-semibold text-gray-900 mb-2">학력</h2>
+            <ul className="space-y-2">
+              {expert.academic_records.map((a, i) => (
+                <li key={i} className="text-sm text-gray-700">
+                  <span className="font-medium text-gray-900">
+                    {ACADEMIC_LEVEL_LABELS[a.level] ?? a.level}
+                    {a.degree ? `(${a.degree})` : ''}
+                  </span>
+                  <span className="text-gray-500">
+                    {' '}
+                    · {a.school_name}
+                    {a.major ? ` ${a.major}` : ''}
+                  </span>
+                  {(a.start_date || a.end_date) && (
+                    <span className="block text-xs text-gray-400">
+                      {a.start_date ?? ''}
+                      {a.start_date && a.end_date ? ' ~ ' : ''}
+                      {a.end_date ?? ''}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {expert.experiences.length > 0 && (
           <section>
             <h2 className="text-sm font-semibold text-gray-900 mb-2">경력</h2>
@@ -218,7 +261,7 @@ export default async function ExpertDetailPage({
 
         {expert.educations.length > 0 && (
           <section>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">학력</h2>
+            <h2 className="text-sm font-semibold text-gray-900 mb-2">교육</h2>
             <ul className="space-y-2">
               {expert.educations.map((e, i) => (
                 <li key={i} className="text-sm text-gray-700">

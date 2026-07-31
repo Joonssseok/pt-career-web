@@ -20,7 +20,7 @@ export async function getOwnEducations() {
 
   const { data, error } = await supabase
     .from('educations')
-    .select('id, education_name, organization_name, completion_date, description, owner_visible')
+    .select('id, education_name, organization_name, start_date, completion_date, description, owner_visible')
     .eq('profile_id', profileId)
     .order('display_order');
 
@@ -37,6 +37,7 @@ export async function getOwnEducations() {
       educationName: edu.education_name,
       organizationName: edu.organization_name ?? '',
       // DB stores a full DATE; the <input type="month"> UI needs "YYYY-MM".
+      startDate: edu.start_date?.slice(0, 7) ?? '',
       completionDate: edu.completion_date?.slice(0, 7) ?? '',
       description: edu.description ?? '',
       ownerVisible: edu.owner_visible,
@@ -49,6 +50,7 @@ export async function saveEducation(data: {
     id?: string;
     educationName: string;
     organizationName?: string;
+    startDate?: string;
     completionDate?: string;
     description?: string;
     ownerVisible?: boolean;
@@ -73,6 +75,7 @@ export async function saveEducation(data: {
         education_name: edu.educationName,
         organization_name: edu.organizationName || null,
         // <input type="month"> gives "YYYY-MM"; the DB column is a full DATE.
+        start_date: edu.startDate ? `${edu.startDate}-01` : null,
         completion_date: edu.completionDate ? `${edu.completionDate}-01` : null,
         description: edu.description || null,
         owner_visible: edu.ownerVisible ?? true,

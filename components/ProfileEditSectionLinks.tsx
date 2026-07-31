@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 
 const SECTIONS = [
   { id: 'basic', label: '기본 정보' },
+  { id: 'academic', label: '학력' },
   { id: 'experience', label: '경력' },
   { id: 'education', label: '교육' },
   { id: 'certification', label: '자격·면허' },
@@ -15,7 +16,7 @@ const SECTIONS = [
 
 const EDIT_PATH = '/expert/edit';
 
-// /expert/edit 페이지의 6개 앵커(#basic 등)를 IntersectionObserver로 감시해
+// /expert/edit 페이지의 7개 앵커(#basic 등)를 IntersectionObserver로 감시해
 // 현재 보고 있는 섹션에 해당하는 링크를 하이라이트한다. 다른 페이지에서는
 // 관찰 대상 앵커가 DOM에 없으므로 자연히 아무 것도 활성화되지 않는다.
 //

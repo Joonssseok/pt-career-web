@@ -1,0 +1,47 @@
+-- 백업: experience_period_visibility 마이그레이션 적용 전 프로덕션 상태
+-- 2026-07-31, project oqrxdvwlsbwkhihsvqvt
+
+-- public_expert_detail 뷰 정의 (적용 전)
+-- SELECT p.id, p.display_name, p.profession, p.headline, p.introduction,
+--        p.total_experience_years, p.profile_image_path,
+--        CASE WHEN w.is_location_public AND w.owner_visible THEN w.region ELSE NULL::text END AS workplace_region,
+--        CASE WHEN w.is_location_public AND w.owner_visible THEN w.center_name ELSE NULL::text END AS workplace_center_name,
+--        CASE WHEN w.is_location_public AND w.owner_visible THEN w.website_url ELSE NULL::text END AS workplace_website_url,
+--        COALESCE(spec.specialties, '[]'::jsonb) AS specialties,
+--        COALESCE(exp.experiences, '[]'::jsonb) AS experiences,
+--        COALESCE(edu.educations, '[]'::jsonb) AS educations,
+--        COALESCE(lic.licenses, '[]'::jsonb) AS licenses,
+--        CASE WHEN w.is_location_public AND w.owner_visible THEN w.address ELSE NULL::text END AS workplace_address,
+--        CASE WHEN w.is_location_public AND w.owner_visible THEN w.address_detail ELSE NULL::text END AS workplace_address_detail,
+--        CASE WHEN w.is_location_public AND w.owner_visible THEN w.phone ELSE NULL::text END AS workplace_phone,
+--        CASE WHEN w.is_location_public AND w.owner_visible THEN w.external_contact_url ELSE NULL::text END AS workplace_external_contact_url,
+--        CASE WHEN w.is_location_public AND w.owner_visible THEN w.latitude ELSE NULL::double precision END AS workplace_latitude,
+--        CASE WHEN w.is_location_public AND w.owner_visible THEN w.longitude ELSE NULL::double precision END AS workplace_longitude,
+--        COALESCE(acad.academic_records, '[]'::jsonb) AS academic_records
+--   FROM profiles p
+--     LEFT JOIN workplaces w ON w.profile_id = p.id
+--     LEFT JOIN LATERAL (spec) ... spec ON true
+--     LEFT JOIN LATERAL (acad) ... acad ON true
+--     LEFT JOIN LATERAL ( SELECT jsonb_agg(jsonb_build_object('organization_name', e.organization_name, 'position', e."position",
+--          'start_date', e.start_date, 'end_date', e.end_date,
+--          'is_current', e.is_current, 'description', e.description) ORDER BY e.display_order) AS experiences
+--           FROM experiences e
+--          WHERE e.profile_id = p.id AND e.owner_visible = true) exp ON true
+--     LEFT JOIN LATERAL (edu) ... edu ON true
+--     LEFT JOIN LATERAL (lic) ... lic ON true
+--  WHERE p.is_public = true AND p.verification_status = 'approved'::text AND p.deletion_requested_at IS NULL AND p.owner_visible = true;
+--
+-- 롤백 시 위 정의로 CREATE OR REPLACE VIEW 후 재실행 필요:
+--   ALTER VIEW public.public_expert_detail SET (security_invoker = true);
+--   GRANT SELECT ON public.public_expert_detail TO anon, authenticated, service_role;
+
+-- profiles 테이블 anon 컬럼별 GRANT (적용 전, 11개 컬럼)
+-- deletion_requested_at, display_name, headline, id, introduction, is_public,
+-- owner_visible, profession, profile_image_path, total_experience_years, verification_status
+
+-- profiles 행 수: 2 (둘 다 verification_status='approved')
+
+-- 롤백 SQL (필요 시):
+-- DROP FUNCTION IF EXISTS public.set_own_experience_period_visibility(boolean);
+-- ALTER TABLE public.profiles DROP COLUMN IF EXISTS experience_period_visible;
+-- (위 뷰 정의로 CREATE OR REPLACE VIEW 재실행 + security_invoker/grant 재적용)

@@ -8,7 +8,7 @@ export async function SiteHeader() {
   } = await supabase.auth.getUser();
 
   return (
-    <nav className="flex items-center justify-between px-4 py-4 sm:px-6 border-b border-gray-100 bg-white">
+    <nav className="sticky top-0 z-40 flex items-center justify-between px-4 py-4 sm:px-6 border-b border-gray-100 bg-white">
       <Link href="/" className="text-lg font-bold text-slate-900 sm:text-xl">
         PT Career
       </Link>

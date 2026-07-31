@@ -1,7 +1,29 @@
 # 교육이력 자동정렬 + 시작일 추가 + 학력(academic_records) 신규 (2026-07-31)
 
-**브랜치:** `feat/education-sort-startdate-academic-records` (base: `main`, PR #52 병합 이후)
-**DB 마이그레이션:** 2건 (아래 1절/3절) — **프로덕션 미적용, 이번 PR 병합·배포 시 함께 적용 필요**
+**브랜치:** `feat/education-sort-startdate-academic-records` (base: `main`, PR #52 병합 이후) → **PR #53 병합 완료(merge commit `b5490f4`), 프로덕션 적용·검증 완료**
+**DB 마이그레이션:** 2건 (아래 1절/3절) — **프로덕션 적용 완료 (2026-07-31)**
+
+## 10. 프로덕션 적용 및 실측 검증 (2026-07-31, PR #53 병합 직후)
+
+**절차:** 백업(`backup_pre_academic_records_20260731_schema.sql`, 마이그레이션 적용 직전 `save_own_educations()`/`public_expert_detail` 뷰 정의 스냅샷) → 프로덕션 `list_migrations`로 최신 마이그레이션이 `20260731000144_license_evidence_and_visibility_toggle`(PR #48)임을 확인, 순서 충돌 없음 확인 → `20260731020000_educations_start_date` → `20260731030000_academic_records` 순서로 `apply_migration` 적용 → 아래 실측 검증 → PR #53 `gh pr merge --merge`.
+
+**`get_advisors(security)`:** 새 ERROR 없음. 신규 RPC 2종(`save_own_academic_records`/`set_own_academic_record_visibility`)에 대해 기존의 다른 모든 `save_own_*`/`set_own_*_visibility` 함수와 동일한 패턴의 WARN(`authenticated_security_definer_function_executable`, 의도된 설계)만 발생 — 새로운 카테고리의 문제 없음.
+
+**스키마 직접 조회:**
+- `educations.start_date` 컬럼: `date`, nullable, 기존 6개 행 전부 `NULL`(예상대로).
+- `academic_records` 테이블: RLS 정책 7개(`admin_all`/`owner_insert`/`owner_update`/`owner_delete`/`auth_select_own_or_public`/`anon_select_public`/`auth_select_public`) 전부 확인, 트리거 `demote_profile_if_approved_trigger`(INSERT/DELETE/UPDATE)와 `update_academic_records_updated_at`(BEFORE UPDATE) 정확히 부착.
+- `public_expert_detail` 뷰: `pg_class.reloptions`로 `security_invoker=true` 재확인, `information_schema.role_table_grants`로 `anon`/`authenticated`/`service_role` SELECT GRANT 재확인, 뷰 정의에 `academic_records` 컬럼 포함 확인.
+
+**실제 계정 브라우저 검증** (`qhammt70+pttest0731@gmail.com` 테스트 계정, 이메일 확인은 DB에서 직접 `email_confirmed_at` 세팅):
+- `/expert/edit`에서 기본정보 저장 후 학력 4개 구분(대학원/대학교/고등학교/중학교, 서로 다른 날짜) + 교육이력 2개(수료일 있음/없음) 추가 → 임시저장 → DB 직접 쿼리로 `display_order` 순서 확인:
+  - `academic_records`: 졸업일 있는 항목(2022-02, 2020-02) 먼저, 졸업일 없는 항목(2013-03, 2010-03 시작일 내림차순)이 그 아래 분리 배치 — 인터리빙 없음.
+  - `educations`: 수료일 있는 항목(2018-06)이 `display_order=0`, 수료일 없는 항목(시작일 2024-09로 더 최근이지만)이 `display_order=1` — 두 그룹이 절대 섞이지 않음을 확인(시작일만으로 보면 역전될 상황인데도 그룹 분리가 우선함을 실측으로 증명).
+  - 학위/전공 노출 조건: 대학원만 학위 필드, 대학원·대학교만 전공 필드 노출 확인(대학원=`석사`+`체육교육과`, 대학교=`생활체육학과`, 고등/중학교는 학위·전공 없음).
+- 서비스 롤로 프로필 승인(`verification_status='approved'`, `is_public=true`) 후 `/experts/{id}` 공개 페이지 확인: 학력 섹션이 기본정보~경력 사이(교육보다 앞)에 배치, 표시 형식 "대학원(석사) · 테스트대학원 체육교육과" 등 지시서 예시와 일치, 기존 "학력" 오표기였던 자리가 정확히 "교육"으로 표시됨(버그 수정 재확인).
+- 마스터 토글(`AccountSidebar`) OFF 시 학력 항목 4개의 스위치가 전부 `aria-checked="false"` + `disabled=true` + "비공개" 라벨로 강제 전환됨을 DOM에서 직접 확인 — 다른 6개 섹션과 동일한 `VisibilityToggle` 컴포넌트를 그대로 재사용했을 뿐인데 캡션 없이도 정상 동작.
+- `NEIS_API_KEY` 미설정 상태에서 학교명 입력창에 "서울" 타이핑 → 브라우저 콘솔 에러 0건, 자유 텍스트 입력 정상 — 무음 폴백 실측 확인.
+- Vercel 배포: `list_deployments`로 최신 프로덕션 배포(`dpl_CD56zFYn8FJtAtk5M1hdKeFejxMP`, state READY)의 `githubCommitSha`가 병합 커밋 `b5490f47c073d820fd3b1146cca6e414cd9f7370`와 정확히 일치함을 확인.
+- 검증 완료 후 테스트 프로필(`profiles` 행, cascade로 `academic_records`/`educations` 등 전부 삭제)과 테스트 auth 계정을 완전히 삭제해 정리.
 
 ## 0. "교육" vs "학력" 구분
 
@@ -81,9 +103,9 @@ order 2: completion_date=NULL, start_date=2025-01-01 (시작일 그룹, 아래�
 
 ## 8. 미완료/보류 항목
 
-- **`get_advisors(security)` 미실행** — Supabase MCP 도구가 로컬 개발 DB를 대상으로 지원하지 않아(원격 프로젝트만 지원), 이번 세션에서는 로컬 검증까지만 완료했다. 이 PR을 병합·배포할 때(다음 "병합 및 배포해줘" 요청 시) 프로덕션 마이그레이션 적용 직후 `get_advisors`로 확인 예정.
-- **`NEIS_API_KEY` 미설정** — 자동완성은 폴백(자유 텍스트)으로만 동작 중. 키를 발급받아 Vercel 환경변수에 추가하면 재배포 없이 자동으로 켜진다.
-- **프로덕션 마이그레이션 미적용** — 이번 세그먼트는 이전 3개 PR(#50~#52)과 달리 DB 스키마 변경을 포함한다. 병합 시 백업→버전 충돌 확인→마이그레이션 적용→`get_advisors`→재검증의 기존 절차를 그대로 따를 것.
+- **`get_advisors(security)`** — PR #53 병합 및 프로덕션 마이그레이션 적용 직후 실행 완료(10절 참고). 새 ERROR 없음.
+- **`NEIS_API_KEY` 미설정** — 자동완성은 여전히 폴백(자유 텍스트)으로만 동작 중(범위 밖, 사용자가 별도 발급 후 전달 예정). 키를 발급받아 Vercel 환경변수에 추가하면 재배포 없이 자동으로 켜진다.
+- **프로덕션 마이그레이션** — 2건 모두 적용 완료(10절 참고).
 
 ## 9. 변경 파일
 

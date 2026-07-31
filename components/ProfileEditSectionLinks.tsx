@@ -18,6 +18,13 @@ const EDIT_PATH = '/expert/edit';
 // /expert/edit 페이지의 6개 앵커(#basic 등)를 IntersectionObserver로 감시해
 // 현재 보고 있는 섹션에 해당하는 링크를 하이라이트한다. 다른 페이지에서는
 // 관찰 대상 앵커가 DOM에 없으므로 자연히 아무 것도 활성화되지 않는다.
+//
+// EditForm은 약관 동의 여부/프로필 상태를 비동기로 조회한 뒤에야 이 6개
+// 섹션을 실제로 마운트하므로, 이 effect가 처음 실행되는 시점엔 아직 섹션이
+// DOM에 없을 수 있다. document.body에 MutationObserver를 걸어 섹션이 나중에
+// 나타나는 순간을 잡아내고, 6개를 모두 찾으면 더 관찰할 필요가 없으므로
+// MutationObserver는 그 시점에 disconnect한다(IntersectionObserver는 계속
+// 유지).
 function useActiveSection(): string | null {
   const pathname = usePathname();
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -28,7 +35,7 @@ function useActiveSection(): string | null {
       return;
     }
 
-    const observer = new IntersectionObserver(
+    const intersectionObserver = new IntersectionObserver(
       (entries) => {
         const visible = entries.filter((e) => e.isIntersecting);
         if (visible.length === 0) return;
@@ -40,15 +47,30 @@ function useActiveSection(): string | null {
       { rootMargin: '-96px 0px -70% 0px', threshold: 0 }
     );
 
-    const elements = SECTIONS.map((s) => document.getElementById(s.id)).filter(
-      (el): el is HTMLElement => el !== null
-    );
-    elements.forEach((el) => observer.observe(el));
+    const observedIds = new Set<string>();
+    const tryObserveAll = () => {
+      for (const s of SECTIONS) {
+        if (observedIds.has(s.id)) continue;
+        const el = document.getElementById(s.id);
+        if (el) {
+          intersectionObserver.observe(el);
+          observedIds.add(s.id);
+        }
+      }
+      if (observedIds.size === SECTIONS.length) {
+        mutationObserver.disconnect();
+      }
+    };
 
-    return () => observer.disconnect();
-    // EditForm이 약관 동의/저장 후 섹션을 나중에 렌더링할 수 있으므로, 클라이언트
-    // 라우팅 없이도 재관찰이 필요할 때가 있다 — 짧은 폴링 대신 pathname 변경 시에만
-    // 재구독하고, 나머지는 섹션이 이미 마운트된 이후 첫 실행에서 잡아낸다.
+    const mutationObserver = new MutationObserver(tryObserveAll);
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
+
+    tryObserveAll(); // 이미 마운트되어 있는 경우(예: 승인된 프로필로 재방문) 즉시 잡아낸다.
+
+    return () => {
+      mutationObserver.disconnect();
+      intersectionObserver.disconnect();
+    };
   }, [pathname]);
 
   return activeId;

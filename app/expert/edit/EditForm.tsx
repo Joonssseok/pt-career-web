@@ -57,7 +57,11 @@ function toSubmitMessage(rawError: string): string {
 }
 
 export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.ReactNode }) {
-  const [termsChecked, setTermsChecked] = useState(true); // 약관 동의 여부 조회 중
+  // 조회가 끝나기 전까지는 false로 두어 아래 !termsChecked ? null : ... 분기가
+  // 약관 동의 화면을 잘못 깜빡이지 않도록 한다(초기값 true였을 때, 이미 동의한
+  // 사용자에게도 getOwnTermsAgreedAt() 응답 전까지 termsAgreed의 초기값 false를
+  // 근거로 동의 화면이 매번 잠깐 노출되던 버그).
+  const [termsChecked, setTermsChecked] = useState(false);
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [agreeCheckbox, setAgreeCheckbox] = useState(false);
   const [agreeing, setAgreeing] = useState(false);

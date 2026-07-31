@@ -36,15 +36,29 @@
 - **증빙 서류함**(`EvidenceFileArchive`): `/my`에서 제거하고 `#certification` 섹션의 `CertificationSection` 바로 아래로 이동했습니다. 이 컴포넌트는 async 서버 컴포넌트라 `'use client'`인 `EditForm` 안에서 직접 import할 수 없어, `page.tsx`(서버)에서 `<EvidenceFileArchive />`를 렌더링해 `evidenceArchive` prop으로 내려주는 구조로 처리했습니다.
 - **프로필 미존재 안내**: 기본정보를 아직 저장하지 않은 상태(`display_name`이 비어있음)에서는 다른 5개 섹션 위에 "먼저 기본 정보를 저장해야 아래 섹션들이 정상적으로 저장됩니다"라는 옅은 안내 한 줄만 띄우고, 섹션 자체는 그대로 렌더링합니다(지시서의 "과하게 막지 마세요" 지침을 따름 — RPC의 "Profile not found" 에러가 그대로 alert로 노출되는 것도 허용).
 
+### 3-1. (2026-07-31 후속) 약관 동의 화면 깜빡임 버그와 수정
+
+`termsChecked`(약관 동의 여부 "조회 중"을 나타내는 상태)의 초기값이 `useState(true)`로 잘못 되어 있었습니다. 렌더링 분기는 `!termsChecked ? null : !termsAgreed ? (약관 게이트) : (배너+섹션)`인데, 초기값이 `true`면 조회가 끝나기도 전에 `!termsChecked`가 `false`가 되어 곧장 다음 분기로 넘어가고, 이때 `termsAgreed`의 초기값은 `false`이므로 이미 동의를 마친 사용자에게도 `getOwnTermsAgreedAt()` 응답이 오기 전까지 약관 동의 화면이 매번 잠깐 노출됐습니다. 주석("조회 중")과 실제 초기값이 반대로 되어 있던 단순한 실수입니다.
+
+**수정**: 초기값을 `useState(false)`로 바꿔, 조회가 끝나기 전까지는 `!termsChecked` 분기(`null`, 아무 것도 렌더링하지 않음)에 머물도록 했습니다.
+
+**검증**: 이 버그는 "초기 렌더와 비동기 응답 사이의 경쟁 상태"라 스크린샷/타이밍 캡처로 재현하기 어렵고(4-2에서 설명한 동일한 컴포지팅 제약과도 무관하게, 밀리초 단위 현상이라 이 세션의 도구로 프레임 단위 캡처 자체가 불가능합니다), 코드 검토로 원인과 수정이 명확합니다. 대신 이미 동의를 마친 실제 계정으로 `/expert/edit`에 진입해 약관 게이트를 거치지 않고 곧바로 정상 콘텐츠(상태 배너+6개 섹션)가 렌더링되는 최종 상태에는 회귀가 없음을 재확인했습니다.
+
 ## 4. 스크롤스파이
 
 `components/ProfileEditSectionLinks.tsx`(신규, 클라이언트 컴포넌트)를 만들어 `IntersectionObserver`로 6개 앵커를 감시하고, 현재 뷰포트에 걸친 섹션에 `bg-blue-50 text-blue-600 font-medium`을 입힙니다. 링크 클릭 시 현재 페이지가 `/expert/edit`이면 `preventDefault()` 후 `scrollIntoView({behavior:'smooth'})`로 이동하고, 다른 페이지에서는 일반 링크 이동(`/expert/edit#앵커`)입니다. `AccountSidebar`는 여전히 서버 컴포넌트이고, 이 부분만 별도 클라이언트 컴포넌트로 분리해 데스크톱/모바일 양쪽에서 재사용합니다.
 
-**검증상 특이사항**: 이 세션의 자동화 브라우저 도구로 실측하는 과정에서, 해당 Browser pane이 `document.visibilityState = 'hidden'`(컴포지팅되지 않는 배경 탭 상태)으로 렌더링된다는 것을 발견했습니다 — `computer.screenshot`도 "the Browser pane is not displayed, so the page is not compositing frames" 오류를 냈습니다. Chromium은 배경 탭에서 `requestAnimationFrame` 기반 애니메이션(smooth scroll)과 `IntersectionObserver` 콜백을 모두 억제하므로, 이 도구 안에서는 클릭 시 `smooth` 스크롤도, 활성 링크 하이라이트도 실제로 눈에 보이게 검증할 수 없었습니다. 대신 다음으로 간접 검증했습니다:
-  - 클릭 후 `window.location.hash`가 계속 빈 문자열로 유지됨 → `preventDefault()`가 정상 호출되어 온클릭 핸들러가 실행되고 있음을 확인.
-  - `scrollIntoView({behavior:'instant'})`는 즉시 정확한 위치로 이동함 → 앵커 id와 타겟팅 로직 자체는 올바름을 확인.
-  - 콘솔에서 직접 만든 테스트용 `IntersectionObserver`도 초기 콜백조차 발화하지 않음 → 관찰자 자체가 이 배경 탭 상태에서 전역적으로 억제된다는 것을 재확인(제 컴포넌트만의 문제가 아님).
-  - 이 부분은 실제 사용자의 포그라운드 브라우저에서는 정상 동작할 코드이지만, **실제 화면에서 스크롤하며 하이라이트가 이동하는 모습은 CTO께서 직접 한 번 확인해 주시길 권장**합니다.
+### 4-1. (2026-07-31 후속) 하이라이트가 영구적으로 켜지지 않던 실제 버그와 수정
+
+소스 직접 대조로 발견된 지적이 정확했습니다. `useActiveSection()`의 `useEffect(() => {...}, [pathname])`가 `IntersectionObserver`를 만들면서 `document.getElementById(s.id)`를 **딱 한 번, 동기적으로만** 호출해 관찰 대상을 찾았는데, `EditForm.tsx`의 6개 `<section id="...">`는 `showSections`(= `termsAgreed && status !== 'pending'`) 아래 있고 `termsAgreed`는 `getOwnTermsAgreedAt()` 비동기 응답 이후에야 `true`가 됩니다. 즉 사이드바 effect가 처음 실행되는 시점엔 섹션이 아직 DOM에 없어 `observer.observe()`가 아무 것도 관찰하지 않았고, 이후 섹션이 실제로 마운트돼도 이 effect는 `pathname`에만 의존하므로 재실행되지 않아 하이라이트가 한 번도 켜지지 않았습니다. 실제 동작과 맞지 않던 주석("섹션이 이미 마운트된 이후 첫 실행에서 잡아낸다")도 함께 정리했습니다.
+
+**수정**: `document.body`에 `MutationObserver({childList:true, subtree:true})`를 걸어 6개 섹션이 DOM에 나타나는 순간을 감지하고, 나타날 때마다 `IntersectionObserver.observe()`를 등록합니다. 6개를 모두 찾으면(이미 마운트되어 있던 경우 포함) `MutationObserver`는 그 시점에 `disconnect()`하고(불필요한 관찰 방지), `IntersectionObserver`는 effect가 정리될 때(페이지 이동/언마운트)까지 유지됩니다.
+
+**회귀 방지 자동화 테스트**(`tests/profile-edit-section-links.test.tsx`, 신규 — jsdom 환경, `@testing-library/react` 도입): `IntersectionObserver`를 mock하고, 사이드바 컴포넌트를 먼저 렌더링(섹션이 아직 DOM에 없는 상태) → 이후 6개 `<section>`을 `document.body`에 지연 추가(EditForm의 실제 마운트 타이밍 재현) → `observer.observe()`가 결국 6개 전부에 대해 호출됐는지 확인합니다. **이 테스트가 실제로 버그를 잡아낸다는 것을 직접 검증**했습니다 — 수정 전 코드로 임시 교체해 같은 테스트를 돌리자 정확히 "지연 마운트된 섹션을 못 잡음" 케이스에서 2/3 실패했고(`observedTargets: []`), 수정된 코드로 되돌리자 3/3 통과했습니다.
+
+### 4-2. 실제 브라우저 재검증 결과 (2026-07-31)
+
+지시대로 자동화 브라우저를 다시 열어 재확인을 시도했습니다. 이 세션의 Browser pane은 여전히 `document.visibilityState = 'hidden'`(배경 탭 상태, `computer.screenshot`도 동일한 "not compositing frames" 오류)이라 — 이는 이 세션의 도구 자체의 고정적 특성으로 보이며, `smooth` 스크롤 애니메이션과 `IntersectionObserver` 콜백의 실시간 발화(하이라이트 전환)는 이번에도 시각적으로 캡처할 수 없었습니다. 다만 위 4-1의 jsdom 기반 자동화 테스트는 실제 브라우저 컴포지팅과 무관하게 DOM/옵저버 로직 자체를 검증하므로, 이 환경 제약과 별개로 수정이 올바르다는 강한 증거로 판단합니다. **실제 화면에서 스크롤하며 하이라이트가 전환되는 모습은 CTO께서 직접 한 번 확인해 주시길 다시 권장**합니다.
 
 ## 5. `AccountSidebar.tsx` 재구성
 
@@ -93,10 +107,11 @@
 ## 9. 검증
 
 - `tsc --noEmit` → 클린.
-- `pnpm test` → **59/59 PASS**(DB 변경이 없으므로 기존 테스트 그대로).
+- `pnpm test` → **62/62 PASS**(기존 59개 + 신규 `profile-edit-section-links.test.tsx` 3개, DB 변경 없으므로 나머지는 회귀 없음).
 - `pnpm build` → 성공. `/expert/onboarding`, `/expert/onboarding/[...slug]`, `/my/terms` 라우트 정상 생성, 옛 6개 스텝 라우트는 빌드 결과물에서 사라짐.
-- 브라우저 실측: 옛 경로 리다이렉트, 신규 계정 전체 플로우, 4가지 상태 배너, `/my`/`/my/terms`, 공개 프로필 순서 — 전부 위에 기술한 대로 확인.
+- 브라우저 실측: 옛 경로 리다이렉트, 신규 계정 전체 플로우, 4가지 상태 배너, `/my`/`/my/terms`, 공개 프로필 순서, 약관 게이트 스킵 회귀 없음 — 전부 위에 기술한 대로 확인.
 - DB 마이그레이션이 없는 작업이라 `get_advisors`는 실행하지 않았습니다.
+- (2026-07-31 후속) `@testing-library/react`, `@testing-library/jest-dom`, `jest-environment-jsdom`을 devDependencies에 추가하고, `jest.config.js`의 `testMatch`를 `.tsx`까지, ts-jest의 `jsx` 옵션을 `react-jsx`(automatic runtime)로 넓혔습니다 — 기존 `.ts` 통합 테스트는 여전히 `testEnvironment: 'node'`로 영향 없고, 신규 컴포넌트 테스트만 파일 상단 `@jest-environment jsdom` 독블록으로 jsdom을 사용합니다.
 
 ## 10. 애매해서 임의로 판단한 부분 (확인 요청)
 
@@ -121,3 +136,8 @@
 | `app/my/terms/page.tsx`, `TermsAgreementCard.tsx` | 신규 — 약관 동의 화면 |
 | `app/experts/[id]/page.tsx` | 섹션 순서 재배열 + 근무기관/웹사이트 통합 + 조건 버그 수정 |
 | `lib/auth/get-next-onboarding-step.ts` | 반환 경로를 `/expert/edit`로 변경 |
+| `components/ProfileEditSectionLinks.tsx` | (후속) `MutationObserver`로 지연 마운트 섹션 감지하도록 수정 |
+| `app/expert/edit/EditForm.tsx` | (후속) `termsChecked` 초기값 `true`→`false` |
+| `tests/profile-edit-section-links.test.tsx` | 신규(후속) — 스크롤스파이 지연 마운트 회귀 테스트 3건 |
+| `jest.config.js` | (후속) `testMatch`에 `.tsx` 추가, ts-jest `jsx` 옵션을 `react-jsx`로 변경 |
+| `package.json` | (후속) `@testing-library/react`, `@testing-library/jest-dom`, `jest-environment-jsdom` devDependency 추가 |

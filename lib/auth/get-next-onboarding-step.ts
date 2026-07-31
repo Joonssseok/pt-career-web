@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 
-export type NextOnboardingStep = '/signup' | '/expert/onboarding' | '/my';
+export type NextOnboardingStep = '/signup' | '/expert/edit' | '/my';
 
 export async function getNextOnboardingStep(): Promise<NextOnboardingStep> {
   const supabase = await createClient();
@@ -19,11 +19,11 @@ export async function getNextOnboardingStep(): Promise<NextOnboardingStep> {
     .maybeSingle();
 
   if (!profile) {
-    return '/expert/onboarding';
+    return '/expert/edit';
   }
 
   if (profile.verification_status === 'draft') {
-    return '/expert/onboarding';
+    return '/expert/edit';
   }
 
   return '/my';

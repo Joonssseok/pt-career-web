@@ -2,8 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { getOwnProfile, saveOwnProfile } from '@/app/actions/profile';
+import {
+  getOwnProfile,
+  saveOwnProfile,
+  getOwnRejectionReason,
+  submitProfile,
+} from '@/app/actions/profile';
+import { agreeToTerms, getOwnTermsAgreedAt } from '@/app/actions/terms';
 import { OFFICIAL_PROFESSIONS } from '@/lib/constants/professions';
 import { createClient } from '@/lib/supabase/client';
 import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
@@ -15,6 +20,12 @@ import SpecialtySection from '@/components/profile-sections/SpecialtySection';
 import GallerySection from '@/components/profile-sections/GallerySection';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
+type ProfileMeta = {
+  id: string;
+  verificationStatus: string;
+  ownerVisible: boolean;
+  hasBasicInfo: boolean;
+};
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -24,18 +35,7 @@ const EXT_BY_TYPE: Record<string, string> = {
   'image/webp': 'webp',
 };
 
-const EDIT_SECTIONS = [
-  { value: 'basic', label: '기본 정보' },
-  { value: 'experience', label: '경력' },
-  { value: 'education', label: '교육' },
-  { value: 'certification', label: '자격·면허' },
-  { value: 'workplace', label: '근무기관' },
-  { value: 'specialty', label: '전문분야' },
-  { value: 'gallery', label: '갤러리' },
-];
-const VALID_SECTIONS = EDIT_SECTIONS.map((s) => s.value);
-
-// edit 화면에서는 저장 후 페이지 이동 없이 그 자리에 머문다.
+// 저장 후 페이지 이동 없이 그 자리에 머문다(연속 스크롤 페이지이므로 "다음 단계"가 없다).
 const SECTION_SUBMIT_LABEL = '저장 후 재검토 요청';
 const SECTION_SAVED_MESSAGE = '✓ 저장되었습니다. 재검토 대기열로 이동했습니다.';
 // 갤러리는 demote_profile_if_approved_trigger가 붙지 않아 재검토를 유발하지
@@ -43,21 +43,33 @@ const SECTION_SAVED_MESSAGE = '✓ 저장되었습니다. 재검토 대기열로
 const GALLERY_SUBMIT_LABEL = '저장';
 const GALLERY_SAVED_MESSAGE = '✓ 저장되었습니다. 바로 공개 프로필에 반영됩니다.';
 
-export default function EditForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const initialSection = searchParams.get('section');
-  const [section, setSection] = useState(
-    initialSection && VALID_SECTIONS.includes(initialSection) ? initialSection : 'basic'
-  );
+const SUBMIT_ERROR_MESSAGE_MAP: Record<string, string> = {
+  'Not authenticated': '로그인이 필요합니다.',
+  'Profile not found': '프로필을 찾을 수 없습니다.',
+  'Profile status does not allow submission': '이미 제출되었거나 공개된 프로필입니다.',
+  'Profile image is required for submission': '제출하려면 프로필 사진을 등록해주세요.',
+  'At least one experience or license is required for submission':
+    '제출하려면 경력 또는 자격/면허를 최소 1개 이상 입력해주세요.',
+};
 
-  // 계정 사이드바 등 외부 링크(?section=...)로 진입/이동할 때도 반영되도록 동기화.
-  useEffect(() => {
-    const paramSection = searchParams.get('section');
-    if (paramSection && VALID_SECTIONS.includes(paramSection)) {
-      setSection(paramSection);
-    }
-  }, [searchParams]);
+function toSubmitMessage(rawError: string): string {
+  return SUBMIT_ERROR_MESSAGE_MAP[rawError] ?? '제출 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
+}
+
+export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.ReactNode }) {
+  // 조회가 끝나기 전까지는 false로 두어 아래 !termsChecked ? null : ... 분기가
+  // 약관 동의 화면을 잘못 깜빡이지 않도록 한다(초기값 true였을 때, 이미 동의한
+  // 사용자에게도 getOwnTermsAgreedAt() 응답 전까지 termsAgreed의 초기값 false를
+  // 근거로 동의 화면이 매번 잠깐 노출되던 버그).
+  const [termsChecked, setTermsChecked] = useState(false);
+  const [termsAgreed, setTermsAgreed] = useState(false);
+  const [agreeCheckbox, setAgreeCheckbox] = useState(false);
+  const [agreeing, setAgreeing] = useState(false);
+
+  const [profileMeta, setProfileMeta] = useState<ProfileMeta | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [submitState, setSubmitState] = useState<'default' | 'loading' | 'done'>('default');
+  const [submitError, setSubmitError] = useState('');
 
   const [formData, setFormData] = useState({
     displayName: '',
@@ -70,23 +82,69 @@ export default function EditForm() {
   const [formState, setFormState] = useState<FormState>('default');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageUploading, setImageUploading] = useState(false);
-  // 마스터 토글 — 꺼져 있으면 각 섹션의 항목별 공개 토글을 비활성화한다.
-  const [profileOwnerVisible, setProfileOwnerVisible] = useState(true);
+
+  const loadProfile = async () => {
+    const result = await getOwnProfile();
+    if (!result.ok || !result.profile) {
+      setProfileMeta(null);
+      return;
+    }
+    const p = result.profile;
+    setFormData({
+      displayName: p.display_name ?? '',
+      profession: p.profession ?? '',
+      bio: p.headline ?? '',
+      description: p.introduction ?? '',
+      profileImagePath: p.profile_image_path ?? '',
+    });
+    setProfileMeta({
+      id: p.id,
+      verificationStatus: p.verification_status,
+      ownerVisible: p.owner_visible ?? true,
+      hasBasicInfo: !!p.display_name,
+    });
+
+    if (p.verification_status === 'rejected') {
+      const reasonResult = await getOwnRejectionReason();
+      setRejectionReason(reasonResult.ok ? reasonResult.reason : null);
+    } else {
+      setRejectionReason(null);
+    }
+  };
 
   useEffect(() => {
-    getOwnProfile().then((result) => {
-      if (!result.ok || !result.profile) return;
-      const p = result.profile;
-      setFormData({
-        displayName: p.display_name ?? '',
-        profession: p.profession ?? '',
-        bio: p.headline ?? '',
-        description: p.introduction ?? '',
-        profileImagePath: p.profile_image_path ?? '',
-      });
-      setProfileOwnerVisible(p.owner_visible ?? true);
+    getOwnTermsAgreedAt().then((result) => {
+      setTermsAgreed(!!(result.ok && result.agreedAt));
+      setTermsChecked(true);
     });
+    loadProfile();
   }, []);
+
+  const handleAgreeTerms = async () => {
+    if (!agreeCheckbox) return;
+    setAgreeing(true);
+    const result = await agreeToTerms();
+    setAgreeing(false);
+    if (result.ok) {
+      setTermsAgreed(true);
+      loadProfile();
+    } else {
+      alert(result.error);
+    }
+  };
+
+  const handleSubmitForReview = async () => {
+    setSubmitState('loading');
+    setSubmitError('');
+    const result = await submitProfile();
+    if (result.ok) {
+      setSubmitState('done');
+      loadProfile();
+    } else {
+      setSubmitError(toSubmitMessage(result.error));
+      setSubmitState('default');
+    }
+  };
 
   const professions = OFFICIAL_PROFESSIONS;
 
@@ -201,9 +259,7 @@ export default function EditForm() {
 
     if (result.ok) {
       setFormState('saved');
-      setTimeout(() => {
-        router.push('/my');
-      }, 1200);
+      loadProfile();
     } else {
       setErrors({ submit: result.error });
       setFormState('error');
@@ -218,232 +274,364 @@ export default function EditForm() {
     return `${baseClass} border-gray-300 focus:ring-blue-500`;
   };
 
+  const status = profileMeta?.verificationStatus ?? null;
+  const showSections = termsAgreed && status !== 'pending';
+
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8">
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
-          <p className="text-sm font-medium text-blue-600">내 프로필 수정</p>
-          <h1 className="text-page-title font-semibold text-gray-900 mt-1">프로필 정보를 수정하세요</h1>
+          <p className="text-sm font-medium text-blue-600">내 프로필 관리</p>
+          <h1 className="text-page-title font-semibold text-gray-900 mt-1">전문가 프로필</h1>
           <p className="text-sm text-gray-600 mt-1">
-            항목을 선택해 승인된 정보를 변경할 수 있습니다.
+            아래에서 순서대로 정보를 입력하고, 각 섹션의 저장 버튼으로 개별 저장하세요.
           </p>
         </div>
 
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <p className="text-sm text-yellow-900 font-medium">확인 필요</p>
-          <p className="text-sm text-yellow-800 mt-1">
-            수정 후 저장하면 프로필이 다시 관리자 검토 상태로 전환됩니다.
-          </p>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-900 mb-2">수정할 항목</label>
-            <select
-              value={section}
-              onChange={(e) => setSection(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {EDIT_SECTIONS.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {section === 'basic' && formState === 'error' && errors.submit && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-sm text-red-900 font-medium">⚠️ {errors.submit}</p>
-            </div>
-          )}
-
-          {section === 'basic' && formState === 'saved' && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-sm text-green-900 font-medium">
-                ✓ 저장되었습니다. 재검토 대기열로 이동했습니다.
-              </p>
-            </div>
-          )}
-
-          {section === 'experience' && (
-            <ExperienceSection
-              submitLabel={SECTION_SUBMIT_LABEL}
-              savedMessage={SECTION_SAVED_MESSAGE}
-              onSaved={() => {}}
-              profileOwnerVisible={profileOwnerVisible}
-            />
-          )}
-
-          {section === 'education' && (
-            <EducationSection
-              submitLabel={SECTION_SUBMIT_LABEL}
-              savedMessage={SECTION_SAVED_MESSAGE}
-              onSaved={() => {}}
-              profileOwnerVisible={profileOwnerVisible}
-            />
-          )}
-
-          {section === 'certification' && (
-            <CertificationSection
-              submitLabel={SECTION_SUBMIT_LABEL}
-              savedMessage={SECTION_SAVED_MESSAGE}
-              onSaved={() => {}}
-              profileOwnerVisible={profileOwnerVisible}
-            />
-          )}
-
-          {section === 'workplace' && (
-            <WorkplaceSection
-              submitLabel={SECTION_SUBMIT_LABEL}
-              savedMessage={SECTION_SAVED_MESSAGE}
-              onSaved={() => {}}
-              profileOwnerVisible={profileOwnerVisible}
-            />
-          )}
-
-          {section === 'specialty' && (
-            <SpecialtySection
-              submitLabel={SECTION_SUBMIT_LABEL}
-              savedMessage={SECTION_SAVED_MESSAGE}
-              onSaved={() => {}}
-              profileOwnerVisible={profileOwnerVisible}
-            />
-          )}
-
-          {section === 'gallery' && (
-            <GallerySection
-              submitLabel={GALLERY_SUBMIT_LABEL}
-              savedMessage={GALLERY_SAVED_MESSAGE}
-              onSaved={() => {}}
-              profileOwnerVisible={profileOwnerVisible}
-            />
-          )}
-
-          {section === 'basic' && (
-          <form onSubmit={handleSubmit} className="space-y-5">
+        {!termsChecked ? null : !termsAgreed ? (
+          <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-5">
             <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                이름/활동명 <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="displayName"
-                value={formData.displayName}
-                onChange={handleChange}
-                maxLength={50}
-                disabled={formState === 'loading'}
-                className={getInputClass('displayName')}
-              />
-              {errors.displayName && (
-                <p className="text-xs text-red-500 mt-1">{errors.displayName}</p>
-              )}
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">시작하기 전에</h2>
+              <p className="text-sm text-gray-600">
+                전문가 프로필 작성을 시작하려면 이용약관과 개인정보처리방침에 동의해주세요.
+              </p>
             </div>
 
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <p className="text-sm font-medium text-gray-900 mb-2">프로필 사진</p>
-              <label className="block bg-white border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors">
-                {formData.profileImagePath ? (
-                  <div className="flex flex-col items-center gap-2">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getProfilePhotoUrl(formData.profileImagePath) ?? undefined}
-                      alt="프로필 사진"
-                      className="w-16 h-16 rounded-full object-cover"
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreeCheckbox}
+                  onChange={(e) => setAgreeCheckbox(e.target.checked)}
+                  className="mt-1"
+                />
+                <span className="text-sm text-gray-700">
+                  <Link href="/terms" target="_blank" className="text-blue-600 underline">
+                    이용약관
+                  </Link>
+                  {' '}및{' '}
+                  <Link href="/privacy" target="_blank" className="text-blue-600 underline">
+                    개인정보처리방침
+                  </Link>
+                  에 동의합니다. (필수)
+                </span>
+              </label>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAgreeTerms}
+              disabled={!agreeCheckbox || agreeing}
+              className="w-full min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {agreeing ? '처리 중...' : '동의하고 시작하기'}
+            </button>
+          </div>
+        ) : (
+          <>
+            {status && (
+              <StatusBanner
+                status={status}
+                profileId={profileMeta?.id ?? null}
+                rejectionReason={rejectionReason}
+                submitState={submitState}
+                submitError={submitError}
+                onSubmitForReview={handleSubmitForReview}
+              />
+            )}
+
+            {showSections && (
+              <>
+                <section id="basic" className="bg-white border border-gray-200 rounded-lg p-6 space-y-5">
+                  <h2 className="text-lg font-semibold text-gray-900">기본 정보</h2>
+
+                  {formState === 'error' && errors.submit && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                      <p className="text-sm text-red-900 font-medium">⚠️ {errors.submit}</p>
+                    </div>
+                  )}
+
+                  {formState === 'saved' && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <p className="text-sm text-green-900 font-medium">✓ 저장되었습니다.</p>
+                    </div>
+                  )}
+
+                  <form onSubmit={handleSubmit} className="space-y-5">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        이름/활동명 <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        name="displayName"
+                        value={formData.displayName}
+                        onChange={handleChange}
+                        maxLength={50}
+                        disabled={formState === 'loading'}
+                        className={getInputClass('displayName')}
+                      />
+                      {errors.displayName && (
+                        <p className="text-xs text-red-500 mt-1">{errors.displayName}</p>
+                      )}
+                    </div>
+
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <p className="text-sm font-medium text-gray-900 mb-2">프로필 사진</p>
+                      <label className="block bg-white border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors">
+                        {formData.profileImagePath ? (
+                          <div className="flex flex-col items-center gap-2">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={getProfilePhotoUrl(formData.profileImagePath) ?? undefined}
+                              alt="프로필 사진"
+                              className="w-16 h-16 rounded-full object-cover"
+                            />
+                            <p className="text-xs text-blue-600 font-medium">
+                              {imageUploading ? '⏳ 업로드 중...' : '파일 교체'}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-600">
+                            {imageUploading ? '⏳ 업로드 중...' : '📸 프로필 사진 업로드'}
+                          </p>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handleImageChange}
+                          disabled={imageUploading || formState === 'loading'}
+                          className="hidden"
+                        />
+                      </label>
+                      {errors.image && <p className="text-xs text-red-500 mt-2">{errors.image}</p>}
+                      <p className="text-xs text-gray-500 mt-2">승인 후 공개 프로필에 표시됩니다.</p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">
+                        직군 <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        name="profession"
+                        value={formData.profession}
+                        onChange={handleChange}
+                        disabled={formState === 'loading'}
+                        className={getInputClass('profession')}
+                      >
+                        <option value="">직군을 선택해주세요</option>
+                        {professions.map((prof) => (
+                          <option key={prof} value={prof}>
+                            {prof}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.profession && (
+                        <p className="text-xs text-red-500 mt-1">{errors.profession}</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">한 줄 소개</label>
+                      <input
+                        type="text"
+                        name="bio"
+                        value={formData.bio}
+                        onChange={handleChange}
+                        maxLength={100}
+                        disabled={formState === 'loading'}
+                        className={getInputClass('bio')}
+                      />
+                      {errors.bio && <p className="text-xs text-red-500 mt-1">{errors.bio}</p>}
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">상세 소개</label>
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleChange}
+                        rows={5}
+                        maxLength={500}
+                        disabled={formState === 'loading'}
+                        className={getInputClass('description')}
+                      />
+                      {errors.description && (
+                        <p className="text-xs text-red-500 mt-1">{errors.description}</p>
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={formState === 'loading'}
+                      className="w-full min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                      {formState === 'loading' ? '저장 중...' : '기본 정보 저장'}
+                    </button>
+                  </form>
+
+                  <div className="pt-5 border-t border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">전문분야</h3>
+                    <SpecialtySection
+                      submitLabel={SECTION_SUBMIT_LABEL}
+                      savedMessage={SECTION_SAVED_MESSAGE}
+                      onSaved={() => {}}
+                      profileOwnerVisible={profileMeta?.ownerVisible ?? true}
                     />
-                    <p className="text-xs text-blue-600 font-medium">
-                      {imageUploading ? '⏳ 업로드 중...' : '파일 교체'}
-                    </p>
                   </div>
-                ) : (
-                  <p className="text-sm text-gray-600">
-                    {imageUploading ? '⏳ 업로드 중...' : '📸 프로필 사진 업로드'}
+                </section>
+
+                {!profileMeta?.hasBasicInfo && (
+                  <p className="text-xs text-gray-500 px-1">
+                    먼저 기본 정보를 저장해야 아래 섹션들이 정상적으로 저장됩니다.
                   </p>
                 )}
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={handleImageChange}
-                  disabled={imageUploading || formState === 'loading'}
-                  className="hidden"
-                />
-              </label>
-              {errors.image && <p className="text-xs text-red-500 mt-2">{errors.image}</p>}
-              <p className="text-xs text-gray-500 mt-2">승인 후 공개 프로필에 표시됩니다.</p>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                직군 <span className="text-red-500">*</span>
-              </label>
-              <select
-                name="profession"
-                value={formData.profession}
-                onChange={handleChange}
-                disabled={formState === 'loading'}
-                className={getInputClass('profession')}
-              >
-                <option value="">직군을 선택해주세요</option>
-                {professions.map((prof) => (
-                  <option key={prof} value={prof}>
-                    {prof}
-                  </option>
-                ))}
-              </select>
-              {errors.profession && (
-                <p className="text-xs text-red-500 mt-1">{errors.profession}</p>
-              )}
-            </div>
+                <section id="experience" className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">경력</h2>
+                  <ExperienceSection
+                    submitLabel={SECTION_SUBMIT_LABEL}
+                    savedMessage={SECTION_SAVED_MESSAGE}
+                    onSaved={() => {}}
+                    profileOwnerVisible={profileMeta?.ownerVisible ?? true}
+                  />
+                </section>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">한 줄 소개</label>
-              <input
-                type="text"
-                name="bio"
-                value={formData.bio}
-                onChange={handleChange}
-                maxLength={100}
-                disabled={formState === 'loading'}
-                className={getInputClass('bio')}
-              />
-              {errors.bio && <p className="text-xs text-red-500 mt-1">{errors.bio}</p>}
-            </div>
+                <section id="education" className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">교육</h2>
+                  <EducationSection
+                    submitLabel={SECTION_SUBMIT_LABEL}
+                    savedMessage={SECTION_SAVED_MESSAGE}
+                    onSaved={() => {}}
+                    profileOwnerVisible={profileMeta?.ownerVisible ?? true}
+                  />
+                </section>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-900 mb-2">상세 소개</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={5}
-                maxLength={500}
-                disabled={formState === 'loading'}
-                className={getInputClass('description')}
-              />
-              {errors.description && (
-                <p className="text-xs text-red-500 mt-1">{errors.description}</p>
-              )}
-            </div>
+                <section id="certification" className="bg-white border border-gray-200 rounded-lg p-6 space-y-5">
+                  <h2 className="text-lg font-semibold text-gray-900">자격·면허</h2>
+                  <CertificationSection
+                    submitLabel={SECTION_SUBMIT_LABEL}
+                    savedMessage={SECTION_SAVED_MESSAGE}
+                    onSaved={() => {}}
+                    profileOwnerVisible={profileMeta?.ownerVisible ?? true}
+                  />
+                  {evidenceArchive}
+                </section>
 
-            <div className="flex gap-3 pt-2">
-              <Link
-                href="/my"
-                className="min-h-[44px] px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
-              >
-                변경 취소
-              </Link>
-              <button
-                type="submit"
-                disabled={formState === 'loading' || formState === 'saved'}
-                className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                {formState === 'loading' ? '저장 중...' : '저장 후 재검토 요청'}
-              </button>
-            </div>
-          </form>
-          )}
-        </div>
+                <section id="workplace" className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">근무기관</h2>
+                  <WorkplaceSection
+                    submitLabel={SECTION_SUBMIT_LABEL}
+                    savedMessage={SECTION_SAVED_MESSAGE}
+                    onSaved={() => {}}
+                    profileOwnerVisible={profileMeta?.ownerVisible ?? true}
+                  />
+                </section>
+
+                <section id="gallery" className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">갤러리</h2>
+                  <GallerySection
+                    submitLabel={GALLERY_SUBMIT_LABEL}
+                    savedMessage={GALLERY_SAVED_MESSAGE}
+                    onSaved={() => {}}
+                    profileOwnerVisible={profileMeta?.ownerVisible ?? true}
+                  />
+                </section>
+              </>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
+}
+
+function StatusBanner({
+  status,
+  profileId,
+  rejectionReason,
+  submitState,
+  submitError,
+  onSubmitForReview,
+}: {
+  status: string;
+  profileId: string | null;
+  rejectionReason: string | null;
+  submitState: 'default' | 'loading' | 'done';
+  submitError: string;
+  onSubmitForReview: () => void;
+}) {
+  if (status === 'draft' || status === 'rejected') {
+    const isRejected = status === 'rejected';
+    return (
+      <div
+        className={`p-4 rounded-lg border space-y-3 ${
+          isRejected ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'
+        }`}
+      >
+        <p className={`text-sm font-medium ${isRejected ? 'text-red-900' : 'text-orange-800'}`}>
+          {isRejected ? '반려됨' : '작성 중'}
+        </p>
+        {isRejected && rejectionReason && (
+          <p className="text-sm text-red-800">
+            <strong>반려 사유:</strong> {rejectionReason}
+          </p>
+        )}
+        <p className="text-xs text-gray-600">
+          아래 섹션을 채운 뒤 제출하면 관리자 검토를 거쳐 프로필이 공개됩니다. 제출하려면
+          프로필 사진과, 경력 또는 자격/면허 중 최소 1개가 필요합니다.
+        </p>
+        {submitState === 'done' ? (
+          <p className="text-sm text-green-700 font-medium">
+            ✓ 제출되었습니다! 관리자 검토 후 공개됩니다.
+          </p>
+        ) : (
+          <>
+            {submitError && <p className="text-sm text-red-700">{submitError}</p>}
+            <button
+              type="button"
+              onClick={onSubmitForReview}
+              disabled={submitState === 'loading'}
+              className="min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {submitState === 'loading' ? '제출 중...' : isRejected ? '다시 제출하기' : '제출하기'}
+            </button>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (status === 'pending') {
+    return (
+      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-900 font-medium">검토 중</p>
+        <p className="text-sm text-blue-800 mt-1">
+          현재 관리자 검토 중입니다. 검토가 끝날 때까지 정보를 수정할 수 없습니다.
+        </p>
+      </div>
+    );
+  }
+
+  if (status === 'approved') {
+    return (
+      <div className="p-4 bg-green-50 border border-green-200 rounded-lg space-y-3">
+        <p className="text-sm text-green-900 font-medium">공개 중</p>
+        {profileId && (
+          <Link
+            href={`/experts/${profileId}`}
+            className="inline-block text-sm text-green-700 underline"
+          >
+            공개 프로필 보기
+          </Link>
+        )}
+        <p className="text-xs text-gray-600">
+          정보를 수정하고 저장하면 프로필이 다시 관리자 검토 상태로 전환되며, 재승인 전까지
+          공개가 중단됩니다(갤러리 제외).
+        </p>
+      </div>
+    );
+  }
+
+  return null;
 }

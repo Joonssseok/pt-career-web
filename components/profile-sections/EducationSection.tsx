@@ -10,10 +10,27 @@ type Education = {
   id: string;
   educationName: string;
   organizationName: string;
+  startDate: string;
   completionDate: string;
   description: string;
   ownerVisible: boolean;
 };
+
+// 최근 이수 순(수료일 내림차순)으로 자동 정렬 -- 수료일이 없는 항목은
+// 시작일 내림차순으로 그 아래에 배치한다. 수동 순서 변경 UI는 없다(자동
+// 정렬과 충돌하므로 추가하지 않음). 렌더 직전과 save() 페이로드 구성
+// 직전 양쪽에서 이 함수 하나로 동일하게 파생시킨다.
+function sortEducationsByRecency(items: Education[]): Education[] {
+  const withCompletion = items.filter((e) => e.completionDate);
+  const withoutCompletion = items.filter((e) => !e.completionDate);
+  const byDateDesc = (key: 'completionDate' | 'startDate') => (a: Education, b: Education) =>
+    a[key] > b[key] ? -1 : a[key] < b[key] ? 1 : 0;
+
+  return [
+    ...[...withCompletion].sort(byDateDesc('completionDate')),
+    ...[...withoutCompletion].sort(byDateDesc('startDate')),
+  ];
+}
 
 type Props = {
   // 프로필 마스터 토글이 꺼져 있으면 항목별 토글을 비활성화한다.
@@ -53,6 +70,7 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
   const [newEducation, setNewEducation] = useState({
     educationName: '',
     organizationName: '',
+    startDate: '',
     completionDate: '',
     description: '',
   });
@@ -72,6 +90,7 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
       setNewEducation({
         educationName: '',
         organizationName: '',
+        startDate: '',
         completionDate: '',
         description: '',
       });
@@ -83,6 +102,7 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
     setEditForm({
       educationName: edu.educationName,
       organizationName: edu.organizationName,
+      startDate: edu.startDate,
       completionDate: edu.completionDate,
       description: edu.description,
     });
@@ -109,10 +129,11 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
 
   const save = async (): Promise<{ ok: boolean; error?: string }> => {
     const result = await saveEducation({
-      educations: educations.map((edu) => ({
+      educations: sortEducationsByRecency(educations).map((edu) => ({
         id: edu.id,
         educationName: edu.educationName,
         organizationName: edu.organizationName,
+        startDate: edu.startDate,
         completionDate: edu.completionDate,
         description: edu.description,
         ownerVisible: edu.ownerVisible,
@@ -170,12 +191,21 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
           </div>
         </div>
 
-        <div>
-          <label className="text-xs font-medium text-gray-600 mb-2 block">수료일</label>
-          <YearMonthSelect
-            value={newEducation.completionDate}
-            onChange={(completionDate) => setNewEducation({ ...newEducation, completionDate })}
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-2 block">시작일</label>
+            <YearMonthSelect
+              value={newEducation.startDate}
+              onChange={(startDate) => setNewEducation({ ...newEducation, startDate })}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600 mb-2 block">수료일</label>
+            <YearMonthSelect
+              value={newEducation.completionDate}
+              onChange={(completionDate) => setNewEducation({ ...newEducation, completionDate })}
+            />
+          </div>
         </div>
 
         <div>
@@ -206,11 +236,11 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
         </button>
       </div>
 
-      {/* List Educations */}
+      {/* List Educations -- 최근 이수 순으로 자동 정렬(수동 순서 변경 없음) */}
       {educations.length > 0 && (
         <div className="space-y-3">
           <h3 className="font-medium text-gray-900">추가된 교육 이력 ({educations.length})</h3>
-          {educations.map((edu) => (
+          {sortEducationsByRecency(educations).map((edu) => (
             <div key={edu.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
               {editingId === edu.id ? (
                 // Edit Mode
@@ -263,8 +293,12 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
                     <div>
                       <p className="font-medium text-gray-900">{edu.educationName}</p>
                       <p className="text-sm text-gray-600">{edu.organizationName}</p>
-                      {edu.completionDate && (
-                        <p className="text-xs text-gray-500 mt-1">{edu.completionDate}</p>
+                      {(edu.startDate || edu.completionDate) && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {edu.startDate}
+                          {edu.startDate && edu.completionDate ? ' ~ ' : ''}
+                          {edu.completionDate}
+                        </p>
                       )}
                       {edu.description && (
                         <p className="text-xs text-gray-500 mt-1">{edu.description}</p>

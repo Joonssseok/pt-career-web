@@ -2,7 +2,7 @@
  * @jest-environment jsdom
  *
  * Regression test for the scrollspy lazy-mount bug (PR #49 follow-up):
- * EditForm mounts its 6 <section id="..."> anchors only after an async
+ * EditForm mounts its 7 <section id="..."> anchors only after an async
  * getOwnTermsAgreedAt()/getOwnProfile() round trip resolves. The sidebar's
  * useActiveSection() effect used to look up those elements exactly once,
  * synchronously, when it first ran -- if the sections weren't in the DOM
@@ -11,10 +11,10 @@
  * life.
  *
  * This test renders the sidebar component in isolation (no real EditForm),
- * confirms nothing is observed at mount, then appends the 6 section
+ * confirms nothing is observed at mount, then appends the 7 section
  * elements to document.body -- exactly mimicking EditForm mounting them
  * later elsewhere in the same document -- and asserts the MutationObserver
- * catches this and registers all 6 with IntersectionObserver.
+ * catches this and registers all 7 with IntersectionObserver.
  */
 import { render, act } from '@testing-library/react';
 import { ProfileEditSectionLinksDesktop } from '@/components/ProfileEditSectionLinks';
@@ -23,7 +23,7 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/expert/edit',
 }));
 
-const SECTION_IDS = ['basic', 'experience', 'education', 'certification', 'workplace', 'gallery'];
+const SECTION_IDS = ['basic', 'academic', 'experience', 'education', 'certification', 'workplace', 'gallery'];
 
 class MockIntersectionObserver implements IntersectionObserver {
   static instances: MockIntersectionObserver[] = [];

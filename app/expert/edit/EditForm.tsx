@@ -12,6 +12,7 @@ import { agreeToTerms, getOwnTermsAgreedAt } from '@/app/actions/terms';
 import { OFFICIAL_PROFESSIONS } from '@/lib/constants/professions';
 import { createClient } from '@/lib/supabase/client';
 import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
+import AcademicSection from '@/components/profile-sections/AcademicSection';
 import ExperienceSection from '@/components/profile-sections/ExperienceSection';
 import EducationSection from '@/components/profile-sections/EducationSection';
 import CertificationSection from '@/components/profile-sections/CertificationSection';
@@ -67,6 +68,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
   const [draftSaveState, setDraftSaveState] = useState<'default' | 'loading' | 'done' | 'error'>('default');
   const [draftSaveMessage, setDraftSaveMessage] = useState('');
 
+  const academicRef = useRef<SectionSaveHandle>(null);
   const experienceRef = useRef<SectionSaveHandle>(null);
   const educationRef = useRef<SectionSaveHandle>(null);
   const certificationRef = useRef<SectionSaveHandle>(null);
@@ -302,6 +304,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
     }
 
     const sections: Array<{ label: string; ref: React.RefObject<SectionSaveHandle | null> }> = [
+      { label: '학력', ref: academicRef },
       { label: '경력', ref: experienceRef },
       { label: '교육', ref: educationRef },
       { label: '자격·면허', ref: certificationRef },
@@ -553,6 +556,14 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                     먼저 기본 정보를 저장해야 아래 섹션들이 정상적으로 저장됩니다.
                   </p>
                 )}
+
+                <section id="academic" className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">학력</h2>
+                  <AcademicSection
+                    ref={academicRef}
+                    profileOwnerVisible={profileMeta?.ownerVisible ?? true}
+                  />
+                </section>
 
                 <section id="experience" className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">경력</h2>

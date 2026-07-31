@@ -35,10 +35,25 @@ export async function searchSchools(query: string): Promise<SchoolSearchResult[]
 
     const res = await fetch(url.toString(), { cache: 'no-store' });
     if (!res.ok) {
+      console.error('[searchSchools] NEIS API HTTP error, status:', res.status);
       return [];
     }
 
     const json = await res.json();
+
+    // NEIS는 인증키 오류 등 전역 실패 시 { RESULT: { CODE, MESSAGE } } 형태로,
+    // 성공/정상 응답 시에도 schoolInfo[0].head 안에 RESULT를 담아 보낸다. 두
+    // 위치 모두 확인해 실패 시 코드/메시지를 로그로만 남긴다(키 값 자체는
+    // 절대 로그하지 않음) -- 클라이언트에는 여전히 빈 배열만 돌려준다.
+    const topLevelResult = json?.RESULT;
+    const headResult = json?.schoolInfo?.[0]?.head?.find(
+      (h: Record<string, unknown>) => h?.RESULT
+    )?.RESULT;
+    const result = topLevelResult ?? headResult;
+    if (result && result.CODE !== 'INFO-000') {
+      console.error('[searchSchools] NEIS API non-success RESULT:', result.CODE, result.MESSAGE);
+    }
+
     const rows = json?.schoolInfo?.[1]?.row;
     if (!Array.isArray(rows)) {
       return [];

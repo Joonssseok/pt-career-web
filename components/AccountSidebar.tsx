@@ -2,19 +2,11 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { PROFILE_STATUS_META as STATUS_META } from '@/lib/constants/status-badges';
 import { ProfileVisibilityToggle } from '@/components/ProfileVisibilityToggle';
+import { ProfileEditSectionLinksDesktop, ProfileEditSectionLinksMobile } from '@/components/ProfileEditSectionLinks';
 
-const EDIT_SECTION_LINKS = [
-  { value: 'basic', label: '기본 정보' },
-  { value: 'experience', label: '경력' },
-  { value: 'education', label: '교육' },
-  { value: 'certification', label: '자격·면허' },
-  { value: 'workplace', label: '근무기관' },
-  { value: 'specialty', label: '전문분야' },
-  { value: 'gallery', label: '갤러리' },
-];
-
-// 활성 라우트 프리픽스 (마이페이지/프로필 수정 맥락). 온보딩 마법사는 자체
-// 스텝 진행 화면이라 계정 사이드바를 붙이지 않는다 — 보고서에 사유 명시.
+// 계층: 내 계정 관리(계정 정보/약관 동의) → 프로필 관리(공개 토글/내 프로필
+// 수정/프로필 미리보기) → 회원 탈퇴(최상위). 마이페이지/프로필 수정/삭제
+// 확인 등 계정 관련 화면 전반에 배치되는 공용 사이드바.
 export async function AccountSidebar() {
   const supabase = await createClient();
   const {
@@ -48,19 +40,54 @@ export async function AccountSidebar() {
             statusMeta={statusMeta}
             joinedAtText={joinedAtText}
           />
-          {profile && (
-            <div className="flex items-center justify-between gap-2 py-2 border-y border-gray-100">
-              <p className="text-xs font-medium text-gray-600">프로필 전체 공개</p>
-              <ProfileVisibilityToggle initialVisible={profile.owner_visible} />
-            </div>
-          )}
-          <EditSectionLinks />
-          <PublicPreviewLink profileId={profile?.id ?? null} isApproved={isApproved} />
+
+          <div>
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
+              내 계정 관리
+            </p>
+            <ul className="space-y-1">
+              <li>
+                <Link
+                  href="/my"
+                  className="block px-2 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 hover:text-blue-600 transition-colors"
+                >
+                  계정 정보
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/my/terms"
+                  className="block px-2 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 hover:text-blue-600 transition-colors"
+                >
+                  약관 동의
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+              프로필 관리
+            </p>
+
+            {profile && (
+              <div className="flex items-center justify-between gap-2 px-2 py-2 bg-gray-50 rounded-md">
+                <p className="text-xs font-medium text-gray-600">프로필 전체 공개</p>
+                <ProfileVisibilityToggle initialVisible={profile.owner_visible} />
+              </div>
+            )}
+
+            <ProfileEditSectionLinksDesktop />
+
+            <PublicPreviewLink profileId={profile?.id ?? null} isApproved={isApproved} />
+          </div>
+
           <DeleteAccountLink />
         </div>
       </aside>
 
-      {/* 모바일: 상단 가로 스크롤 탭 */}
+      {/* 모바일: 상단 가로 스크롤 탭 (그룹 순서는 데스크톱과 동일: 계정 관리 →
+          프로필 관리 → 회원 탈퇴, 구분선으로 그룹을 나눈다) */}
       <div className="md:hidden border-b border-gray-200 bg-white overflow-x-auto">
         <div className="flex items-center gap-2 px-4 py-3 whitespace-nowrap">
           {statusMeta && (
@@ -70,33 +97,45 @@ export async function AccountSidebar() {
               {statusMeta.label}
             </span>
           )}
+
+          <Link
+            href="/my"
+            className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+          >
+            계정 정보
+          </Link>
+          <Link
+            href="/my/terms"
+            className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
+          >
+            약관 동의
+          </Link>
+
+          <span className="w-px h-4 bg-gray-200 flex-shrink-0" />
+
           {profile && (
             <span className="flex items-center gap-1.5 text-xs text-gray-500">
               전체 공개
               <ProfileVisibilityToggle initialVisible={profile.owner_visible} />
             </span>
           )}
-          {EDIT_SECTION_LINKS.map((s) => (
-            <Link
-              key={s.value}
-              href={`/expert/edit?section=${s.value}`}
-              className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
-            >
-              {s.label}
-            </Link>
-          ))}
+          <ProfileEditSectionLinksMobile />
+
           {profile?.id && isApproved ? (
             <Link
               href={`/experts/${profile.id}`}
               className="px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-full hover:bg-blue-100 transition-colors"
             >
-              공개 프로필
+              프로필 미리보기
             </Link>
           ) : (
             <span className="px-3 py-1.5 text-xs font-medium text-gray-400 bg-gray-50 rounded-full">
-              공개 프로필(승인 대기)
+              프로필 미리보기(승인 대기)
             </span>
           )}
+
+          <span className="w-px h-4 bg-gray-200 flex-shrink-0" />
+
           <Link
             href="/my/delete-account"
             className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-full hover:bg-red-100 transition-colors"
@@ -141,28 +180,6 @@ function SummaryBlock({
   );
 }
 
-function EditSectionLinks() {
-  return (
-    <div>
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
-        프로필 수정
-      </p>
-      <ul className="space-y-1">
-        {EDIT_SECTION_LINKS.map((s) => (
-          <li key={s.value}>
-            <Link
-              href={`/expert/edit?section=${s.value}`}
-              className="block px-2 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 hover:text-blue-600 transition-colors"
-            >
-              {s.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 function PublicPreviewLink({
   profileId,
   isApproved,
@@ -172,19 +189,16 @@ function PublicPreviewLink({
 }) {
   return (
     <div>
-      <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
-        공개 프로필
-      </p>
       {profileId && isApproved ? (
         <Link
           href={`/experts/${profileId}`}
           className="block px-2 py-2 text-sm text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
         >
-          내 공개 프로필 보기
+          프로필 미리보기
         </Link>
       ) : (
         <p className="px-2 py-2 text-xs text-gray-400 leading-relaxed">
-          아직 공개되지 않았습니다. 관리자 승인 후 볼 수 있어요.
+          프로필 미리보기 — 아직 공개되지 않았습니다. 관리자 승인 후 볼 수 있어요.
         </p>
       )}
     </div>

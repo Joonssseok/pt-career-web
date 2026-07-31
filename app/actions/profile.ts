@@ -20,7 +20,7 @@ export async function getOwnProfile() {
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('display_name, profession, headline, introduction, profile_image_path, verification_status, owner_visible')
+    .select('id, display_name, profession, headline, introduction, profile_image_path, verification_status, owner_visible')
     .eq('id', profileId)
     .maybeSingle();
 
@@ -90,6 +90,23 @@ export async function setOwnProfileVisibility(visible: boolean) {
   } catch (err) {
     console.error('[setOwnProfileVisibility] threw:', err);
     return { ok: false, error: String(err) };
+  }
+}
+
+export async function getOwnRejectionReason() {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.rpc('get_own_rejection_reason');
+
+    if (error) {
+      console.error('[getOwnRejectionReason] Supabase error:', error);
+      return { ok: false as const, error: error.message, reason: null };
+    }
+
+    return { ok: true as const, error: '', reason: data as string | null };
+  } catch (err) {
+    console.error('[getOwnRejectionReason] threw:', err);
+    return { ok: false as const, error: String(err), reason: null };
   }
 }
 

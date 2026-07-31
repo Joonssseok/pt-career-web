@@ -197,9 +197,6 @@ export default async function ExpertDetailPage({
           </section>
         )}
 
-        <GalleryCarousel images={galleryImages} />
-        <GalleryFullScroll images={galleryImages} />
-
         {expert.experiences.length > 0 && (
           <section>
             <h2 className="text-sm font-semibold text-gray-900 mb-2">경력</h2>
@@ -257,9 +254,12 @@ export default async function ExpertDetailPage({
           </section>
         )}
 
-        {(expert.workplace_address || expert.workplace_phone || expert.workplace_external_contact_url) && (
+        {(expert.workplace_address ||
+          expert.workplace_phone ||
+          expert.workplace_external_contact_url ||
+          expert.workplace_website_url) && (
           <section>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">문의하기</h2>
+            <h2 className="text-sm font-semibold text-gray-900 mb-2">근무기관</h2>
             <div className="space-y-3">
               {expert.workplace_address && (
                 <p className="text-sm text-gray-700">
@@ -287,26 +287,29 @@ export default async function ExpertDetailPage({
                   외부 문의(카카오톡 등)
                 </a>
               )}
+
+              {expert.workplace_website_url && (
+                <a
+                  href={expert.workplace_website_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full min-h-[44px] px-4 py-3 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-slate-50 transition-colors text-center"
+                >
+                  센터 웹사이트 방문
+                </a>
+              )}
             </div>
           </section>
         )}
+
+        <GalleryCarousel images={galleryImages} />
+        <GalleryFullScroll images={galleryImages} />
 
         <ShareButton
           profileId={expert.id}
           displayName={expert.display_name}
           headline={expert.headline}
         />
-
-        {expert.workplace_website_url && (
-          <a
-            href={expert.workplace_website_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full min-h-[44px] px-4 py-3 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-slate-50 transition-colors text-center"
-          >
-            센터 웹사이트 방문
-          </a>
-        )}
       </div>
     </main>
   );

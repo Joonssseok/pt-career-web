@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { getOwnExperiences, saveExperience, setOwnExperienceVisibility } from '@/app/actions/experience';
 import { VisibilityToggle } from './VisibilityToggle';
+import type { SectionSaveHandle } from './types';
 
 type Experience = {
   id: string;
@@ -15,22 +16,14 @@ type Experience = {
 };
 
 type Props = {
-  // 저장 성공 시 호출. 다음 단계로 이동할지, 그 자리에 머물지는 호출부가 결정한다.
-  onSaved: () => void;
-  submitLabel: string;
-  savedMessage?: string;
-  leftNav?: React.ReactNode;
   // 프로필 마스터 토글이 꺼져 있으면 항목별 토글을 비활성화한다.
   profileOwnerVisible?: boolean;
 };
 
-export default function ExperienceSection({
-  onSaved,
-  submitLabel,
-  savedMessage = '✓ 저장되었습니다!',
-  leftNav,
-  profileOwnerVisible = true,
-}: Props) {
+const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function ExperienceSection(
+  { profileOwnerVisible = true },
+  ref
+) {
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
@@ -66,7 +59,6 @@ export default function ExperienceSection({
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<typeof newExperience | null>(null);
-  const [formState, setFormState] = useState<'default' | 'loading' | 'saved'>('default');
 
   const handleAddExperience = () => {
     if (newExperience.companyName.trim() && newExperience.position.trim()) {
@@ -120,11 +112,7 @@ export default function ExperienceSection({
     setExperiences(experiences.filter((exp) => exp.id !== id));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    setFormState('loading');
-
+  const save = async (): Promise<{ ok: boolean; error?: string }> => {
     const result = await saveExperience({
       experiences: experiences.map((exp) => ({
         id: exp.id,
@@ -136,18 +124,13 @@ export default function ExperienceSection({
         ownerVisible: exp.ownerVisible,
       })),
     });
-
-    if (result.ok) {
-      setFormState('saved');
-      onSaved();
-    } else {
-      setFormState('default');
-      alert(result.error);
-    }
+    return result.ok ? { ok: true } : { ok: false, error: result.error };
   };
 
+  useImperativeHandle(ref, () => ({ save }), [experiences]);
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <div className="space-y-5">
       {!profileOwnerVisible && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
           <p className="text-xs text-gray-500">
@@ -237,19 +220,6 @@ export default function ExperienceSection({
           + 경력 추가
         </button>
       </div>
-
-      {/* State Messages */}
-      {formState === 'loading' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-900 font-medium">⏳ 저장 중입니다...</p>
-        </div>
-      )}
-
-      {formState === 'saved' && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-sm text-green-900 font-medium">{savedMessage}</p>
-        </div>
-      )}
 
       {/* List Experiences */}
       {experiences.length > 0 && (
@@ -345,17 +315,8 @@ export default function ExperienceSection({
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex gap-3 pt-4">
-        {leftNav}
-        <button
-          type="submit"
-          disabled={formState === 'loading'}
-          className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 flex items-center justify-center"
-        >
-          {formState === 'loading' ? '저장 중...' : submitLabel}
-        </button>
-      </div>
-    </form>
+    </div>
   );
-}
+});
+
+export default ExperienceSection;

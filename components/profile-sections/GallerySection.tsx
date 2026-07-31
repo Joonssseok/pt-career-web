@@ -173,7 +173,7 @@ const GallerySection = forwardRef<SectionSaveHandle, Props>(function GallerySect
       )}
 
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
-        <h3 className="font-medium text-gray-900">갤러리 이미지 추가</h3>
+        <h3 className="font-medium text-gray-900">상세정보 이미지 추가</h3>
         <p className="text-xs text-gray-500">
           최대 {MAX_IMAGES}장까지 등록할 수 있습니다({images.length}/{MAX_IMAGES}). 관리자 검토 없이
           저장 즉시 공개 프로필에 반영됩니다.

@@ -307,7 +307,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
       { label: '자격·면허', ref: certificationRef },
       { label: '근무기관', ref: workplaceRef },
       { label: '전문분야', ref: specialtyRef },
-      { label: '갤러리', ref: galleryRef },
+      { label: '상세정보 이미지', ref: galleryRef },
     ];
 
     const results = await Promise.all(
@@ -422,77 +422,85 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                   )}
 
                   <form onSubmit={handleSubmit} className="space-y-5">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">
-                        이름/활동명 <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="displayName"
-                        value={formData.displayName}
-                        onChange={handleChange}
-                        maxLength={50}
-                        disabled={formState === 'loading'}
-                        className={getInputClass('displayName')}
-                      />
-                      {errors.displayName && (
-                        <p className="text-xs text-red-500 mt-1">{errors.displayName}</p>
-                      )}
-                    </div>
-
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                      <p className="text-sm font-medium text-gray-900 mb-2">프로필 사진</p>
-                      <label className="block bg-white border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-400 transition-colors">
-                        {formData.profileImagePath ? (
-                          <div className="flex flex-col items-center gap-2">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <div className="flex gap-6">
+                      {/* 이력서 증명사진 자리 — 실제 증명사진 규격(3.5:4.5)에 가까운 비율 박스 */}
+                      <div className="flex-shrink-0 flex flex-col items-center gap-2">
+                        <div className="w-28 h-36 rounded-lg overflow-hidden bg-gray-50 border border-gray-300 flex items-center justify-center">
+                          {formData.profileImagePath ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img
                               src={getProfilePhotoUrl(formData.profileImagePath) ?? undefined}
                               alt="프로필 사진"
-                              className="w-16 h-16 rounded-full object-cover"
+                              className="w-full h-full object-cover"
                             />
-                            <p className="text-xs text-blue-600 font-medium">
-                              {imageUploading ? '⏳ 업로드 중...' : '파일 교체'}
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-600">
-                            {imageUploading ? '⏳ 업로드 중...' : '📸 프로필 사진 업로드'}
-                          </p>
+                          ) : (
+                            <span className="text-xs text-gray-400 text-center px-2">증명사진</span>
+                          )}
+                        </div>
+                        <label className="text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer transition-colors">
+                          {imageUploading
+                            ? '⏳ 업로드 중...'
+                            : formData.profileImagePath
+                              ? '파일 교체'
+                              : '📎 첨부파일'}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleImageChange}
+                            disabled={imageUploading || formState === 'loading'}
+                            className="hidden"
+                          />
+                        </label>
+                        {errors.image && (
+                          <p className="text-xs text-red-500 text-center">{errors.image}</p>
                         )}
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          onChange={handleImageChange}
-                          disabled={imageUploading || formState === 'loading'}
-                          className="hidden"
-                        />
-                      </label>
-                      {errors.image && <p className="text-xs text-red-500 mt-2">{errors.image}</p>}
-                      <p className="text-xs text-gray-500 mt-2">승인 후 공개 프로필에 표시됩니다.</p>
-                    </div>
+                        <p className="text-[11px] text-gray-400 text-center leading-tight">
+                          승인 후 공개 프로필에 표시됩니다
+                        </p>
+                      </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">
-                        직군 <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        name="profession"
-                        value={formData.profession}
-                        onChange={handleChange}
-                        disabled={formState === 'loading'}
-                        className={getInputClass('profession')}
-                      >
-                        <option value="">직군을 선택해주세요</option>
-                        {professions.map((prof) => (
-                          <option key={prof} value={prof}>
-                            {prof}
-                          </option>
-                        ))}
-                      </select>
-                      {errors.profession && (
-                        <p className="text-xs text-red-500 mt-1">{errors.profession}</p>
-                      )}
+                      <div className="flex-1 min-w-0 space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900 mb-2">
+                            이름/활동명 <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="displayName"
+                            value={formData.displayName}
+                            onChange={handleChange}
+                            maxLength={50}
+                            disabled={formState === 'loading'}
+                            className={getInputClass('displayName')}
+                          />
+                          {errors.displayName && (
+                            <p className="text-xs text-red-500 mt-1">{errors.displayName}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900 mb-2">
+                            직군 <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            name="profession"
+                            value={formData.profession}
+                            onChange={handleChange}
+                            disabled={formState === 'loading'}
+                            className={getInputClass('profession')}
+                          >
+                            <option value="">직군을 선택해주세요</option>
+                            {professions.map((prof) => (
+                              <option key={prof} value={prof}>
+                                {prof}
+                              </option>
+                            ))}
+                          </select>
+                          {errors.profession && (
+                            <p className="text-xs text-red-500 mt-1">{errors.profession}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
                     <div>
@@ -536,10 +544,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
 
                   <div className="pt-5 border-t border-gray-100">
                     <h3 className="text-sm font-semibold text-gray-900 mb-3">전문분야</h3>
-                    <SpecialtySection
-                      ref={specialtyRef}
-                      profileOwnerVisible={profileMeta?.ownerVisible ?? true}
-                    />
+                    <SpecialtySection ref={specialtyRef} />
                   </div>
                 </section>
 
@@ -583,7 +588,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                 </section>
 
                 <section id="gallery" className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">갤러리</h2>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">상세정보 이미지</h2>
                   <GallerySection
                     ref={galleryRef}
                     profileOwnerVisible={profileMeta?.ownerVisible ?? true}
@@ -704,7 +709,7 @@ function StatusBanner({
         )}
         <p className="text-xs text-gray-600">
           정보를 수정하고 저장하면 프로필이 다시 관리자 검토 상태로 전환되며, 재승인 전까지
-          공개가 중단됩니다(갤러리 제외).
+          공개가 중단됩니다(상세정보 이미지 제외).
         </p>
       </div>
     );

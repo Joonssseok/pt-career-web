@@ -34,7 +34,7 @@ export async function AccountSidebar() {
     <>
       {/* 데스크톱: 좌측 고정 사이드바 */}
       <aside className="hidden md:block w-64 flex-shrink-0 border-r border-gray-200 bg-white">
-        <div className="sticky top-0 p-4 space-y-6">
+        <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto p-4 space-y-6">
           <SummaryBlock
             hasProfile={!!profile}
             statusMeta={statusMeta}

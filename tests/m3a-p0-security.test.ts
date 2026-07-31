@@ -171,13 +171,13 @@ describe('M3-A P0 Security', () => {
       expect(pubErr).not.toBeNull();
     });
 
-    it('submit_profile requires a profile image before draft -> pending', async () => {
+    it('submit_profile requires a profile image before publishing', async () => {
       await adminApi.from('profiles').update({ profile_image_path: null }).eq('id', ownerProfileId);
       const noImage = await ownerClient.rpc('submit_profile');
       expect(noImage.data?.[0]?.ok).toBe(false);
     });
 
-    it('submit_profile requires at least one experience or license once the image is set', async () => {
+    it('submit_profile requires at least one experience or license, then publishes immediately (profile review removed)', async () => {
       await adminApi.from('profiles').update({ profile_image_path: '/img.jpg' }).eq('id', ownerProfileId);
       const noExpOrLicense = await ownerClient.rpc('submit_profile');
       expect(noExpOrLicense.data?.[0]?.ok).toBe(false);
@@ -186,17 +186,19 @@ describe('M3-A P0 Security', () => {
       const submitted = await ownerClient.rpc('submit_profile');
       expect(submitted.data?.[0]?.ok).toBe(true);
 
-      const { data: row } = await ownerClient.from('profiles').select('verification_status').eq('id', ownerProfileId).single();
-      expect(row?.verification_status).toBe('pending');
+      // No more review queue: submit_profile() sets approved+public directly.
+      const { data: row } = await ownerClient.from('profiles').select('verification_status, is_public').eq('id', ownerProfileId).single();
+      expect(row?.verification_status).toBe('approved');
+      expect(row?.is_public).toBe(true);
     });
 
-    it('cannot submit again while already pending', async () => {
+    it('can submit again while already approved (idempotent, no review-state guard blocks it)', async () => {
       const { data } = await ownerClient.rpc('submit_profile');
-      expect(data?.[0]?.ok).toBe(false);
+      expect(data?.[0]?.ok).toBe(true);
     });
   });
 
-  describe('Admin review workflow', () => {
+  describe('Admin review workflow (harmless dead code -- kept intentionally, no longer reachable via submit_profile)', () => {
     it('non-admin cannot call review_expert_profile', async () => {
       const { data } = await otherClient.rpc('review_expert_profile', {
         p_target_user_id: ownerId, p_decision: 'approved', p_rejection_reason: null,
@@ -211,7 +213,12 @@ describe('M3-A P0 Security', () => {
       expect(data?.[0]?.ok).toBe(false);
     });
 
-    it('admin can approve a pending profile, which logs an admin_actions row', async () => {
+    it('admin can still approve a profile manually forced into pending (simulates the now-unreachable legacy path), which logs an admin_actions row', async () => {
+      // submit_profile() never produces 'pending' anymore, so this fixture
+      // forces it directly (service_role) to prove review_expert_profile()
+      // itself still works correctly as intentionally-kept dead code.
+      await adminApi.from('profiles').update({ verification_status: 'pending' }).eq('id', ownerProfileId);
+
       const { data } = await adminClient.rpc('review_expert_profile', {
         p_target_user_id: ownerId, p_decision: 'approved', p_rejection_reason: null,
       });

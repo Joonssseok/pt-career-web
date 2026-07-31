@@ -171,10 +171,10 @@ describe('Owner visibility toggle (Part B)', () => {
       { organization_name: 'Gym B', position: 'Coach', owner_visible: false },
     ]);
 
-    // This full resave DOES demote (delete+insert, not an owner_visible-only
-    // update) -- expected, pre-existing behavior, unrelated to this trap.
-    // Reset back to approved so the master-toggle tests below start clean.
-    expect((await profileGroundTruth()).verification_status).toBe('pending');
+    // Profile review has been removed entirely: no trigger demotes an
+    // approved profile back to pending anymore, regardless of how child
+    // rows are saved (delete+insert or owner_visible-only update).
+    expect((await profileGroundTruth()).verification_status).toBe('approved');
     await approveProfile();
 
     // Refresh ids for the anon/non-owner blocking test below (they churned).

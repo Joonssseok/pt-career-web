@@ -40,10 +40,9 @@ const EXT_BY_TYPE: Record<string, string> = {
 const SUBMIT_ERROR_MESSAGE_MAP: Record<string, string> = {
   'Not authenticated': '로그인이 필요합니다.',
   'Profile not found': '프로필을 찾을 수 없습니다.',
-  'Profile status does not allow submission': '이미 제출되었거나 공개된 프로필입니다.',
-  'Profile image is required for submission': '제출하려면 프로필 사진을 등록해주세요.',
+  'Profile image is required for submission': '업로드하려면 프로필 사진을 등록해주세요.',
   'At least one experience or license is required for submission':
-    '제출하려면 경력 또는 자격/면허를 최소 1개 이상 입력해주세요.',
+    '업로드하려면 경력 또는 자격/면허를 최소 1개 이상 입력해주세요.',
 };
 
 function toSubmitMessage(rawError: string): string {
@@ -64,6 +63,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [submitState, setSubmitState] = useState<'default' | 'loading' | 'done'>('default');
   const [submitError, setSubmitError] = useState('');
+  const [showUploadConfirm, setShowUploadConfirm] = useState(false);
 
   const [draftSaveState, setDraftSaveState] = useState<'default' | 'loading' | 'done' | 'error'>('default');
   const [draftSaveMessage, setDraftSaveMessage] = useState('');
@@ -139,6 +139,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
   };
 
   const handleSubmitForReview = async () => {
+    setShowUploadConfirm(false);
     setSubmitState('loading');
     setSubmitError('');
     const result = await submitProfile();
@@ -627,7 +628,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
 
                   {submitState === 'done' && (
                     <p className="text-sm text-green-700 font-medium">
-                      ✓ 제출되었습니다! 관리자 검토 후 공개됩니다.
+                      ✓ 업로드되었습니다! 프로필 정보가 바로 공개되었습니다.
                     </p>
                   )}
                   {submitError && <p className="text-sm text-red-700">{submitError}</p>}
@@ -641,16 +642,14 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                     >
                       {draftSaveState === 'loading' ? '저장 중...' : '임시저장'}
                     </button>
-                    {(status === 'draft' || status === 'rejected') && (
-                      <button
-                        type="button"
-                        onClick={handleSubmitForReview}
-                        disabled={submitState === 'loading'}
-                        className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
-                      >
-                        {submitState === 'loading' ? '제출 중...' : '업로드'}
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowUploadConfirm(true)}
+                      disabled={submitState === 'loading'}
+                      className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+                    >
+                      {submitState === 'loading' ? '업로드 중...' : '업로드'}
+                    </button>
                   </div>
                 </div>
               </>
@@ -658,6 +657,34 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
           </>
         )}
       </div>
+
+      {showUploadConfirm && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-sm w-full p-6 space-y-4">
+            <h2 className="text-base font-semibold text-gray-900">프로필을 업로드할까요?</h2>
+            <ul className="text-sm text-gray-600 space-y-2 list-disc pl-5">
+              <li>기본 정보·경력·학력 등 프로필 내용은 별도 검토 없이 즉시 공개됩니다.</li>
+              <li>자격증·면허 증빙 파일은 이 업로드와 무관하게 관리자 검토를 거친 뒤 별도로 공개 배지가 표시됩니다.</li>
+            </ul>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowUploadConfirm(false)}
+                className="flex-1 min-h-[44px] px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitForReview}
+                className="flex-1 min-h-[44px] px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                업로드
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -688,8 +715,9 @@ function StatusBanner({
           </p>
         )}
         <p className="text-xs text-gray-600">
-          아래 섹션을 채운 뒤 맨 아래 "업로드" 버튼을 누르면 관리자 검토를 거쳐 프로필이 공개됩니다.
-          업로드하려면 프로필 사진과, 경력 또는 자격/면허 중 최소 1개가 필요합니다.
+          아래 섹션을 채운 뒤 맨 아래 "업로드" 버튼을 누르면 프로필이 바로 공개됩니다(별도 검토
+          없음). 업로드하려면 프로필 사진과, 경력 또는 자격/면허 중 최소 1개가 필요합니다.
+          자격증·면허 증빙 파일만 별도로 관리자 검토를 거칩니다.
         </p>
       </div>
     );
@@ -719,8 +747,8 @@ function StatusBanner({
           </Link>
         )}
         <p className="text-xs text-gray-600">
-          정보를 수정하고 저장하면 프로필이 다시 관리자 검토 상태로 전환되며, 재승인 전까지
-          공개가 중단됩니다(상세정보 이미지 제외).
+          정보를 수정하고 저장하면 즉시 반영됩니다. 자격증·면허 증빙 파일만 별도로 관리자
+          검토를 거쳐 공개 배지가 표시됩니다.
         </p>
       </div>
     );

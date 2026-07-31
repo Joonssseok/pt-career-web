@@ -120,7 +120,7 @@ describe('Child-table save RPCs', () => {
     expect(rows.data?.[0].display_order).toBe(0);
   });
 
-  it('KEEPS the rows when saving experiences on an approved profile, and demotes to pending', async () => {
+  it('KEEPS the rows when saving experiences on an approved profile, and no longer demotes (profile review removed)', async () => {
     await setStatus('approved');
 
     const { data, error } = await ownerClient.rpc('save_own_experiences', {
@@ -142,7 +142,10 @@ describe('Child-table save RPCs', () => {
     expect(rows.data?.length).toBe(2);
     expect(rows.data?.map((r) => r.organization_name)).toEqual(['Approved Gym A', 'Approved Gym B']);
 
-    expect(await currentStatus()).toBe('pending');
+    // demote_profile_if_approved_trigger was dropped when the review process
+    // was removed -- editing an approved profile's child rows no longer
+    // sends it back to pending.
+    expect(await currentStatus()).toBe('approved');
   });
 
   it('refuses to save experiences while pending (already under review)', async () => {
@@ -182,7 +185,7 @@ describe('Child-table save RPCs', () => {
       .eq('profile_id', ownerProfileId);
     expect(rows.data?.length).toBe(1);
     expect(rows.data?.[0].completion_date).toBe('2020-06-01');
-    expect(await currentStatus()).toBe('pending');
+    expect(await currentStatus()).toBe('approved');
   });
 
   it('KEEPS the rows when saving licenses on an approved profile', async () => {
@@ -208,7 +211,7 @@ describe('Child-table save RPCs', () => {
       .eq('profile_id', ownerProfileId);
     expect(rows.data?.length).toBe(1);
     expect(rows.data?.[0].acquired_date).toBe('2019-11-01');
-    expect(await currentStatus()).toBe('pending');
+    expect(await currentStatus()).toBe('approved');
   });
 
   it('rejects a license with no evidence file (Part A: mandatory evidence)', async () => {

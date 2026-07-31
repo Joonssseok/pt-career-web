@@ -175,19 +175,21 @@ export default async function ExpertDetailPage({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-          {expert.total_experience_years != null && (
-            <span className="px-2.5 py-1 bg-gray-100 rounded-full">
-              경력 {expert.total_experience_years}년
-            </span>
-          )}
-          {expert.workplace_center_name && (
-            <span className="px-2.5 py-1 bg-gray-100 rounded-full">
-              {expert.workplace_region ? `${expert.workplace_region} · ` : ''}
-              {expert.workplace_center_name}
-            </span>
-          )}
-        </div>
+        {(expert.total_experience_years != null || expert.workplace_center_name) && (
+          <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+            {expert.total_experience_years != null && (
+              <span className="px-2.5 py-1 bg-gray-100 rounded-full">
+                경력 {expert.total_experience_years}년
+              </span>
+            )}
+            {expert.workplace_center_name && (
+              <span className="px-2.5 py-1 bg-gray-100 rounded-full">
+                {expert.workplace_region ? `${expert.workplace_region} · ` : ''}
+                {expert.workplace_center_name}
+              </span>
+            )}
+          </div>
+        )}
 
         {expert.specialties.length > 0 && (
           <section>

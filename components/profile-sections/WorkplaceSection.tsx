@@ -246,18 +246,18 @@ const WorkplaceSection = forwardRef<SectionSaveHandle, Props>(function Workplace
         {/* Official Contact */}
         <div>
           <label className="block text-sm font-medium text-gray-900 mb-2">
-            공식 문의처
+            카카오톡 오픈채팅 등 문의 링크
           </label>
           <input
-            type="text"
+            type="url"
             name="officialContact"
             value={formData.officialContact}
             onChange={handleChange}
-            placeholder="예: 02-1234-5678"
+            placeholder="https://open.kakao.com/o/..."
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="text-xs text-gray-500 mt-1">
-            💡 개인 연락처: 항상 비공개 / 공식 연락처: 공개 정책 미확정
+            💡 전화번호가 아닌 http:// 또는 https://로 시작하는 링크만 입력해주세요. 개인 연락처는 항상 비공개입니다.
           </p>
         </div>
 
@@ -279,9 +279,6 @@ const WorkplaceSection = forwardRef<SectionSaveHandle, Props>(function Workplace
               </option>
             ))}
           </select>
-          <p className="text-xs text-gray-500 mt-1">
-            ⏳ 근무지역 공개 정책은 운영팀 검토 중입니다
-          </p>
         </div>
 
         {/* Location Public Flag */}
@@ -299,7 +296,7 @@ const WorkplaceSection = forwardRef<SectionSaveHandle, Props>(function Workplace
                 근무지역을 공개합니다
               </p>
               <p className="text-xs text-gray-600 mt-1">
-                체크하면 PT Career 내 검색 시 지역 필터에 나타납니다. (운영팀 승인 후 공개)
+                체크하고 저장하면 별도 검토 없이 즉시 PT Career 검색의 지역 필터에 나타납니다.
               </p>
             </div>
           </label>

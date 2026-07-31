@@ -44,21 +44,23 @@ export function ExpertCard({ expert }: { expert: ExpertListItem }) {
           )}
         </div>
 
-        {expert.headline && (
-          <p className="text-sm text-gray-700 mt-1 line-clamp-2">{expert.headline}</p>
+        {(expert.total_experience_years != null || expert.workplace_center_name) && (
+          <div className="flex items-center gap-2 mt-1 text-xs text-gray-500 flex-wrap">
+            {expert.total_experience_years != null && (
+              <span>경력 {expert.total_experience_years}년</span>
+            )}
+            {expert.workplace_center_name && (
+              <span>
+                {expert.workplace_region ? `${expert.workplace_region} · ` : ''}
+                {expert.workplace_center_name}
+              </span>
+            )}
+          </div>
         )}
 
-        <div className="flex items-center gap-2 mt-2 text-xs text-gray-500 flex-wrap">
-          {expert.total_experience_years != null && (
-            <span>경력 {expert.total_experience_years}년</span>
-          )}
-          {expert.workplace_center_name && (
-            <span>
-              {expert.workplace_region ? `${expert.workplace_region} · ` : ''}
-              {expert.workplace_center_name}
-            </span>
-          )}
-        </div>
+        {expert.headline && (
+          <p className="text-sm text-gray-700 mt-2 line-clamp-2">{expert.headline}</p>
+        )}
 
         {expert.specialties.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-2">

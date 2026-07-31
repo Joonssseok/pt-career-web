@@ -134,7 +134,7 @@ describe('M3-A Child State Gate (experiences)', () => {
     expect(data).toBeNull();
   });
 
-  it('owner CAN update an approved profile\'s experience row, which demotes the profile back to pending', async () => {
+  it('owner CAN update and delete an approved profile\'s experience row, which no longer demotes the profile (profile review removed)', async () => {
     // Bring the profile back to draft to legitimately create the row via ownerClient,
     // then flip to approved (service_role fixture only) before attempting mutation.
     await adminApi.from('profiles').update({ verification_status: 'draft' }).eq('id', ownerProfileId);
@@ -168,34 +168,31 @@ describe('M3-A Child State Gate (experiences)', () => {
       .single();
     expect(updatedRow?.organization_name).toBe('Edited While Approved');
 
-    // The edit should have demoted the profile back to pending (mirrors
-    // save_own_profile()'s own approved -> pending transition).
-    const { data: demotedProfile } = await adminApi
+    // demote_profile_if_approved_trigger was dropped when profile review was
+    // removed -- editing an approved profile's child row no longer sends it
+    // back to pending, and is_public/approved_at stay untouched.
+    const { data: profileAfterEdit } = await adminApi
       .from('profiles')
       .select('verification_status, is_public, approved_at')
       .eq('id', ownerProfileId)
       .single();
-    expect(demotedProfile?.verification_status).toBe('pending');
-    expect(demotedProfile?.is_public).toBe(false);
-    expect(demotedProfile?.approved_at).toBeNull();
+    expect(profileAfterEdit?.verification_status).toBe('approved');
+    expect(profileAfterEdit?.is_public).toBe(true);
+    expect(profileAfterEdit?.approved_at).not.toBeNull();
 
+    // Still approved (not pending), so the owner can delete the row too --
+    // no demotion means no delete-block on the next attempt.
     const deleteAttempt = await ownerClient.from('experiences').delete().eq('id', rowId).select('id');
-    // Now pending again, so the delete is blocked exactly like the 'pending' test above.
     expect(deleteAttempt.error).toBeNull();
-    expect(deleteAttempt.data).toEqual([]);
+    expect(deleteAttempt.data?.length).toBe(1);
 
     const { data: stillThere } = await adminApi
       .from('experiences')
       .select('id')
       .eq('id', rowId);
-    expect(stillThere?.length).toBe(1);
+    expect(stillThere?.length).toBe(0);
 
-    // Restore to approved for the next test (admin management), which expects
-    // an approved profile to already exist.
-    await adminApi
-      .from('profiles')
-      .update({ verification_status: 'approved', is_public: true, approved_at: new Date().toISOString() })
-      .eq('id', ownerProfileId);
+    // ownerProfileId stays approved for the next test (admin management).
   });
 
   it('admin can SELECT and manage experience rows regardless of profile status (via admin_all, not an RPC)', async () => {

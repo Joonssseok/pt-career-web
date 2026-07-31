@@ -8,6 +8,29 @@ import { LoadMoreExperts, EXPERTS_PAGE_SIZE } from './LoadMoreExperts';
 
 export const dynamic = 'force-dynamic';
 
+function ExpertCardSkeleton() {
+  return (
+    <div className="flex gap-4 p-4 rounded-lg border border-gray-200 bg-white animate-pulse">
+      <div className="w-16 h-16 rounded-full bg-gray-200 flex-shrink-0" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="h-4 w-1/3 bg-gray-200 rounded" />
+        <div className="h-3 w-2/3 bg-gray-200 rounded" />
+        <div className="h-3 w-1/4 bg-gray-200 rounded" />
+      </div>
+    </div>
+  );
+}
+
+function ExpertListSkeleton() {
+  return (
+    <div className="space-y-3" aria-label="전문가 목록을 불러오는 중">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <ExpertCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
 type SearchParams = Promise<{
   profession?: string;
   region?: string;
@@ -65,7 +88,7 @@ export default function ExpertsPage({ searchParams }: { searchParams: SearchPara
         <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
           ← 홈
         </Link>
-        <h1 className="text-lg font-semibold text-gray-900">내 주변 전문가 찾기</h1>
+        <h1 className="text-lg font-semibold text-gray-900">지역별 전문가 찾기</h1>
       </nav>
 
       <div className="px-4 py-4 sm:px-6 max-w-2xl mx-auto space-y-4">
@@ -73,7 +96,7 @@ export default function ExpertsPage({ searchParams }: { searchParams: SearchPara
           <FiltersWithData />
         </Suspense>
 
-        <Suspense fallback={<div className="p-8 text-center text-gray-400 text-sm">불러오는 중...</div>}>
+        <Suspense fallback={<ExpertListSkeleton />}>
           <ExpertResults searchParams={searchParams} />
         </Suspense>
       </div>

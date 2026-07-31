@@ -15,6 +15,12 @@ export default function NotFound() {
         >
           홈으로 돌아가기
         </Link>
+        <Link
+          href="/experts"
+          className="w-full min-h-[44px] flex items-center justify-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+        >
+          전문가 찾기
+        </Link>
       </div>
     </main>
   );

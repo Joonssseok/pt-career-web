@@ -62,6 +62,25 @@ export async function saveWorkplace(data: {
       return { ok: false, error: 'Profile not found' };
     }
 
+    // 공식 문의처는 "외부 문의(카카오톡 등)" 버튼의 href로 그대로 쓰인다.
+    // 형식 검증 없이는 전화번호 같은 값이 그대로 저장돼 클릭 시 깨진 링크로
+    // 이어지는 문제가 있었다 -- http(s):// 링크만 허용한다.
+    if (data.officialContact) {
+      let isValidUrl = false;
+      try {
+        const url = new URL(data.officialContact);
+        isValidUrl = url.protocol === 'http:' || url.protocol === 'https:';
+      } catch {
+        isValidUrl = false;
+      }
+      if (!isValidUrl) {
+        return {
+          ok: false,
+          error: '공식 문의처는 http:// 또는 https://로 시작하는 링크(예: 카카오톡 오픈채팅 URL)여야 합니다.',
+        };
+      }
+    }
+
     // workplaces is one row per profile, upserted (not delete+insert), so
     // owner_visible doesn't have the same id-churn trap as the other
     // save_own_* RPCs -- still passed through explicitly so an omitted value

@@ -20,7 +20,7 @@ export default async function Home() {
 
           {/* Description */}
           <p className="text-base sm:text-lg text-slate-600 mb-8 leading-relaxed">
-            내 주변 재활·운동 전문가를
+            지역별 재활·운동 전문가를
             <br />
             경력과 자격으로 확인해보세요.
           </p>
@@ -32,7 +32,7 @@ export default async function Home() {
               href="/experts"
               className="block w-full py-3 sm:py-4 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-center"
             >
-              내 주변 전문가 찾기
+              지역별 전문가 찾기
             </Link>
 
             {/* Create Profile Button */}

@@ -70,6 +70,8 @@ export default function EditForm() {
   const [formState, setFormState] = useState<FormState>('default');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageUploading, setImageUploading] = useState(false);
+  // 마스터 토글 — 꺼져 있으면 각 섹션의 항목별 공개 토글을 비활성화한다.
+  const [profileOwnerVisible, setProfileOwnerVisible] = useState(true);
 
   useEffect(() => {
     getOwnProfile().then((result) => {
@@ -82,6 +84,7 @@ export default function EditForm() {
         description: p.introduction ?? '',
         profileImagePath: p.profile_image_path ?? '',
       });
+      setProfileOwnerVisible(p.owner_visible ?? true);
     });
   }, []);
 
@@ -268,6 +271,7 @@ export default function EditForm() {
               submitLabel={SECTION_SUBMIT_LABEL}
               savedMessage={SECTION_SAVED_MESSAGE}
               onSaved={() => {}}
+              profileOwnerVisible={profileOwnerVisible}
             />
           )}
 
@@ -276,6 +280,7 @@ export default function EditForm() {
               submitLabel={SECTION_SUBMIT_LABEL}
               savedMessage={SECTION_SAVED_MESSAGE}
               onSaved={() => {}}
+              profileOwnerVisible={profileOwnerVisible}
             />
           )}
 
@@ -284,6 +289,7 @@ export default function EditForm() {
               submitLabel={SECTION_SUBMIT_LABEL}
               savedMessage={SECTION_SAVED_MESSAGE}
               onSaved={() => {}}
+              profileOwnerVisible={profileOwnerVisible}
             />
           )}
 
@@ -292,6 +298,7 @@ export default function EditForm() {
               submitLabel={SECTION_SUBMIT_LABEL}
               savedMessage={SECTION_SAVED_MESSAGE}
               onSaved={() => {}}
+              profileOwnerVisible={profileOwnerVisible}
             />
           )}
 
@@ -300,6 +307,7 @@ export default function EditForm() {
               submitLabel={SECTION_SUBMIT_LABEL}
               savedMessage={SECTION_SAVED_MESSAGE}
               onSaved={() => {}}
+              profileOwnerVisible={profileOwnerVisible}
             />
           )}
 
@@ -308,6 +316,7 @@ export default function EditForm() {
               submitLabel={GALLERY_SUBMIT_LABEL}
               savedMessage={GALLERY_SAVED_MESSAGE}
               onSaved={() => {}}
+              profileOwnerVisible={profileOwnerVisible}
             />
           )}
 

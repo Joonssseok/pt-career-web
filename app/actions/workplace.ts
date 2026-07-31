@@ -21,7 +21,7 @@ export async function getOwnWorkplace() {
   const { data: workplace, error } = await supabase
     .from('workplaces')
     .select(
-      'center_name, website_url, external_contact_url, region, is_location_public, address, address_detail, phone, latitude, longitude'
+      'center_name, website_url, external_contact_url, region, is_location_public, address, address_detail, phone, latitude, longitude, owner_visible'
     )
     .eq('profile_id', profileId)
     .maybeSingle();
@@ -45,6 +45,7 @@ export async function saveWorkplace(data: {
   phone?: string;
   latitude?: number;
   longitude?: number;
+  ownerVisible?: boolean;
 }) {
   try {
     const supabase = await createClient();
@@ -61,6 +62,11 @@ export async function saveWorkplace(data: {
       return { ok: false, error: 'Profile not found' };
     }
 
+    // workplaces is one row per profile, upserted (not delete+insert), so
+    // owner_visible doesn't have the same id-churn trap as the other
+    // save_own_* RPCs -- still passed through explicitly so an omitted value
+    // doesn't silently upsert the column default (true) over an existing
+    // false.
     const { error } = await supabase
       .from('workplaces')
       .upsert(
@@ -76,6 +82,7 @@ export async function saveWorkplace(data: {
           phone: data.phone || null,
           latitude: data.latitude ?? null,
           longitude: data.longitude ?? null,
+          owner_visible: data.ownerVisible ?? true,
         },
         { onConflict: 'profile_id' }
       );
@@ -88,6 +95,31 @@ export async function saveWorkplace(data: {
     return { ok: true, error: '' };
   } catch (err) {
     console.error('[saveWorkplace] threw:', err);
+    return { ok: false, error: String(err) };
+  }
+}
+
+// 근무기관 전체를 가리는 상위 토글 — "저장" 버튼과 무관하게 즉시 확정된다.
+export async function setOwnWorkplaceVisibility(visible: boolean) {
+  try {
+    const supabase = await createClient();
+    const { data: result, error } = await supabase.rpc('set_own_workplace_visibility', {
+      p_visible: visible,
+    });
+
+    if (error) {
+      console.error('[setOwnWorkplaceVisibility] Supabase error:', error);
+      return { ok: false, error: error.message };
+    }
+
+    if (result && result.length > 0) {
+      const { ok, error: rpcError } = result[0];
+      return { ok, error: rpcError };
+    }
+
+    return { ok: false, error: 'Unexpected response' };
+  } catch (err) {
+    console.error('[setOwnWorkplaceVisibility] threw:', err);
     return { ok: false, error: String(err) };
   }
 }

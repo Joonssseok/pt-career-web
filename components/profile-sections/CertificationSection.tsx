@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getOwnCertifications, saveCertifications } from '@/app/actions/certification';
+import { getOwnCertifications, saveCertifications, setOwnLicenseVisibility } from '@/app/actions/certification';
 import { createClient } from '@/lib/supabase/client';
 import { getEvidenceFileUrl } from '@/lib/storage/evidence-file-url';
 import { LICENSE_STATUS_META } from '@/lib/constants/status-badges';
+import { VisibilityToggle } from './VisibilityToggle';
 
 type Certification = {
   id: string;
@@ -16,6 +17,7 @@ type Certification = {
   // 방금 추가해 아직 저장 전인 항목은 서버 상태가 없다 — undefined는
   // "검토 대기"(not_submitted와 동일한 의미)로 취급한다.
   verificationStatus?: string;
+  ownerVisible: boolean;
 };
 
 const LICENSE_CATEGORIES = [
@@ -42,6 +44,8 @@ type Props = {
   submitLabel: string;
   savedMessage?: string;
   leftNav?: React.ReactNode;
+  // 프로필 마스터 토글이 꺼져 있으면 항목별 토글을 비활성화한다.
+  profileOwnerVisible?: boolean;
 };
 
 export default function CertificationSection({
@@ -49,6 +53,7 @@ export default function CertificationSection({
   submitLabel,
   savedMessage = '✓ 저장되었습니다!',
   leftNav,
+  profileOwnerVisible = true,
 }: Props) {
   const [certifications, setCertifications] = useState<Certification[]>([]);
   const [newCert, setNewCert] = useState({
@@ -63,6 +68,8 @@ export default function CertificationSection({
   const [formState, setFormState] = useState<'default' | 'loading' | 'saved'>('default');
   const [fileUploading, setFileUploading] = useState(false);
   const [fileError, setFileError] = useState('');
+  const [addError, setAddError] = useState('');
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
     getOwnCertifications().then((result) => {
@@ -70,6 +77,22 @@ export default function CertificationSection({
       setCertifications(result.certifications);
     });
   }, []);
+
+  const handleToggleVisibility = async (id: string) => {
+    const target = certifications.find((cert) => cert.id === id);
+    if (!target) return;
+
+    const nextVisible = !target.ownerVisible;
+    setTogglingId(id);
+    setCertifications((prev) => prev.map((cert) => (cert.id === id ? { ...cert, ownerVisible: nextVisible } : cert)));
+
+    const result = await setOwnLicenseVisibility(id, nextVisible);
+    if (!result.ok) {
+      setCertifications((prev) => prev.map((cert) => (cert.id === id ? { ...cert, ownerVisible: !nextVisible } : cert)));
+      alert(result.error);
+    }
+    setTogglingId(null);
+  };
 
   const commonCerts = [
     'ISSA CPT',
@@ -133,11 +156,17 @@ export default function CertificationSection({
 
   const handleAddCertification = () => {
     if (newCert.name.trim() && newCert.issuer.trim()) {
+      if (!newCert.documentPath) {
+        setAddError('증빙 파일을 첨부해야 자격증을 추가할 수 있습니다');
+        return;
+      }
+      setAddError('');
       setCertifications([
         ...certifications,
         {
           id: Date.now().toString(),
           ...newCert,
+          ownerVisible: true,
         },
       ]);
       setNewCert({
@@ -195,6 +224,7 @@ export default function CertificationSection({
         issuer: cert.issuer,
         issueDate: cert.issueDate,
         documentPath: cert.documentPath,
+        ownerVisible: cert.ownerVisible,
       })),
     });
 
@@ -209,6 +239,14 @@ export default function CertificationSection({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {!profileOwnerVisible && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <p className="text-xs text-gray-500">
+            전체 비공개 상태입니다. 사이드바의 프로필 공개 설정을 켜야 항목별 공개 설정이 적용됩니다.
+          </p>
+        </div>
+      )}
+
       {/* Add New Certification */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
         <h3 className="font-medium text-gray-900">자격증 추가</h3>
@@ -298,7 +336,7 @@ export default function CertificationSection({
 
         <div>
           <label className="text-xs font-medium text-gray-600 mb-2 block">
-            증빙 파일 (선택)
+            증빙 파일 (필수)
           </label>
           {newCert.documentPath ? (
             <div className="flex items-center justify-between bg-white border border-gray-300 rounded-lg px-4 py-2">
@@ -328,6 +366,8 @@ export default function CertificationSection({
           )}
           {fileError && <p className="text-xs text-red-500 mt-1">{fileError}</p>}
         </div>
+
+        {addError && <p className="text-xs text-red-500">{addError}</p>}
 
         <button
           type="button"
@@ -439,7 +479,13 @@ export default function CertificationSection({
                         </a>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
+                      <VisibilityToggle
+                        visible={cert.ownerVisible}
+                        onToggle={() => handleToggleVisibility(cert.id)}
+                        disabled={!profileOwnerVisible}
+                        pending={togglingId === cert.id}
+                      />
                       <button
                         type="button"
                         onClick={() => handleEditStart(cert)}

@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getOwnWorkplace, saveWorkplace } from '@/app/actions/workplace';
+import { getOwnWorkplace, saveWorkplace, setOwnWorkplaceVisibility } from '@/app/actions/workplace';
 import { REGIONS } from '@/lib/constants/regions';
+import { VisibilityToggle } from './VisibilityToggle';
 
 type Props = {
   // 저장 성공 시 호출. 다음 단계로 이동할지, 그 자리에 머물지는 호출부가 결정한다.
@@ -10,6 +11,8 @@ type Props = {
   submitLabel: string;
   savedMessage?: string;
   leftNav?: React.ReactNode;
+  // 프로필 마스터 토글이 꺼져 있으면 이 섹션 토글을 비활성화한다.
+  profileOwnerVisible?: boolean;
 };
 
 export default function WorkplaceSection({
@@ -17,6 +20,7 @@ export default function WorkplaceSection({
   submitLabel,
   savedMessage = '✓ 저장되었습니다!',
   leftNav,
+  profileOwnerVisible = true,
 }: Props) {
   const [formData, setFormData] = useState({
     centerName: '',
@@ -29,7 +33,9 @@ export default function WorkplaceSection({
     phone: '',
     latitude: '',
     longitude: '',
+    ownerVisible: true,
   });
+  const [togglePending, setTogglePending] = useState(false);
 
   const regions = REGIONS;
 
@@ -48,9 +54,23 @@ export default function WorkplaceSection({
         phone: w.phone ?? '',
         latitude: w.latitude != null ? String(w.latitude) : '',
         longitude: w.longitude != null ? String(w.longitude) : '',
+        ownerVisible: w.owner_visible ?? true,
       });
     });
   }, []);
+
+  const handleToggleVisibility = async () => {
+    const nextVisible = !formData.ownerVisible;
+    setTogglePending(true);
+    setFormData((prev) => ({ ...prev, ownerVisible: nextVisible }));
+
+    const result = await setOwnWorkplaceVisibility(nextVisible);
+    if (!result.ok) {
+      setFormData((prev) => ({ ...prev, ownerVisible: !nextVisible }));
+      alert(result.error);
+    }
+    setTogglePending(false);
+  };
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -108,6 +128,7 @@ export default function WorkplaceSection({
       phone: formData.phone || undefined,
       latitude,
       longitude,
+      ownerVisible: formData.ownerVisible,
     });
 
     if (result.ok) {
@@ -137,6 +158,21 @@ export default function WorkplaceSection({
           </p>
         </div>
       )}
+
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium text-gray-900">근무기관 섹션 공개</p>
+          {!profileOwnerVisible && (
+            <p className="text-xs text-gray-500 mt-1">전체 비공개 상태입니다. 사이드바의 프로필 공개 설정을 켜야 적용됩니다.</p>
+          )}
+        </div>
+        <VisibilityToggle
+          visible={formData.ownerVisible}
+          onToggle={handleToggleVisibility}
+          disabled={!profileOwnerVisible}
+          pending={togglePending}
+        />
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Center Name */}

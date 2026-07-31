@@ -195,7 +195,7 @@ describe('Child-table save RPCs', () => {
           category: '민간자격',
           issuing_organization: 'NASM',
           acquired_date: '2019-11-01',
-          document_path_private: null,
+          document_path_private: `${ownerId}/evidence.pdf`,
         },
       ],
     });
@@ -209,6 +209,27 @@ describe('Child-table save RPCs', () => {
     expect(rows.data?.length).toBe(1);
     expect(rows.data?.[0].acquired_date).toBe('2019-11-01');
     expect(await currentStatus()).toBe('pending');
+  });
+
+  it('rejects a license with no evidence file (Part A: mandatory evidence)', async () => {
+    await setStatus('approved');
+
+    const { data, error } = await ownerClient.rpc('save_own_licenses', {
+      p_licenses: [
+        {
+          license_name: 'No Evidence Cert',
+          document_path_private: null,
+        },
+      ],
+    });
+    expect(error).toBeNull();
+    expect(data?.[0]?.ok).toBe(false);
+    expect(data?.[0]?.error).toMatch(/증빙 파일/);
+
+    // Bailed out before deleting -- the previous license row is still there.
+    const rows = await adminApi.from('licenses').select('license_name').eq('profile_id', ownerProfileId);
+    expect(rows.data?.length).toBe(1);
+    expect(rows.data?.[0].license_name).toBe('NASM-CPT');
   });
 
   it('rejects an evidence path outside the caller own folder', async () => {

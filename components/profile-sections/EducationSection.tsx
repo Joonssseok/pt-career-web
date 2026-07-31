@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getOwnEducations, saveEducation } from '@/app/actions/education';
+import { getOwnEducations, saveEducation, setOwnEducationVisibility } from '@/app/actions/education';
+import { VisibilityToggle } from './VisibilityToggle';
 
 type Education = {
   id: string;
@@ -9,6 +10,7 @@ type Education = {
   organizationName: string;
   completionDate: string;
   description: string;
+  ownerVisible: boolean;
 };
 
 type Props = {
@@ -20,6 +22,8 @@ type Props = {
   // 전달하면 "건너뛰기" 버튼을 노출한다. 목록이 비어있을 때만 호출되고,
   // 목록에 항목이 있으면 저장 후 onSaved()로 이어진다(온보딩 기존 동작).
   onSkip?: () => void;
+  // 프로필 마스터 토글이 꺼져 있으면 항목별 토글을 비활성화한다.
+  profileOwnerVisible?: boolean;
 };
 
 export default function EducationSection({
@@ -28,8 +32,10 @@ export default function EducationSection({
   savedMessage = '✓ 저장되었습니다!',
   leftNav,
   onSkip,
+  profileOwnerVisible = true,
 }: Props) {
   const [educations, setEducations] = useState<Education[]>([]);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   useEffect(() => {
     getOwnEducations().then((result) => {
@@ -37,6 +43,22 @@ export default function EducationSection({
       setEducations(result.educations);
     });
   }, []);
+
+  const handleToggleVisibility = async (id: string) => {
+    const target = educations.find((edu) => edu.id === id);
+    if (!target) return;
+
+    const nextVisible = !target.ownerVisible;
+    setTogglingId(id);
+    setEducations((prev) => prev.map((edu) => (edu.id === id ? { ...edu, ownerVisible: nextVisible } : edu)));
+
+    const result = await setOwnEducationVisibility(id, nextVisible);
+    if (!result.ok) {
+      setEducations((prev) => prev.map((edu) => (edu.id === id ? { ...edu, ownerVisible: !nextVisible } : edu)));
+      alert(result.error);
+    }
+    setTogglingId(null);
+  };
 
   const [newEducation, setNewEducation] = useState({
     educationName: '',
@@ -55,6 +77,7 @@ export default function EducationSection({
         {
           id: Date.now().toString(),
           ...newEducation,
+          ownerVisible: true,
         },
       ]);
       setNewEducation({
@@ -105,6 +128,7 @@ export default function EducationSection({
         organizationName: edu.organizationName,
         completionDate: edu.completionDate,
         description: edu.description,
+        ownerVisible: edu.ownerVisible,
       })),
     });
 
@@ -132,6 +156,14 @@ export default function EducationSection({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {!profileOwnerVisible && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <p className="text-xs text-gray-500">
+            전체 비공개 상태입니다. 사이드바의 프로필 공개 설정을 켜야 항목별 공개 설정이 적용됩니다.
+          </p>
+        </div>
+      )}
+
       {/* Add New Education */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
         <h3 className="font-medium text-gray-900">교육 이력 추가</h3>
@@ -289,7 +321,13 @@ export default function EducationSection({
                         <p className="text-xs text-gray-500 mt-1">{edu.description}</p>
                       )}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex items-center gap-2">
+                      <VisibilityToggle
+                        visible={edu.ownerVisible}
+                        onToggle={() => handleToggleVisibility(edu.id)}
+                        disabled={!profileOwnerVisible}
+                        pending={togglingId === edu.id}
+                      />
                       <button
                         type="button"
                         onClick={() => handleEditStart(edu)}

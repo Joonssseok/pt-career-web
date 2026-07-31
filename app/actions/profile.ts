@@ -20,7 +20,7 @@ export async function getOwnProfile() {
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('display_name, profession, headline, introduction, profile_image_path, verification_status')
+    .select('display_name, profession, headline, introduction, profile_image_path, verification_status, owner_visible')
     .eq('id', profileId)
     .maybeSingle();
 
@@ -63,6 +63,32 @@ export async function saveOwnProfile(data: {
     return { ok: false, error: 'Unexpected response' };
   } catch (err) {
     console.error('[saveOwnProfile] threw:', err);
+    return { ok: false, error: String(err) };
+  }
+}
+
+// 프로필 전체 공개/비공개 마스터 토글 — 관리자 승인 상태와 무관하며,
+// 즉시 확정된다("저장" 버튼과 무관, 낙관적 UI 업데이트).
+export async function setOwnProfileVisibility(visible: boolean) {
+  try {
+    const supabase = await createClient();
+    const { data: result, error } = await supabase.rpc('set_own_profile_visibility', {
+      p_visible: visible,
+    });
+
+    if (error) {
+      console.error('[setOwnProfileVisibility] Supabase error:', error);
+      return { ok: false, error: error.message };
+    }
+
+    if (result && result.length > 0) {
+      const { ok, error: rpcError } = result[0];
+      return { ok, error: rpcError };
+    }
+
+    return { ok: false, error: 'Unexpected response' };
+  } catch (err) {
+    console.error('[setOwnProfileVisibility] threw:', err);
     return { ok: false, error: String(err) };
   }
 }

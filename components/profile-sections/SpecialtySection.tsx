@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import {
   getOwnSelectedSpecialtyIds,
   getSpecialties,
@@ -8,27 +8,19 @@ import {
   setOwnSpecialtyVisibility,
 } from '@/app/actions/specialties';
 import { VisibilityToggle } from './VisibilityToggle';
+import type { SectionSaveHandle } from './types';
 
-type FormState = 'default' | 'error' | 'loading' | 'saved';
 type Specialty = { id: string; name: string; sort_order: number };
 
 type Props = {
-  // 저장 성공 시 호출. 다음 단계로 이동할지, 그 자리에 머물지는 호출부가 결정한다.
-  onSaved: () => void;
-  submitLabel: string;
-  savedMessage?: string;
-  leftNav?: React.ReactNode;
   // 프로필 마스터 토글이 꺼져 있으면 항목별 토글을 비활성화한다.
   profileOwnerVisible?: boolean;
 };
 
-export default function SpecialtySection({
-  onSaved,
-  submitLabel,
-  savedMessage = '✓ 저장되었습니다!',
-  leftNav,
-  profileOwnerVisible = true,
-}: Props) {
+const SpecialtySection = forwardRef<SectionSaveHandle, Props>(function SpecialtySection(
+  { profileOwnerVisible = true },
+  ref
+) {
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // specialty_id -> owner_visible. 저장 시(replaceProfileSpecialties) 함께
@@ -36,7 +28,6 @@ export default function SpecialtySection({
   const [visibilityMap, setVisibilityMap] = useState<Record<string, boolean>>({});
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  const [formState, setFormState] = useState<FormState>('default');
   const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
@@ -92,48 +83,24 @@ export default function SpecialtySection({
     setTogglingId(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (selectedIds.length < MIN_SELECTION) {
-      setShowWarning(true);
-      return;
+  const save = async (): Promise<{ ok: boolean; error?: string }> => {
+    if (selectedIds.length === 0) {
+      // 전문분야를 아직 선택하지 않은 사용자 — 아래 "선택됨: 0/3개" 안내가 이미
+      // 상시 노출되므로, replaceProfileSpecialties가 항상 실패할 이 케이스는
+      // 굳이 호출하지 않고 조용히 건너뛴다(중복된 실패 알림 방지).
+      return { ok: true };
     }
-
-    setFormState('loading');
 
     const result = await replaceProfileSpecialties(
       selectedIds.map((id) => ({ specialtyId: id, ownerVisible: visibilityMap[id] ?? true }))
     );
-
-    if (result.ok) {
-      setFormState('saved');
-      onSaved();
-    } else {
-      setFormState('error');
-      setTimeout(() => {
-        setFormState('default');
-      }, 3000);
-    }
+    return result.ok ? { ok: true } : { ok: false, error: result.error };
   };
+
+  useImperativeHandle(ref, () => ({ save }), [selectedIds, visibilityMap]);
 
   return (
     <div className="space-y-6">
-      {/* State Messages */}
-      {formState === 'loading' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-900 font-medium">
-            ⏳ 저장 중입니다...
-          </p>
-        </div>
-      )}
-
-      {formState === 'saved' && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-sm text-green-900 font-medium">{savedMessage}</p>
-        </div>
-      )}
-
       {showWarning && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-sm text-red-900 font-medium">
@@ -151,7 +118,7 @@ export default function SpecialtySection({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="space-y-5">
         {/* Selection Count */}
         <div
           className={`border rounded-lg p-4 ${
@@ -177,15 +144,10 @@ export default function SpecialtySection({
               key={specialty.id}
               type="button"
               onClick={() => toggleSpecialty(specialty.id)}
-              disabled={formState === 'loading'}
-              className={`p-4 rounded-lg border-2 text-left transition-all ${
+              className={`p-4 rounded-lg border-2 text-left transition-all cursor-pointer ${
                 selectedIds.includes(specialty.id)
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 bg-white hover:border-gray-300'
-              } ${
-                formState === 'loading'
-                  ? 'opacity-50 cursor-not-allowed'
-                  : 'cursor-pointer'
               }`}
             >
               <div className="flex items-center gap-3">
@@ -235,22 +197,9 @@ export default function SpecialtySection({
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="flex gap-3 pt-4">
-          {leftNav}
-          <button
-            type="submit"
-            disabled={
-              selectedIds.length === 0 ||
-              selectedIds.length > MAX_SELECTION ||
-              formState === 'loading'
-            }
-            className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
-          >
-            {formState === 'loading' ? '저장 중...' : submitLabel}
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
   );
-}
+});
+
+export default SpecialtySection;

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import { getOwnGalleryImages, saveGalleryImages, setOwnGalleryImageVisibility } from '@/app/actions/gallery';
 import { createClient } from '@/lib/supabase/client';
 import { getGalleryImageUrl } from '@/lib/storage/gallery-image-url';
 import { VisibilityToggle } from './VisibilityToggle';
+import type { SectionSaveHandle } from './types';
 
 type GalleryImage = {
   id: string;
@@ -23,23 +24,15 @@ const EXT_BY_TYPE: Record<string, string> = {
 };
 
 type Props = {
-  onSaved: () => void;
-  submitLabel: string;
-  savedMessage?: string;
-  leftNav?: React.ReactNode;
   // 프로필 마스터 토글이 꺼져 있으면 항목별 토글을 비활성화한다.
   profileOwnerVisible?: boolean;
 };
 
-export default function GallerySection({
-  onSaved,
-  submitLabel,
-  savedMessage = '✓ 저장되었습니다!',
-  leftNav,
-  profileOwnerVisible = true,
-}: Props) {
+const GallerySection = forwardRef<SectionSaveHandle, Props>(function GallerySection(
+  { profileOwnerVisible = true },
+  ref
+) {
   const [images, setImages] = useState<GalleryImage[]>([]);
-  const [formState, setFormState] = useState<'default' | 'loading' | 'saved'>('default');
   const [fileUploading, setFileUploading] = useState(false);
   const [fileError, setFileError] = useState('');
   const [togglingId, setTogglingId] = useState<string | null>(null);
@@ -156,11 +149,7 @@ export default function GallerySection({
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    setFormState('loading');
-
+  const save = async (): Promise<{ ok: boolean; error?: string }> => {
     const result = await saveGalleryImages({
       images: images.map((img) => ({
         imagePath: img.imagePath,
@@ -168,18 +157,13 @@ export default function GallerySection({
         ownerVisible: img.ownerVisible,
       })),
     });
-
-    if (result.ok) {
-      setFormState('saved');
-      onSaved();
-    } else {
-      setFormState('default');
-      alert(result.error);
-    }
+    return result.ok ? { ok: true } : { ok: false, error: result.error };
   };
 
+  useImperativeHandle(ref, () => ({ save }), [images]);
+
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <div className="space-y-5">
       {!profileOwnerVisible && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
           <p className="text-xs text-gray-500">
@@ -215,18 +199,6 @@ export default function GallerySection({
         </label>
         {fileError && <p className="text-xs text-red-500 mt-1">{fileError}</p>}
       </div>
-
-      {formState === 'loading' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-900 font-medium">⏳ 저장 중입니다...</p>
-        </div>
-      )}
-
-      {formState === 'saved' && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-sm text-green-900 font-medium">{savedMessage}</p>
-        </div>
-      )}
 
       {images.length > 0 && (
         <div className="space-y-3">
@@ -285,16 +257,8 @@ export default function GallerySection({
         </div>
       )}
 
-      <div className="flex gap-3 pt-4">
-        {leftNav}
-        <button
-          type="submit"
-          disabled={formState === 'loading'}
-          className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 flex items-center justify-center"
-        >
-          {formState === 'loading' ? '저장 중...' : submitLabel}
-        </button>
-      </div>
-    </form>
+    </div>
   );
-}
+});
+
+export default GallerySection;

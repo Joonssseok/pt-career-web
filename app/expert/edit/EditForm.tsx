@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   getOwnProfile,
@@ -18,6 +18,7 @@ import CertificationSection from '@/components/profile-sections/CertificationSec
 import WorkplaceSection from '@/components/profile-sections/WorkplaceSection';
 import SpecialtySection from '@/components/profile-sections/SpecialtySection';
 import GallerySection from '@/components/profile-sections/GallerySection';
+import type { SectionSaveHandle } from '@/components/profile-sections/types';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 type ProfileMeta = {
@@ -34,14 +35,6 @@ const EXT_BY_TYPE: Record<string, string> = {
   'image/png': 'png',
   'image/webp': 'webp',
 };
-
-// 저장 후 페이지 이동 없이 그 자리에 머문다(연속 스크롤 페이지이므로 "다음 단계"가 없다).
-const SECTION_SUBMIT_LABEL = '저장 후 재검토 요청';
-const SECTION_SAVED_MESSAGE = '✓ 저장되었습니다. 재검토 대기열로 이동했습니다.';
-// 갤러리는 demote_profile_if_approved_trigger가 붙지 않아 재검토를 유발하지
-// 않고 즉시 공개되므로(CTO 확정 사항), 다른 섹션과 같은 문구를 쓰면 안 된다.
-const GALLERY_SUBMIT_LABEL = '저장';
-const GALLERY_SAVED_MESSAGE = '✓ 저장되었습니다. 바로 공개 프로필에 반영됩니다.';
 
 const SUBMIT_ERROR_MESSAGE_MAP: Record<string, string> = {
   'Not authenticated': '로그인이 필요합니다.',
@@ -70,6 +63,16 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [submitState, setSubmitState] = useState<'default' | 'loading' | 'done'>('default');
   const [submitError, setSubmitError] = useState('');
+
+  const [draftSaveState, setDraftSaveState] = useState<'default' | 'loading' | 'done' | 'error'>('default');
+  const [draftSaveMessage, setDraftSaveMessage] = useState('');
+
+  const experienceRef = useRef<SectionSaveHandle>(null);
+  const educationRef = useRef<SectionSaveHandle>(null);
+  const certificationRef = useRef<SectionSaveHandle>(null);
+  const workplaceRef = useRef<SectionSaveHandle>(null);
+  const specialtyRef = useRef<SectionSaveHandle>(null);
+  const galleryRef = useRef<SectionSaveHandle>(null);
 
   const [formData, setFormData] = useState({
     displayName: '',
@@ -266,6 +269,70 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
     }
   };
 
+  // 맨 아래 저장 바의 "임시저장" — 기본 정보 + 6개 섹션을 검증 없이 한 번에 저장한다.
+  // 기본 정보를 먼저 저장(await)해야 한다: 프로필 행 자체가 없는 상태(신규 사용자)에서는
+  // 하위 섹션 RPC가 전부 "Profile not found"로 실패하므로, 순서가 바뀌면 안 된다.
+  const handleSaveDraft = async () => {
+    setDraftSaveState('loading');
+    setDraftSaveMessage('');
+
+    const failed: string[] = [];
+
+    const validationErrors = validate();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setFormState('error');
+      failed.push('기본 정보(필수 항목을 확인해주세요)');
+    } else {
+      const basicResult = await saveOwnProfile({
+        displayName: formData.displayName,
+        profession: formData.profession,
+        bio: formData.bio,
+        description: formData.description,
+        profileImagePath: formData.profileImagePath,
+      });
+      if (basicResult.ok) {
+        setErrors({});
+        setFormState('saved');
+      } else {
+        setErrors({ submit: basicResult.error });
+        setFormState('error');
+        failed.push(`기본 정보(${basicResult.error})`);
+      }
+    }
+
+    const sections: Array<{ label: string; ref: React.RefObject<SectionSaveHandle | null> }> = [
+      { label: '경력', ref: experienceRef },
+      { label: '교육', ref: educationRef },
+      { label: '자격·면허', ref: certificationRef },
+      { label: '근무기관', ref: workplaceRef },
+      { label: '전문분야', ref: specialtyRef },
+      { label: '갤러리', ref: galleryRef },
+    ];
+
+    const results = await Promise.all(
+      sections.map(async ({ label, ref }) => {
+        if (!ref.current) return { label, ok: true as const };
+        const result = await ref.current.save();
+        return { label, ok: result.ok, error: result.error };
+      })
+    );
+
+    for (const r of results) {
+      if (!r.ok) failed.push(r.error ? `${r.label}(${r.error})` : r.label);
+    }
+
+    await loadProfile();
+
+    if (failed.length === 0) {
+      setDraftSaveState('done');
+      setDraftSaveMessage('✓ 전체 저장되었습니다.');
+    } else {
+      setDraftSaveState('error');
+      setDraftSaveMessage(`일부 저장에 실패했습니다: ${failed.join(', ')}`);
+    }
+  };
+
   const getInputClass = (fieldName: string) => {
     const baseClass = 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2';
     if (errors[fieldName]) {
@@ -284,7 +351,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
           <p className="text-sm font-medium text-blue-600">내 프로필 관리</p>
           <h1 className="text-page-title font-semibold text-gray-900 mt-1">전문가 프로필</h1>
           <p className="text-sm text-gray-600 mt-1">
-            아래에서 순서대로 정보를 입력하고, 각 섹션의 저장 버튼으로 개별 저장하세요.
+            아래에서 순서대로 정보를 입력하고, 맨 아래 저장 바에서 임시저장하거나 검토를 위해 업로드하세요.
           </p>
         </div>
 
@@ -334,9 +401,6 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                 status={status}
                 profileId={profileMeta?.id ?? null}
                 rejectionReason={rejectionReason}
-                submitState={submitState}
-                submitError={submitError}
-                onSubmitForReview={handleSubmitForReview}
               />
             )}
 
@@ -473,9 +537,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                   <div className="pt-5 border-t border-gray-100">
                     <h3 className="text-sm font-semibold text-gray-900 mb-3">전문분야</h3>
                     <SpecialtySection
-                      submitLabel={SECTION_SUBMIT_LABEL}
-                      savedMessage={SECTION_SAVED_MESSAGE}
-                      onSaved={() => {}}
+                      ref={specialtyRef}
                       profileOwnerVisible={profileMeta?.ownerVisible ?? true}
                     />
                   </div>
@@ -490,9 +552,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                 <section id="experience" className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">경력</h2>
                   <ExperienceSection
-                    submitLabel={SECTION_SUBMIT_LABEL}
-                    savedMessage={SECTION_SAVED_MESSAGE}
-                    onSaved={() => {}}
+                    ref={experienceRef}
                     profileOwnerVisible={profileMeta?.ownerVisible ?? true}
                   />
                 </section>
@@ -500,9 +560,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                 <section id="education" className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">교육</h2>
                   <EducationSection
-                    submitLabel={SECTION_SUBMIT_LABEL}
-                    savedMessage={SECTION_SAVED_MESSAGE}
-                    onSaved={() => {}}
+                    ref={educationRef}
                     profileOwnerVisible={profileMeta?.ownerVisible ?? true}
                   />
                 </section>
@@ -510,9 +568,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                 <section id="certification" className="bg-white border border-gray-200 rounded-lg p-6 space-y-5">
                   <h2 className="text-lg font-semibold text-gray-900">자격·면허</h2>
                   <CertificationSection
-                    submitLabel={SECTION_SUBMIT_LABEL}
-                    savedMessage={SECTION_SAVED_MESSAGE}
-                    onSaved={() => {}}
+                    ref={certificationRef}
                     profileOwnerVisible={profileMeta?.ownerVisible ?? true}
                   />
                   {evidenceArchive}
@@ -521,9 +577,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                 <section id="workplace" className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">근무기관</h2>
                   <WorkplaceSection
-                    submitLabel={SECTION_SUBMIT_LABEL}
-                    savedMessage={SECTION_SAVED_MESSAGE}
-                    onSaved={() => {}}
+                    ref={workplaceRef}
                     profileOwnerVisible={profileMeta?.ownerVisible ?? true}
                   />
                 </section>
@@ -531,12 +585,58 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                 <section id="gallery" className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">갤러리</h2>
                   <GallerySection
-                    submitLabel={GALLERY_SUBMIT_LABEL}
-                    savedMessage={GALLERY_SAVED_MESSAGE}
-                    onSaved={() => {}}
+                    ref={galleryRef}
                     profileOwnerVisible={profileMeta?.ownerVisible ?? true}
                   />
                 </section>
+
+                <div className="sticky bottom-0 bg-white border-t border-gray-200 -mx-4 px-4 py-4 sm:mx-0 sm:rounded-lg sm:border sm:static space-y-3">
+                  {draftSaveState !== 'default' && (
+                    <div
+                      className={`p-3 rounded-lg border ${
+                        draftSaveState === 'error'
+                          ? 'bg-red-50 border-red-200'
+                          : 'bg-green-50 border-green-200'
+                      }`}
+                    >
+                      <p
+                        className={`text-sm font-medium ${
+                          draftSaveState === 'error' ? 'text-red-900' : 'text-green-900'
+                        }`}
+                      >
+                        {draftSaveMessage}
+                      </p>
+                    </div>
+                  )}
+
+                  {submitState === 'done' && (
+                    <p className="text-sm text-green-700 font-medium">
+                      ✓ 제출되었습니다! 관리자 검토 후 공개됩니다.
+                    </p>
+                  )}
+                  {submitError && <p className="text-sm text-red-700">{submitError}</p>}
+
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSaveDraft}
+                      disabled={draftSaveState === 'loading'}
+                      className="flex-1 min-h-[44px] px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+                    >
+                      {draftSaveState === 'loading' ? '저장 중...' : '임시저장'}
+                    </button>
+                    {(status === 'draft' || status === 'rejected') && (
+                      <button
+                        type="button"
+                        onClick={handleSubmitForReview}
+                        disabled={submitState === 'loading'}
+                        className="flex-1 min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+                      >
+                        {submitState === 'loading' ? '제출 중...' : '업로드'}
+                      </button>
+                    )}
+                  </div>
+                </div>
               </>
             )}
           </>
@@ -550,22 +650,16 @@ function StatusBanner({
   status,
   profileId,
   rejectionReason,
-  submitState,
-  submitError,
-  onSubmitForReview,
 }: {
   status: string;
   profileId: string | null;
   rejectionReason: string | null;
-  submitState: 'default' | 'loading' | 'done';
-  submitError: string;
-  onSubmitForReview: () => void;
 }) {
   if (status === 'draft' || status === 'rejected') {
     const isRejected = status === 'rejected';
     return (
       <div
-        className={`p-4 rounded-lg border space-y-3 ${
+        className={`p-4 rounded-lg border space-y-2 ${
           isRejected ? 'bg-red-50 border-red-200' : 'bg-orange-50 border-orange-200'
         }`}
       >
@@ -578,26 +672,9 @@ function StatusBanner({
           </p>
         )}
         <p className="text-xs text-gray-600">
-          아래 섹션을 채운 뒤 제출하면 관리자 검토를 거쳐 프로필이 공개됩니다. 제출하려면
-          프로필 사진과, 경력 또는 자격/면허 중 최소 1개가 필요합니다.
+          아래 섹션을 채운 뒤 맨 아래 "업로드" 버튼을 누르면 관리자 검토를 거쳐 프로필이 공개됩니다.
+          업로드하려면 프로필 사진과, 경력 또는 자격/면허 중 최소 1개가 필요합니다.
         </p>
-        {submitState === 'done' ? (
-          <p className="text-sm text-green-700 font-medium">
-            ✓ 제출되었습니다! 관리자 검토 후 공개됩니다.
-          </p>
-        ) : (
-          <>
-            {submitError && <p className="text-sm text-red-700">{submitError}</p>}
-            <button
-              type="button"
-              onClick={onSubmitForReview}
-              disabled={submitState === 'loading'}
-              className="min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              {submitState === 'loading' ? '제출 중...' : isRejected ? '다시 제출하기' : '제출하기'}
-            </button>
-          </>
-        )}
       </div>
     );
   }

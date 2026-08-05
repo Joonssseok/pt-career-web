@@ -13,12 +13,32 @@ export const dynamic = 'force-dynamic';
 // 10_DECISION_LOG.md (2026-07-28): 출시(2026-10) 시점까지 전문가 프로필 10명 내외가 1차 목표.
 const LAUNCH_TARGET_PUBLIC_PROFILES = 10;
 
+type ProfessionRef = { name: string; slug: string };
+
 type PendingProfile = {
   id: string;
   display_name: string | null;
-  profession: string | null;
   submitted_at: string | null;
+  profile_professions: {
+    custom_label: string | null;
+    display_order: number;
+    // supabase-js의 조인 타입 추론이 to-one FK를 배열로 볼 때가 있어 둘 다 수용
+    professions: ProfessionRef | ProfessionRef[] | null;
+  }[];
 };
+
+// custom 슬롯은 custom_label을, 그 외에는 참조 테이블 name을 표시한다
+// (public 뷰의 CASE 처리와 동일한 규칙).
+function professionNames(p: PendingProfile): string {
+  const names = [...p.profile_professions]
+    .sort((a, b) => a.display_order - b.display_order)
+    .map((pp) => {
+      const ref = Array.isArray(pp.professions) ? pp.professions[0] : pp.professions;
+      return ref?.slug === 'custom' ? pp.custom_label : ref?.name;
+    })
+    .filter(Boolean);
+  return names.length > 0 ? names.join(' · ') : '직군 미입력';
+}
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
@@ -40,7 +60,7 @@ export default async function AdminDashboardPage() {
   const [{ data, error }, statsResult, kpisResult, adminsResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, display_name, profession, submitted_at')
+      .select('id, display_name, submitted_at, profile_professions(custom_label, display_order, professions(name, slug))')
       .eq('verification_status', 'pending')
       .order('submitted_at', { ascending: true }),
     getAdminDashboardStats(),
@@ -48,7 +68,7 @@ export default async function AdminDashboardPage() {
     getAdminUsersList(),
   ]);
 
-  const pending = (data ?? []) as PendingProfile[];
+  const pending = (data ?? []) as unknown as PendingProfile[];
   const stats = statsResult.ok ? statsResult.stats : null;
   const kpis = kpisResult.ok ? kpisResult.kpis : null;
   const admins = adminsResult.ok ? adminsResult.admins : [];
@@ -129,7 +149,7 @@ export default async function AdminDashboardPage() {
               >
                 <div>
                   <p className="font-medium text-gray-900">{p.display_name ?? '이름 미입력'}</p>
-                  <p className="text-sm text-gray-500">{p.profession ?? '직군 미입력'}</p>
+                  <p className="text-sm text-gray-500">{professionNames(p)}</p>
                 </div>
                 <div className="text-xs text-gray-400">
                   {p.submitted_at ? new Date(p.submitted_at).toLocaleDateString('ko-KR') : ''}

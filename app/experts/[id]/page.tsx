@@ -21,7 +21,9 @@ const ACADEMIC_LEVEL_LABELS: Record<string, string> = {
 type ExpertDetail = {
   id: string;
   display_name: string | null;
-  profession: string | null;
+  // display_order 순(첫 번째 = 대표 직군). custom 슬롯은 name에 자유입력
+  // 라벨이 이미 치환돼 내려온다(뷰의 CASE 처리).
+  professions: { slug: string; name: string; is_primary: boolean }[];
   headline: string | null;
   introduction: string | null;
   total_experience_years: number | null;
@@ -92,7 +94,8 @@ export async function generateMetadata({
     return {};
   }
 
-  const title = [expert.display_name, expert.profession].filter(Boolean).join(' · ') || 'PT Career 전문가';
+  const professionNames = expert.professions.map((p) => p.name).join(' · ');
+  const title = [expert.display_name, professionNames].filter(Boolean).join(' · ') || 'PT Career 전문가';
   const description =
     expert.headline ?? '경력과 자격으로 검증된 물리치료사, 트레이너, 재활 전문가를 찾아보세요.';
   const imageUrl = getProfilePhotoUrl(expert.profile_image_path);
@@ -166,8 +169,10 @@ export default async function ExpertDetailPage({
             <h1 className="text-page-title font-bold text-gray-900">
               {expert.display_name ?? '이름 미공개'}
             </h1>
-            {expert.profession && (
-              <p className="text-sm text-gray-500">{expert.profession}</p>
+            {expert.professions.length > 0 && (
+              <p className="text-sm text-gray-500">
+                {expert.professions.map((p) => p.name).join(' · ')}
+              </p>
             )}
             {expert.headline && (
               <p className="text-sm text-gray-700 mt-1">{expert.headline}</p>

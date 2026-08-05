@@ -9,7 +9,6 @@ import {
   submitProfile,
 } from '@/app/actions/profile';
 import { agreeToTerms, getOwnTermsAgreedAt } from '@/app/actions/terms';
-import { OFFICIAL_PROFESSIONS } from '@/lib/constants/professions';
 import { createClient } from '@/lib/supabase/client';
 import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
 import AcademicSection from '@/components/profile-sections/AcademicSection';
@@ -17,6 +16,7 @@ import ExperienceSection from '@/components/profile-sections/ExperienceSection';
 import EducationSection from '@/components/profile-sections/EducationSection';
 import CertificationSection from '@/components/profile-sections/CertificationSection';
 import WorkplaceSection from '@/components/profile-sections/WorkplaceSection';
+import ProfessionSection from '@/components/profile-sections/ProfessionSection';
 import SpecialtySection from '@/components/profile-sections/SpecialtySection';
 import GallerySection from '@/components/profile-sections/GallerySection';
 import type { SectionSaveHandle } from '@/components/profile-sections/types';
@@ -73,12 +73,12 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
   const educationRef = useRef<SectionSaveHandle>(null);
   const certificationRef = useRef<SectionSaveHandle>(null);
   const workplaceRef = useRef<SectionSaveHandle>(null);
+  const professionRef = useRef<SectionSaveHandle>(null);
   const specialtyRef = useRef<SectionSaveHandle>(null);
   const galleryRef = useRef<SectionSaveHandle>(null);
 
   const [formData, setFormData] = useState({
     displayName: '',
-    profession: '',
     bio: '',
     description: '',
     profileImagePath: '',
@@ -97,7 +97,6 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
     const p = result.profile;
     setFormData({
       displayName: p.display_name ?? '',
-      profession: p.profession ?? '',
       bio: p.headline ?? '',
       description: p.introduction ?? '',
       profileImagePath: p.profile_image_path ?? '',
@@ -151,8 +150,6 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
       setSubmitState('default');
     }
   };
-
-  const professions = OFFICIAL_PROFESSIONS;
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -227,10 +224,6 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
       newErrors.displayName = '이름은 50자 이내여야 합니다';
     }
 
-    if (!formData.profession) {
-      newErrors.profession = '직군을 선택해주세요';
-    }
-
     if (formData.bio.length > 100) {
       newErrors.bio = '한 줄 소개는 100자 이내여야 합니다';
     }
@@ -257,7 +250,6 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
 
     const result = await saveOwnProfile({
       displayName: formData.displayName,
-      profession: formData.profession,
       bio: formData.bio,
       description: formData.description,
       profileImagePath: formData.profileImagePath,
@@ -289,7 +281,6 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
     } else {
       const basicResult = await saveOwnProfile({
         displayName: formData.displayName,
-        profession: formData.profession,
         bio: formData.bio,
         description: formData.description,
         profileImagePath: formData.profileImagePath,
@@ -310,6 +301,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
       { label: '교육', ref: educationRef },
       { label: '자격·면허', ref: certificationRef },
       { label: '근무기관', ref: workplaceRef },
+      { label: '직군', ref: professionRef },
       { label: '전문분야', ref: specialtyRef },
       { label: '상세정보 이미지', ref: galleryRef },
     ];
@@ -482,28 +474,6 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                           )}
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-900 mb-2">
-                            직군 <span className="text-red-500">*</span>
-                          </label>
-                          <select
-                            name="profession"
-                            value={formData.profession}
-                            onChange={handleChange}
-                            disabled={formState === 'loading'}
-                            className={getInputClass('profession')}
-                          >
-                            <option value="">직군을 선택해주세요</option>
-                            {professions.map((prof) => (
-                              <option key={prof} value={prof}>
-                                {prof}
-                              </option>
-                            ))}
-                          </select>
-                          {errors.profession && (
-                            <p className="text-xs text-red-500 mt-1">{errors.profession}</p>
-                          )}
-                        </div>
                       </div>
                     </div>
 
@@ -545,6 +515,13 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                       {formState === 'loading' ? '저장 중...' : '기본 정보 저장'}
                     </button>
                   </form>
+
+                  <div className="pt-5 border-t border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                      직군 <span className="text-red-500">*</span>
+                    </h3>
+                    <ProfessionSection ref={professionRef} />
+                  </div>
 
                   <div className="pt-5 border-t border-gray-100">
                     <h3 className="text-sm font-semibold text-gray-900 mb-3">전문분야</h3>

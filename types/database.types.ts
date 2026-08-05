@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -39,6 +34,73 @@ export type Database = {
   }
   public: {
     Tables: {
+      academic_records: {
+        Row: {
+          created_at: string
+          degree: string | null
+          display_order: number
+          end_date: string | null
+          id: string
+          level: string
+          major: string | null
+          owner_visible: boolean
+          profile_id: string
+          school_name: string
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          degree?: string | null
+          display_order?: number
+          end_date?: string | null
+          id?: string
+          level: string
+          major?: string | null
+          owner_visible?: boolean
+          profile_id: string
+          school_name: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          degree?: string | null
+          display_order?: number
+          end_date?: string | null
+          id?: string
+          level?: string
+          major?: string | null
+          owner_visible?: boolean
+          profile_id?: string
+          school_name?: string
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "academic_records_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "academic_records_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_expert_detail"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "academic_records_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_expert_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_actions: {
         Row: {
           action_type: string
@@ -135,7 +197,9 @@ export type Database = {
           education_name: string
           id: string
           organization_name: string | null
+          owner_visible: boolean
           profile_id: string
+          start_date: string | null
           updated_at: string
         }
         Insert: {
@@ -146,7 +210,9 @@ export type Database = {
           education_name: string
           id?: string
           organization_name?: string | null
+          owner_visible?: boolean
           profile_id: string
+          start_date?: string | null
           updated_at?: string
         }
         Update: {
@@ -157,7 +223,9 @@ export type Database = {
           education_name?: string
           id?: string
           organization_name?: string | null
+          owner_visible?: boolean
           profile_id?: string
+          start_date?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -193,6 +261,8 @@ export type Database = {
           id: string
           is_current: boolean
           organization_name: string
+          owner_visible: boolean
+          period_visible: boolean
           position: string | null
           profile_id: string
           start_date: string | null
@@ -206,6 +276,8 @@ export type Database = {
           id?: string
           is_current?: boolean
           organization_name: string
+          owner_visible?: boolean
+          period_visible?: boolean
           position?: string | null
           profile_id: string
           start_date?: string | null
@@ -219,6 +291,8 @@ export type Database = {
           id?: string
           is_current?: boolean
           organization_name?: string
+          owner_visible?: boolean
+          period_visible?: boolean
           position?: string | null
           profile_id?: string
           start_date?: string | null
@@ -259,6 +333,7 @@ export type Database = {
           issuing_organization: string | null
           license_name: string
           license_number_encrypted: string | null
+          owner_visible: boolean
           profile_id: string
           updated_at: string
           verification_status: string
@@ -273,6 +348,7 @@ export type Database = {
           issuing_organization?: string | null
           license_name: string
           license_number_encrypted?: string | null
+          owner_visible?: boolean
           profile_id: string
           updated_at?: string
           verification_status?: string
@@ -287,6 +363,7 @@ export type Database = {
           issuing_organization?: string | null
           license_name?: string
           license_number_encrypted?: string | null
+          owner_visible?: boolean
           profile_id?: string
           updated_at?: string
           verification_status?: string
@@ -315,11 +392,150 @@ export type Database = {
           },
         ]
       }
+      professions: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      profile_gallery_images: {
+        Row: {
+          caption: string | null
+          created_at: string
+          display_order: number
+          id: string
+          image_path: string
+          owner_visible: boolean
+          profile_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_path: string
+          owner_visible?: boolean
+          profile_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_path?: string
+          owner_visible?: boolean
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_gallery_images_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_gallery_images_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_expert_detail"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_gallery_images_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_expert_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profile_professions: {
+        Row: {
+          created_at: string
+          custom_label: string | null
+          display_order: number
+          is_primary: boolean
+          owner_visible: boolean
+          profession_id: string
+          profile_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_label?: string | null
+          display_order?: number
+          is_primary?: boolean
+          owner_visible?: boolean
+          profession_id: string
+          profile_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_label?: string | null
+          display_order?: number
+          is_primary?: boolean
+          owner_visible?: boolean
+          profession_id?: string
+          profile_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_professions_profession_id_fkey"
+            columns: ["profession_id"]
+            isOneToOne: false
+            referencedRelation: "professions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_professions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_professions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_expert_detail"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_professions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "public_expert_list"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profile_specialties: {
         Row: {
           created_at: string
           display_order: number
           is_primary: boolean
+          owner_visible: boolean
           profile_id: string
           specialty_id: string
         }
@@ -327,6 +543,7 @@ export type Database = {
           created_at?: string
           display_order?: number
           is_primary?: boolean
+          owner_visible?: boolean
           profile_id: string
           specialty_id: string
         }
@@ -334,6 +551,7 @@ export type Database = {
           created_at?: string
           display_order?: number
           is_primary?: boolean
+          owner_visible?: boolean
           profile_id?: string
           specialty_id?: string
         }
@@ -372,15 +590,18 @@ export type Database = {
         Row: {
           approved_at: string | null
           created_at: string
+          deletion_requested_at: string | null
           display_name: string | null
+          experience_period_visible: boolean
           headline: string | null
           id: string
           introduction: string | null
           is_public: boolean
-          profession: string | null
+          owner_visible: boolean
           profile_image_path: string | null
           region: string | null
           submitted_at: string | null
+          terms_agreed_at: string | null
           total_experience_years: number | null
           updated_at: string
           user_id: string
@@ -389,15 +610,18 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           created_at?: string
+          deletion_requested_at?: string | null
           display_name?: string | null
+          experience_period_visible?: boolean
           headline?: string | null
           id?: string
           introduction?: string | null
           is_public?: boolean
-          profession?: string | null
+          owner_visible?: boolean
           profile_image_path?: string | null
           region?: string | null
           submitted_at?: string | null
+          terms_agreed_at?: string | null
           total_experience_years?: number | null
           updated_at?: string
           user_id: string
@@ -406,15 +630,18 @@ export type Database = {
         Update: {
           approved_at?: string | null
           created_at?: string
+          deletion_requested_at?: string | null
           display_name?: string | null
+          experience_period_visible?: boolean
           headline?: string | null
           id?: string
           introduction?: string | null
           is_public?: boolean
-          profession?: string | null
+          owner_visible?: boolean
           profile_image_path?: string | null
           region?: string | null
           submitted_at?: string | null
+          terms_agreed_at?: string | null
           total_experience_years?: number | null
           updated_at?: string
           user_id?: string
@@ -507,6 +734,7 @@ export type Database = {
           is_location_public: boolean
           latitude: number | null
           longitude: number | null
+          owner_visible: boolean
           phone: string | null
           profile_id: string
           region: string | null
@@ -524,6 +752,7 @@ export type Database = {
           is_location_public?: boolean
           latitude?: number | null
           longitude?: number | null
+          owner_visible?: boolean
           phone?: string | null
           profile_id: string
           region?: string | null
@@ -541,6 +770,7 @@ export type Database = {
           is_location_public?: boolean
           latitude?: number | null
           longitude?: number | null
+          owner_visible?: boolean
           phone?: string | null
           profile_id?: string
           region?: string | null
@@ -551,21 +781,21 @@ export type Database = {
           {
             foreignKeyName: "workplaces_profile_id_fkey"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "workplaces_profile_id_fkey"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "public_expert_detail"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "workplaces_profile_id_fkey"
             columns: ["profile_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "public_expert_list"
             referencedColumns: ["id"]
           },
@@ -575,6 +805,7 @@ export type Database = {
     Views: {
       public_expert_detail: {
         Row: {
+          academic_records: Json | null
           display_name: string | null
           educations: Json | null
           experiences: Json | null
@@ -582,11 +813,17 @@ export type Database = {
           id: string | null
           introduction: string | null
           licenses: Json | null
-          profession: string | null
+          professions: Json | null
           profile_image_path: string | null
           specialties: Json | null
           total_experience_years: number | null
+          workplace_address: string | null
+          workplace_address_detail: string | null
           workplace_center_name: string | null
+          workplace_external_contact_url: string | null
+          workplace_latitude: number | null
+          workplace_longitude: number | null
+          workplace_phone: string | null
           workplace_region: string | null
           workplace_website_url: string | null
         }
@@ -597,7 +834,7 @@ export type Database = {
           display_name: string | null
           headline: string | null
           id: string | null
-          profession: string | null
+          professions: Json | null
           profile_image_path: string | null
           specialties: Json | null
           total_experience_years: number | null
@@ -608,7 +845,72 @@ export type Database = {
       }
     }
     Functions: {
+      cancel_account_deletion: {
+        Args: never
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      get_admin_audit_log: {
+        Args: {
+          p_action_type?: string
+          p_admin_user_id?: string
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_to?: string
+        }
+        Returns: {
+          action_type: string
+          admin_email: string
+          admin_user_id: string
+          created_at: string
+          id: string
+          memo: string
+          target_display_name: string
+          target_license_name: string
+          target_profile_id: string
+        }[]
+      }
+      get_admin_dashboard_stats: {
+        Args: never
+        Returns: {
+          approved_count: number
+          draft_count: number
+          pending_count: number
+          public_count: number
+          rejected_count: number
+          total_signups: number
+        }[]
+      }
+      get_admin_review_kpis: {
+        Args: never
+        Returns: {
+          approved_count: number
+          avg_processing_hours: number
+          pending_count: number
+          rejected_count: number
+        }[]
+      }
+      get_admin_users_list: {
+        Args: never
+        Returns: {
+          email: string
+          role: string
+          user_id: string
+        }[]
+      }
       get_own_rejection_reason: { Args: never; Returns: string }
+      get_public_licenses: {
+        Args: { p_profile_id: string }
+        Returns: {
+          acquired_date: string
+          category: string
+          issuing_organization: string
+          license_name: string
+        }[]
+      }
       is_admin: { Args: { user_id?: string }; Returns: boolean }
       is_profile_public_approved: {
         Args: { profile_id: string }
@@ -618,8 +920,22 @@ export type Database = {
         Args: { p_user_id: string }
         Returns: boolean
       }
+      replace_profile_professions: {
+        Args: { p_professions: Json }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
       replace_profile_specialties: {
-        Args: { p_specialty_ids: string[] }
+        Args: { p_specialties: Json }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      request_account_deletion: {
+        Args: never
         Returns: {
           error: string
           ok: boolean
@@ -636,12 +952,53 @@ export type Database = {
           ok: boolean
         }[]
       }
+      review_license: {
+        Args: { p_decision: string; p_license_id: string; p_memo?: string }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      save_own_academic_records: {
+        Args: { p_records: Json }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      save_own_educations: {
+        Args: { p_educations: Json }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      save_own_experiences: {
+        Args: { p_experiences: Json }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      save_own_gallery_images: {
+        Args: { p_images: Json }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      save_own_licenses: {
+        Args: { p_licenses: Json }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
       save_own_profile: {
         Args: {
           p_display_name: string
           p_headline: string
           p_introduction: string
-          p_profession: string
           p_profile_image_path: string
         }
         Returns: {
@@ -661,7 +1018,7 @@ export type Database = {
           display_name: string | null
           headline: string | null
           id: string | null
-          profession: string | null
+          professions: Json | null
           profile_image_path: string | null
           specialties: Json | null
           total_experience_years: number | null
@@ -674,6 +1031,69 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      set_own_academic_record_visibility: {
+        Args: { p_record_id: string; p_visible: boolean }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      set_own_education_visibility: {
+        Args: { p_education_id: string; p_visible: boolean }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      set_own_experience_period_visibility: {
+        Args: { p_visible: boolean }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      set_own_experience_visibility: {
+        Args: { p_experience_id: string; p_visible: boolean }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      set_own_gallery_image_visibility: {
+        Args: { p_image_id: string; p_visible: boolean }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      set_own_license_visibility: {
+        Args: { p_license_id: string; p_visible: boolean }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      set_own_profile_visibility: {
+        Args: { p_visible: boolean }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      set_own_specialty_visibility: {
+        Args: { p_specialty_id: string; p_visible: boolean }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
+      }
+      set_own_workplace_visibility: {
+        Args: { p_visible: boolean }
+        Returns: {
+          error: string
+          ok: boolean
+        }[]
       }
       submit_profile: {
         Args: never
@@ -817,3 +1237,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

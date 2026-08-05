@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { OFFICIAL_PROFESSIONS } from '@/lib/constants/professions';
 import { REGIONS } from '@/lib/constants/regions';
 
 type Specialty = { id: string; name: string; slug: string };
+type Profession = { id: string; name: string; slug: string };
 
-export function ExpertFilters({ specialties }: { specialties: Specialty[] }) {
+export function ExpertFilters({
+  specialties,
+  professions,
+}: {
+  specialties: Specialty[];
+  professions: Profession[];
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -59,11 +65,14 @@ export function ExpertFilters({ specialties }: { specialties: Specialty[] }) {
         aria-label="직군 필터"
       >
         <option value="">전체 직군</option>
-        {OFFICIAL_PROFESSIONS.map((p) => (
-          <option key={p} value={p}>
-            {p}
-          </option>
-        ))}
+        {/* custom(직접 입력) 슬롯은 고정 카테고리가 아니므로 필터에서 제외 */}
+        {professions
+          .filter((p) => p.slug !== 'custom')
+          .map((p) => (
+            <option key={p.id} value={p.slug}>
+              {p.name}
+            </option>
+          ))}
       </select>
 
       <select

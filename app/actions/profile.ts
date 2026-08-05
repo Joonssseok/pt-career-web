@@ -20,7 +20,7 @@ export async function getOwnProfile() {
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id, display_name, profession, headline, introduction, profile_image_path, verification_status, owner_visible')
+    .select('id, display_name, headline, introduction, profile_image_path, verification_status, owner_visible')
     .eq('id', profileId)
     .maybeSingle();
 
@@ -34,7 +34,6 @@ export async function getOwnProfile() {
 
 export async function saveOwnProfile(data: {
   displayName: string;
-  profession: string;
   bio: string;
   description: string;
   profileImagePath: string;
@@ -42,9 +41,10 @@ export async function saveOwnProfile(data: {
   try {
     const supabase = await createClient();
 
+    // 직군은 이제 replace_profile_professions RPC로 별도 저장된다
+    // (전문분야가 save_own_profile과 분리돼 있는 것과 동일한 구조).
     const { data: result, error } = await supabase.rpc('save_own_profile', {
       p_display_name: data.displayName,
-      p_profession: data.profession,
       p_headline: data.bio,
       p_introduction: data.description,
       p_profile_image_path: data.profileImagePath || null,

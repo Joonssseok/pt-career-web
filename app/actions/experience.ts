@@ -29,7 +29,7 @@ export async function getOwnExperiences() {
 
   const { data, error } = await supabase
     .from('experiences')
-    .select('id, organization_name, position, start_date, end_date, is_current, owner_visible')
+    .select('id, organization_name, position, start_date, end_date, is_current, owner_visible, period_visible')
     .eq('profile_id', profile.id)
     .order('display_order');
 
@@ -50,6 +50,7 @@ export async function getOwnExperiences() {
       endDate: exp.end_date?.slice(0, 7) ?? '',
       isCurrently: exp.is_current,
       ownerVisible: exp.owner_visible,
+      periodVisible: exp.period_visible,
     })),
     periodVisible: profile.experience_period_visible,
   };
@@ -64,6 +65,7 @@ export async function saveExperience(data: {
     endDate?: string;
     isCurrentlyWorking: boolean;
     ownerVisible?: boolean;
+    periodVisible?: boolean;
   }>;
 }) {
   try {
@@ -91,6 +93,9 @@ export async function saveExperience(data: {
         end_date: exp.isCurrentlyWorking ? null : exp.endDate ? `${exp.endDate}-01` : null,
         is_current: exp.isCurrentlyWorking,
         owner_visible: exp.ownerVisible ?? true,
+        // save_own_experiences는 전체 DELETE+INSERT라, 이 값을 누락하면 저장할
+        // 때마다 항목별 기간 표시 설정이 기본값(true)으로 리셋된다.
+        period_visible: exp.periodVisible ?? true,
       })),
     });
 

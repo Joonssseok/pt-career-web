@@ -19,6 +19,9 @@ type Experience = {
   endDate: string;
   isCurrently: boolean;
   ownerVisible: boolean;
+  // 이 항목의 근무기간을 공개 프로필에 표시할지. 마스터 토글(periodVisible)이
+  // 켜져 있을 때만 유효하다(최종 노출 = 마스터 AND 항목별).
+  periodVisible: boolean;
 };
 
 type Props = {
@@ -80,6 +83,7 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
     startDate: '',
     endDate: '',
     isCurrently: false,
+    periodVisible: true,
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<typeof newExperience | null>(null);
@@ -100,6 +104,7 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
         startDate: '',
         endDate: '',
         isCurrently: false,
+        periodVisible: true,
       });
     }
   };
@@ -112,6 +117,7 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
       startDate: exp.startDate,
       endDate: exp.endDate,
       isCurrently: exp.isCurrently,
+      periodVisible: exp.periodVisible,
     });
   };
 
@@ -146,6 +152,7 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
         endDate: exp.endDate,
         isCurrentlyWorking: exp.isCurrently,
         ownerVisible: exp.ownerVisible,
+        periodVisible: exp.periodVisible,
       })),
     });
     return result.ok ? { ok: true } : { ok: false, error: result.error };
@@ -231,19 +238,43 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
           </div>
         </div>
 
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={newExperience.isCurrently}
-            onChange={(e) =>
-              setNewExperience({
-                ...newExperience,
-                isCurrently: e.target.checked,
-              })
-            }
-          />
-          <span className="text-sm text-gray-700">현재 근무 중</span>
-        </label>
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={newExperience.isCurrently}
+              onChange={(e) =>
+                setNewExperience({
+                  ...newExperience,
+                  isCurrently: e.target.checked,
+                })
+              }
+            />
+            <span className="text-sm text-gray-700">현재 근무 중</span>
+          </label>
+
+          {/* 항목별 기간 표시 -- 마스터 토글이 꺼져 있으면 잠긴다(통합형).
+              profileOwnerVisible이 꺼졌을 때 VisibilityToggle이 disabled되는
+              기존 패턴과 동일한 방식. */}
+          <label
+            className={`flex items-center gap-2 ${
+              !profileOwnerVisible || !periodVisible ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={newExperience.periodVisible}
+              disabled={!profileOwnerVisible || !periodVisible}
+              onChange={(e) =>
+                setNewExperience({
+                  ...newExperience,
+                  periodVisible: e.target.checked,
+                })
+              }
+            />
+            <span className="text-sm text-gray-700">근무기간 표시</span>
+          </label>
+        </div>
 
         <button
           type="button"
@@ -287,6 +318,26 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
                     className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
                     placeholder="직책"
                   />
+                  <label
+                    className={`flex items-center gap-2 ${
+                      !profileOwnerVisible || !periodVisible
+                        ? 'cursor-not-allowed opacity-50'
+                        : 'cursor-pointer'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={editForm?.periodVisible ?? true}
+                      disabled={!profileOwnerVisible || !periodVisible}
+                      onChange={(e) =>
+                        setEditForm({
+                          ...editForm!,
+                          periodVisible: e.target.checked,
+                        })
+                      }
+                    />
+                    <span className="text-sm text-gray-700">근무기간 표시</span>
+                  </label>
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -317,6 +368,34 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
                           ? ` ~ ${exp.endDate.substring(0, 7)}`
                           : ' ~ 현재'}
                       </p>
+                      {/* 항목별 기간 표시 -- 여기서 바꾼 값은 "임시저장" 시 함께
+                          저장된다. 마스터 토글이 꺼져 있으면 잠긴다(통합형). */}
+                      <label
+                        className={`mt-2 flex items-center gap-2 ${
+                          !profileOwnerVisible || !periodVisible
+                            ? 'cursor-not-allowed opacity-50'
+                            : 'cursor-pointer'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={exp.periodVisible}
+                          disabled={!profileOwnerVisible || !periodVisible}
+                          onChange={(e) =>
+                            setExperiences((prev) =>
+                              prev.map((item) =>
+                                item.id === exp.id
+                                  ? { ...item, periodVisible: e.target.checked }
+                                  : item
+                              )
+                            )
+                          }
+                        />
+                        <span className="text-xs text-gray-600">
+                          근무기간 표시
+                          {!periodVisible && ' (섹션 전체 근무기간 공개가 꺼져 있어 적용되지 않음)'}
+                        </span>
+                      </label>
                     </div>
                     <div className="flex items-center gap-2">
                       <VisibilityToggle

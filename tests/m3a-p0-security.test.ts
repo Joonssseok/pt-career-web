@@ -101,7 +101,7 @@ describe('M3-A P0 Security', () => {
 
     it('cannot call save_own_profile RPC', async () => {
       const { data, error } = await anonClient.rpc('save_own_profile', {
-        p_display_name: 'x', p_profession: null, p_headline: null, p_introduction: null, p_profile_image_path: null,
+        p_display_name: 'x', p_headline: null, p_introduction: null, p_profile_image_path: null,
       });
       expect(error).not.toBeNull();
       expect(data).toBeNull();
@@ -144,19 +144,55 @@ describe('M3-A P0 Security', () => {
       expect(leaked).toEqual([]);
     });
 
-    it('save_own_profile updates allowed fields and rejects an invalid profession', async () => {
+    it('save_own_profile updates allowed fields', async () => {
       const ok = await ownerClient.rpc('save_own_profile', {
-        p_display_name: 'Owner Updated', p_profession: '필라테스 강사',
+        p_display_name: 'Owner Updated',
         p_headline: 'h', p_introduction: 'i', p_profile_image_path: '/img.jpg',
       });
       expect(ok.error).toBeNull();
       expect(ok.data?.[0]?.ok).toBe(true);
+    });
 
-      const bad = await ownerClient.rpc('save_own_profile', {
-        p_display_name: 'Owner Updated', p_profession: '없는직군',
-        p_headline: 'h', p_introduction: 'i', p_profile_image_path: '/img.jpg',
+    // 직군은 이제 profiles.profession(CHECK 제약)이 아니라
+    // professions/profile_professions + replace_profile_professions RPC로 관리된다.
+    it('replace_profile_professions saves multi-select and validates the custom slot', async () => {
+      const { data: profs, error: profsErr } = await ownerClient
+        .from('professions')
+        .select('id, slug');
+      expect(profsErr).toBeNull();
+      const pt = profs!.find((p) => p.slug === 'physical-therapist')!;
+      const custom = profs!.find((p) => p.slug === 'custom')!;
+
+      // 공식 직군 1개 + 자유입력 슬롯(라벨 포함) → 성공
+      const ok = await ownerClient.rpc('replace_profile_professions', {
+        p_professions: [
+          { profession_id: pt.id },
+          { profession_id: custom.id, custom_label: '영상사' },
+        ],
       });
-      expect(bad.data?.[0]?.ok).toBe(false);
+      expect(ok.error).toBeNull();
+      expect(ok.data?.[0]?.ok).toBe(true);
+
+      // 자유입력 슬롯을 선택했는데 라벨이 없으면 실패
+      const noLabel = await ownerClient.rpc('replace_profile_professions', {
+        p_professions: [{ profession_id: custom.id }],
+      });
+      expect(noLabel.data?.[0]?.ok).toBe(false);
+
+      // 최대 5개 초과(시드 7개 전부) → 실패
+      const tooMany = await ownerClient.rpc('replace_profile_professions', {
+        p_professions: profs!.map((p) => ({
+          profession_id: p.id,
+          ...(p.slug === 'custom' ? { custom_label: 'x' } : {}),
+        })),
+      });
+      expect(tooMany.data?.[0]?.ok).toBe(false);
+
+      // 중복 profession_id → 실패
+      const dup = await ownerClient.rpc('replace_profile_professions', {
+        p_professions: [{ profession_id: pt.id }, { profession_id: pt.id }],
+      });
+      expect(dup.data?.[0]?.ok).toBe(false);
     });
 
     it('owner cannot directly UPDATE verification_status/is_public/approved_at on profiles', async () => {

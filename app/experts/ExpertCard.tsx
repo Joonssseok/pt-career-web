@@ -5,7 +5,9 @@ import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
 export type ExpertListItem = {
   id: string;
   display_name: string | null;
-  profession: string | null;
+  // display_order 순(첫 번째 = 대표 직군). custom 슬롯은 name에 자유입력
+  // 라벨이 이미 치환돼 내려온다(뷰의 CASE 처리).
+  professions: { slug: string; name: string; is_primary: boolean }[];
   headline: string | null;
   total_experience_years: number | null;
   profile_image_path: string | null;
@@ -39,8 +41,10 @@ export function ExpertCard({ expert }: { expert: ExpertListItem }) {
           <h3 className="font-semibold text-gray-900 truncate">
             {expert.display_name ?? '이름 미공개'}
           </h3>
-          {expert.profession && (
-            <span className="text-xs text-gray-500">{expert.profession}</span>
+          {expert.professions.length > 0 && (
+            <span className="text-xs text-gray-500">
+              {expert.professions.map((p) => p.name).join(' · ')}
+            </span>
           )}
         </div>
 

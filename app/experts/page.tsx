@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { getSpecialties } from '@/app/actions/specialties';
+import { getProfessions } from '@/app/actions/professions';
 import { type ExpertListItem } from './ExpertCard';
 import { ExpertFilters } from './ExpertFilters';
 import { LoadMoreExperts, EXPERTS_PAGE_SIZE } from './LoadMoreExperts';
@@ -105,7 +106,11 @@ export default function ExpertsPage({ searchParams }: { searchParams: SearchPara
 }
 
 async function FiltersWithData() {
-  const result = await getSpecialties();
-  const specialties = result.ok ? result.specialties : [];
-  return <ExpertFilters specialties={specialties} />;
+  const [specialtiesResult, professionsResult] = await Promise.all([
+    getSpecialties(),
+    getProfessions(),
+  ]);
+  const specialties = specialtiesResult.ok ? specialtiesResult.specialties : [];
+  const professions = professionsResult.ok ? professionsResult.professions : [];
+  return <ExpertFilters specialties={specialties} professions={professions} />;
 }

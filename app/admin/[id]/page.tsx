@@ -46,6 +46,7 @@ export default async function AdminProfileDetailPage({
     { data: educations },
     { data: licenses },
     { data: specialtyLinks },
+    { data: professionLinks },
   ] = await Promise.all([
     supabase.from('workplaces').select('*').eq('profile_id', id).maybeSingle(),
     supabase.from('experiences').select('*').eq('profile_id', id).order('display_order'),
@@ -56,7 +57,24 @@ export default async function AdminProfileDetailPage({
       .select('is_primary, specialties(name)')
       .eq('profile_id', id)
       .order('display_order'),
+    supabase
+      .from('profile_professions')
+      .select('custom_label, is_primary, professions(name, slug)')
+      .eq('profile_id', id)
+      .order('display_order'),
   ]);
+
+  // custom 슬롯은 custom_label을, 그 외에는 참조 테이블 name을 표시한다
+  // (public 뷰의 CASE 처리와 동일한 규칙). supabase-js의 조인 타입 추론이
+  // to-one FK를 배열로 볼 때가 있어 둘 다 수용한다.
+  const professionText =
+    (professionLinks ?? [])
+      .map((pp) => {
+        const ref = Array.isArray(pp.professions) ? pp.professions[0] : pp.professions;
+        return ref?.slug === 'custom' ? pp.custom_label : ref?.name;
+      })
+      .filter(Boolean)
+      .join(' · ') || null;
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -85,7 +103,7 @@ export default async function AdminProfileDetailPage({
             <h2 className="text-xl font-bold text-gray-900">
               {profile.display_name ?? '이름 미입력'}
             </h2>
-            <p className="text-sm text-gray-500">{profile.profession ?? '직군 미입력'}</p>
+            <p className="text-sm text-gray-500">{professionText ?? '직군 미입력'}</p>
             {profile.headline && <p className="text-sm text-gray-700 mt-1">{profile.headline}</p>}
           </div>
         </div>

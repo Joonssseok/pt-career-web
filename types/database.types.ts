@@ -1011,6 +1011,7 @@ export type Database = {
           p_limit?: number
           p_offset?: number
           p_profession?: string
+          p_query?: string
           p_region?: string
           p_specialty_slug?: string
         }

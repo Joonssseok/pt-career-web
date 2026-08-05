@@ -36,14 +36,16 @@ type SearchParams = Promise<{
   profession?: string;
   region?: string;
   specialty?: string;
+  query?: string;
 }>;
 
 async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
-  const { profession, region, specialty } = await searchParams;
+  const { profession, region, specialty, query } = await searchParams;
   const filters = {
     profession: profession || null,
     region: region || null,
     specialty: specialty || null,
+    query: query || null,
   };
 
   const supabase = await createClient();
@@ -51,6 +53,7 @@ async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
     p_profession: filters.profession,
     p_region: filters.region,
     p_specialty_slug: filters.specialty,
+    p_query: filters.query,
     p_limit: EXPERTS_PAGE_SIZE,
     p_offset: 0,
   });
@@ -75,7 +78,7 @@ async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
 
   return (
     <LoadMoreExperts
-      key={`${filters.profession}|${filters.region}|${filters.specialty}`}
+      key={`${filters.profession}|${filters.region}|${filters.specialty}|${filters.query}`}
       initialExperts={experts}
       filters={filters}
     />
@@ -89,7 +92,7 @@ export default function ExpertsPage({ searchParams }: { searchParams: SearchPara
         <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
           ← 홈
         </Link>
-        <h1 className="text-lg font-semibold text-gray-900">지역별 전문가 찾기</h1>
+        <h1 className="text-lg font-semibold text-gray-900">전문가 찾기</h1>
       </nav>
 
       <div className="px-4 py-4 sm:px-6 max-w-2xl mx-auto space-y-4">

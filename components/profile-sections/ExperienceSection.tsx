@@ -360,7 +360,11 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
                 <div>
                   <div className="flex items-start justify-between">
                     <div>
-                      <p className="font-medium text-gray-900">{exp.companyName}</p>
+                      {/* 공개 프로필의 (전)/(현) 표기와 일관성 유지 */}
+                      <p className="font-medium text-gray-900">
+                        {exp.isCurrently ? '(현) ' : '(전) '}
+                        {exp.companyName}
+                      </p>
                       <p className="text-sm text-gray-600">{exp.position}</p>
                       <p className="text-xs text-gray-500 mt-1">
                         {exp.startDate && exp.startDate.substring(0, 7)}

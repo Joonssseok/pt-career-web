@@ -25,10 +25,10 @@ const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: "PT Career — 지역별 재활·운동 전문가 찾기",
+  title: "PT Career — 재활·운동 전문가 찾기",
   description: "경력과 자격으로 검증된 물리치료사, 트레이너, 재활 전문가를 찾아보세요.",
   openGraph: {
-    title: "PT Career — 지역별 재활·운동 전문가 찾기",
+    title: "PT Career — 재활·운동 전문가 찾기",
     description: "경력과 자격으로 검증된 물리치료사, 트레이너, 재활 전문가를 찾아보세요.",
     type: "website",
   },

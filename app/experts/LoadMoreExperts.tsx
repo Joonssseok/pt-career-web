@@ -10,6 +10,7 @@ type Filters = {
   profession: string | null;
   region: string | null;
   specialty: string | null;
+  query: string | null;
 };
 
 export function LoadMoreExperts({
@@ -29,10 +30,13 @@ export function LoadMoreExperts({
     setError(false);
 
     const supabase = createClient();
+    // query를 빠뜨리면 "더보기"로 다음 페이지를 불러올 때 검색어 조건이
+    // 사라져 1페이지만 검색되고 2페이지부터 전체 목록이 섞이는 버그가 된다.
     const { data, error: rpcError } = await supabase.rpc('search_public_experts', {
       p_profession: filters.profession,
       p_region: filters.region,
       p_specialty_slug: filters.specialty,
+      p_query: filters.query,
       p_limit: EXPERTS_PAGE_SIZE,
       p_offset: experts.length,
     });

@@ -253,7 +253,14 @@ export default async function ExpertDetailPage({
             <ul className="space-y-2">
               {expert.experiences.map((e, i) => (
                 <li key={i} className="text-sm text-gray-700">
-                  <span className="font-medium text-gray-900">{e.organization_name}</span>
+                  {/* (전)/(현)은 is_current(예/아니오) 기준 -- 항목별 기간 비공개
+                      (period_visible=false)로 날짜가 NULL이어도 그대로 표시한다.
+                      "언제부터 언제까지"와 "지금 다니는 곳인지"는 별개의 정보
+                      (PR #54/#57에서 is_current를 계속 노출한 것과 같은 근거). */}
+                  <span className="font-medium text-gray-900">
+                    {e.is_current ? '(현) ' : '(전) '}
+                    {e.organization_name}
+                  </span>
                   {e.position && <span className="text-gray-500"> · {e.position}</span>}
                   {e.start_date && (
                     <span className="block text-xs text-gray-400">

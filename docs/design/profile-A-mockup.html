@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>PT 프로필 A안</title>
+<style>
+:root{--ink:#111418;--sub:#5b6470;--line:#e8ebef;--bg:#f4f6f8;--blue:#2563eb;--blue-d:#1d4ed8;--green:#16a34a;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif;background:var(--bg);color:var(--ink);padding:22px 14px 60px;}
+.stage{max-width:430px;margin:0 auto;}
+.phone{background:#fff;border-radius:26px;overflow:hidden;box-shadow:0 12px 40px rgba(20,30,50,.14);border:1px solid #eceff3;}
+.muted{color:var(--sub);}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:999px;}
+.hero{position:relative;height:150px;background:linear-gradient(135deg,#1e3a8a,#2563eb 55%,#3b82f6);}
+.back{position:absolute;top:12px;left:12px;color:#fff;font-size:13px;}
+.share{position:absolute;top:12px;right:12px;color:#fff;font-size:13px;}
+.headwrap{padding:0 18px 4px;margin-top:-46px;position:relative;z-index:2;}
+.avatar{width:88px;height:88px;border-radius:22px;border:4px solid #fff;background:#dbe4ff;box-shadow:0 6px 16px rgba(0,0,0,.12);display:block;}
+.name{font-size:21px;font-weight:800;margin-top:12px;}
+.prof{color:var(--sub);font-size:13px;margin-top:3px;}
+.head{font-size:14px;margin-top:8px;line-height:1.55;color:#2b3440;}
+.stats{display:flex;margin:14px 18px 0;border:1px solid var(--line);border-radius:16px;overflow:hidden;}
+.stat{flex:1;text-align:center;padding:12px 3px;} .stat+.stat{border-left:1px solid var(--line);}
+.stat .n{font-size:17px;font-weight:800;color:var(--blue);} .stat .l{font-size:10px;color:var(--sub);margin-top:2px;}
+.cta{display:flex;gap:8px;margin:12px 18px 0;} .cta a{flex:1;text-align:center;padding:13px;border-radius:13px;font-size:14px;font-weight:700;text-decoration:none;}
+.cta .p{background:var(--blue);color:#fff;} .cta .s{background:#eef2ff;color:var(--blue-d);}
+.card{margin:14px 18px 0;border:1px solid var(--line);border-radius:16px;padding:16px;}
+.sec-t{font-size:13px;font-weight:700;display:flex;align-items:center;gap:7px;margin-bottom:12px;} .sec-t .more{margin-left:auto;font-size:11.5px;color:var(--blue);font-weight:600;}
+.tags{display:flex;flex-wrap:wrap;gap:6px;} .tags .chip{background:#eef2ff;color:var(--blue-d);}
+.tl{position:relative;padding-left:20px;} .tl::before{content:"";position:absolute;left:-9px;top:5px;bottom:5px;width:2px;background:var(--line);}
+.tl .item{position:relative;padding-bottom:15px;} .tl .item:last-child{padding-bottom:0;}
+.tl .item::before{content:"";position:absolute;left:-13px;top:4px;width:9px;height:9px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 3px #dbe4ff;}
+.tl .item.cur::before{background:var(--green);box-shadow:0 0 0 3px #dcfce7;}
+.role{font-size:14px;font-weight:700;} .org{font-size:12.5px;color:var(--sub);margin-top:1px;} .when{font-size:11px;color:#9aa3af;margin-top:2px;}
+.badgeC{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:6px;} .now{background:#dcfce7;color:#15803d;} .was{background:#f1f3f6;color:#6b7480;}
+.rowline{padding:9px 0;border-bottom:1px solid var(--line);} .rowline:last-child{border-bottom:0;padding-bottom:0;}
+.rowline .l{font-size:13.5px;font-weight:600;} .rowline .s{font-size:11.5px;color:var(--sub);margin-top:2px;}
+.cert{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);} .cert:last-child{border-bottom:0;}
+.cert .ic{width:34px;height:34px;border-radius:9px;background:#dcfce7;color:#15803d;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.cert .tt{font-size:13px;font-weight:600;} .cert .ss{font-size:11.5px;color:var(--sub);} .verified{margin-left:auto;font-size:10.5px;color:var(--green);font-weight:700;}
+.gal{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;} .gal div{aspect-ratio:1;border-radius:10px;background:linear-gradient(135deg,#e2e8f0,#cbd5e1);}
+.wp-btn{display:flex;gap:8px;margin-top:12px;} .wp-btn a{flex:1;text-align:center;padding:11px;border-radius:11px;font-size:12.5px;font-weight:700;text-decoration:none;background:#eef2ff;color:var(--blue-d);}
+</style></head><body>
+<div class="stage"><div class="phone"><div>
+<div class="hero"><div class="back">← 목록</div><div class="share">공유 ↗</div></div>
+<div class="headwrap"><div class="avatar"></div><div class="name">김도현</div><div class="prof">퍼스널 트레이너 · 재활 트레이너</div><div class="head">"부상 없이, 오래 가는 몸을 만듭니다" — 재활과 근력을 함께 잡는 맞춤 코칭.</div></div>
+<div class="stats"><div class="stat"><div class="n">8년</div><div class="l">경력</div></div><div class="stat"><div class="n">5개</div><div class="l">인증 자격</div></div><div class="stat"><div class="n">강남</div><div class="l">지역</div></div></div>
+<div class="cta"><a class="p" href="#">상담 문의</a><a class="s" href="#">전화 걸기</a></div>
+<div class="card"><div class="sec-t">🎯 전문 분야</div><div class="tags"><span class="chip">체형교정</span><span class="chip">재활운동</span><span class="chip">근력강화</span><span class="chip">다이어트</span><span class="chip">자세분석</span></div></div>
+<div class="card"><div class="sec-t">📝 소개</div><div class="muted" style="font-size:13.5px;line-height:1.7;">부상 이후 다시 운동을 시작하는 분들을 8년간 코칭해왔습니다.</div></div>
+<div class="card"><div class="sec-t">💼 경력</div><div class="tl"><div class="item cur"><div class="role">수석 트레이너<span class="badgeC now">현</span></div><div class="org">피트니스 강남점</div><div class="when">2021.03 ~ 현재</div></div><div class="item"><div class="role">재활 트레이너<span class="badgeC was">전</span></div><div class="org">스포츠재활센터</div><div class="when">2018.01 ~ 2021.02</div></div></div></div>
+<div class="card"><div class="sec-t">🎓 학력</div><div class="rowline"><div class="l">○○대학교 · 운동재활학 학사</div><div class="s">2012.03 ~ 2016.02</div></div></div>
+<div class="card"><div class="sec-t">📚 교육 이수</div><div class="rowline"><div class="l">기능성 트레이닝 심화 과정</div><div class="s">대한피트니스교육원</div></div></div>
+<div class="card"><div class="sec-t">🏅 자격증<span class="verified" style="margin-left:6px;">관리자 인증</span></div><div class="cert"><div class="ic">✓</div><div><div class="tt">생활스포츠지도사 2급</div><div class="ss">문화체육관광부</div></div><div class="verified">인증됨</div></div></div>
+<div class="card"><div class="sec-t">🖼️ 활동 갤러리<span class="more">전체 보기</span></div><div class="gal"><div></div><div></div><div></div><div></div><div></div><div></div></div></div>
+<div class="card" style="margin-bottom:18px;"><div class="sec-t">📍 근무 기관</div><div style="font-size:14px;font-weight:600;">피트니스 강남점</div><div class="muted" style="font-size:12.5px;margin-top:2px;">서울 강남구 테헤란로 123</div><div class="wp-btn"><a href="#">📞 전화</a><a href="#">✉ 문의</a><a href="#">🌐 웹사이트</a></div></div>
+</div></div></div></body></html>

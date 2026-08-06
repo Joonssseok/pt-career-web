@@ -1,22 +1,13 @@
 import Link from 'next/link';
-import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
 import { ShareButton } from './ShareButton';
-import { GalleryCarousel } from '@/components/GalleryCarousel';
-import { GalleryFullScroll } from '@/components/GalleryFullScroll';
+import { ExpertProfileView } from '@/components/experts/ExpertProfileView';
 
 export const dynamic = 'force-dynamic';
-
-const ACADEMIC_LEVEL_LABELS: Record<string, string> = {
-  graduate: '대학원',
-  university: '대학교',
-  high_school: '고등학교',
-  middle_school: '중학교',
-};
 
 type ExpertDetail = {
   id: string;
@@ -142,226 +133,19 @@ export default async function ExpertDetailPage({
   }));
 
   return (
-    <main className="min-h-screen bg-white pb-12">
-      <nav className="flex items-center gap-3 px-4 py-4 sm:px-6 border-b border-gray-100">
-        <Link href="/experts" className="text-sm text-gray-500 hover:text-gray-700">
+    <main className="relative min-h-screen bg-white">
+      <nav className="absolute top-3 left-3 z-20">
+        <Link
+          href="/experts"
+          className="text-sm text-white/90 hover:text-white drop-shadow-sm"
+        >
           ← 목록
         </Link>
       </nav>
 
-      <div className="px-4 py-6 sm:px-6 max-w-2xl mx-auto space-y-6">
-        <div className="flex gap-4 items-start">
-          <div className="w-20 h-20 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center text-3xl text-gray-400">
-            {expert.profile_image_path ? (
-              <Image
-                src={getProfilePhotoUrl(expert.profile_image_path) ?? ''}
-                alt={expert.display_name ?? '전문가'}
-                width={80}
-                height={80}
-                priority
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              '🏋️'
-            )}
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-page-title font-bold text-gray-900">
-              {expert.display_name ?? '이름 미공개'}
-            </h1>
-            {expert.professions.length > 0 && (
-              <p className="text-sm text-gray-500">
-                {expert.professions.map((p) => p.name).join(' · ')}
-              </p>
-            )}
-            {expert.headline && (
-              <p className="text-sm text-gray-700 mt-1">{expert.headline}</p>
-            )}
-          </div>
-        </div>
+      <ExpertProfileView expert={expert} galleryImages={galleryImages} />
 
-        {(expert.total_experience_years != null || expert.workplace_center_name) && (
-          <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-            {expert.total_experience_years != null && (
-              <span className="px-2.5 py-1 bg-gray-100 rounded-full">
-                경력 {expert.total_experience_years}년
-              </span>
-            )}
-            {expert.workplace_center_name && (
-              <span className="px-2.5 py-1 bg-gray-100 rounded-full">
-                {expert.workplace_region ? `${expert.workplace_region} · ` : ''}
-                {expert.workplace_center_name}
-              </span>
-            )}
-          </div>
-        )}
-
-        {expert.specialties.length > 0 && (
-          <section>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">전문분야</h2>
-            <div className="flex flex-wrap gap-1.5">
-              {expert.specialties.map((s) => (
-                <span
-                  key={s.slug}
-                  className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium"
-                >
-                  {s.name}
-                </span>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {expert.introduction && (
-          <section>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">소개</h2>
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">{expert.introduction}</p>
-          </section>
-        )}
-
-        {expert.academic_records.length > 0 && (
-          <section>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">학력</h2>
-            <ul className="space-y-2">
-              {expert.academic_records.map((a, i) => (
-                <li key={i} className="text-sm text-gray-700">
-                  <span className="font-medium text-gray-900">
-                    {ACADEMIC_LEVEL_LABELS[a.level] ?? a.level}
-                    {a.degree ? `(${a.degree})` : ''}
-                  </span>
-                  <span className="text-gray-500">
-                    {' '}
-                    · {a.school_name}
-                    {a.major ? ` ${a.major}` : ''}
-                  </span>
-                  {(a.start_date || a.end_date) && (
-                    <span className="block text-xs text-gray-400">
-                      {a.start_date ?? ''}
-                      {a.start_date && a.end_date ? ' ~ ' : ''}
-                      {a.end_date ?? ''}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {expert.experiences.length > 0 && (
-          <section>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">경력</h2>
-            <ul className="space-y-2">
-              {expert.experiences.map((e, i) => (
-                <li key={i} className="text-sm text-gray-700">
-                  {/* (전)/(현)은 is_current(예/아니오) 기준 -- 항목별 기간 비공개
-                      (period_visible=false)로 날짜가 NULL이어도 그대로 표시한다.
-                      "언제부터 언제까지"와 "지금 다니는 곳인지"는 별개의 정보
-                      (PR #54/#57에서 is_current를 계속 노출한 것과 같은 근거). */}
-                  <span className="font-medium text-gray-900">
-                    {e.is_current ? '(현) ' : '(전) '}
-                    {e.organization_name}
-                  </span>
-                  {e.position && <span className="text-gray-500"> · {e.position}</span>}
-                  {e.start_date && (
-                    <span className="block text-xs text-gray-400">
-                      {e.start_date} ~ {e.is_current ? '현재' : e.end_date ?? ''}
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {expert.educations.length > 0 && (
-          <section>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">교육</h2>
-            <ul className="space-y-2">
-              {expert.educations.map((e, i) => (
-                <li key={i} className="text-sm text-gray-700">
-                  <span className="font-medium text-gray-900">{e.education_name}</span>
-                  {e.organization_name && (
-                    <span className="text-gray-500"> · {e.organization_name}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {expert.licenses.length > 0 && (
-          <section>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">자격증</h2>
-            <ul className="space-y-2">
-              {expert.licenses.map((l, i) => (
-                <li key={i} className="text-sm text-gray-700">
-                  <span className="font-medium text-gray-900">{l.license_name}</span>
-                  {l.issuing_organization && (
-                    <span className="text-gray-500"> · {l.issuing_organization}</span>
-                  )}
-                  {/* get_public_licenses()가 verification_status='verified' AND
-                      is_public=true인 행만 반환하므로, 여기 나오는 항목은 전부
-                      관리자 인증을 거친 것이다. */}
-                  <span className="ml-2 inline-flex items-center gap-0.5 px-2 py-0.5 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-medium">
-                    ✓ 인증됨
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        {(expert.workplace_address ||
-          expert.workplace_phone ||
-          expert.workplace_external_contact_url ||
-          expert.workplace_website_url) && (
-          <section>
-            <h2 className="text-sm font-semibold text-gray-900 mb-2">근무기관</h2>
-            <div className="space-y-3">
-              {expert.workplace_address && (
-                <p className="text-sm text-gray-700">
-                  {expert.workplace_address}
-                  {expert.workplace_address_detail ? ` ${expert.workplace_address_detail}` : ''}
-                </p>
-              )}
-
-              {expert.workplace_phone && (
-                <a
-                  href={`tel:${expert.workplace_phone}`}
-                  className="block w-full min-h-[44px] px-4 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-center"
-                >
-                  전화 걸기
-                </a>
-              )}
-
-              {expert.workplace_external_contact_url && (
-                <a
-                  href={expert.workplace_external_contact_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full min-h-[44px] px-4 py-3 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-slate-50 transition-colors text-center"
-                >
-                  외부 문의(카카오톡 등)
-                </a>
-              )}
-
-              {expert.workplace_website_url && (
-                <a
-                  href={expert.workplace_website_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block w-full min-h-[44px] px-4 py-3 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-slate-50 transition-colors text-center"
-                >
-                  센터 웹사이트 방문
-                </a>
-              )}
-            </div>
-          </section>
-        )}
-
-        <GalleryCarousel images={galleryImages} />
-        <GalleryFullScroll images={galleryImages} />
-
+      <div className="px-4 sm:px-6 max-w-2xl mx-auto pb-6">
         <ShareButton
           profileId={expert.id}
           displayName={expert.display_name}

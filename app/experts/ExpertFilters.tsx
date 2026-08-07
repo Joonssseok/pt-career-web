@@ -57,11 +57,11 @@ export function ExpertFilters({
     });
   };
 
-  // 검색어 입력은 키 입력마다 라우팅하면 요청이 과도해지므로 디바운스 후
-  // 반영한다. queryInput은 입력창의 즉시 값, lastPushedQueryRef는 우리가
-  // 마지막으로 URL에 반영한 값 -- 커밋된 query가 이 값과 다르면 뒤로 가기 등
-  // 외부 변경이므로 입력창을 동기화하고, 같으면 (디바운스 대기 중인 타이핑을
-  // 덮어쓰지 않도록) 건드리지 않는다.
+  // 검색어는 입력 중에는 결과에 반영하지 않고, 돋보기 버튼 클릭 또는 Enter로
+  // 명시적으로 제출했을 때만 커밋한다. queryInput은 입력창의 즉시 값,
+  // lastPushedQueryRef는 우리가 마지막으로 URL에 반영한 값 -- 커밋된 query가
+  // 이 값과 다르면 뒤로/앞으로 가기 등 외부 변경이므로 입력창을 동기화하고,
+  // 같으면 (아직 제출하지 않은 타이핑을 덮어쓰지 않도록) 건드리지 않는다.
   const [queryInput, setQueryInput] = useState(committedQuery);
   const lastPushedQueryRef = useRef(committedQuery);
 
@@ -73,17 +73,13 @@ export function ExpertFilters({
     }
   }, [searchParams]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const trimmed = queryInput.trim();
-      if (trimmed !== lastPushedQueryRef.current) {
-        lastPushedQueryRef.current = trimmed;
-        updateFilter('query', trimmed);
-      }
-    }, 350);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [queryInput]);
+  const commitQuery = () => {
+    const trimmed = queryInput.trim();
+    if (trimmed !== lastPushedQueryRef.current) {
+      lastPushedQueryRef.current = trimmed;
+      updateFilter('query', trimmed);
+    }
+  };
 
   // 상세검색(직군/지역/분야) 펼침 상태 -- 이미 선택된 필터가 있으면 접혀서
   // 안 보이는 게 더 혼란스러우므로 기본 펼침으로 시작한다.
@@ -98,10 +94,22 @@ export function ExpertFilters({
           type="search"
           value={queryInput}
           onChange={(e) => setQueryInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commitQuery();
+          }}
           placeholder="이름, 소개로 검색"
           aria-label="전문가 검색"
           className="flex-1 min-w-0 min-h-[44px] px-3 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+        <button
+          type="button"
+          onClick={commitQuery}
+          aria-label="검색"
+          title="검색"
+          className="min-h-[44px] min-w-[44px] px-3 border border-gray-300 rounded-lg bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+        >
+          🔍
+        </button>
         <button
           type="button"
           onClick={() => setShowAdvanced((prev) => !prev)}

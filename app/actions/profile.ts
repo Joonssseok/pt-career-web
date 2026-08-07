@@ -20,7 +20,9 @@ export async function getOwnProfile() {
 
   const { data: profile, error } = await supabase
     .from('profiles')
-    .select('id, display_name, headline, introduction, profile_image_path, verification_status, owner_visible')
+    .select(
+      'id, display_name, headline, introduction, profile_image_path, cover_image_path, youtube_url, instagram_url, blog_url, other_sns_url, verification_status, owner_visible'
+    )
     .eq('id', profileId)
     .maybeSingle();
 
@@ -32,13 +34,46 @@ export async function getOwnProfile() {
   return { ok: true as const, error: '', profile };
 }
 
+// 소셜 링크는 공개 프로필에서 href로 그대로 쓰이므로 http(s) 링크만 허용한다
+// (saveWorkplace()의 공식 문의처 검증과 동일한 패턴, PR #56).
+function isValidHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+const SOCIAL_URL_LABELS: Record<string, string> = {
+  youtubeUrl: '유튜브',
+  instagramUrl: '인스타그램',
+  blogUrl: '블로그',
+  otherSnsUrl: '기타 SNS',
+};
+
 export async function saveOwnProfile(data: {
   displayName: string;
   bio: string;
   description: string;
   profileImagePath: string;
+  coverImagePath?: string;
+  youtubeUrl?: string;
+  instagramUrl?: string;
+  blogUrl?: string;
+  otherSnsUrl?: string;
 }) {
   try {
+    for (const key of ['youtubeUrl', 'instagramUrl', 'blogUrl', 'otherSnsUrl'] as const) {
+      const value = data[key]?.trim();
+      if (value && !isValidHttpUrl(value)) {
+        return {
+          ok: false,
+          error: `${SOCIAL_URL_LABELS[key]} 링크는 http:// 또는 https://로 시작하는 주소여야 합니다.`,
+        };
+      }
+    }
+
     const supabase = await createClient();
 
     // 직군은 이제 replace_profile_professions RPC로 별도 저장된다
@@ -48,6 +83,11 @@ export async function saveOwnProfile(data: {
       p_headline: data.bio,
       p_introduction: data.description,
       p_profile_image_path: data.profileImagePath || null,
+      p_cover_image_path: data.coverImagePath || null,
+      p_youtube_url: data.youtubeUrl?.trim() || null,
+      p_instagram_url: data.instagramUrl?.trim() || null,
+      p_blog_url: data.blogUrl?.trim() || null,
+      p_other_sns_url: data.otherSnsUrl?.trim() || null,
     });
 
     if (error) {

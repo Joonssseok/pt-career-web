@@ -82,11 +82,17 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
     bio: '',
     description: '',
     profileImagePath: '',
+    coverImagePath: '',
+    youtubeUrl: '',
+    instagramUrl: '',
+    blogUrl: '',
+    otherSnsUrl: '',
   });
 
   const [formState, setFormState] = useState<FormState>('default');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageUploading, setImageUploading] = useState(false);
+  const [coverUploading, setCoverUploading] = useState(false);
 
   const loadProfile = async () => {
     const result = await getOwnProfile();
@@ -100,6 +106,11 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
       bio: p.headline ?? '',
       description: p.introduction ?? '',
       profileImagePath: p.profile_image_path ?? '',
+      coverImagePath: p.cover_image_path ?? '',
+      youtubeUrl: p.youtube_url ?? '',
+      instagramUrl: p.instagram_url ?? '',
+      blogUrl: p.blog_url ?? '',
+      otherSnsUrl: p.other_sns_url ?? '',
     });
     setProfileMeta({
       id: p.id,
@@ -201,6 +212,59 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
     }
   };
 
+  // 커버 이미지 업로드 -- 프로필 사진(handleImageChange)과 동일한 패턴,
+  // 저장 경로만 ${user.id}/cover.${ext}. storage RLS가 파일명이 아니라
+  // user.id 폴더 prefix 기준이라 정책 변경 없이 동작한다(직접 확인).
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      setErrors((prev) => ({ ...prev, cover: 'jpg, png, webp 파일만 업로드할 수 있습니다' }));
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setErrors((prev) => ({ ...prev, cover: '5MB 이하의 파일만 업로드할 수 있습니다' }));
+      return;
+    }
+
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.cover;
+      return next;
+    });
+    setCoverUploading(true);
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setErrors((prev) => ({ ...prev, cover: '로그인이 필요합니다' }));
+        return;
+      }
+
+      const ext = EXT_BY_TYPE[file.type];
+      const path = `${user.id}/cover.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('profile-images')
+        .upload(path, file, { upsert: true, contentType: file.type });
+
+      if (uploadError) {
+        setErrors((prev) => ({ ...prev, cover: `업로드에 실패했습니다: ${uploadError.message}` }));
+        return;
+      }
+
+      setFormData((prev) => ({ ...prev, coverImagePath: path }));
+    } finally {
+      setCoverUploading(false);
+    }
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -253,6 +317,11 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
       bio: formData.bio,
       description: formData.description,
       profileImagePath: formData.profileImagePath,
+      coverImagePath: formData.coverImagePath,
+      youtubeUrl: formData.youtubeUrl,
+      instagramUrl: formData.instagramUrl,
+      blogUrl: formData.blogUrl,
+      otherSnsUrl: formData.otherSnsUrl,
     });
 
     if (result.ok) {
@@ -419,9 +488,10 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
 
                   <form onSubmit={handleSubmit} className="space-y-5">
                     <div className="flex gap-6">
-                      {/* 이력서 증명사진 자리 — 실제 증명사진 규격(3.5:4.5)에 가까운 비율 박스 */}
+                      {/* 이력서 증명사진 자리 — 실제 증명사진 규격(3.5:4.5)에 가까운 비율 박스.
+                          용도(신원 확인용 증명사진)는 그대로 두고 크기만 확대(112x144 → 144x184). */}
                       <div className="flex-shrink-0 flex flex-col items-center gap-2">
-                        <div className="w-28 h-36 rounded-lg overflow-hidden bg-gray-50 border border-gray-300 flex items-center justify-center">
+                        <div className="w-36 h-[11.5rem] rounded-lg overflow-hidden bg-gray-50 border border-gray-300 flex items-center justify-center">
                           {formData.profileImagePath ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
@@ -477,6 +547,45 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                       </div>
                     </div>
 
+                    {/* 디자인 -- 공개 프로필 상단 히어로에 표시될 커버 이미지 */}
+                    <div className="pt-4 border-t border-gray-100">
+                      <h3 className="text-sm font-semibold text-gray-900 mb-2">디자인</h3>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">커버 이미지</label>
+                      {/* 공개 히어로(전체 폭 x h-48)와 비슷한 와이드 비율 미리보기 */}
+                      <div className="w-full aspect-[3/1] rounded-lg overflow-hidden bg-gradient-to-br from-blue-900 via-blue-600 to-blue-500 border border-gray-300 flex items-center justify-center">
+                        {formData.coverImagePath ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={getProfilePhotoUrl(formData.coverImagePath) ?? undefined}
+                            alt="커버 이미지"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-xs text-white/80 text-center px-2">
+                            커버 이미지가 없으면 기본 그라데이션이 표시됩니다
+                          </span>
+                        )}
+                      </div>
+                      <label className="inline-block mt-2 text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer transition-colors">
+                        {coverUploading
+                          ? '⏳ 업로드 중...'
+                          : formData.coverImagePath
+                            ? '커버 교체'
+                            : '📎 커버 이미지 업로드'}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          onChange={handleCoverChange}
+                          disabled={coverUploading || formState === 'loading'}
+                          className="hidden"
+                        />
+                      </label>
+                      {errors.cover && <p className="text-xs text-red-500 mt-1">{errors.cover}</p>}
+                      <p className="text-[11px] text-gray-400 mt-1">
+                        jpg/png/webp, 5MB 이하. 저장 버튼을 눌러야 공개 프로필에 반영됩니다.
+                      </p>
+                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-900 mb-2">한 줄 소개</label>
                       <input
@@ -505,6 +614,35 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                       {errors.description && (
                         <p className="text-xs text-red-500 mt-1">{errors.description}</p>
                       )}
+                    </div>
+
+                    {/* 링크 -- 공개 프로필의 "콘텐츠 & 소셜" 섹션에 표시된다.
+                        전부 선택 입력, http(s) 형식은 저장 시 서버에서 검증. */}
+                    <div className="pt-4 border-t border-gray-100 space-y-3">
+                      <h3 className="text-sm font-semibold text-gray-900">링크</h3>
+                      {(
+                        [
+                          { name: 'youtubeUrl', label: '유튜브', placeholder: 'https://youtube.com/@channel' },
+                          { name: 'instagramUrl', label: '인스타그램', placeholder: 'https://instagram.com/id' },
+                          { name: 'blogUrl', label: '블로그', placeholder: 'https://blog.naver.com/id' },
+                          { name: 'otherSnsUrl', label: '기타 SNS', placeholder: 'https://...' },
+                        ] as const
+                      ).map(({ name, label, placeholder }) => (
+                        <div key={name}>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            {label} <span className="text-gray-400">(선택)</span>
+                          </label>
+                          <input
+                            type="url"
+                            name={name}
+                            value={formData[name]}
+                            onChange={handleChange}
+                            placeholder={placeholder}
+                            disabled={formState === 'loading'}
+                            className={getInputClass(name)}
+                          />
+                        </div>
+                      ))}
                     </div>
 
                     <button

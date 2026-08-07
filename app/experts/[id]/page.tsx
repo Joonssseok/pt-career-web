@@ -19,6 +19,11 @@ type ExpertDetail = {
   introduction: string | null;
   total_experience_years: number | null;
   profile_image_path: string | null;
+  cover_image_path: string | null;
+  youtube_url: string | null;
+  instagram_url: string | null;
+  blog_url: string | null;
+  other_sns_url: string | null;
   workplace_region: string | null;
   workplace_center_name: string | null;
   workplace_website_url: string | null;

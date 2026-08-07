@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
 export async function SiteHeader() {
@@ -24,14 +25,16 @@ export async function SiteHeader() {
 
   return (
     <nav className="sticky top-0 z-40 flex h-16 items-center justify-between px-4 sm:px-6 border-b border-gray-100 bg-white">
-      {/* 왼쪽: 로고 + 전역 내비게이션(로그인 여부와 무관하게 항상 표시) */}
-      <div className="flex items-center gap-4 sm:gap-6">
+      {/* 왼쪽: 로고 + 전역 내비게이션(로그인 여부와 무관하게 항상 표시).
+          items-baseline: "전문가 찾기"(작은 글씨)가 로고의 베이스라인에 맞춰
+          한 단계 아래로 내려앉아 브랜드의 하위 항목으로 읽히게 한다. */}
+      <div className="flex items-baseline gap-4 sm:gap-6">
         <Link href="/" className="text-lg font-bold text-slate-900 sm:text-xl">
           PT Career
         </Link>
         <Link
           href="/experts"
-          className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+          className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors translate-y-px"
         >
           전문가 찾기
         </Link>
@@ -51,6 +54,24 @@ export async function SiteHeader() {
             >
               마이페이지
             </Link>
+            {/* /my 페이지의 기존 로그아웃 패턴(서버 액션 + form) 재사용 --
+                redirect가 풀 네비게이션이라 헤더가 즉시 로그아웃 상태로
+                재렌더된다. */}
+            <form
+              action={async () => {
+                'use server';
+                const sb = await createClient();
+                await sb.auth.signOut();
+                redirect('/login');
+              }}
+            >
+              <button
+                type="submit"
+                className="text-sm font-medium text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                로그아웃
+              </button>
+            </form>
           </>
         ) : (
           <>

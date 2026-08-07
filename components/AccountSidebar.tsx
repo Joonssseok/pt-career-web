@@ -2,7 +2,15 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { PROFILE_STATUS_META as STATUS_META } from '@/lib/constants/status-badges';
 import { ProfileVisibilityToggle } from '@/components/ProfileVisibilityToggle';
-import { ProfileEditSectionLinksDesktop, ProfileEditSectionLinksMobile } from '@/components/ProfileEditSectionLinks';
+import { ProfileEditSectionLinksDesktop } from '@/components/ProfileEditSectionLinks';
+import { AccountMobileDrawer } from '@/components/AccountMobileDrawer';
+
+type ProfileSummary = {
+  id: string;
+  owner_visible: boolean;
+} | null;
+
+type StatusMeta = { label: string; className: string } | null;
 
 // 계층: 내 계정 관리(계정 정보/약관 동의) → 프로필 관리(공개 토글/내 프로필
 // 수정/프로필 미리보기) → 회원 탈퇴(최상위). 마이페이지/프로필 수정/삭제
@@ -34,117 +42,86 @@ export async function AccountSidebar() {
     <>
       {/* 데스크톱: 좌측 고정 사이드바 */}
       <aside className="hidden md:block w-64 flex-shrink-0 border-r border-gray-200 bg-white">
-        <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto p-4 space-y-6">
-          <SummaryBlock
-            hasProfile={!!profile}
+        <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto p-4">
+          <SidebarMenuContent
+            profile={profile}
             statusMeta={statusMeta}
             joinedAtText={joinedAtText}
+            isApproved={isApproved}
           />
-
-          <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
-              내 계정 관리
-            </p>
-            <ul className="space-y-1">
-              <li>
-                <Link
-                  href="/my"
-                  className="block px-2 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 hover:text-blue-600 transition-colors"
-                >
-                  계정 정보
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/my/terms"
-                  className="block px-2 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 hover:text-blue-600 transition-colors"
-                >
-                  약관 동의
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-              프로필 관리
-            </p>
-
-            {profile && (
-              <div className="flex items-center justify-between gap-2 px-2 py-2 bg-gray-50 rounded-md">
-                <p className="text-xs font-medium text-gray-600">프로필 전체 공개</p>
-                <ProfileVisibilityToggle initialVisible={profile.owner_visible} />
-              </div>
-            )}
-
-            <ProfileEditSectionLinksDesktop />
-
-            <PublicPreviewLink profileId={profile?.id ?? null} isApproved={isApproved} />
-          </div>
-
-          <DeleteAccountLink />
         </div>
       </aside>
 
-      {/* 모바일: 상단 가로 스크롤 탭 (그룹 순서는 데스크톱과 동일: 계정 관리 →
-          프로필 관리 → 회원 탈퇴, 구분선으로 그룹을 나눈다) */}
-      <div className="md:hidden border-b border-gray-200 bg-white overflow-x-auto">
-        <div className="flex items-center gap-2 px-4 py-3 whitespace-nowrap">
-          {statusMeta && (
-            <span
-              className={`px-2.5 py-1 rounded-full text-xs font-medium border ${statusMeta.className}`}
-            >
-              {statusMeta.label}
-            </span>
-          )}
-
-          <Link
-            href="/my"
-            className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
-          >
-            계정 정보
-          </Link>
-          <Link
-            href="/my/terms"
-            className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors"
-          >
-            약관 동의
-          </Link>
-
-          <span className="w-px h-4 bg-gray-200 flex-shrink-0" />
-
-          {profile && (
-            <span className="flex items-center gap-1.5 text-xs text-gray-500">
-              전체 공개
-              <ProfileVisibilityToggle initialVisible={profile.owner_visible} />
-            </span>
-          )}
-          <ProfileEditSectionLinksMobile />
-
-          {profile?.id && isApproved ? (
-            <Link
-              href={`/experts/${profile.id}`}
-              className="px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-full hover:bg-blue-100 transition-colors"
-            >
-              프로필 미리보기
-            </Link>
-          ) : (
-            <span className="px-3 py-1.5 text-xs font-medium text-gray-400 bg-gray-50 rounded-full">
-              프로필 미리보기(승인 대기)
-            </span>
-          )}
-
-          <span className="w-px h-4 bg-gray-200 flex-shrink-0" />
-
-          <Link
-            href="/my/delete-account"
-            className="px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 rounded-full hover:bg-red-100 transition-colors"
-          >
-            회원 탈퇴
-          </Link>
-        </div>
-      </div>
+      {/* 모바일: 햄버거 버튼 + 좌측 슬라이드 드로어 (메뉴 구성은 데스크톱과
+          동일: 계정 관리 → 프로필 관리 → 회원 탈퇴) */}
+      <AccountMobileDrawer>
+        <SidebarMenuContent
+          profile={profile}
+          statusMeta={statusMeta}
+          joinedAtText={joinedAtText}
+          isApproved={isApproved}
+        />
+      </AccountMobileDrawer>
     </>
+  );
+}
+
+function SidebarMenuContent({
+  profile,
+  statusMeta,
+  joinedAtText,
+  isApproved,
+}: {
+  profile: ProfileSummary;
+  statusMeta: StatusMeta;
+  joinedAtText: string | null;
+  isApproved: boolean;
+}) {
+  return (
+    <div className="space-y-6">
+      <SummaryBlock hasProfile={!!profile} statusMeta={statusMeta} joinedAtText={joinedAtText} />
+
+      <div>
+        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
+          내 계정 관리
+        </p>
+        <ul className="space-y-1">
+          <li>
+            <Link
+              href="/my"
+              className="block px-2 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 hover:text-blue-600 transition-colors"
+            >
+              계정 정보
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/my/terms"
+              className="block px-2 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 hover:text-blue-600 transition-colors"
+            >
+              약관 동의
+            </Link>
+          </li>
+        </ul>
+      </div>
+
+      <div className="space-y-3">
+        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">프로필 관리</p>
+
+        {profile && (
+          <div className="flex items-center justify-between gap-2 px-2 py-2 bg-gray-50 rounded-md">
+            <p className="text-xs font-medium text-gray-600">프로필 전체 공개</p>
+            <ProfileVisibilityToggle initialVisible={profile.owner_visible} />
+          </div>
+        )}
+
+        <ProfileEditSectionLinksDesktop />
+
+        <PublicPreviewLink profileId={profile?.id ?? null} isApproved={isApproved} />
+      </div>
+
+      <DeleteAccountLink />
+    </div>
   );
 }
 

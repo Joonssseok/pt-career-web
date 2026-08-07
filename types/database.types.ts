@@ -602,7 +602,6 @@ export type Database = {
           region: string | null
           submitted_at: string | null
           terms_agreed_at: string | null
-          total_experience_years: number | null
           updated_at: string
           user_id: string
           verification_status: string
@@ -622,7 +621,6 @@ export type Database = {
           region?: string | null
           submitted_at?: string | null
           terms_agreed_at?: string | null
-          total_experience_years?: number | null
           updated_at?: string
           user_id: string
           verification_status?: string
@@ -642,7 +640,6 @@ export type Database = {
           region?: string | null
           submitted_at?: string | null
           terms_agreed_at?: string | null
-          total_experience_years?: number | null
           updated_at?: string
           user_id?: string
           verification_status?: string

@@ -600,12 +600,13 @@ export type Database = {
           instagram_url: string | null
           introduction: string | null
           is_public: boolean
-          other_sns_url: string | null
+          kakao_url: string | null
           owner_visible: boolean
           profile_image_path: string | null
           region: string | null
           submitted_at: string | null
           terms_agreed_at: string | null
+          threads_url: string | null
           updated_at: string
           user_id: string
           verification_status: string
@@ -624,12 +625,13 @@ export type Database = {
           instagram_url?: string | null
           introduction?: string | null
           is_public?: boolean
-          other_sns_url?: string | null
+          kakao_url?: string | null
           owner_visible?: boolean
           profile_image_path?: string | null
           region?: string | null
           submitted_at?: string | null
           terms_agreed_at?: string | null
+          threads_url?: string | null
           updated_at?: string
           user_id: string
           verification_status?: string
@@ -648,12 +650,13 @@ export type Database = {
           instagram_url?: string | null
           introduction?: string | null
           is_public?: boolean
-          other_sns_url?: string | null
+          kakao_url?: string | null
           owner_visible?: boolean
           profile_image_path?: string | null
           region?: string | null
           submitted_at?: string | null
           terms_agreed_at?: string | null
+          threads_url?: string | null
           updated_at?: string
           user_id?: string
           verification_status?: string
@@ -827,11 +830,12 @@ export type Database = {
           id: string | null
           instagram_url: string | null
           introduction: string | null
+          kakao_url: string | null
           licenses: Json | null
-          other_sns_url: string | null
           professions: Json | null
           profile_image_path: string | null
           specialties: Json | null
+          threads_url: string | null
           total_experience_years: number | null
           workplace_address: string | null
           workplace_address_detail: string | null
@@ -1019,8 +1023,9 @@ export type Database = {
           p_headline: string
           p_instagram_url?: string
           p_introduction: string
-          p_other_sns_url?: string
+          p_kakao_url?: string
           p_profile_image_path: string
+          p_threads_url?: string
           p_youtube_url?: string
         }
         Returns: {

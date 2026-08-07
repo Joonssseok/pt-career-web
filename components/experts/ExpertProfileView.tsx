@@ -29,7 +29,8 @@ export type ExpertProfileViewProps = {
     youtube_url: string | null;
     instagram_url: string | null;
     blog_url: string | null;
-    other_sns_url: string | null;
+    threads_url: string | null;
+    kakao_url: string | null;
     workplace_region: string | null;
     workplace_center_name: string | null;
     workplace_website_url: string | null;
@@ -100,7 +101,8 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
     { label: '유튜브', icon: '▶', url: expert.youtube_url },
     { label: '인스타그램', icon: '📷', url: expert.instagram_url },
     { label: '블로그', icon: '✍', url: expert.blog_url },
-    { label: '기타 SNS', icon: '🔗', url: expert.other_sns_url },
+    { label: '스레드', icon: '@', url: expert.threads_url },
+    { label: '카카오톡', icon: '💬', url: expert.kakao_url },
   ].filter((l): l is { label: string; icon: string; url: string } => !!l.url);
 
   return (
@@ -162,7 +164,7 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
             </div>
             <div className="flex-1 text-center py-3 px-1 border-l border-gray-200">
               <div className="text-base font-extrabold text-blue-600">{certifiedCount}개</div>
-              <div className="text-[10px] text-gray-500 mt-0.5">인증 자격</div>
+              <div className="text-[10px] text-gray-500 mt-0.5">자격/면허</div>
             </div>
             <div className="flex-1 text-center py-3 px-1 border-l border-gray-200">
               <div className="text-base font-extrabold text-blue-600">
@@ -302,7 +304,7 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
           {expert.licenses.length > 0 && (
             <SectionCard
               icon="🏅"
-              title="자격증"
+              title="자격/면허"
               action={<span className="text-[11px] font-bold text-green-600">관리자 인증</span>}
             >
               <ul className="divide-y divide-gray-100">

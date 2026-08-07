@@ -589,14 +589,18 @@ export type Database = {
       profiles: {
         Row: {
           approved_at: string | null
+          blog_url: string | null
+          cover_image_path: string | null
           created_at: string
           deletion_requested_at: string | null
           display_name: string | null
           experience_period_visible: boolean
           headline: string | null
           id: string
+          instagram_url: string | null
           introduction: string | null
           is_public: boolean
+          other_sns_url: string | null
           owner_visible: boolean
           profile_image_path: string | null
           region: string | null
@@ -605,17 +609,22 @@ export type Database = {
           updated_at: string
           user_id: string
           verification_status: string
+          youtube_url: string | null
         }
         Insert: {
           approved_at?: string | null
+          blog_url?: string | null
+          cover_image_path?: string | null
           created_at?: string
           deletion_requested_at?: string | null
           display_name?: string | null
           experience_period_visible?: boolean
           headline?: string | null
           id?: string
+          instagram_url?: string | null
           introduction?: string | null
           is_public?: boolean
+          other_sns_url?: string | null
           owner_visible?: boolean
           profile_image_path?: string | null
           region?: string | null
@@ -624,17 +633,22 @@ export type Database = {
           updated_at?: string
           user_id: string
           verification_status?: string
+          youtube_url?: string | null
         }
         Update: {
           approved_at?: string | null
+          blog_url?: string | null
+          cover_image_path?: string | null
           created_at?: string
           deletion_requested_at?: string | null
           display_name?: string | null
           experience_period_visible?: boolean
           headline?: string | null
           id?: string
+          instagram_url?: string | null
           introduction?: string | null
           is_public?: boolean
+          other_sns_url?: string | null
           owner_visible?: boolean
           profile_image_path?: string | null
           region?: string | null
@@ -643,6 +657,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           verification_status?: string
+          youtube_url?: string | null
         }
         Relationships: []
       }
@@ -803,13 +818,17 @@ export type Database = {
       public_expert_detail: {
         Row: {
           academic_records: Json | null
+          blog_url: string | null
+          cover_image_path: string | null
           display_name: string | null
           educations: Json | null
           experiences: Json | null
           headline: string | null
           id: string | null
+          instagram_url: string | null
           introduction: string | null
           licenses: Json | null
+          other_sns_url: string | null
           professions: Json | null
           profile_image_path: string | null
           specialties: Json | null
@@ -823,6 +842,7 @@ export type Database = {
           workplace_phone: string | null
           workplace_region: string | null
           workplace_website_url: string | null
+          youtube_url: string | null
         }
         Relationships: []
       }
@@ -993,10 +1013,15 @@ export type Database = {
       }
       save_own_profile: {
         Args: {
+          p_blog_url?: string
+          p_cover_image_path?: string
           p_display_name: string
           p_headline: string
+          p_instagram_url?: string
           p_introduction: string
+          p_other_sns_url?: string
           p_profile_image_path: string
+          p_youtube_url?: string
         }
         Returns: {
           error: string

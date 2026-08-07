@@ -25,6 +25,11 @@ export type ExpertProfileViewProps = {
     introduction: string | null;
     total_experience_years: number | null;
     profile_image_path: string | null;
+    cover_image_path: string | null;
+    youtube_url: string | null;
+    instagram_url: string | null;
+    blog_url: string | null;
+    other_sns_url: string | null;
     workplace_region: string | null;
     workplace_center_name: string | null;
     workplace_website_url: string | null;
@@ -90,19 +95,40 @@ function SectionCard({
 export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewProps) {
   const certifiedCount = expert.licenses.length;
 
+  // 값이 있는 소셜 링크만 렌더링, 전부 비어 있으면 섹션 자체를 숨긴다.
+  const socialLinks = [
+    { label: '유튜브', icon: '▶', url: expert.youtube_url },
+    { label: '인스타그램', icon: '📷', url: expert.instagram_url },
+    { label: '블로그', icon: '✍', url: expert.blog_url },
+    { label: '기타 SNS', icon: '🔗', url: expert.other_sns_url },
+  ].filter((l): l is { label: string; icon: string; url: string } => !!l.url);
+
   return (
     <div className="pb-6">
-      <div className="relative h-36 bg-gradient-to-br from-blue-900 via-blue-600 to-blue-500" />
+      {/* 커버 이미지가 있으면 배경으로, 없으면 기존 그라데이션 기본값 유지.
+          실제 이미지가 들어가면 h-36이 좁아 보여 h-48로 확대(그라데이션도 동일
+          높이로 통일). */}
+      <div className="relative h-48 bg-gradient-to-br from-blue-900 via-blue-600 to-blue-500 overflow-hidden">
+        {expert.cover_image_path && (
+          <Image
+            src={getProfilePhotoUrl(expert.cover_image_path) ?? ''}
+            alt=""
+            fill
+            priority
+            className="object-cover"
+          />
+        )}
+      </div>
 
       <div className="px-4 sm:px-6 max-w-2xl mx-auto">
-        <div className="-mt-12 relative z-10 flex flex-col items-start">
-          <div className="w-22 h-22 rounded-2xl border-4 border-white bg-blue-100 shadow-md overflow-hidden flex items-center justify-center text-3xl text-blue-300">
+        <div className="-mt-14 relative z-10 flex flex-col items-start">
+          <div className="w-28 h-28 rounded-2xl border-4 border-white bg-blue-100 shadow-md overflow-hidden flex items-center justify-center text-4xl text-blue-300">
             {expert.profile_image_path ? (
               <Image
                 src={getProfilePhotoUrl(expert.profile_image_path) ?? ''}
                 alt={expert.display_name ?? '전문가'}
-                width={88}
-                height={88}
+                width={112}
+                height={112}
                 priority
                 className="w-full h-full object-cover"
               />
@@ -304,6 +330,25 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
                   </li>
                 ))}
               </ul>
+            </SectionCard>
+          )}
+
+          {socialLinks.length > 0 && (
+            <SectionCard icon="🔗" title="콘텐츠 & 소셜">
+              <div className="grid grid-cols-2 gap-2">
+                {socialLinks.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-gray-50 hover:bg-blue-50 text-sm font-semibold text-gray-800 hover:text-blue-700 transition-colors"
+                  >
+                    <span className="text-base">{link.icon}</span>
+                    <span className="truncate">{link.label}</span>
+                  </a>
+                ))}
+              </div>
             </SectionCard>
           )}
 

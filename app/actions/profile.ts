@@ -21,7 +21,7 @@ export async function getOwnProfile() {
   const { data: profile, error } = await supabase
     .from('profiles')
     .select(
-      'id, display_name, headline, introduction, profile_image_path, cover_image_path, youtube_url, instagram_url, blog_url, other_sns_url, verification_status, owner_visible'
+      'id, display_name, headline, introduction, profile_image_path, cover_image_path, youtube_url, instagram_url, blog_url, threads_url, kakao_url, verification_status, owner_visible'
     )
     .eq('id', profileId)
     .maybeSingle();
@@ -49,7 +49,8 @@ const SOCIAL_URL_LABELS: Record<string, string> = {
   youtubeUrl: '유튜브',
   instagramUrl: '인스타그램',
   blogUrl: '블로그',
-  otherSnsUrl: '기타 SNS',
+  threadsUrl: '스레드',
+  kakaoUrl: '카카오톡',
 };
 
 export async function saveOwnProfile(data: {
@@ -61,10 +62,11 @@ export async function saveOwnProfile(data: {
   youtubeUrl?: string;
   instagramUrl?: string;
   blogUrl?: string;
-  otherSnsUrl?: string;
+  threadsUrl?: string;
+  kakaoUrl?: string;
 }) {
   try {
-    for (const key of ['youtubeUrl', 'instagramUrl', 'blogUrl', 'otherSnsUrl'] as const) {
+    for (const key of ['youtubeUrl', 'instagramUrl', 'blogUrl', 'threadsUrl', 'kakaoUrl'] as const) {
       const value = data[key]?.trim();
       if (value && !isValidHttpUrl(value)) {
         return {
@@ -87,7 +89,8 @@ export async function saveOwnProfile(data: {
       p_youtube_url: data.youtubeUrl?.trim() || null,
       p_instagram_url: data.instagramUrl?.trim() || null,
       p_blog_url: data.blogUrl?.trim() || null,
-      p_other_sns_url: data.otherSnsUrl?.trim() || null,
+      p_threads_url: data.threadsUrl?.trim() || null,
+      p_kakao_url: data.kakaoUrl?.trim() || null,
     });
 
     if (error) {

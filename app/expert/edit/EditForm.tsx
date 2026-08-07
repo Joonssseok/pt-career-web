@@ -86,13 +86,16 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
     youtubeUrl: '',
     instagramUrl: '',
     blogUrl: '',
-    otherSnsUrl: '',
+    threadsUrl: '',
+    kakaoUrl: '',
   });
 
   const [formState, setFormState] = useState<FormState>('default');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageUploading, setImageUploading] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
+  // 소셜링크 아이콘별 입력창 펼침 상태 -- 독립 토글(여러 개 동시 펼침 가능)
+  const [openSocial, setOpenSocial] = useState<Record<string, boolean>>({});
 
   const loadProfile = async () => {
     const result = await getOwnProfile();
@@ -110,7 +113,8 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
       youtubeUrl: p.youtube_url ?? '',
       instagramUrl: p.instagram_url ?? '',
       blogUrl: p.blog_url ?? '',
-      otherSnsUrl: p.other_sns_url ?? '',
+      threadsUrl: p.threads_url ?? '',
+      kakaoUrl: p.kakao_url ?? '',
     });
     setProfileMeta({
       id: p.id,
@@ -321,7 +325,8 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
       youtubeUrl: formData.youtubeUrl,
       instagramUrl: formData.instagramUrl,
       blogUrl: formData.blogUrl,
-      otherSnsUrl: formData.otherSnsUrl,
+      threadsUrl: formData.threadsUrl,
+      kakaoUrl: formData.kakaoUrl,
     });
 
     if (result.ok) {
@@ -616,33 +621,79 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                       )}
                     </div>
 
-                    {/* 링크 -- 공개 프로필의 "콘텐츠 & 소셜" 섹션에 표시된다.
-                        전부 선택 입력, http(s) 형식은 저장 시 서버에서 검증. */}
+                    {/* 소셜링크 -- 아이콘을 클릭하면 그 플랫폼의 URL 입력창이
+                        펼쳐진다(독립 토글). 값이 등록된 아이콘은 파란 강조 +
+                        체크 배지로 표시. http(s) 형식은 저장 시 서버에서 검증.
+                        kakaoUrl(개인 카카오톡 채널)은 근무기관의 "공식 문의처"
+                        (workplaces.external_contact_url)와 별개 필드다. */}
                     <div className="pt-4 border-t border-gray-100 space-y-3">
-                      <h3 className="text-sm font-semibold text-gray-900">링크</h3>
+                      <h3 className="text-sm font-semibold text-gray-900">소셜링크</h3>
+                      <div className="flex gap-2">
+                        {(
+                          [
+                            { name: 'youtubeUrl', label: '유튜브', icon: '▶' },
+                            { name: 'instagramUrl', label: '인스타그램', icon: '📷' },
+                            { name: 'blogUrl', label: '블로그', icon: '✍' },
+                            { name: 'threadsUrl', label: '스레드', icon: '@' },
+                            { name: 'kakaoUrl', label: '카카오톡', icon: '💬' },
+                          ] as const
+                        ).map(({ name, label, icon }) => {
+                          const filled = !!formData[name].trim();
+                          const open = !!openSocial[name];
+                          return (
+                            <button
+                              key={name}
+                              type="button"
+                              onClick={() =>
+                                setOpenSocial((prev) => ({ ...prev, [name]: !prev[name] }))
+                              }
+                              aria-expanded={open}
+                              title={label}
+                              className={`relative flex flex-col items-center gap-1 flex-1 py-2.5 rounded-lg border-2 transition-colors ${
+                                filled
+                                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                                  : open
+                                    ? 'border-gray-400 bg-gray-50 text-gray-700'
+                                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                              }`}
+                            >
+                              <span className="text-lg leading-none">{icon}</span>
+                              <span className="text-[10px] font-medium">{label}</span>
+                              {filled && (
+                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center">
+                                  ✓
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
                       {(
                         [
                           { name: 'youtubeUrl', label: '유튜브', placeholder: 'https://youtube.com/@channel' },
                           { name: 'instagramUrl', label: '인스타그램', placeholder: 'https://instagram.com/id' },
                           { name: 'blogUrl', label: '블로그', placeholder: 'https://blog.naver.com/id' },
-                          { name: 'otherSnsUrl', label: '기타 SNS', placeholder: 'https://...' },
+                          { name: 'threadsUrl', label: '스레드', placeholder: 'https://threads.net/@id' },
+                          { name: 'kakaoUrl', label: '카카오톡', placeholder: 'https://pf.kakao.com/... 또는 오픈채팅 링크' },
                         ] as const
-                      ).map(({ name, label, placeholder }) => (
-                        <div key={name}>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">
-                            {label} <span className="text-gray-400">(선택)</span>
-                          </label>
-                          <input
-                            type="url"
-                            name={name}
-                            value={formData[name]}
-                            onChange={handleChange}
-                            placeholder={placeholder}
-                            disabled={formState === 'loading'}
-                            className={getInputClass(name)}
-                          />
-                        </div>
-                      ))}
+                      )
+                        .filter(({ name }) => openSocial[name])
+                        .map(({ name, label, placeholder }) => (
+                          <div key={name}>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                              {label} 링크 <span className="text-gray-400">(선택)</span>
+                            </label>
+                            <input
+                              type="url"
+                              name={name}
+                              value={formData[name]}
+                              onChange={handleChange}
+                              placeholder={placeholder}
+                              disabled={formState === 'loading'}
+                              className={getInputClass(name)}
+                            />
+                          </div>
+                        ))}
                     </div>
 
                     <button

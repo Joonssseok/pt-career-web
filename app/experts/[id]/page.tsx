@@ -23,7 +23,8 @@ type ExpertDetail = {
   youtube_url: string | null;
   instagram_url: string | null;
   blog_url: string | null;
-  other_sns_url: string | null;
+  threads_url: string | null;
+  kakao_url: string | null;
   workplace_region: string | null;
   workplace_center_name: string | null;
   workplace_website_url: string | null;

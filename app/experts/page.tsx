@@ -39,6 +39,15 @@ type SearchParams = Promise<{
   query?: string;
 }>;
 
+// 콤마 구분 단일 파라미터를 배열로 파싱한다. 빈 문자열/미지정은 빈 배열이
+// 아니라 undefined(=파라미터 자체를 안 보냄 -> RPC에서 NULL -> 필터 없음)로
+// 취급해야 "0개 선택 = 전체"가 유지된다.
+function parseMulti(value: string | undefined): string[] | undefined {
+  if (!value) return undefined;
+  const arr = value.split(',').filter(Boolean);
+  return arr.length > 0 ? arr : undefined;
+}
+
 async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
   const { profession, region, specialty, query } = await searchParams;
   const filters = {
@@ -50,9 +59,9 @@ async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc('search_public_experts', {
-    p_profession: filters.profession,
-    p_region: filters.region,
-    p_specialty_slug: filters.specialty,
+    p_professions: parseMulti(profession) ?? null,
+    p_regions: parseMulti(region) ?? null,
+    p_specialty_slugs: parseMulti(specialty) ?? null,
     p_query: filters.query,
     p_limit: EXPERTS_PAGE_SIZE,
     p_offset: 0,

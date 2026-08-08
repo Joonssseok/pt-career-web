@@ -1037,10 +1037,10 @@ export type Database = {
         Args: {
           p_limit?: number
           p_offset?: number
-          p_profession?: string
+          p_professions?: string[]
           p_query?: string
-          p_region?: string
-          p_specialty_slug?: string
+          p_regions?: string[]
+          p_specialty_slugs?: string[]
         }
         Returns: {
           display_name: string | null

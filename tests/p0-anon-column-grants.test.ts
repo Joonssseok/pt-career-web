@@ -197,22 +197,39 @@ describe('M4: anon base-table lockout + public projection views', () => {
       expect(data?.some((r: { id: string }) => r.id === ownerProfileId)).toBe(true);
     });
 
-    it('filters by specialty_slug (containment match)', async () => {
-      const { data } = await anonClient.rpc('search_public_experts', { p_specialty_slug: specialtySlug });
+    it('filters by specialty_slugs (containment match, OR across array)', async () => {
+      const { data } = await anonClient.rpc('search_public_experts', { p_specialty_slugs: [specialtySlug] });
       expect(data?.some((r: { id: string }) => r.id === ownerProfileId)).toBe(true);
 
-      const { data: noMatch } = await anonClient.rpc('search_public_experts', { p_specialty_slug: 'nonexistent-slug' });
+      const { data: noMatch } = await anonClient.rpc('search_public_experts', { p_specialty_slugs: ['nonexistent-slug'] });
       expect(noMatch?.some((r: { id: string }) => r.id === ownerProfileId)).toBe(false);
     });
 
-    it('filters by region, gated by is_location_public', async () => {
-      const { data: match } = await anonClient.rpc('search_public_experts', { p_region: '서울' });
+    it('filters by regions (OR across array), gated by is_location_public', async () => {
+      const { data: match } = await anonClient.rpc('search_public_experts', { p_regions: ['서울'] });
       expect(match?.some((r: { id: string }) => r.id === ownerProfileId)).toBe(true);
 
       await adminApi.from('workplaces').update({ is_location_public: false }).eq('profile_id', ownerProfileId);
-      const { data: hidden } = await anonClient.rpc('search_public_experts', { p_region: '서울' });
+      const { data: hidden } = await anonClient.rpc('search_public_experts', { p_regions: ['서울'] });
       expect(hidden?.some((r: { id: string }) => r.id === ownerProfileId)).toBe(false);
       await adminApi.from('workplaces').update({ is_location_public: true }).eq('profile_id', ownerProfileId);
+    });
+
+    it('OR-matches when multiple values are selected (e.g. real region + a non-matching one)', async () => {
+      const { data: match } = await anonClient.rpc('search_public_experts', {
+        p_regions: ['서울', '부산'],
+      });
+      expect(match?.some((r: { id: string }) => r.id === ownerProfileId)).toBe(true);
+
+      const { data: noMatch } = await anonClient.rpc('search_public_experts', {
+        p_regions: ['부산', '대전'],
+      });
+      expect(noMatch?.some((r: { id: string }) => r.id === ownerProfileId)).toBe(false);
+    });
+
+    it('an explicit empty array matches nothing (distinct from NULL = no filter)', async () => {
+      const { data } = await anonClient.rpc('search_public_experts', { p_regions: [] });
+      expect(data?.some((r: { id: string }) => r.id === ownerProfileId)).toBe(false);
     });
   });
 

@@ -13,6 +13,15 @@ type Filters = {
   query: string | null;
 };
 
+// 콤마 구분 단일 파라미터를 배열로 파싱한다(ExpertFilters/page.tsx와 동일
+// 규칙). 빈 값은 undefined -> RPC에서 NULL -> 필터 없음(전체)으로 처리돼야
+// "0개 선택 = 전체"가 더보기에서도 유지된다.
+function parseMulti(value: string | null): string[] | null {
+  if (!value) return null;
+  const arr = value.split(',').filter(Boolean);
+  return arr.length > 0 ? arr : null;
+}
+
 export function LoadMoreExperts({
   initialExperts,
   filters,
@@ -30,12 +39,13 @@ export function LoadMoreExperts({
     setError(false);
 
     const supabase = createClient();
-    // query를 빠뜨리면 "더보기"로 다음 페이지를 불러올 때 검색어 조건이
-    // 사라져 1페이지만 검색되고 2페이지부터 전체 목록이 섞이는 버그가 된다.
+    // query/다중선택 필터를 빠뜨리면 "더보기"로 다음 페이지를 불러올 때
+    // 조건이 사라져 1페이지만 필터링되고 2페이지부터 전체 목록이 섞이는
+    // 버그가 된다(PR #58에서 확인된 것과 동일한 함정, 다중선택에도 적용).
     const { data, error: rpcError } = await supabase.rpc('search_public_experts', {
-      p_profession: filters.profession,
-      p_region: filters.region,
-      p_specialty_slug: filters.specialty,
+      p_professions: parseMulti(filters.profession),
+      p_regions: parseMulti(filters.region),
+      p_specialty_slugs: parseMulti(filters.specialty),
       p_query: filters.query,
       p_limit: EXPERTS_PAGE_SIZE,
       p_offset: experts.length,

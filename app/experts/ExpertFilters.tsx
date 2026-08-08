@@ -7,6 +7,67 @@ import { REGIONS } from '@/lib/constants/regions';
 type Specialty = { id: string; name: string; slug: string };
 type Profession = { id: string; name: string; slug: string };
 
+// 콤마 구분 단일 파라미터로 다중값을 encode한다 -- 반복 키(profession=a&profession=b)
+// 대신 이 방식을 택해 기존 paramsString/URLSearchParams.set 기반 로컬 상태
+// 아키텍처(PR #56의 경쟁 상태 방지 패턴)를 값 파싱만 바꿔 그대로 재사용한다.
+function parseMulti(params: URLSearchParams, key: string): string[] {
+  const raw = params.get(key);
+  return raw ? raw.split(',').filter(Boolean) : [];
+}
+
+function MultiSelectField({
+  label,
+  options,
+  selected,
+  onToggle,
+}: {
+  label: string;
+  options: { value: string; label: string }[];
+  selected: string[];
+  onToggle: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        aria-expanded={open}
+        className={`w-full min-h-[44px] px-3 border rounded-lg text-sm font-medium text-left transition-colors ${
+          selected.length > 0
+            ? 'border-blue-500 bg-blue-50 text-blue-700'
+            : open
+              ? 'border-gray-400 bg-gray-50 text-gray-700'
+              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+        }`}
+      >
+        {label}
+        {selected.length > 0 ? ` (${selected.length})` : ''}
+      </button>
+
+      {open && (
+        <div className="mt-1 p-2 border border-gray-200 rounded-lg bg-white grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-56 overflow-y-auto">
+          {options.map((opt) => (
+            <label
+              key={opt.value}
+              className="flex items-center gap-1.5 px-1.5 py-1 rounded text-xs text-gray-700 hover:bg-gray-50 cursor-pointer"
+            >
+              <input
+                type="checkbox"
+                checked={selected.includes(opt.value)}
+                onChange={() => onToggle(opt.value)}
+                className="flex-shrink-0"
+              />
+              <span className="truncate">{opt.label}</span>
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ExpertFilters({
   specialties,
   professions,
@@ -40,9 +101,9 @@ export function ExpertFilters({
   }, [paramsString]);
 
   const params = new URLSearchParams(paramsString);
-  const profession = params.get('profession') ?? '';
-  const region = params.get('region') ?? '';
-  const specialty = params.get('specialty') ?? '';
+  const selectedProfessions = parseMulti(params, 'profession');
+  const selectedRegions = parseMulti(params, 'region');
+  const selectedSpecialties = parseMulti(params, 'specialty');
   const committedQuery = params.get('query') ?? '';
 
   const updateFilter = (key: string, value: string) => {
@@ -55,6 +116,15 @@ export function ExpertFilters({
       }
       return next.toString();
     });
+  };
+
+  // 체크박스 토글: 선택 0개가 되면 파라미터 자체를 지운다(= 전체, NULL로
+  // 서버에 전달돼 필터 없음으로 해석된다 -- 빈 배열과는 다른 의미).
+  const toggleMulti = (key: string, current: string[], value: string) => {
+    const next = current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value];
+    updateFilter(key, next.join(','));
   };
 
   // 검색어는 입력 중에는 결과에 반영하지 않고, 돋보기 버튼 클릭 또는 Enter로
@@ -84,7 +154,7 @@ export function ExpertFilters({
   // 상세검색(직군/지역/분야) 펼침 상태 -- 이미 선택된 필터가 있으면 접혀서
   // 안 보이는 게 더 혼란스러우므로 기본 펼침으로 시작한다.
   const [showAdvanced, setShowAdvanced] = useState(
-    () => Boolean(profession || region || specialty)
+    () => selectedProfessions.length > 0 || selectedRegions.length > 0 || selectedSpecialties.length > 0
   );
 
   return (
@@ -126,50 +196,29 @@ export function ExpertFilters({
 
       {showAdvanced && (
         <div className="grid grid-cols-3 gap-2">
-          <select
-            value={profession}
-            onChange={(e) => updateFilter('profession', e.target.value)}
-            className="min-h-[44px] px-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white"
-            aria-label="직군 필터"
-          >
-            <option value="">전체 직군</option>
-            {/* custom(직접 입력) 슬롯은 고정 카테고리가 아니므로 필터에서 제외 */}
-            {professions
+          <MultiSelectField
+            label="직군"
+            selected={selectedProfessions}
+            onToggle={(v) => toggleMulti('profession', selectedProfessions, v)}
+            options={professions
+              // custom(직접 입력) 슬롯은 고정 카테고리가 아니므로 필터에서 제외
               .filter((p) => p.slug !== 'custom')
-              .map((p) => (
-                <option key={p.id} value={p.slug}>
-                  {p.name}
-                </option>
-              ))}
-          </select>
+              .map((p) => ({ value: p.slug, label: p.name }))}
+          />
 
-          <select
-            value={region}
-            onChange={(e) => updateFilter('region', e.target.value)}
-            className="min-h-[44px] px-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white"
-            aria-label="지역 필터"
-          >
-            <option value="">전체 지역</option>
-            {REGIONS.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
+          <MultiSelectField
+            label="지역"
+            selected={selectedRegions}
+            onToggle={(v) => toggleMulti('region', selectedRegions, v)}
+            options={REGIONS.map((r) => ({ value: r, label: r }))}
+          />
 
-          <select
-            value={specialty}
-            onChange={(e) => updateFilter('specialty', e.target.value)}
-            className="min-h-[44px] px-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white"
-            aria-label="전문분야 필터"
-          >
-            <option value="">전체 분야</option>
-            {specialties.map((s) => (
-              <option key={s.id} value={s.slug}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+          <MultiSelectField
+            label="분야"
+            selected={selectedSpecialties}
+            onToggle={(v) => toggleMulti('specialty', selectedSpecialties, v)}
+            options={specialties.map((s) => ({ value: s.slug, label: s.name }))}
+          />
         </div>
       )}
     </div>

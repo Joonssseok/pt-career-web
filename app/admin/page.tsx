@@ -7,6 +7,7 @@ import {
   getAdminUsersList,
 } from '@/app/actions/admin';
 import { AuditLog } from './AuditLog';
+import { AllProfilesList, type AdminProfileListItem } from './AllProfilesList';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,18 +58,30 @@ export default async function AdminDashboardPage() {
     redirect('/');
   }
 
-  const [{ data, error }, statsResult, kpisResult, adminsResult] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('id, display_name, submitted_at, profile_professions(custom_label, display_order, professions(name, slug))')
-      .eq('verification_status', 'pending')
-      .order('submitted_at', { ascending: true }),
-    getAdminDashboardStats(),
-    getAdminReviewKpis(),
-    getAdminUsersList(),
-  ]);
+  const [{ data, error }, { data: allProfilesData, error: allProfilesError }, statsResult, kpisResult, adminsResult] =
+    await Promise.all([
+      supabase
+        .from('profiles')
+        .select('id, display_name, submitted_at, profile_professions(custom_label, display_order, professions(name, slug))')
+        .eq('verification_status', 'pending')
+        .order('submitted_at', { ascending: true }),
+      // 승인·게시 완료 프로필을 포함해 전체를 검색/조회하기 위한 목록 --
+      // admin_all RLS 정책(is_admin(auth.uid()))이 이미 관리자에게 상태
+      // 무관 전체 조회를 허용하므로 새 RPC/마이그레이션 없이 필터만 뺀다.
+      supabase
+        .from('profiles')
+        .select(
+          'id, display_name, verification_status, is_public, suspended_at, profile_professions(custom_label, display_order, professions(name, slug))'
+        )
+        .order('created_at', { ascending: false })
+        .limit(200),
+      getAdminDashboardStats(),
+      getAdminReviewKpis(),
+      getAdminUsersList(),
+    ]);
 
   const pending = (data ?? []) as unknown as PendingProfile[];
+  const allProfiles = (allProfilesData ?? []) as unknown as AdminProfileListItem[];
   const stats = statsResult.ok ? statsResult.stats : null;
   const kpis = kpisResult.ok ? kpisResult.kpis : null;
   const admins = adminsResult.ok ? adminsResult.admins : [];
@@ -157,6 +170,19 @@ export default async function AdminDashboardPage() {
               </Link>
             ))}
           </div>
+        </section>
+
+        {/* 전체 프로필 검색 -- 승인·게시된 프로필 등 상태 무관하게 상세로
+            들어갈 수 있는 유일한 경로(임시조치 등은 /admin/[id]에서만 가능). */}
+        <section>
+          <h2 className="text-sm font-semibold text-gray-900 mb-3">전체 프로필 검색</h2>
+          {allProfilesError ? (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-900">
+              목록을 불러오지 못했습니다: {allProfilesError.message}
+            </div>
+          ) : (
+            <AllProfilesList profiles={allProfiles} />
+          )}
         </section>
 
         {/* 2-2. 감사로그 */}

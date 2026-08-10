@@ -111,6 +111,26 @@ export default function SignUpForm() {
         <div className="bg-white rounded-lg shadow p-8">
           <h1 className="text-page-title font-bold mb-6 text-center">회원가입</h1>
 
+          {/* 가입 전 기대치 안내 -- 실제 공개 플로우(업로드 즉시 공개, 증빙
+              파일만 관리자 검토)와 문구가 어긋나지 않게 유지할 것 */}
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+            <p className="text-sm font-medium text-blue-900 mb-2">
+              전문가 등록, 이렇게 진행돼요
+            </p>
+            <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+              <li>가입 후 프로필 작성 — 약 5분</li>
+              <li>프로필 사진과, 경력 또는 자격·면허 1개가 필요해요</li>
+              <li>업로드하면 바로 공개돼요 (자격증 증빙 파일만 관리자 확인 후 배지 표시)</li>
+            </ol>
+            <p className="text-xs text-blue-700 mt-3">
+              전문가를 찾고 계신가요? 가입 없이{' '}
+              <Link href="/experts" className="underline hover:text-blue-900">
+                둘러볼 수 있어요
+              </Link>
+              .
+            </p>
+          </div>
+
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">
               {error}

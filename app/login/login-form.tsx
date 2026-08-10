@@ -75,7 +75,14 @@ export default function LoginForm() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-lg shadow p-8">
-          <h1 className="text-page-title font-bold mb-6 text-center">로그인</h1>
+          <h1 className="text-page-title font-bold mb-2 text-center">로그인</h1>
+          <p className="text-sm text-gray-500 mb-6 text-center">
+            전문가 프로필 관리를 위한 로그인이에요.{' '}
+            <Link href="/experts" className="underline hover:text-gray-700">
+              전문가 찾기
+            </Link>
+            는 로그인 없이 가능해요.
+          </p>
 
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded">

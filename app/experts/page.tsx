@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
+import { getNextOnboardingStep } from '@/lib/auth/get-next-onboarding-step';
 import { getSpecialties } from '@/app/actions/specialties';
 import { getProfessions } from '@/app/actions/professions';
 import { type ExpertListItem } from './ExpertCard';
@@ -8,6 +9,11 @@ import { ExpertFilters } from './ExpertFilters';
 import { LoadMoreExperts, EXPERTS_PAGE_SIZE } from './LoadMoreExperts';
 
 export const dynamic = 'force-dynamic';
+
+// 공개 전문가가 이 수 미만이면 목록이 "비어있다"가 아니라 "초기 단계다"로
+// 읽히도록 상단에 콜드스타트 안내 배너를 띄운다. 필터와 무관하게 전체
+// 공개 수 기준 -- 목표치를 넘기면 배너는 자동으로 사라진다.
+const COLD_START_THRESHOLD = 10;
 
 function ExpertCardSkeleton() {
   return (
@@ -58,14 +64,20 @@ async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
   };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc('search_public_experts', {
-    p_professions: parseMulti(profession) ?? null,
-    p_regions: parseMulti(region) ?? null,
-    p_specialty_slugs: parseMulti(specialty) ?? null,
-    p_query: filters.query,
-    p_limit: EXPERTS_PAGE_SIZE,
-    p_offset: 0,
-  });
+  // 배너 임계치 판정은 목록과 같은 소스(public_expert_list 뷰)의 전체 수로
+  // 해야 필터 결과 수와 혼동되지 않는다.
+  const [{ data, error }, { count: publicCount }, expertEntryHref] = await Promise.all([
+    supabase.rpc('search_public_experts', {
+      p_professions: parseMulti(profession) ?? null,
+      p_regions: parseMulti(region) ?? null,
+      p_specialty_slugs: parseMulti(specialty) ?? null,
+      p_query: filters.query,
+      p_limit: EXPERTS_PAGE_SIZE,
+      p_offset: 0,
+    }),
+    supabase.from('public_expert_list').select('id', { count: 'exact', head: true }),
+    getNextOnboardingStep(),
+  ]);
 
   if (error) {
     return (
@@ -76,21 +88,44 @@ async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
   }
 
   const experts = (data ?? []) as ExpertListItem[];
-
-  if (experts.length === 0) {
-    return (
-      <div className="p-8 text-center text-gray-500 text-sm">
-        조건에 맞는 전문가가 아직 없습니다.
-      </div>
-    );
-  }
+  const isColdStart = (publicCount ?? 0) < COLD_START_THRESHOLD;
 
   return (
-    <LoadMoreExperts
-      key={`${filters.profession}|${filters.region}|${filters.specialty}|${filters.query}`}
-      initialExperts={experts}
-      filters={filters}
-    />
+    <>
+      {isColdStart && (
+        <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-900">
+          PT Career는 이제 막 시작했어요. 지금 합류하는 전문가는 초기 멤버로 가장
+          먼저 눈에 띕니다.
+        </div>
+      )}
+
+      {experts.length === 0 ? (
+        <div className="p-8 text-center text-gray-500 text-sm">
+          조건에 맞는 전문가가 아직 없습니다.
+        </div>
+      ) : (
+        <LoadMoreExperts
+          key={`${filters.profession}|${filters.region}|${filters.specialty}|${filters.query}`}
+          initialExperts={experts}
+          filters={filters}
+        />
+      )}
+
+      <Link
+        href={expertEntryHref}
+        className="flex gap-4 p-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/40 transition-colors min-h-[44px]"
+      >
+        <div className="w-16 h-16 rounded-full bg-white border border-dashed border-gray-300 flex-shrink-0 flex items-center justify-center text-2xl text-gray-400">
+          +
+        </div>
+        <div className="min-w-0 flex-1 flex flex-col justify-center">
+          <p className="font-semibold text-gray-900">전문가로 등록하기</p>
+          <p className="text-sm text-gray-600 mt-1">
+            약 5분이면 프로필을 만들 수 있어요. 경력과 자격으로 나를 소개해보세요.
+          </p>
+        </div>
+      </Link>
+    </>
   );
 }
 

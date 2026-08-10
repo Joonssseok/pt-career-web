@@ -157,3 +157,52 @@ export async function reviewLicense(
     return { ok: false, error: String(err) };
   }
 }
+
+export async function suspendExpertProfile(profileId: string, reason: string) {
+  try {
+    const supabase = await createClient();
+    const { data: result, error } = await supabase.rpc('admin_suspend_profile', {
+      p_profile_id: profileId,
+      p_reason: reason,
+    });
+
+    if (error) {
+      console.error('[suspendExpertProfile] Supabase error:', error);
+      return { ok: false, error: error.message };
+    }
+
+    if (result && result.length > 0) {
+      const { ok, error: rpcError } = result[0];
+      return { ok, error: rpcError };
+    }
+
+    return { ok: false, error: 'Unexpected response' };
+  } catch (err) {
+    console.error('[suspendExpertProfile] threw:', err);
+    return { ok: false, error: String(err) };
+  }
+}
+
+export async function unsuspendExpertProfile(profileId: string) {
+  try {
+    const supabase = await createClient();
+    const { data: result, error } = await supabase.rpc('admin_unsuspend_profile', {
+      p_profile_id: profileId,
+    });
+
+    if (error) {
+      console.error('[unsuspendExpertProfile] Supabase error:', error);
+      return { ok: false, error: error.message };
+    }
+
+    if (result && result.length > 0) {
+      const { ok, error: rpcError } = result[0];
+      return { ok, error: rpcError };
+    }
+
+    return { ok: false, error: 'Unexpected response' };
+  } catch (err) {
+    console.error('[unsuspendExpertProfile] threw:', err);
+    return { ok: false, error: String(err) };
+  }
+}

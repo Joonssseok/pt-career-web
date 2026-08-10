@@ -5,6 +5,7 @@ import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
 import { getEvidenceFileUrl } from '@/lib/storage/evidence-file-url';
 import { ReviewActions } from './ReviewActions';
 import { LicenseReviewActions } from './LicenseReviewActions';
+import { SuspendActions } from './SuspendActions';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,6 +48,7 @@ export default async function AdminProfileDetailPage({
     { data: licenses },
     { data: specialtyLinks },
     { data: professionLinks },
+    { data: suspensionHistory },
   ] = await Promise.all([
     supabase.from('workplaces').select('*').eq('profile_id', id).maybeSingle(),
     supabase.from('experiences').select('*').eq('profile_id', id).order('display_order'),
@@ -62,6 +64,14 @@ export default async function AdminProfileDetailPage({
       .select('custom_label, is_primary, professions(name, slug)')
       .eq('profile_id', id)
       .order('display_order'),
+    // admin_actions는 이미 이 프로필의 정지/해제 이력을 갖고 있다(action_type
+    // 'profile_hidden'/'profile_restored') -- 별도 이력 테이블 없이 재사용.
+    supabase
+      .from('admin_actions')
+      .select('id, action_type, memo, created_at')
+      .eq('target_profile_id', id)
+      .in('action_type', ['profile_hidden', 'profile_restored'])
+      .order('created_at', { ascending: false }),
   ]);
 
   // custom 슬롯은 custom_label을, 그 외에는 참조 테이블 name을 표시한다
@@ -107,6 +117,12 @@ export default async function AdminProfileDetailPage({
             {profile.headline && <p className="text-sm text-gray-700 mt-1">{profile.headline}</p>}
           </div>
         </div>
+
+        <SuspendActions
+          profileId={profile.id}
+          suspendedAt={profile.suspended_at}
+          suspensionReason={profile.suspension_reason}
+        />
 
         {profile.introduction && (
           <section className="bg-white rounded-lg border border-gray-200 p-4">
@@ -217,6 +233,25 @@ export default async function AdminProfileDetailPage({
             <p className="text-sm text-gray-400">없음</p>
           )}
         </section>
+
+        {suspensionHistory && suspensionHistory.length > 0 && (
+          <section className="bg-white rounded-lg border border-gray-200 p-4">
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">임시조치 이력</h3>
+            <ul className="space-y-2 text-sm text-gray-700">
+              {suspensionHistory.map((h) => (
+                <li key={h.id} className="border border-gray-100 rounded-lg p-3">
+                  <span className="font-medium">
+                    {h.action_type === 'profile_hidden' ? '🚫 임시조치' : '✅ 조치 해제'}
+                  </span>
+                  <span className="block text-xs text-gray-400 mt-0.5">
+                    {new Date(h.created_at).toLocaleString('ko-KR')}
+                  </span>
+                  {h.memo && <span className="block text-gray-600 mt-1">사유: {h.memo}</span>}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <ReviewActions targetUserId={profile.user_id} />
       </div>

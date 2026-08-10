@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { AccountSidebar } from '@/components/AccountSidebar'
 import { DeletionBanner } from './DeletionBanner'
+import { SuspensionBanner } from './SuspensionBanner'
 
 // "계정 정보" 전용 화면. 프로필 상태 배너/요약, 증빙 서류함은 "프로필 관리"
 // 쪽(/expert/edit)으로 이동했다 — 지시서 5절.
@@ -19,7 +20,7 @@ export default async function MyPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('deletion_requested_at')
+    .select('deletion_requested_at, suspended_at, suspension_reason')
     .eq('user_id', user.id)
     .maybeSingle()
 
@@ -35,6 +36,13 @@ export default async function MyPage() {
               가입일 {new Date(user.created_at).toLocaleDateString('ko-KR')}
             </p>
           </div>
+
+          {profile?.suspended_at && (
+            <SuspensionBanner
+              suspendedAt={profile.suspended_at}
+              suspensionReason={profile.suspension_reason}
+            />
+          )}
 
           {!profile && (
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">

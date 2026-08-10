@@ -45,7 +45,13 @@ const SUBMIT_ERROR_MESSAGE_MAP: Record<string, string> = {
     '업로드하려면 경력 또는 자격/면허를 최소 1개 이상 입력해주세요.',
 };
 
+const SUSPENDED_ERROR_PREFIX = 'Profile suspended: ';
+
 function toSubmitMessage(rawError: string): string {
+  if (rawError.startsWith(SUSPENDED_ERROR_PREFIX)) {
+    const reason = rawError.slice(SUSPENDED_ERROR_PREFIX.length);
+    return `임시조치되어 게시할 수 없습니다${reason ? ` (사유: ${reason})` : ''}.`;
+  }
   return SUBMIT_ERROR_MESSAGE_MAP[rawError] ?? '제출 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
 }
 

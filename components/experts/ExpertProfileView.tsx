@@ -186,8 +186,13 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
     (l): l is { label: string; Icon: typeof YoutubeIcon; url: string } => !!l.url
   );
 
-  // 정렬은 시작일 기준 내림차순(최근이 위). 시작일이 없는 항목은 맨 뒤로 보낸다.
+  // 정렬: ① 현재 재직중(is_current)이 항상 최상단 → ② 그 다음 시작일 내림차순
+  // (최근이 위). 프로필 소유자가 "경력 기간 비공개"를 켜면 뷰가 모든 경력의
+  // start_date/end_date를 NULL로 내려주므로(is_current는 유지) start_date만
+  // 보고 정렬하면 무력화된다 -- is_current를 1순위 기준으로 둬야 이 경우에도
+  // 현재 직장이 위로 온다. start_date가 없는 항목은 그룹 내에서 뒤로 보낸다.
   const sortedExperiences = [...expert.experiences].sort((a, b) => {
+    if (a.is_current !== b.is_current) return a.is_current ? -1 : 1;
     if (!a.start_date && !b.start_date) return 0;
     if (!a.start_date) return 1;
     if (!b.start_date) return -1;

@@ -374,8 +374,8 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
               ) : (
                 // View Mode
                 <div>
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-gray-900">
                         {LEVEL_LABELS[r.level]}
                         {r.degree && `(${r.degree})`} · {r.schoolName}
@@ -389,27 +389,29 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
                         </p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleEditStart(r)}
+                          className="min-h-[44px] px-3 py-2 text-blue-500 hover:text-blue-700 font-medium whitespace-nowrap flex items-center justify-center"
+                        >
+                          수정
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteRecord(r.id)}
+                          className="min-h-[44px] px-3 py-2 text-red-500 hover:text-red-700 font-medium whitespace-nowrap flex items-center justify-center"
+                        >
+                          삭제
+                        </button>
+                      </div>
                       <VisibilityToggle
                         visible={r.ownerVisible}
                         onToggle={() => handleToggleVisibility(r.id)}
                         disabled={!profileOwnerVisible}
                         pending={togglingId === r.id}
                       />
-                      <button
-                        type="button"
-                        onClick={() => handleEditStart(r)}
-                        className="min-h-[44px] min-w-[44px] px-3 py-2 text-blue-500 hover:text-blue-700 font-medium flex items-center justify-center"
-                      >
-                        수정
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteRecord(r.id)}
-                        className="min-h-[44px] min-w-[44px] px-3 py-2 text-red-500 hover:text-red-700 font-medium flex items-center justify-center"
-                      >
-                        삭제
-                      </button>
                     </div>
                   </div>
                 </div>

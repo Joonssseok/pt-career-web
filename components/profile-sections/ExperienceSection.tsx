@@ -358,8 +358,8 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
               ) : (
                 // View Mode
                 <div>
-                  <div className="flex items-start justify-between">
-                    <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
                       {/* 공개 프로필의 (전)/(현) 표기와 일관성 유지 */}
                       <p className="font-medium text-gray-900">
                         {exp.isCurrently ? '(현) ' : '(전) '}
@@ -401,27 +401,29 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
                         </span>
                       </label>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleEditStart(exp)}
+                          className="min-h-[44px] px-3 py-2 text-blue-500 hover:text-blue-700 font-medium whitespace-nowrap flex items-center justify-center"
+                        >
+                          수정
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteExperience(exp.id)}
+                          className="min-h-[44px] px-3 py-2 text-red-500 hover:text-red-700 font-medium whitespace-nowrap flex items-center justify-center"
+                        >
+                          삭제
+                        </button>
+                      </div>
                       <VisibilityToggle
                         visible={exp.ownerVisible}
                         onToggle={() => handleToggleVisibility(exp.id)}
                         disabled={!profileOwnerVisible}
                         pending={togglingId === exp.id}
                       />
-                      <button
-                        type="button"
-                        onClick={() => handleEditStart(exp)}
-                        className="min-h-[44px] min-w-[44px] px-3 py-2 text-blue-500 hover:text-blue-700 font-medium flex items-center justify-center"
-                      >
-                        수정
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteExperience(exp.id)}
-                        className="min-h-[44px] min-w-[44px] px-3 py-2 text-red-500 hover:text-red-700 font-medium flex items-center justify-center"
-                      >
-                        삭제
-                      </button>
                     </div>
                   </div>
                 </div>

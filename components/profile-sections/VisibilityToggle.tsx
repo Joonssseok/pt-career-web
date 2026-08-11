@@ -22,8 +22,10 @@ export function VisibilityToggle({
   const label = pending ? '변경 중...' : displayVisible ? '공개' : '비공개';
 
   return (
-    <span className="inline-flex items-center gap-2">
-      <span className={`text-xs font-medium ${displayVisible ? 'text-green-700' : 'text-gray-500'}`}>
+    <span className="inline-flex items-center gap-2 flex-shrink-0">
+      <span
+        className={`text-xs font-medium whitespace-nowrap ${displayVisible ? 'text-green-700' : 'text-gray-500'}`}
+      >
         {label}
       </span>
       <button

@@ -127,7 +127,7 @@ const WorkplaceSection = forwardRef<SectionSaveHandle, Props>(function Workplace
 
   return (
     <div className="space-y-6">
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3">
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-medium text-gray-900">근무기관 섹션 공개</p>
           {!profileOwnerVisible && (

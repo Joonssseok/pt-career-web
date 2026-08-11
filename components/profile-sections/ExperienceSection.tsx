@@ -172,7 +172,7 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
 
       {/* 경력 섹션 전체 마스터 스위치 -- 항목별 공개/비공개(VisibilityToggle)와
           별개로, 공개된 경력 항목에서 근무기간만 가릴지를 한 번에 제어한다. */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center justify-between gap-3">
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-medium text-gray-900">근무기간 공개</p>
           <p className="text-xs text-gray-500 mt-1">

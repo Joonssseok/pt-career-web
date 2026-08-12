@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { AppFrame } from "@/components/AppFrame";
 
 const notoSansKR = Noto_Sans_KR({
   subsets: ["latin"],
@@ -42,9 +43,11 @@ export default function RootLayout({
   return (
     <html lang="ko" className={notoSansKR.variable}>
       <body className="font-sans">
-        <SiteHeader />
-        {children}
-        <SiteFooter />
+        <AppFrame>
+          <SiteHeader />
+          {children}
+          <SiteFooter />
+        </AppFrame>
         <Analytics />
       </body>
     </html>

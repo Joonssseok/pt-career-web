@@ -213,7 +213,7 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
             설명 (선택 · 최대 1,000자)
           </label>
           <textarea
-            placeholder="교육 내용을 간단히 소개해주세요"
+            placeholder="예: 필라테스 매트·기구 지도법과 해부학을 6개월간 학습했습니다"
             value={newEducation.description}
             maxLength={1000}
             rows={4}
@@ -255,7 +255,7 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
                       })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                    placeholder="기관명"
+                    placeholder="예: 대한필라테스협회"
                   />
                   <input
                     type="text"
@@ -267,7 +267,7 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
                       })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                    placeholder="과정명"
+                    placeholder="예: 필라테스 지도자 과정"
                   />
                   <div className="flex gap-2">
                     <button

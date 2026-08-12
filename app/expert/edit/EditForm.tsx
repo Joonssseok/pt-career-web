@@ -47,6 +47,34 @@ const SUBMIT_ERROR_MESSAGE_MAP: Record<string, string> = {
 
 const SUSPENDED_ERROR_PREFIX = 'Profile suspended: ';
 
+// 한 줄 소개 placeholder -- 직군별 예시를 로테이션한다. 실제 선택된 직군과
+// 연동하려면 ProfessionSection(imperative ref 구조)의 상태를 부모로 끌어올려야
+// 해서 범위가 커진다 -- 이번엔 마운트 시 랜덤으로 하나를 고정 노출한다.
+// 과장광고 금지(이용약관 제7조) 표현("완치", "100% 효과" 등)은 넣지 않는다.
+const BIO_PLACEHOLDER_EXAMPLES = [
+  '무릎·어깨 재활 10년차, 축구선수 출신 물리치료사입니다',
+  '체형교정 전문 PT · 다이어트 성공 사례 200건 이상',
+  '생활습관병 예방 중심 건강운동관리사, 시니어 전문',
+];
+
+// 상세 소개 "예시 보기" 패널 -- ①전문분야·강점 ②대표 경력·성과 ③상담
+// 철학이 한 단락 안에 자연스럽게 드러나도록 작성해, 예시 자체가 작성
+// 템플릿 역할을 하게 한다. 여기도 과장광고 금지 표현은 넣지 않는다.
+const DESCRIPTION_EXAMPLES = [
+  {
+    profession: '물리치료사',
+    text: '무릎·어깨 등 근골격계 재활을 전문으로 합니다. 정형외과 협진 경험을 바탕으로 수술 후 재활 200건 이상을 담당했습니다. 통증의 원인을 함께 찾아가는 상담을 지향하며, 운동 습관이 자리 잡을 때까지 꾸준히 동행합니다.',
+  },
+  {
+    profession: 'PT(퍼스널 트레이너)',
+    text: '체형 불균형 교정과 근력 강화를 중심으로 지도하는 퍼스널 트레이너입니다. 직장인 회원 위주로 8년간 300명 이상의 운동 프로그램을 설계해왔습니다. 무리한 목표보다 오래 지속할 수 있는 루틴을 함께 만드는 걸 중요하게 생각합니다.',
+  },
+  {
+    profession: '건강운동관리사',
+    text: '생활습관병 예방과 시니어 운동 지도를 전문으로 하는 건강운동관리사입니다. 보건소·복지관 연계 프로그램에서 5년간 다양한 연령대를 지도했습니다. 몸 상태를 꼼꼼히 확인한 뒤 무리 없는 속도로 운동 강도를 조절합니다.',
+  },
+];
+
 function toSubmitMessage(rawError: string): string {
   if (rawError.startsWith(SUSPENDED_ERROR_PREFIX)) {
     const reason = rawError.slice(SUSPENDED_ERROR_PREFIX.length);
@@ -102,6 +130,18 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
   const [coverUploading, setCoverUploading] = useState(false);
   // 소셜링크 아이콘별 입력창 펼침 상태 -- 독립 토글(여러 개 동시 펼침 가능)
   const [openSocial, setOpenSocial] = useState<Record<string, boolean>>({});
+  // 한 줄 소개 placeholder -- 서버 렌더링 시 항상 0번 예시로 시작하고,
+  // 마운트 후(useEffect)에만 랜덤으로 바꾼다. 초기 state에서 바로
+  // Math.random()을 쓰면 서버와 클라이언트가 다른 값을 그려 hydration
+  // mismatch가 난다.
+  const [bioPlaceholder, setBioPlaceholder] = useState(BIO_PLACEHOLDER_EXAMPLES[0]);
+  const [showDescriptionExamples, setShowDescriptionExamples] = useState(false);
+
+  useEffect(() => {
+    setBioPlaceholder(
+      BIO_PLACEHOLDER_EXAMPLES[Math.floor(Math.random() * BIO_PLACEHOLDER_EXAMPLES.length)]
+    );
+  }, []);
 
   const loadProfile = async () => {
     const result = await getOwnProfile();
@@ -605,6 +645,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                         value={formData.bio}
                         onChange={handleChange}
                         maxLength={100}
+                        placeholder={`예: ${bioPlaceholder}`}
                         disabled={formState === 'loading'}
                         className={getInputClass('bio')}
                       />
@@ -612,7 +653,32 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">상세 소개</label>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-900">상세 소개</label>
+                        <button
+                          type="button"
+                          onClick={() => setShowDescriptionExamples((prev) => !prev)}
+                          aria-expanded={showDescriptionExamples}
+                          className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                        >
+                          {showDescriptionExamples ? '예시 접기 ▴' : '예시 보기 ▾'}
+                        </button>
+                      </div>
+
+                      {showDescriptionExamples && (
+                        <div className="mb-2 bg-blue-50 border border-blue-100 rounded-lg p-3 space-y-3">
+                          <p className="text-xs text-blue-800">
+                            💡 전문분야·강점 → 대표 경력·성과 → 상담 스타일 순으로 써보면 자연스러워요
+                          </p>
+                          {DESCRIPTION_EXAMPLES.map((example) => (
+                            <div key={example.profession}>
+                              <p className="text-xs font-semibold text-blue-700">{example.profession} 예시</p>
+                              <p className="text-xs text-gray-700 mt-1 leading-relaxed">{example.text}</p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       <textarea
                         name="description"
                         value={formData.description}

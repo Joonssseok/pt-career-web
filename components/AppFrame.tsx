@@ -22,10 +22,10 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      {/* 672px(max-w-2xl)는 너무 좁다는 피드백으로 4xl(896px)로 확장.
+      {/* 672px(2xl) -> 896px(4xl)도 좁다는 피드백으로 1300px로 확장.
           좌우 광고 컬럼 도입 시에는 이 프레임 폭 자체를 다시 검토해야
           한다 (광고 폭만큼 더 넓히거나, 3단 그리드로 재구성). */}
-      <div className="mx-auto min-h-screen w-full max-w-4xl bg-white sm:border-x sm:border-slate-200 sm:shadow-sm">
+      <div className="mx-auto min-h-screen w-full max-w-[1300px] bg-white sm:border-x sm:border-slate-200 sm:shadow-sm">
         {children}
       </div>
     </div>

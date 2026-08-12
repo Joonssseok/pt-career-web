@@ -343,7 +343,7 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
                     value={editForm?.schoolName || ''}
                     onChange={(e) => setEditForm({ ...editForm!, schoolName: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                    placeholder="학교명"
+                    placeholder="예: 서울대학교"
                   />
                   {(r.level === 'graduate' || r.level === 'university') && (
                     <input
@@ -351,7 +351,7 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
                       value={editForm?.major || ''}
                       onChange={(e) => setEditForm({ ...editForm!, major: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                      placeholder="전공"
+                      placeholder="예: 체육교육과"
                     />
                   )}
                   <div className="flex gap-2">

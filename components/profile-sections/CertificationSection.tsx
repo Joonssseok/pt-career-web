@@ -380,7 +380,7 @@ const CertificationSection = forwardRef<SectionSaveHandle, Props>(function Certi
                       })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                    placeholder="자격증명"
+                    placeholder="예: ISSA CPT"
                   />
                   <input
                     type="text"
@@ -392,7 +392,7 @@ const CertificationSection = forwardRef<SectionSaveHandle, Props>(function Certi
                       })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                    placeholder="발급처"
+                    placeholder="예: ISSA"
                   />
                   <div className="flex gap-2">
                     <button

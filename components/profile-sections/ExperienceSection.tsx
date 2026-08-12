@@ -196,7 +196,7 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
         <div className="grid grid-cols-2 gap-4">
           <input
             type="text"
-            placeholder="기관명"
+            placeholder="예: 서울정형외과의원"
             value={newExperience.companyName}
             onChange={(e) =>
               setNewExperience({
@@ -208,7 +208,7 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
           />
           <input
             type="text"
-            placeholder="직책"
+            placeholder="예: 물리치료팀장"
             value={newExperience.position}
             onChange={(e) =>
               setNewExperience({
@@ -304,7 +304,7 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
                       })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                    placeholder="기관명"
+                    placeholder="예: 서울정형외과의원"
                   />
                   <input
                     type="text"
@@ -316,7 +316,7 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
                       })
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
-                    placeholder="직책"
+                    placeholder="예: 물리치료팀장"
                   />
                   <label
                     className={`flex items-center gap-2 ${

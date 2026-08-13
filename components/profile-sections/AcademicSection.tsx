@@ -8,6 +8,7 @@ import {
   type AcademicLevel,
 } from '@/app/actions/academic-record';
 import { searchSchools, searchUniversities, type SchoolSearchResult } from '@/app/actions/school-search';
+import { ACADEMIC_LEVEL_LABELS } from '@/lib/constants/academic-levels';
 import { VisibilityToggle } from './VisibilityToggle';
 import { YearMonthSelect } from './YearMonthSelect';
 import type { SectionSaveHandle } from './types';
@@ -29,12 +30,7 @@ const LEVEL_OPTIONS: Array<{ value: AcademicLevel; label: string }> = [
   { value: 'high_school', label: '고등학교' },
   { value: 'middle_school', label: '중학교' },
 ];
-const LEVEL_LABELS: Record<AcademicLevel, string> = {
-  graduate: '대학원',
-  university: '대학교',
-  high_school: '고등학교',
-  middle_school: '중학교',
-};
+const LEVEL_LABELS = ACADEMIC_LEVEL_LABELS;
 
 const DEGREE_OPTIONS = ['석사', '박사'];
 

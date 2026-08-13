@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   getOwnProfile,
+  getOwnResumePhone,
   saveOwnProfile,
   getOwnRejectionReason,
   submitProfile,
@@ -122,6 +123,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
     blogUrl: '',
     threadsUrl: '',
     kakaoUrl: '',
+    resumePhone: '',
   });
 
   const [formState, setFormState] = useState<FormState>('default');
@@ -144,7 +146,9 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
   }, []);
 
   const loadProfile = async () => {
-    const result = await getOwnProfile();
+    // resume_phone은 컬럼 GRANT가 없어 getOwnProfile()의 일반 select에
+    // 포함되지 않는다 -- 전용 RPC로 별도 조회(app/actions/profile.ts 주석 참고).
+    const [result, phoneResult] = await Promise.all([getOwnProfile(), getOwnResumePhone()]);
     if (!result.ok || !result.profile) {
       setProfileMeta(null);
       return;
@@ -161,6 +165,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
       blogUrl: p.blog_url ?? '',
       threadsUrl: p.threads_url ?? '',
       kakaoUrl: p.kakao_url ?? '',
+      resumePhone: phoneResult.ok ? phoneResult.phone : '',
     });
     setProfileMeta({
       id: p.id,
@@ -373,6 +378,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
       blogUrl: formData.blogUrl,
       threadsUrl: formData.threadsUrl,
       kakaoUrl: formData.kakaoUrl,
+      resumePhone: formData.resumePhone,
     });
 
     if (result.ok) {
@@ -404,6 +410,12 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
         bio: formData.bio,
         description: formData.description,
         profileImagePath: formData.profileImagePath,
+        // 전화번호는 이 최소 저장 경로에도 반드시 포함해야 한다 -- 포함하지
+        // 않으면 save_own_profile의 DEFAULT NULL + EXCLUDED 업서트 때문에
+        // "임시저장"을 누를 때마다 이미 입력된 번호가 NULL로 덮어써진다
+        // (coverImagePath/소셜링크가 이 최소 호출에서 이미 겪고 있는 것과
+        // 같은 기존 문제 -- 그쪽은 이번 티켓 범위 밖이라 손대지 않음).
+        resumePhone: formData.resumePhone,
       });
       if (basicResult.ok) {
         setErrors({});
@@ -595,6 +607,23 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                           )}
                         </div>
 
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900 mb-2">
+                            전화번호 <span className="text-gray-400 font-normal">(선택)</span>
+                          </label>
+                          <input
+                            type="tel"
+                            name="resumePhone"
+                            value={formData.resumePhone}
+                            onChange={handleChange}
+                            placeholder="예: 010-1234-5678"
+                            disabled={formState === 'loading'}
+                            className={getInputClass('resumePhone')}
+                          />
+                          <p className="text-[11px] text-gray-400 mt-1 leading-tight">
+                            이력서 다운로드 시에만 사용되며 공개 프로필에는 노출되지 않습니다.
+                          </p>
+                        </div>
                       </div>
                     </div>
 

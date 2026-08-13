@@ -34,6 +34,22 @@ export async function getOwnProfile() {
   return { ok: true as const, error: '', profile };
 }
 
+// resume_phone은 컬럼 GRANT를 주지 않고 SECURITY DEFINER RPC로만 읽는다
+// (get_own_resume_phone -- 20260813000000_resume_export.sql). 다른 사람의
+// 공개 프로필을 authenticated로 조회할 때 전화번호가 같이 새는 걸 막기
+// 위한 의도된 설계라, getOwnProfile()의 일반 select에 합치지 않았다.
+export async function getOwnResumePhone() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc('get_own_resume_phone');
+
+  if (error) {
+    console.error('[getOwnResumePhone] Supabase error:', error);
+    return { ok: false as const, error: error.message, phone: '' };
+  }
+
+  return { ok: true as const, error: '', phone: (data as string | null) ?? '' };
+}
+
 // 소셜 링크는 공개 프로필에서 href로 그대로 쓰이므로 http(s) 링크만 허용한다
 // (saveWorkplace()의 공식 문의처 검증과 동일한 패턴, PR #56).
 function isValidHttpUrl(value: string): boolean {
@@ -64,6 +80,7 @@ export async function saveOwnProfile(data: {
   blogUrl?: string;
   threadsUrl?: string;
   kakaoUrl?: string;
+  resumePhone?: string;
 }) {
   try {
     for (const key of ['youtubeUrl', 'instagramUrl', 'blogUrl', 'threadsUrl', 'kakaoUrl'] as const) {
@@ -91,6 +108,7 @@ export async function saveOwnProfile(data: {
       p_blog_url: data.blogUrl?.trim() || null,
       p_threads_url: data.threadsUrl?.trim() || null,
       p_kakao_url: data.kakaoUrl?.trim() || null,
+      p_resume_phone: data.resumePhone?.trim() || null,
     });
 
     if (error) {

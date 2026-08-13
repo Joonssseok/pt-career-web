@@ -44,6 +44,15 @@ export default async function MyPage() {
             />
           )}
 
+          {profile && (
+            <a
+              href="/api/resume"
+              className="block text-center min-h-[44px] flex items-center justify-center gap-2 bg-gray-100 text-gray-900 rounded-lg font-medium hover:bg-gray-200 transition"
+            >
+              📄 이력서 다운로드 (Word)
+            </a>
+          )}
+
           {!profile && (
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
               <p className="text-sm text-blue-900">

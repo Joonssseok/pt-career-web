@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { AccountSidebar } from '@/components/AccountSidebar'
+import { AccountInfoForm } from '@/components/AccountInfoForm'
+import { getOwnResumePhone } from '@/app/actions/profile'
 import { DeletionBanner } from './DeletionBanner'
 import { SuspensionBanner } from './SuspensionBanner'
 
@@ -18,11 +20,14 @@ export default async function MyPage() {
     redirect('/login?next=/my')
   }
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('deletion_requested_at, suspended_at, suspension_reason')
-    .eq('user_id', user.id)
-    .maybeSingle()
+  const [{ data: profile }, phoneResult] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select('deletion_requested_at, suspended_at, suspension_reason')
+      .eq('user_id', user.id)
+      .maybeSingle(),
+    getOwnResumePhone(),
+  ])
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
@@ -31,11 +36,16 @@ export default async function MyPage() {
         <div className="bg-white rounded-lg shadow p-8 space-y-6">
           <div>
             <h1 className="text-page-title font-bold text-gray-900">계정 정보</h1>
-            <p className="text-sm text-gray-500 mt-1">{user.email}</p>
             <p className="text-xs text-gray-400 mt-1">
               가입일 {new Date(user.created_at).toLocaleDateString('ko-KR')}
             </p>
           </div>
+
+          <AccountInfoForm
+            initialEmail={user.email ?? ''}
+            initialPhone={phoneResult.ok ? phoneResult.phone : ''}
+            hasProfile={!!profile}
+          />
 
           {profile?.suspended_at && (
             <SuspensionBanner

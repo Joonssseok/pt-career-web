@@ -1,30 +1,14 @@
-'use client';
-
-import { usePathname } from 'next/navigation';
-
-// 사이드바(AccountSidebar)를 쓰는 화면과 관리자 화면은 좁은 프레임에 넣으면
-// 내용이 찌그러지므로 제외한다. 그 외 소비자용 화면(랜딩/experts/약관 등)은
-// 콘텐츠가 아직 적어 넓은 데스크톱 화면에서 휑해 보이므로, 앱처럼 폭을 좁혀
-// 중앙에 고정하고 바깥은 옅은 배경으로 채운다.
-const WIDE_PATH_PREFIXES = ['/admin', '/my', '/expert'];
-
+// 헤더(SiteHeader)는 이 프레임 밖에서 항상 전체 화면 폭으로 렌더링된다
+// (app/layout.tsx). 이 프레임은 헤더를 제외한 나머지(페이지 콘텐츠 +
+// SiteFooter)를 모든 경로 예외 없이 동일한 폭으로 가운데 고정한다.
+// 예전에는 사이드바(AccountSidebar)를 쓰는 /my, /expert/*와 관리자 화면
+// /admin을 이 프레임에서 제외했지만, 폭이 672px -> 1300px로 넓어지면서
+// 그 화면들의 내부 최대폭(사이드바 256px + 콘텐츠 최대 672px, 관리자
+// 콘텐츠 최대 896px)이 전부 1300px 안에 여유롭게 들어가 찌그러지지
+// 않는 걸 직접 확인했으므로 예외를 없앴다(2026-08-13 지시서).
 export function AppFrame({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  // 단순 startsWith는 '/expert'가 '/experts'까지 잘못 잡아먹으므로
-  // 정확히 그 경로이거나 그 하위 경로('/expert/...')일 때만 매칭한다.
-  const isWide = WIDE_PATH_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname?.startsWith(`${prefix}/`)
-  );
-
-  if (isWide) {
-    return <>{children}</>;
-  }
-
   return (
     <div className="min-h-screen bg-slate-100">
-      {/* 672px(2xl) -> 896px(4xl)도 좁다는 피드백으로 1300px로 확장.
-          좌우 광고 컬럼 도입 시에는 이 프레임 폭 자체를 다시 검토해야
-          한다 (광고 폭만큼 더 넓히거나, 3단 그리드로 재구성). */}
       <div className="mx-auto min-h-screen w-full max-w-[1300px] bg-white sm:border-x sm:border-slate-200 sm:shadow-sm">
         {children}
       </div>

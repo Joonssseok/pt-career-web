@@ -21,6 +21,7 @@ import ProfessionSection from '@/components/profile-sections/ProfessionSection';
 import SpecialtySection from '@/components/profile-sections/SpecialtySection';
 import GallerySection from '@/components/profile-sections/GallerySection';
 import type { SectionSaveHandle } from '@/components/profile-sections/types';
+import { YoutubeIcon, InstagramIcon, ThreadsIcon, KakaoIcon, BlogIcon } from '@/components/icons/SocialIcons';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 type ProfileMeta = {
@@ -354,43 +355,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
     return newErrors;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      setFormState('error');
-      return;
-    }
-
-    setFormState('loading');
-    setErrors({});
-
-    const result = await saveOwnProfile({
-      displayName: formData.displayName,
-      bio: formData.bio,
-      description: formData.description,
-      profileImagePath: formData.profileImagePath,
-      coverImagePath: formData.coverImagePath,
-      youtubeUrl: formData.youtubeUrl,
-      instagramUrl: formData.instagramUrl,
-      blogUrl: formData.blogUrl,
-      threadsUrl: formData.threadsUrl,
-      kakaoUrl: formData.kakaoUrl,
-      resumePhone: formData.resumePhone,
-    });
-
-    if (result.ok) {
-      setFormState('saved');
-      loadProfile();
-    } else {
-      setErrors({ submit: result.error });
-      setFormState('error');
-    }
-  };
-
-  // 맨 아래 저장 바의 "임시저장" — 기본 정보 + 6개 섹션을 검증 없이 한 번에 저장한다.
+  // 맨 아래 저장 바의 "임시저장" — 기본 정보 + 8개 섹션을 검증 없이 한 번에 저장한다.
   // 기본 정보를 먼저 저장(await)해야 한다: 프로필 행 자체가 없는 상태(신규 사용자)에서는
   // 하위 섹션 RPC가 전부 "Profile not found"로 실패하므로, 순서가 바뀌면 안 된다.
   const handleSaveDraft = async () => {
@@ -549,7 +514,14 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                     </div>
                   )}
 
-                  <form onSubmit={handleSubmit} className="space-y-5">
+                  {/* 예전에는 이 아래에 자체 "기본 정보 저장" 제출 버튼이 있는
+                      <form>이었다 -- 맨 아래 "임시저장"(handleSaveDraft)이 이미
+                      기본정보 + 8개 하위 섹션을 한 번에 저장하고 있어 완전히
+                      중복이라 버튼을 지웠다(직군/전문분야 섹션도 애초에 자체
+                      저장 버튼 없이 임시저장에만 의존하는 것과 동일한 컨벤션).
+                      <form>으로 남겨두면 버튼 없이도 Enter로 handleSubmit이
+                      조용히 실행될 부작용이 있어 <div>로 바꿨다. */}
+                  <div className="space-y-5">
                     <div className="flex gap-6">
                       {/* 이력서 증명사진 자리 — 실제 증명사진 규격(3.5:4.5)에 가까운 비율 박스.
                           용도(신원 확인용 증명사진)는 그대로 두고 크기만 확대(112x144 → 144x184). */}
@@ -732,13 +704,13 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                       <div className="flex gap-2">
                         {(
                           [
-                            { name: 'youtubeUrl', label: '유튜브', icon: '▶' },
-                            { name: 'instagramUrl', label: '인스타그램', icon: '📷' },
-                            { name: 'blogUrl', label: '블로그', icon: '✍' },
-                            { name: 'threadsUrl', label: '스레드', icon: '@' },
-                            { name: 'kakaoUrl', label: '카카오톡', icon: '💬' },
+                            { name: 'youtubeUrl', label: '유튜브', Icon: YoutubeIcon },
+                            { name: 'instagramUrl', label: '인스타그램', Icon: InstagramIcon },
+                            { name: 'blogUrl', label: '블로그', Icon: BlogIcon },
+                            { name: 'threadsUrl', label: '스레드', Icon: ThreadsIcon },
+                            { name: 'kakaoUrl', label: '카카오톡', Icon: KakaoIcon },
                           ] as const
-                        ).map(({ name, label, icon }) => {
+                        ).map(({ name, label, Icon }) => {
                           const filled = !!formData[name].trim();
                           const open = !!openSocial[name];
                           return (
@@ -758,7 +730,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                                     : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
                               }`}
                             >
-                              <span className="text-lg leading-none">{icon}</span>
+                              <Icon className="w-6 h-6" />
                               <span className="text-[10px] font-medium">{label}</span>
                               {filled && (
                                 <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center">
@@ -796,15 +768,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                           </div>
                         ))}
                     </div>
-
-                    <button
-                      type="submit"
-                      disabled={formState === 'loading'}
-                      className="w-full min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
-                    >
-                      {formState === 'loading' ? '저장 중...' : '기본 정보 저장'}
-                    </button>
-                  </form>
+                  </div>
 
                   <div className="pt-5 border-t border-gray-100">
                     <h3 className="text-sm font-semibold text-gray-900 mb-3">

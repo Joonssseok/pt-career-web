@@ -585,7 +585,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                         {errors.image && (
                           <p className="text-xs text-red-500 text-center">{errors.image}</p>
                         )}
-                        <p className="text-[11px] text-gray-400 text-center leading-tight">
+                        <p className="text-[12px] text-gray-400 text-center leading-tight">
                           승인 후 공개 프로필에 표시됩니다
                         </p>
                       </div>
@@ -622,7 +622,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                             disabled={formState === 'loading'}
                             className={getInputClass('resumePhone')}
                           />
-                          <p className="text-[11px] text-gray-400 mt-1 leading-tight">
+                          <p className="text-[12px] text-gray-400 mt-1 leading-tight">
                             이력서 다운로드 시에만 사용되며 공개 프로필에는 노출되지 않습니다.
                           </p>
                         </div>
@@ -663,7 +663,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                         />
                       </label>
                       {errors.cover && <p className="text-xs text-red-500 mt-1">{errors.cover}</p>}
-                      <p className="text-[11px] text-gray-400 mt-1">
+                      <p className="text-[12px] text-gray-400 mt-1">
                         jpg/png/webp, 5MB 이하. 저장 버튼을 눌러야 공개 프로필에 반영됩니다.
                       </p>
                     </div>
@@ -761,9 +761,9 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                               }`}
                             >
                               <Icon className="w-6 h-6" />
-                              <span className="text-[10px] font-medium">{label}</span>
+                              <span className="text-[11px] font-medium">{label}</span>
                               {filled && (
-                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-blue-500 text-white text-[10px] flex items-center justify-center">
+                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-blue-500 text-white text-[11px] flex items-center justify-center">
                                   ✓
                                 </span>
                               )}

@@ -10,6 +10,23 @@
   --text-page-title: 1.5rem;
   --text-page-title--line-height: 2rem;
 
+  /* 2026-08-13 지시서: 사이트 전반 글씨가 너무 작다는 피드백 -- 개별
+     파일을 일일이 고치는 대신 Tailwind 기본 타입 스케일 자체를 이
+     @theme에서 올린다(재사용 많은 값은 토큰으로 두는 이 저장소의
+     기존 원칙과 동일). text-xs/sm/base/lg를 쓰는 모든 곳에 한 번에
+     반영된다. text-[Npx] 임의값은 이 토큰의 영향을 받지 않으므로
+     각 파일에서 별도로 올렸다(app/not-found.tsx, EditForm.tsx,
+     ExpertProfileView.tsx, AccountInfoForm.tsx).
+     --text-hero/--text-page-title은 그대로 둔다(이미 충분히 큼).*/
+  --text-xs: 0.8125rem; /* 12px -> 13px */
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.9375rem; /* 14px -> 15px */
+  --text-sm--line-height: 1.375rem;
+  --text-base: 1.0625rem; /* 16px -> 17px */
+  --text-base--line-height: 1.625rem;
+  --text-lg: 1.1875rem; /* 18px -> 19px */
+  --text-lg--line-height: 1.75rem;
+
   --font-sans: var(--font-noto-sans-kr), ui-sans-serif, system-ui, sans-serif;
 }
 

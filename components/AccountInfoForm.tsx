@@ -188,7 +188,7 @@ export function AccountInfoForm({
                 {phoneState === 'loading' ? '저장 중...' : '저장'}
               </button>
             </div>
-            <p className="text-[11px] text-gray-400 mt-1 leading-tight">
+            <p className="text-[12px] text-gray-400 mt-1 leading-tight">
               이력서 다운로드 시에만 사용되며 공개 프로필에는 노출되지 않습니다.
             </p>
             {phoneMessage && (

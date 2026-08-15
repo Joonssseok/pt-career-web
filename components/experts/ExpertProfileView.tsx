@@ -220,17 +220,17 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
               <div className="text-base font-extrabold text-blue-600">
                 {expert.total_experience_years != null ? `${expert.total_experience_years}년` : '-'}
               </div>
-              <div className="text-[10px] text-gray-500 mt-0.5">경력</div>
+              <div className="text-[11px] text-gray-500 mt-0.5">경력</div>
             </div>
             <div className="flex-1 text-center py-3 px-1 border-l border-gray-200">
               <div className="text-base font-extrabold text-blue-600">{certifiedCount}개</div>
-              <div className="text-[10px] text-gray-500 mt-0.5">자격/면허</div>
+              <div className="text-[11px] text-gray-500 mt-0.5">자격/면허</div>
             </div>
             <div className="flex-1 text-center py-3 px-1 border-l border-gray-200">
               <div className="text-base font-extrabold text-blue-600">
                 {expert.workplace_region ?? '-'}
               </div>
-              <div className="text-[10px] text-gray-500 mt-0.5">지역</div>
+              <div className="text-[11px] text-gray-500 mt-0.5">지역</div>
             </div>
           </div>
         )}
@@ -292,7 +292,7 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
                       {/* (전)/(현)은 is_current 기준 -- 항목별 기간 비공개로 날짜가
                           NULL이어도 그대로 표시한다(PR #54/#57과 동일 근거). */}
                       <span
-                        className={`ml-1.5 inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        className={`ml-1.5 inline-block text-[11px] font-bold px-1.5 py-0.5 rounded ${
                           e.is_current
                             ? 'bg-green-100 text-green-700'
                             : 'bg-gray-100 text-gray-500'
@@ -303,7 +303,7 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
                     </div>
                     {e.position && <div className="text-xs text-gray-500 mt-0.5">{e.position}</div>}
                     {e.start_date && (
-                      <div className="text-[11px] text-gray-400 mt-0.5">
+                      <div className="text-[12px] text-gray-400 mt-0.5">
                         {e.start_date} ~ {e.is_current ? '현재' : e.end_date ?? ''}
                       </div>
                     )}
@@ -327,7 +327,7 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
                       {a.degree ? `(${a.degree})` : ''}
                     </div>
                     {(a.start_date || a.end_date) && (
-                      <div className="text-[11px] text-gray-400 mt-0.5">
+                      <div className="text-[12px] text-gray-400 mt-0.5">
                         {a.start_date ?? ''}
                         {a.start_date && a.end_date ? ' ~ ' : ''}
                         {a.end_date ?? ''}
@@ -358,7 +358,7 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
             <SectionCard
               icon="🏅"
               title="자격/면허"
-              action={<span className="text-[11px] font-bold text-green-600">관리자 인증</span>}
+              action={<span className="text-[12px] font-bold text-green-600">관리자 인증</span>}
             >
               <ul className="divide-y divide-gray-100">
                 {expert.licenses.map((l, i) => (
@@ -379,7 +379,7 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
                     {/* get_public_licenses()가 verification_status='verified' AND
                         is_public=true인 행만 반환하므로, 여기 나오는 항목은 전부
                         관리자 인증을 거친 것이다. */}
-                    <span className="ml-auto text-[11px] font-bold text-green-600 flex-shrink-0">
+                    <span className="ml-auto text-[12px] font-bold text-green-600 flex-shrink-0">
                       인증됨
                     </span>
                   </li>

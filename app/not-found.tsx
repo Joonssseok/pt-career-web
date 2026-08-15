@@ -4,7 +4,7 @@ export default function NotFound() {
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center px-4">
       <div className="max-w-md w-full flex flex-col items-center gap-4 text-center">
-        <p className="text-[32px] font-bold text-gray-900">404</p>
+        <p className="text-[36px] font-bold text-gray-900">404</p>
         <p className="text-2xl font-bold text-gray-900">페이지를 찾을 수 없습니다</p>
         <p className="text-base text-gray-500">
           요청하신 페이지가 없거나 주소가 변경되었습니다.

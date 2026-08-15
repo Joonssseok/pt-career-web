@@ -43,8 +43,8 @@ export default function RootLayout({
   return (
     <html lang="ko" className={notoSansKR.variable}>
       <body className="font-sans">
+        <SiteHeader />
         <AppFrame>
-          <SiteHeader />
           {children}
           <SiteFooter />
         </AppFrame>

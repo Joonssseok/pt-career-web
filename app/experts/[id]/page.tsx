@@ -62,6 +62,7 @@ type ExpertDetail = {
     issuing_organization: string | null;
     acquired_date: string | null;
   }[];
+  extra_links: { label: string; url: string }[];
 };
 
 const fetchExpert = cache(async (id: string): Promise<ExpertDetail | null> => {

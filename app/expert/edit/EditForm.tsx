@@ -20,6 +20,7 @@ import WorkplaceSection from '@/components/profile-sections/WorkplaceSection';
 import ProfessionSection from '@/components/profile-sections/ProfessionSection';
 import SpecialtySection from '@/components/profile-sections/SpecialtySection';
 import GallerySection from '@/components/profile-sections/GallerySection';
+import ExtraLinksSection from '@/components/profile-sections/ExtraLinksSection';
 import type { SectionSaveHandle } from '@/components/profile-sections/types';
 import { YoutubeIcon, InstagramIcon, ThreadsIcon, KakaoIcon, BlogIcon } from '@/components/icons/SocialIcons';
 
@@ -112,6 +113,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
   const professionRef = useRef<SectionSaveHandle>(null);
   const specialtyRef = useRef<SectionSaveHandle>(null);
   const galleryRef = useRef<SectionSaveHandle>(null);
+  const extraLinksRef = useRef<SectionSaveHandle>(null);
 
   const [formData, setFormData] = useState({
     displayName: '',
@@ -401,6 +403,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
       { label: '직군', ref: professionRef },
       { label: '전문분야', ref: specialtyRef },
       { label: '상세정보 이미지', ref: galleryRef },
+      { label: '추가링크', ref: extraLinksRef },
     ];
 
     const results = await Promise.all(
@@ -768,6 +771,8 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                           </div>
                         ))}
                     </div>
+
+                    <ExtraLinksSection ref={extraLinksRef} />
                   </div>
 
                   <div className="pt-5 border-t border-gray-100">

@@ -206,20 +206,6 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
     }
   };
 
-  const handleSubmitForReview = async () => {
-    setShowUploadConfirm(false);
-    setSubmitState('loading');
-    setSubmitError('');
-    const result = await submitProfile();
-    if (result.ok) {
-      setSubmitState('done');
-      loadProfile();
-    } else {
-      setSubmitError(toSubmitMessage(result.error));
-      setSubmitState('default');
-    }
-  };
-
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -357,10 +343,22 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
     return newErrors;
   };
 
-  // 맨 아래 저장 바의 "임시저장" — 기본 정보 + 8개 섹션을 검증 없이 한 번에 저장한다.
-  // 기본 정보를 먼저 저장(await)해야 한다: 프로필 행 자체가 없는 상태(신규 사용자)에서는
-  // 하위 섹션 RPC가 전부 "Profile not found"로 실패하므로, 순서가 바뀌면 안 된다.
-  const handleSaveDraft = async () => {
+  // 기본 정보(모든 필드) + 9개 하위 섹션을 한 번에 저장한다. "임시저장"
+  // 버튼과 "업로드" 버튼이 둘 다 이 함수를 거친다 -- submit_profile()
+  // RPC는 이미 DB에 저장된 값만 공개 전환할 뿐 화면(React state)의
+  // 미저장 내용을 저장하는 로직이 없어서, 이 함수를 거치지 않고 바로
+  // 업로드하면 방금 입력한 내용이 조용히 사라지는 긴급 버그였다
+  // (2026-08-13 지시서). 기본 정보를 먼저 저장(await)해야 한다: 프로필
+  // 행 자체가 없는 상태(신규 사용자)에서는 하위 섹션 RPC가 전부
+  // "Profile not found"로 실패하므로, 순서가 바뀌면 안 된다.
+  //
+  // saveOwnProfile 호출에는 formData의 모든 필드를 포함해야 한다 --
+  // 하나라도 빠뜨리면 save_own_profile의 DEFAULT NULL + EXCLUDED
+  // 업서트 때문에 그 필드가 매번 NULL로 덮어써진다. 실제로 coverImagePath/
+  // youtubeUrl/instagramUrl/blogUrl/threadsUrl/kakaoUrl이 빠져있어서
+  // "임시저장"을 누를 때마다 커버 이미지와 소셜링크 5종이 지워지는
+  // 활성 데이터 유실 버그였다(resumePhone만 먼저 고쳐져 있었음).
+  const saveAllSections = async (): Promise<boolean> => {
     setDraftSaveState('loading');
     setDraftSaveMessage('');
 
@@ -377,11 +375,12 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
         bio: formData.bio,
         description: formData.description,
         profileImagePath: formData.profileImagePath,
-        // 전화번호는 이 최소 저장 경로에도 반드시 포함해야 한다 -- 포함하지
-        // 않으면 save_own_profile의 DEFAULT NULL + EXCLUDED 업서트 때문에
-        // "임시저장"을 누를 때마다 이미 입력된 번호가 NULL로 덮어써진다
-        // (coverImagePath/소셜링크가 이 최소 호출에서 이미 겪고 있는 것과
-        // 같은 기존 문제 -- 그쪽은 이번 티켓 범위 밖이라 손대지 않음).
+        coverImagePath: formData.coverImagePath,
+        youtubeUrl: formData.youtubeUrl,
+        instagramUrl: formData.instagramUrl,
+        blogUrl: formData.blogUrl,
+        threadsUrl: formData.threadsUrl,
+        kakaoUrl: formData.kakaoUrl,
         resumePhone: formData.resumePhone,
       });
       if (basicResult.ok) {
@@ -423,9 +422,37 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
     if (failed.length === 0) {
       setDraftSaveState('done');
       setDraftSaveMessage('✓ 전체 저장되었습니다.');
+      return true;
     } else {
       setDraftSaveState('error');
       setDraftSaveMessage(`일부 저장에 실패했습니다: ${failed.join(', ')}`);
+      return false;
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    await saveAllSections();
+  };
+
+  const handleSubmitForReview = async () => {
+    setShowUploadConfirm(false);
+    setSubmitState('loading');
+    setSubmitError('');
+
+    const saved = await saveAllSections();
+    if (!saved) {
+      setSubmitState('default');
+      setSubmitError('입력한 내용을 저장하지 못해 업로드를 진행하지 않았습니다. 위 저장 결과를 확인해주세요.');
+      return;
+    }
+
+    const result = await submitProfile();
+    if (result.ok) {
+      setSubmitState('done');
+      loadProfile();
+    } else {
+      setSubmitError(toSubmitMessage(result.error));
+      setSubmitState('default');
     }
   };
 

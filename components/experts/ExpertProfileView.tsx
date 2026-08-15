@@ -67,9 +67,19 @@ export type ExpertProfileViewProps = {
       issuing_organization: string | null;
       acquired_date: string | null;
     }[];
+    extra_links: { label: string; url: string }[];
   };
   galleryImages: GalleryImage[];
 };
+
+// 고정 5종 브랜드가 없는 자유 라벨 링크용 일반 체인링크 아이콘.
+function LinkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 1 1 0 10h-2M8 12h8" />
+    </svg>
+  );
+}
 
 function SectionCard({
   icon,
@@ -179,6 +189,23 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
                   className="rounded-full overflow-hidden hover:opacity-80 transition-opacity"
                 >
                   <Icon />
+                </a>
+              ))}
+            </div>
+          )}
+
+          {expert.extra_links.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {expert.extra_links.map((link, i) => (
+                <a
+                  key={`${link.label}-${i}`}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-full text-xs font-medium text-gray-700 hover:border-gray-300 hover:bg-gray-100 transition-colors"
+                >
+                  <LinkIcon />
+                  {link.label}
                 </a>
               ))}
             </div>

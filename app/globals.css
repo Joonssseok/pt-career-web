@@ -28,6 +28,10 @@
   --text-lg--line-height: 1.75rem;
 
   --font-sans: var(--font-noto-sans-kr), ui-sans-serif, system-ui, sans-serif;
+
+  /* 2026-08-19 "Verified Motion" 리디자인 토큰. */
+  --color-primary: #2563eb;
+  --color-background: #f8fafc;
 }
 
 body {

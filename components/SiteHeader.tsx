@@ -24,7 +24,7 @@ export async function SiteHeader() {
   }
 
   return (
-    <nav className="sticky top-0 z-40 flex h-16 items-center justify-between px-4 sm:px-6 border-b border-gray-100 bg-white">
+    <nav className="sticky top-0 z-40 flex h-16 items-center justify-between px-4 sm:px-6 border-b border-slate-200/70 bg-white/88 backdrop-blur-xl">
       {/* 왼쪽: 로고 + 전역 내비게이션(로그인 여부와 무관하게 항상 표시).
           items-baseline: "전문가 찾기"(작은 글씨)가 로고의 베이스라인에 맞춰
           한 단계 아래로 내려앉아 브랜드의 하위 항목으로 읽히게 한다. */}
@@ -37,6 +37,12 @@ export async function SiteHeader() {
           className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors translate-y-px"
         >
           전문가 찾기
+        </Link>
+        <Link
+          href="/about"
+          className="hidden sm:inline text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors translate-y-px"
+        >
+          서비스 소개
         </Link>
       </div>
 

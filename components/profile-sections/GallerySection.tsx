@@ -218,7 +218,7 @@ const GallerySection = forwardRef<SectionSaveHandle, Props>(function GallerySect
                   onChange={(e) => handleCaptionChange(img.id, e.target.value)}
                   placeholder="캡션 (선택)"
                   maxLength={200}
-                  className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
+                  className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-3 py-1.5 border border-gray-300 rounded text-sm"
                 />
                 <div className="flex flex-wrap items-center gap-2">
                   <VisibilityToggle

@@ -224,7 +224,7 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
             onChange={(e) =>
               setNewRecord((prev) => ({ ...prev, level: e.target.value as AcademicLevel | '' }))
             }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">구분을 선택해주세요</option>
             {LEVEL_OPTIONS.map((opt) => (
@@ -241,7 +241,7 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
             <select
               value={newRecord.degree}
               onChange={(e) => setNewRecord((prev) => ({ ...prev, degree: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">선택 안 함</option>
               {DEGREE_OPTIONS.map((d) => (
@@ -265,7 +265,7 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
             }}
             onFocus={() => setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           {showSuggestions && schoolSuggestions.length > 0 && (
             <ul className="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
@@ -294,7 +294,7 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
               placeholder="예: 체육교육과"
               value={newRecord.major}
               onChange={(e) => setNewRecord((prev) => ({ ...prev, major: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         )}
@@ -338,7 +338,7 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
                     type="text"
                     value={editForm?.schoolName || ''}
                     onChange={(e) => setEditForm({ ...editForm!, schoolName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-3 py-2 border border-gray-300 rounded text-sm"
                     placeholder="예: 서울대학교"
                   />
                   {(r.level === 'graduate' || r.level === 'university') && (
@@ -346,7 +346,7 @@ const AcademicSection = forwardRef<SectionSaveHandle, Props>(function AcademicSe
                       type="text"
                       value={editForm?.major || ''}
                       onChange={(e) => setEditForm({ ...editForm!, major: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                      className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-3 py-2 border border-gray-300 rounded text-sm"
                       placeholder="예: 체육교육과"
                     />
                   )}

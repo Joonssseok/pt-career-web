@@ -171,7 +171,7 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
                   organizationName: e.target.value,
                 })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -186,7 +186,7 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
                   educationName: e.target.value,
                 })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -223,7 +223,7 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
                 description: e.target.value,
               })
             }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -254,7 +254,7 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
                         organizationName: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-3 py-2 border border-gray-300 rounded text-sm"
                     placeholder="예: 대한필라테스협회"
                   />
                   <input
@@ -266,7 +266,7 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
                         educationName: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-3 py-2 border border-gray-300 rounded text-sm"
                     placeholder="예: 필라테스 지도자 과정"
                   />
                   <div className="flex gap-2">

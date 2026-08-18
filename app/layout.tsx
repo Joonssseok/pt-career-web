@@ -16,6 +16,7 @@ const notoSansKR = Noto_Sans_KR({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  colorScheme: "light",
 };
 
 const siteUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL

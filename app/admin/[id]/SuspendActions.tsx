@@ -89,7 +89,7 @@ export function SuspendActions({
           placeholder="임시조치 사유를 입력해주세요 (필수)"
           rows={3}
           disabled={state === 'loading'}
-          className="w-full border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+          className="bg-white text-gray-900 placeholder:text-gray-400 w-full border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-400"
         />
       )}
       <button

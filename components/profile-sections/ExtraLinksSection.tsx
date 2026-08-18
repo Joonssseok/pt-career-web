@@ -98,14 +98,14 @@ const ExtraLinksSection = forwardRef<SectionSaveHandle>(function ExtraLinksSecti
                 onChange={(e) => handleChange(link.id, 'label', e.target.value)}
                 placeholder="예: 포트폴리오"
                 maxLength={30}
-                className="w-28 flex-shrink-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-white text-gray-900 placeholder:text-gray-400 w-28 flex-shrink-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
                 type="url"
                 value={link.url}
                 onChange={(e) => handleChange(link.id, 'url', e.target.value)}
                 placeholder="https://..."
-                className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-white text-gray-900 placeholder:text-gray-400 flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
                 type="button"

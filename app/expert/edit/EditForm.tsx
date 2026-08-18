@@ -457,7 +457,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
   };
 
   const getInputClass = (fieldName: string) => {
-    const baseClass = 'w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2';
+    const baseClass = 'w-full px-4 py-2 border rounded-lg bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2';
     if (errors[fieldName]) {
       return `${baseClass} border-red-500 focus:ring-red-500`;
     }

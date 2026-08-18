@@ -204,7 +204,7 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
                 companyName: e.target.value,
               })
             }
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white text-gray-900 placeholder:text-gray-400 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <input
             type="text"
@@ -216,7 +216,7 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
                 position: e.target.value,
               })
             }
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white text-gray-900 placeholder:text-gray-400 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -303,7 +303,7 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
                         companyName: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-3 py-2 border border-gray-300 rounded text-sm"
                     placeholder="예: 서울정형외과의원"
                   />
                   <input
@@ -315,7 +315,7 @@ const ExperienceSection = forwardRef<SectionSaveHandle, Props>(function Experien
                         position: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-3 py-2 border border-gray-300 rounded text-sm"
                     placeholder="예: 물리치료팀장"
                   />
                   <label

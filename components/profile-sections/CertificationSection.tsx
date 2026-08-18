@@ -249,7 +249,7 @@ const CertificationSection = forwardRef<SectionSaveHandle, Props>(function Certi
                 name: e.target.value,
               })
             }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <datalist id="common-certs">
             {commonCerts.map((cert) => (
@@ -270,7 +270,7 @@ const CertificationSection = forwardRef<SectionSaveHandle, Props>(function Certi
                 category: e.target.value,
               })
             }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">선택 안 함</option>
             {LICENSE_CATEGORIES.map((category) => (
@@ -296,7 +296,7 @@ const CertificationSection = forwardRef<SectionSaveHandle, Props>(function Certi
                   issuer: e.target.value,
                 })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           <div>
@@ -312,7 +312,7 @@ const CertificationSection = forwardRef<SectionSaveHandle, Props>(function Certi
                   issueDate: e.target.value,
                 })
               }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -379,7 +379,7 @@ const CertificationSection = forwardRef<SectionSaveHandle, Props>(function Certi
                         name: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-3 py-2 border border-gray-300 rounded text-sm"
                     placeholder="예: ISSA CPT"
                   />
                   <input
@@ -391,7 +391,7 @@ const CertificationSection = forwardRef<SectionSaveHandle, Props>(function Certi
                         issuer: e.target.value,
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                    className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-3 py-2 border border-gray-300 rounded text-sm"
                     placeholder="예: ISSA"
                   />
                   <div className="flex gap-2">

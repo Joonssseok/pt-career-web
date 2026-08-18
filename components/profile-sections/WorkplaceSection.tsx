@@ -155,7 +155,7 @@ const WorkplaceSection = forwardRef<SectionSaveHandle, Props>(function Workplace
             onChange={handleChange}
             placeholder="예: 피티케어 강남센터"
             required
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -175,7 +175,7 @@ const WorkplaceSection = forwardRef<SectionSaveHandle, Props>(function Workplace
                 value={formData.address}
                 onChange={handleChange}
                 placeholder="예: 서울특별시 강남구 테헤란로 123"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
@@ -185,7 +185,7 @@ const WorkplaceSection = forwardRef<SectionSaveHandle, Props>(function Workplace
                 value={formData.addressDetail}
                 onChange={handleChange}
                 placeholder="상세주소 (선택)"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -195,7 +195,7 @@ const WorkplaceSection = forwardRef<SectionSaveHandle, Props>(function Workplace
                 value={formData.latitude}
                 onChange={handleChange}
                 placeholder="위도 (선택, 예: 37.3915)"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
                 type="text"
@@ -203,7 +203,7 @@ const WorkplaceSection = forwardRef<SectionSaveHandle, Props>(function Workplace
                 value={formData.longitude}
                 onChange={handleChange}
                 placeholder="경도 (선택, 예: 127.1120)"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             {coordError && <p className="text-xs text-red-500">{coordError}</p>}
@@ -221,7 +221,7 @@ const WorkplaceSection = forwardRef<SectionSaveHandle, Props>(function Workplace
             value={formData.phone}
             onChange={handleChange}
             placeholder="예: 02-1234-5678"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="text-xs text-gray-500 mt-1">
             소속기관의 공식 연락처만 입력해주세요
@@ -239,7 +239,7 @@ const WorkplaceSection = forwardRef<SectionSaveHandle, Props>(function Workplace
             value={formData.websiteUrl}
             onChange={handleChange}
             placeholder="https://example.com"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
@@ -254,7 +254,7 @@ const WorkplaceSection = forwardRef<SectionSaveHandle, Props>(function Workplace
             value={formData.officialContact}
             onChange={handleChange}
             placeholder="https://open.kakao.com/o/..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <p className="text-xs text-gray-500 mt-1">
             💡 전화번호가 아닌 http:// 또는 https://로 시작하는 링크만 입력해주세요. 개인 연락처는 항상 비공개입니다.
@@ -270,7 +270,7 @@ const WorkplaceSection = forwardRef<SectionSaveHandle, Props>(function Workplace
             name="workplaceRegion"
             value={formData.workplaceRegion}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">근무지역을 선택해주세요 (선택사항)</option>
             {regions.map((region) => (

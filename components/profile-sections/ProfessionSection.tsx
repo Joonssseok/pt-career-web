@@ -167,7 +167,7 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
                   }}
                   maxLength={CUSTOM_LABEL_MAX}
                   placeholder={`직군명을 직접 입력 (예: 영상사, ${CUSTOM_LABEL_MAX}자 이내)`}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 {customLabelError && (
                   <p className="text-xs text-red-500 mt-1">{customLabelError}</p>

@@ -65,7 +65,7 @@ export function AllProfilesList({ profiles }: { profiles: AdminProfileListItem[]
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="이름으로 검색"
-          className="flex-1 min-h-[44px] px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="bg-white text-gray-900 placeholder:text-gray-400 flex-1 min-h-[44px] px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         <select
           value={statusFilter}

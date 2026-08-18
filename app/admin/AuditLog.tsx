@@ -62,7 +62,7 @@ export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
             type="date"
             value={from}
             onChange={(e) => setFrom(e.target.value)}
-            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
           />
         </label>
         <label className="text-xs text-gray-600 space-y-1">
@@ -71,7 +71,7 @@ export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
             type="date"
             value={to}
             onChange={(e) => setTo(e.target.value)}
-            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
           />
         </label>
         <label className="text-xs text-gray-600 space-y-1">
@@ -79,7 +79,7 @@ export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
           <select
             value={actionType}
             onChange={(e) => setActionType(e.target.value)}
-            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
           >
             <option value="">전체</option>
             <option value="profile_approved">승인</option>
@@ -93,7 +93,7 @@ export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
           <select
             value={adminUserId}
             onChange={(e) => setAdminUserId(e.target.value)}
-            className="w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+            className="bg-white text-gray-900 placeholder:text-gray-400 w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
           >
             <option value="">전체</option>
             {admins.map((a) => (

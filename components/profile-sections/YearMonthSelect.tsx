@@ -42,7 +42,7 @@ export function YearMonthSelect({ value, onChange, disabled = false }: Props) {
           emit(e.target.value, month);
         }}
         disabled={disabled}
-        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+        className="bg-white text-gray-900 placeholder:text-gray-400 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
       >
         <option value="">연도</option>
         {YEARS.map((y) => (
@@ -58,7 +58,7 @@ export function YearMonthSelect({ value, onChange, disabled = false }: Props) {
           emit(year, e.target.value);
         }}
         disabled={disabled}
-        className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+        className="bg-white text-gray-900 placeholder:text-gray-400 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
       >
         <option value="">월</option>
         {MONTHS.map((m) => (

@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 import { getNextOnboardingStep } from '@/lib/auth/get-next-onboarding-step';
 import { MotionPath } from '@/components/MotionPath';
@@ -30,33 +31,48 @@ export default async function Home() {
     <main className="flex min-h-screen flex-col bg-white">
       {/* Hero */}
       <section className="bg-gradient-to-b from-blue-50/80 via-white to-gray-50 px-4 py-12 sm:px-6 sm:py-16 lg:flex lg:min-h-[85vh] lg:flex-col lg:justify-center">
-        <div className="max-w-xl mx-auto text-center">
-          <h1 className="text-hero sm:text-4xl font-bold text-slate-900 leading-tight mb-4">
-            좋은 움직임은,
-            <br />
-            검증된 경력에서 시작됩니다.
-          </h1>
-          <p className="text-base sm:text-lg text-slate-600 mb-2 leading-relaxed">
-            재활·운동 전문가를 경력과 자격으로 확인해보세요.
-          </p>
-          <p className="text-xs text-slate-400 mb-8">
-            자격증은 관리자가 직접 검증하지만, 경력 소개글은 전문가 본인이 작성한
-            내용입니다.
-          </p>
+        <div className="max-w-xl mx-auto text-center lg:max-w-5xl lg:grid lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-10 lg:text-left">
+          <div>
+            <h1 className="text-hero sm:text-4xl font-bold text-slate-900 leading-tight mb-4">
+              좋은 움직임은,
+              <br />
+              검증된 경력에서 시작됩니다.
+            </h1>
+            <p className="text-base sm:text-lg text-slate-600 mb-2 leading-relaxed">
+              재활·운동 전문가를 경력과 자격으로 확인해보세요.
+            </p>
+            <p className="text-xs text-slate-400 mb-8">
+              자격증은 관리자가 직접 검증하지만, 경력 소개글은 전문가 본인이 작성한
+              내용입니다.
+            </p>
 
-          <div className="space-y-3 sm:space-y-4">
-            <Link
-              href={expertEntryHref}
-              className="block w-full py-3 sm:py-4 px-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-[0_8px_18px_-12px_rgba(37,99,235,0.8)] active:scale-[0.97] transition-all text-center"
-            >
-              전문가 프로필 만들기
-            </Link>
-            <Link
-              href="/experts"
-              className="block w-full py-3 sm:py-4 px-4 border border-slate-200 hover:border-blue-200 text-slate-700 hover:text-blue-600 font-bold rounded-xl transition-colors text-center"
-            >
-              전문가 찾기
-            </Link>
+            <div className="space-y-3 sm:space-y-4 lg:max-w-sm">
+              <Link
+                href={expertEntryHref}
+                className="block w-full py-3 sm:py-4 px-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-[0_8px_18px_-12px_rgba(37,99,235,0.8)] active:scale-[0.97] transition-all text-center"
+              >
+                전문가 프로필 만들기
+              </Link>
+              <Link
+                href="/experts"
+                className="block w-full py-3 sm:py-4 px-4 border border-slate-200 hover:border-blue-200 text-slate-700 hover:text-blue-600 font-bold rounded-xl transition-colors text-center"
+              >
+                전문가 찾기
+              </Link>
+            </div>
+          </div>
+
+          {/* 모바일에서는 숨김 -- 히어로 사진이 텍스트를 밀어내 스크롤만
+              길어지는 걸 피함(지시서 판단 사항). */}
+          <div className="hidden lg:block relative rounded-2xl overflow-hidden">
+            <Image
+              src="/images/hero-pt-session.jpg"
+              alt="태블릿을 들고 있는 트레이너"
+              width={2000}
+              height={1125}
+              priority
+              className="w-full h-auto rounded-2xl"
+            />
           </div>
         </div>
       </section>

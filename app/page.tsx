@@ -79,7 +79,7 @@ export default async function Home() {
 
       {/* Quick Category Grid */}
       <section className="bg-white px-4 py-8 sm:px-6">
-        <div className="max-w-4xl mx-auto">
+        <div>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-page-title font-bold text-slate-900">분야별로 찾기</h2>
             <Link href="/experts" className="text-sm font-medium text-blue-600 hover:text-blue-700">
@@ -104,7 +104,7 @@ export default async function Home() {
 
       {/* Verified Expert Cards */}
       <section className="px-4 py-8 sm:px-6 bg-[var(--color-background)]">
-        <div className="max-w-4xl mx-auto">
+        <div>
           <h2 className="text-page-title font-bold text-slate-900 mb-4">인증된 전문가</h2>
           <div className="space-y-3">
             {experts.map((expert) => (
@@ -134,7 +134,7 @@ export default async function Home() {
 
       {/* Trust 3-column */}
       <section className="bg-white px-4 py-8 sm:px-6">
-        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-5">
             <p className="text-sm font-bold text-emerald-600 mb-1">자격 검증</p>
             <p className="text-sm text-slate-600">
@@ -160,7 +160,7 @@ export default async function Home() {
 
       {/* 전문가 등록 유도 배너 -- 커리어가이드/블로그 콘텐츠는 아직 없어 만들지 않음 */}
       <section className="bg-[var(--color-background)] px-4 py-8 sm:px-6 pb-16">
-        <div className="max-w-4xl mx-auto bg-gradient-to-b from-blue-50/80 via-white to-gray-50 border border-blue-100 rounded-2xl p-6 text-center">
+        <div className="bg-gradient-to-b from-blue-50/80 via-white to-gray-50 border border-blue-100 rounded-2xl p-6 text-center">
           <p className="font-bold text-slate-900 mb-1">아직 프로필이 없으신가요?</p>
           <p className="text-sm text-slate-600 mb-4">약 5분이면 경력과 자격으로 나를 소개할 수 있어요.</p>
           <Link

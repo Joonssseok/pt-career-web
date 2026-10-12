@@ -113,7 +113,7 @@ async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
 
       <Link
         href={expertEntryHref}
-        className="flex gap-4 p-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/40 transition-colors min-h-[44px]"
+        className="flex gap-4 p-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/40 transition-colors min-h-tap"
       >
         <div className="w-16 h-16 rounded-full bg-white border border-dashed border-gray-300 flex-shrink-0 flex items-center justify-center text-2xl text-gray-400">
           +

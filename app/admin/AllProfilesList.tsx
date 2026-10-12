@@ -65,12 +65,12 @@ export function AllProfilesList({ profiles }: { profiles: AdminProfileListItem[]
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="이름으로 검색"
-          className="bg-white text-gray-900 placeholder:text-gray-400 flex-1 min-h-[44px] px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="bg-white text-gray-900 placeholder:text-gray-400 flex-1 min-h-tap px-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         <select
           value={statusFilter}
           onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-          className="min-h-[44px] px-3 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+          className="min-h-tap px-3 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
         >
           {STATUS_FILTERS.map((f) => (
             <option key={f.value} value={f.value}>
@@ -92,7 +92,7 @@ export function AllProfilesList({ profiles }: { profiles: AdminProfileListItem[]
               <Link
                 key={p.id}
                 href={`/admin/${p.id}`}
-                className="flex items-center justify-between gap-3 p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-400 transition-colors min-h-[44px]"
+                className="flex items-center justify-between gap-3 p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-400 transition-colors min-h-tap"
               >
                 <div className="min-w-0">
                   <p className="font-medium text-gray-900 truncate">

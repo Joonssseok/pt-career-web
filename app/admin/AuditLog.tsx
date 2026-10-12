@@ -109,7 +109,7 @@ export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
         type="button"
         onClick={() => fetchPage(0, false)}
         disabled={loading}
-        className="min-h-[44px] px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        className="min-h-tap px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
       >
         {loading ? '조회 중...' : '조회'}
       </button>
@@ -156,7 +156,7 @@ export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
           type="button"
           onClick={() => fetchPage(entries.length, true)}
           disabled={loading}
-          className="w-full min-h-[44px] py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          className="w-full min-h-tap py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
         >
           {loading ? '불러오는 중...' : '더 보기'}
         </button>

@@ -51,7 +51,7 @@ export function LicenseReviewActions({
           type="button"
           onClick={() => submit('rejected')}
           disabled={state === 'loading'}
-          className="min-h-[36px] px-3 text-xs border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
+          className="min-h-tap-sm px-3 text-xs border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50"
         >
           반려
         </button>
@@ -59,7 +59,7 @@ export function LicenseReviewActions({
           type="button"
           onClick={() => submit('verified')}
           disabled={state === 'loading'}
-          className="min-h-[36px] px-3 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
+          className="min-h-tap-sm px-3 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50"
         >
           {state === 'loading' ? '처리 중...' : '인증'}
         </button>

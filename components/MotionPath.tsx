@@ -8,7 +8,7 @@ export function MotionPath() {
           y1="4"
           x2="120"
           y2="4"
-          stroke="#93c5fd"
+          stroke="var(--color-motion)"
           strokeWidth="2"
           strokeDasharray="2 6"
           strokeLinecap="round"

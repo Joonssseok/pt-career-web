@@ -230,7 +230,7 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
         <button
           type="button"
           onClick={handleAddEducation}
-          className="w-full min-h-[44px] px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-medium flex items-center justify-center"
+          className="w-full min-h-tap px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-medium flex items-center justify-center"
         >
           + 교육 이력 추가
         </button>
@@ -273,14 +273,14 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
                     <button
                       type="button"
                       onClick={() => handleEditSave(edu.id)}
-                      className="min-h-[44px] px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 flex items-center justify-center"
+                      className="min-h-tap px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 flex items-center justify-center"
                     >
                       저장
                     </button>
                     <button
                       type="button"
                       onClick={handleEditCancel}
-                      className="min-h-[44px] px-4 py-2 bg-gray-300 text-gray-900 text-sm rounded hover:bg-gray-400 flex items-center justify-center"
+                      className="min-h-tap px-4 py-2 bg-gray-300 text-gray-900 text-sm rounded hover:bg-gray-400 flex items-center justify-center"
                     >
                       취소
                     </button>
@@ -309,14 +309,14 @@ const EducationSection = forwardRef<SectionSaveHandle, Props>(function Education
                         <button
                           type="button"
                           onClick={() => handleEditStart(edu)}
-                          className="min-h-[44px] px-3 py-2 text-blue-500 hover:text-blue-700 font-medium whitespace-nowrap flex items-center justify-center"
+                          className="min-h-tap px-3 py-2 text-blue-500 hover:text-blue-700 font-medium whitespace-nowrap flex items-center justify-center"
                         >
                           수정
                         </button>
                         <button
                           type="button"
                           onClick={() => handleDeleteEducation(edu.id)}
-                          className="min-h-[44px] px-3 py-2 text-red-500 hover:text-red-700 font-medium whitespace-nowrap flex items-center justify-center"
+                          className="min-h-tap px-3 py-2 text-red-500 hover:text-red-700 font-medium whitespace-nowrap flex items-center justify-center"
                         >
                           삭제
                         </button>

@@ -34,7 +34,7 @@ function MultiSelectField({
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        className={`w-full min-h-[44px] px-3 border rounded-lg text-sm font-medium text-left transition-colors ${
+        className={`w-full min-h-tap px-3 border rounded-lg text-sm font-medium text-left transition-colors ${
           selected.length > 0
             ? 'border-blue-500 bg-blue-50 text-blue-700'
             : open
@@ -169,14 +169,14 @@ export function ExpertFilters({
           }}
           placeholder="이름, 소개로 검색"
           aria-label="전문가 검색"
-          className="flex-1 min-w-0 min-h-[44px] px-3 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 min-w-0 min-h-tap px-3 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
           type="button"
           onClick={commitQuery}
           aria-label="검색"
           title="검색"
-          className="min-h-[44px] min-w-[44px] px-3 border border-gray-300 rounded-lg bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          className="min-h-tap min-w-tap px-3 border border-gray-300 rounded-lg bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
         >
           🔍
         </button>
@@ -184,7 +184,7 @@ export function ExpertFilters({
           type="button"
           onClick={() => setShowAdvanced((prev) => !prev)}
           aria-expanded={showAdvanced}
-          className={`min-h-[44px] px-3 border rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+          className={`min-h-tap px-3 border rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
             showAdvanced
               ? 'border-blue-500 bg-blue-50 text-blue-700'
               : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'

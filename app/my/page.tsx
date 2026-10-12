@@ -57,7 +57,7 @@ export default async function MyPage() {
           {profile && (
             <a
               href="/api/resume"
-              className="block text-center min-h-[44px] flex items-center justify-center gap-2 bg-gray-100 text-gray-900 rounded-lg font-medium hover:bg-gray-200 transition"
+              className="block text-center min-h-tap flex items-center justify-center gap-2 bg-gray-100 text-gray-900 rounded-lg font-medium hover:bg-gray-200 transition"
             >
               📄 이력서 다운로드 (Word)
             </a>
@@ -70,7 +70,7 @@ export default async function MyPage() {
               </p>
               <Link
                 href="/expert/edit"
-                className="block text-center min-h-[44px] flex items-center justify-center bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+                className="block text-center min-h-tap flex items-center justify-center bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
               >
                 전문가 프로필 만들기
               </Link>
@@ -91,7 +91,7 @@ export default async function MyPage() {
           >
             <button
               type="submit"
-              className="w-full min-h-[44px] bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition"
+              className="w-full min-h-tap bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition"
             >
               로그아웃
             </button>

@@ -72,7 +72,7 @@ export function TermsAgreementCard() {
         type="button"
         onClick={handleAgree}
         disabled={!checkboxChecked || submitting}
-        className="w-full min-h-[44px] px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+        className="w-full min-h-tap px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
       >
         {submitting ? '처리 중...' : '동의하기'}
       </button>

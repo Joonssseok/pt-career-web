@@ -80,7 +80,7 @@ export function LoadMoreExperts({
           type="button"
           onClick={loadMore}
           disabled={loading}
-          className="w-full min-h-[44px] py-3 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full min-h-tap py-3 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? '불러오는 중...' : '더보기'}
         </button>

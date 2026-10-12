@@ -1,6 +1,22 @@
 @import "tailwindcss" source("../");
 
+/* ==========================================================================
+   디자인 토큰 — 사이트의 모든 색/글꼴/글자 크기/여백/모서리/그림자 기준은 여기 한 곳.
+   (Tailwind v4는 tailwind.config.ts 대신 이 @theme 블록을 설정으로 쓴다.)
+
+   규칙
+   - 새 디자인 변경은 아래 토큰을 먼저 고치고, 개별 파일에 text-[13px] 같은
+     임의값을 새로 넣지 않는다.
+   - 화면 대부분은 Tailwind 기본 팔레트(gray-*, blue-*, red-* ...)와 기본
+     스케일(rounded-lg, p-4 ...)을 쓴다. 그 값들도 이 블록에서 덮어쓸 수 있는
+     토큰이다. 예) 브랜드 파란색을 사이트 전체에서 바꾸려면 여기서
+     --color-blue-600 을 재정의하면 bg-blue-600/text-blue-600 전부에 반영된다.
+   ========================================================================== */
 @theme {
+  /* ---------- 글꼴 ---------- */
+  --font-sans: var(--font-noto-sans-kr), ui-sans-serif, system-ui, sans-serif;
+
+  /* ---------- 글자 크기 ---------- */
   /* 홈페이지 히어로 제목 전용. 기존 text-3xl과 동일 크기 — sm 이상에서는 그대로
      sm:text-4xl을 함께 써서 시각적 크기를 바꾸지 않는다. */
   --text-hero: 1.875rem;
@@ -12,12 +28,7 @@
 
   /* 2026-08-13 지시서: 사이트 전반 글씨가 너무 작다는 피드백 -- 개별
      파일을 일일이 고치는 대신 Tailwind 기본 타입 스케일 자체를 이
-     @theme에서 올린다(재사용 많은 값은 토큰으로 두는 이 저장소의
-     기존 원칙과 동일). text-xs/sm/base/lg를 쓰는 모든 곳에 한 번에
-     반영된다. text-[Npx] 임의값은 이 토큰의 영향을 받지 않으므로
-     각 파일에서 별도로 올렸다(app/not-found.tsx, EditForm.tsx,
-     ExpertProfileView.tsx, AccountInfoForm.tsx).
-     --text-hero/--text-page-title은 그대로 둔다(이미 충분히 큼).*/
+     @theme에서 올린다. text-xs/sm/base/lg를 쓰는 모든 곳에 한 번에 반영된다. */
   --text-xs: 0.8125rem; /* 12px -> 13px */
   --text-xs--line-height: 1.125rem;
   --text-sm: 0.9375rem; /* 14px -> 15px */
@@ -27,11 +38,33 @@
   --text-lg: 1.1875rem; /* 18px -> 19px */
   --text-lg--line-height: 1.75rem;
 
-  --font-sans: var(--font-noto-sans-kr), ui-sans-serif, system-ui, sans-serif;
+  /* 배지/보조 라벨처럼 고정 px로 작게 둬야 하는 글자. 줄높이는 부모를 따른다. */
+  --text-micro: 11px; /* text-micro */
+  --text-caption: 12px; /* text-caption */
+  --text-display: 36px; /* text-display (404 숫자) */
 
+  /* ---------- 색 ---------- */
   /* 2026-08-19 "Verified Motion" 리디자인 토큰. */
   --color-primary: #2563eb;
   --color-background: #f8fafc;
+  --color-ink: #000; /* 기본 글자색 */
+  --color-motion: #93c5fd; /* 섹션 구분 점선 */
+
+  /* ---------- 여백 / 크기 ---------- */
+  /* 손가락으로 누르기 좋은 최소 높이. min-h-tap, min-w-tap 으로 쓴다. */
+  --spacing-tap: 44px;
+  --spacing-tap-md: 40px;
+  --spacing-tap-sm: 36px;
+  /* 페이지 본문 최대 폭 */
+  --container-page: 1240px;
+
+  /* ---------- 모서리 둥글기 ---------- */
+  /* 현재 사이트 기본: 버튼·입력·카드 = rounded-lg(0.5rem), 큰 카드 = rounded-2xl,
+     알약형 배지 = rounded-full. 값을 바꾸려면 아래 Tailwind 기본값을 덮어쓴다.
+     --radius-lg: 0.5rem; */
+
+  /* ---------- 그림자 ---------- */
+  --shadow-brand: 0 8px 18px -12px rgba(37, 99, 235, 0.8); /* 파란 주요 버튼 */
 }
 
 html {
@@ -39,5 +72,5 @@ html {
 }
 
 body {
-  color: #000;
+  color: var(--color-ink);
 }

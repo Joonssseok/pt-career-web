@@ -67,7 +67,7 @@ export function SuspendActions({
           type="button"
           onClick={handleUnsuspend}
           disabled={state === 'loading'}
-          className="w-full min-h-[44px] px-4 py-2 bg-white border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full min-h-tap px-4 py-2 bg-white border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {state === 'loading' ? '처리 중...' : '임시조치 해제'}
         </button>
@@ -96,7 +96,7 @@ export function SuspendActions({
         type="button"
         onClick={handleSuspend}
         disabled={state === 'loading' || (showReasonInput && !reason.trim())}
-        className="w-full min-h-[44px] px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full min-h-tap px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {showReasonInput ? '임시조치 확정' : '임시조치 (프로필 내리기)'}
       </button>

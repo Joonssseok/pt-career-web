@@ -43,7 +43,7 @@ export default function AboutPage() {
         <p className="text-sm text-slate-600 mb-4">경력과 자격으로 신뢰를 보여주세요.</p>
         <Link
           href="/signup"
-          className="inline-block py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-[0_8px_18px_-12px_rgba(37,99,235,0.8)] active:scale-[0.97] transition-all"
+          className="inline-block py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-brand active:scale-[0.97] transition-all"
         >
           전문가로 등록하기
         </Link>

@@ -55,7 +55,7 @@ export function ShareButton({ profileId, displayName, headline }: ShareButtonPro
       <button
         type="button"
         onClick={handleShare}
-        className="block w-full min-h-[44px] px-4 py-3 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-slate-50 transition-colors text-center"
+        className="block w-full min-h-tap px-4 py-3 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-slate-50 transition-colors text-center"
       >
         프로필 공유하기
       </button>

@@ -52,7 +52,7 @@ export default async function Home() {
             <p className="text-base sm:text-lg text-slate-600 mb-2 leading-relaxed">
               재활·운동 전문가를 경력과 자격으로 확인해보세요.
             </p>
-            <p className="text-xs text-slate-500 mb-8">
+            <p className="text-xs text-slate-600 mb-8">
               자격증은 관리자가 직접 검증하지만, 경력 소개글은 전문가 본인이 작성한
               내용입니다.
             </p>

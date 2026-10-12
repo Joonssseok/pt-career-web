@@ -43,7 +43,7 @@ export function DeletionBanner({ deletionRequestedAt }: { deletionRequestedAt: s
         type="button"
         onClick={handleCancel}
         disabled={loading}
-        className="w-full min-h-[44px] px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:bg-gray-400 transition"
+        className="w-full min-h-tap px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 disabled:bg-gray-400 transition"
       >
         {loading ? '처리 중...' : '탈퇴 취소'}
       </button>

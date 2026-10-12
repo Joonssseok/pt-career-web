@@ -145,7 +145,7 @@ export default function SignUpForm() {
 
           {/* Terms Agreement */}
           <div className="mb-4">
-            <label className="flex items-start gap-3 cursor-pointer min-h-[44px]">
+            <label className="flex items-start gap-3 cursor-pointer min-h-tap">
               <input
                 type="checkbox"
                 checked={agreedTerms}

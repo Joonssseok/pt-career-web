@@ -110,7 +110,7 @@ const ExtraLinksSection = forwardRef<SectionSaveHandle>(function ExtraLinksSecti
               <button
                 type="button"
                 onClick={() => handleDelete(link.id)}
-                className="min-h-[40px] px-3 text-xs border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap flex-shrink-0"
+                className="min-h-tap-md px-3 text-xs border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap flex-shrink-0"
               >
                 삭제
               </button>
@@ -125,7 +125,7 @@ const ExtraLinksSection = forwardRef<SectionSaveHandle>(function ExtraLinksSecti
         type="button"
         onClick={handleAdd}
         disabled={links.length >= MAX_LINKS}
-        className="w-full min-h-[40px] px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full min-h-tap-md px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {links.length >= MAX_LINKS ? `최대 ${MAX_LINKS}개까지 추가할 수 있어요` : '+ 링크 추가'}
       </button>

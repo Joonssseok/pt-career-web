@@ -75,7 +75,7 @@ export default function DeleteAccountPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <label className="flex items-start gap-3 cursor-pointer min-h-[44px]">
+            <label className="flex items-start gap-3 cursor-pointer min-h-tap">
               <input
                 type="checkbox"
                 checked={agreed}
@@ -104,14 +104,14 @@ export default function DeleteAccountPage() {
             <div className="flex gap-3 pt-2">
               <Link
                 href="/my"
-                className="min-h-[44px] px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
+                className="min-h-tap px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
               >
                 취소
               </Link>
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className="flex-1 min-h-[44px] px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
+                className="flex-1 min-h-tap px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
               >
                 {formState === 'loading' ? '처리 중...' : '탈퇴하기'}
               </button>

@@ -158,7 +158,7 @@ export default async function AdminDashboardPage() {
               <Link
                 key={p.id}
                 href={`/admin/${p.id}`}
-                className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-400 transition-colors min-h-[44px]"
+                className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 hover:border-blue-400 transition-colors min-h-tap"
               >
                 <div>
                   <p className="font-medium text-gray-900">{p.display_name ?? '이름 미입력'}</p>

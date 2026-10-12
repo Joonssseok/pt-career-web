@@ -108,7 +108,7 @@ export function AccountInfoForm({
             type="button"
             onClick={handleEmailSave}
             disabled={emailState === 'loading' || !email.trim() || email.trim() === initialEmail}
-            className="min-h-[44px] px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
+            className="min-h-tap px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
           >
             {emailState === 'loading' ? '변경 중...' : '변경'}
           </button>
@@ -149,7 +149,7 @@ export function AccountInfoForm({
             type="button"
             onClick={handlePasswordSave}
             disabled={passwordState === 'loading' || !password || !passwordConfirm}
-            className="w-full min-h-[44px] px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="w-full min-h-tap px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             {passwordState === 'loading' ? '변경 중...' : '비밀번호 변경'}
           </button>
@@ -183,12 +183,12 @@ export function AccountInfoForm({
                 type="button"
                 onClick={handlePhoneSave}
                 disabled={phoneState === 'loading'}
-                className="min-h-[44px] px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
+                className="min-h-tap px-4 bg-gray-800 text-white rounded-lg font-medium hover:bg-gray-900 disabled:bg-gray-300 disabled:cursor-not-allowed whitespace-nowrap"
               >
                 {phoneState === 'loading' ? '저장 중...' : '저장'}
               </button>
             </div>
-            <p className="text-[12px] text-gray-400 mt-1 leading-tight">
+            <p className="text-caption text-gray-400 mt-1 leading-tight">
               이력서 다운로드 시에만 사용되며 공개 프로필에는 노출되지 않습니다.
             </p>
             {phoneMessage && (

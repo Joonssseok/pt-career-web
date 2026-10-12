@@ -52,7 +52,7 @@ export default async function Home() {
             <p className="text-base sm:text-lg text-slate-600 mb-2 leading-relaxed">
               재활·운동 전문가를 경력과 자격으로 확인해보세요.
             </p>
-            <p className="text-xs text-slate-500 mb-8">
+            <p className="text-xs text-slate-600 mb-8">
               자격증은 관리자가 직접 검증하지만, 경력 소개글은 전문가 본인이 작성한
               내용입니다.
             </p>
@@ -60,7 +60,7 @@ export default async function Home() {
             <div className="space-y-3 sm:space-y-4 sm:max-w-sm">
               <Link
                 href={expertEntryHref}
-                className="block w-full py-3 sm:py-4 px-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-[0_8px_18px_-12px_rgba(37,99,235,0.8)] active:scale-[0.97] transition-all text-center"
+                className="block w-full py-3 sm:py-4 px-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-brand active:scale-[0.97] transition-all text-center"
               >
                 전문가 프로필 만들기
               </Link>
@@ -103,7 +103,7 @@ export default async function Home() {
       <MotionPath />
 
       {/* Verified Expert Cards */}
-      <section className="px-4 py-8 sm:px-6 bg-[var(--color-background)]">
+      <section className="px-4 py-8 sm:px-6 bg-background">
         <div>
           <h2 className="text-page-title font-bold text-slate-900 mb-4">인증된 전문가</h2>
           <div className="space-y-3">
@@ -159,13 +159,13 @@ export default async function Home() {
       </section>
 
       {/* 전문가 등록 유도 배너 -- 커리어가이드/블로그 콘텐츠는 아직 없어 만들지 않음 */}
-      <section className="bg-[var(--color-background)] px-4 py-8 sm:px-6 pb-16">
+      <section className="bg-background px-4 py-8 sm:px-6 pb-16">
         <div className="bg-gradient-to-b from-blue-50/80 via-white to-gray-50 border border-blue-100 rounded-2xl p-6 text-center">
           <p className="font-bold text-slate-900 mb-1">아직 프로필이 없으신가요?</p>
           <p className="text-sm text-slate-600 mb-4">약 5분이면 경력과 자격으로 나를 소개할 수 있어요.</p>
           <Link
             href={expertEntryHref}
-            className="inline-block py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-[0_8px_18px_-12px_rgba(37,99,235,0.8)] active:scale-[0.97] transition-all"
+            className="inline-block py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-brand active:scale-[0.97] transition-all"
           >
             전문가 프로필 만들기
           </Link>

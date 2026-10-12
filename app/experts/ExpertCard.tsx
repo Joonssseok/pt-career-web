@@ -20,7 +20,7 @@ export function ExpertCard({ expert }: { expert: ExpertListItem }) {
   return (
     <Link
       href={`/experts/${expert.id}`}
-      className="flex gap-4 p-4 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-colors min-h-[44px]"
+      className="flex gap-4 p-4 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-colors min-h-tap"
     >
       <div className="w-16 h-16 rounded-full bg-gray-100 flex-shrink-0 overflow-hidden flex items-center justify-center text-2xl text-gray-400">
         {expert.profile_image_path ? (

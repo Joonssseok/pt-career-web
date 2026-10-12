@@ -231,7 +231,7 @@ const GallerySection = forwardRef<SectionSaveHandle, Props>(function GallerySect
                     type="button"
                     onClick={() => handleMove(index, -1)}
                     disabled={index === 0}
-                    className="min-h-[36px] px-3 text-xs border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-30 transition-colors whitespace-nowrap"
+                    className="min-h-tap-sm px-3 text-xs border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-30 transition-colors whitespace-nowrap"
                   >
                     위로
                   </button>
@@ -239,14 +239,14 @@ const GallerySection = forwardRef<SectionSaveHandle, Props>(function GallerySect
                     type="button"
                     onClick={() => handleMove(index, 1)}
                     disabled={index === images.length - 1}
-                    className="min-h-[36px] px-3 text-xs border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-30 transition-colors whitespace-nowrap"
+                    className="min-h-tap-sm px-3 text-xs border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-30 transition-colors whitespace-nowrap"
                   >
                     아래로
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDelete(img.id)}
-                    className="min-h-[36px] px-3 text-xs border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap"
+                    className="min-h-tap-sm px-3 text-xs border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors whitespace-nowrap"
                   >
                     삭제
                   </button>

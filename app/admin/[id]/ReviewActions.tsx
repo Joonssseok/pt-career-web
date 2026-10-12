@@ -69,7 +69,7 @@ export function ReviewActions({ targetUserId }: { targetUserId: string }) {
             state === 'done' ||
             (showRejectInput && !reason.trim())
           }
-          className="flex-1 min-h-[44px] px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 min-h-tap px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {showRejectInput ? '반려 확정' : '반려'}
         </button>
@@ -77,7 +77,7 @@ export function ReviewActions({ targetUserId }: { targetUserId: string }) {
           type="button"
           onClick={() => submit('approved')}
           disabled={state === 'loading' || state === 'done'}
-          className="flex-1 min-h-[44px] px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 min-h-tap px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {state === 'loading' ? '처리 중...' : '승인'}
         </button>

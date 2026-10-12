@@ -6,8 +6,8 @@
 // 재조정 시에도 동일 원칙 유지).
 export function AppFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--color-background)]">
-      <div className="mx-auto min-h-screen w-full max-w-[1240px] bg-white px-5 sm:border-x sm:border-slate-200 sm:shadow-sm lg:px-8">
+    <div className="min-h-screen bg-background">
+      <div className="mx-auto min-h-screen w-full max-w-page bg-white px-5 sm:border-x sm:border-slate-200 sm:shadow-sm lg:px-8">
         {children}
       </div>
     </div>

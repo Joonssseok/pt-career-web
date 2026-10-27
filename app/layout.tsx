@@ -1,17 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans_KR } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { AppFrame } from "@/components/AppFrame";
-
-const notoSansKR = Noto_Sans_KR({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-noto-sans-kr",
-  display: "swap",
-});
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -42,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ko" className={notoSansKR.variable}>
+    <html lang="ko">
       <body className="font-sans">
         <SiteHeader />
         <AppFrame>

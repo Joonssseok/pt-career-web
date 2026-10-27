@@ -1,3 +1,5 @@
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+@import url("https://cdn.jsdelivr.net/gh/toss/tossface/dist/tossface.css");
 @import "tailwindcss" source("../");
 
 /* ==========================================================================
@@ -14,7 +16,7 @@
    ========================================================================== */
 @theme {
   /* ---------- 글꼴 ---------- */
-  --font-sans: var(--font-noto-sans-kr), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Pretendard Variable", Pretendard, Tossface, ui-sans-serif, system-ui, sans-serif;
 
   /* ---------- 글자 크기 ---------- */
   /* 홈페이지 히어로 제목 전용. 기존 text-3xl과 동일 크기 — sm 이상에서는 그대로

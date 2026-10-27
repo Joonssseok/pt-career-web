@@ -66,7 +66,7 @@ export function LoadMoreExperts({
   return (
     <div className="space-y-3">
       {experts.map((expert) => (
-        <ExpertCard key={expert.id} expert={expert} />
+        <ExpertCard key={expert.id} expert={expert} variant="explore" />
       ))}
 
       {error && (

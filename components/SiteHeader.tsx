@@ -24,16 +24,16 @@ export async function SiteHeader() {
   }
 
   return (
-    <nav className="sticky top-0 z-40 h-16 border-b border-slate-200/70 bg-white/88 backdrop-blur-xl">
+    <nav className="sticky top-0 z-40 h-24 border-b border-slate-200/70 bg-white/88 backdrop-blur-xl">
       {/* 헤더 내용도 AppFrame과 동일한 1240px 폭/패딩으로 가운데 정렬해
           아래 콘텐츠와 좌우 경계가 일직선으로 맞도록 한다. */}
-      <div className="mx-auto flex h-16 w-full max-w-page items-center justify-between px-5 lg:px-8">
+      <div className="mx-auto flex h-24 w-full max-w-page items-center justify-between px-5 lg:px-8">
         {/* 왼쪽: 로고 + 전역 내비게이션(로그인 여부와 무관하게 항상 표시).
             items-baseline: "전문가 찾기"(작은 글씨)가 로고의 베이스라인에 맞춰
             한 단계 아래로 내려앉아 브랜드의 하위 항목으로 읽히게 한다. */}
-        <div className="flex items-baseline gap-4 sm:gap-6">
-          <Link href="/" className="text-lg font-bold text-slate-900 sm:text-xl">
-            PT Career
+        <div className="flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:gap-6 lg:gap-9">
+          <Link href="/" className="whitespace-nowrap text-hero font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+            PT <span className="text-primary">Career</span>
           </Link>
           <Link
             href="/experts"
@@ -49,11 +49,11 @@ export async function SiteHeader() {
           </Link>
         </div>
 
-        <div className="flex items-center gap-4 sm:gap-6">
+        <div className="flex shrink-0 items-center gap-4 sm:gap-6 lg:gap-9">
           {user ? (
             <>
               {welcomeName && (
-                <span className="hidden sm:inline text-sm text-gray-600 truncate max-w-[12rem]">
+                <span className="hidden lg:inline text-sm text-gray-600 truncate max-w-[12rem]">
                   <span className="font-semibold text-gray-900">{welcomeName}</span>님 환영합니다
                 </span>
               )}

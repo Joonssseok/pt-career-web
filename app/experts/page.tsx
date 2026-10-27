@@ -17,8 +17,8 @@ const COLD_START_THRESHOLD = 10;
 
 function ExpertCardSkeleton() {
   return (
-    <div className="flex gap-4 p-4 rounded-lg border border-gray-200 bg-white animate-pulse">
-      <div className="w-16 h-16 rounded-full bg-gray-200 flex-shrink-0" />
+    <div className="flex gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 animate-pulse motion-reduce:animate-none sm:gap-6 sm:p-7">
+      <div className="size-20 shrink-0 rounded-2xl bg-slate-100 sm:size-24" />
       <div className="min-w-0 flex-1 space-y-2">
         <div className="h-4 w-1/3 bg-gray-200 rounded" />
         <div className="h-3 w-2/3 bg-gray-200 rounded" />
@@ -93,14 +93,14 @@ async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
   return (
     <>
       {isColdStart && (
-        <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg text-sm text-blue-900">
-          PT Career는 이제 막 시작했어요. 지금 합류하는 전문가는 초기 멤버로 가장
-          먼저 눈에 띕니다.
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-motion" />
+          초기 오픈 중 · 새로운 전문가를 차근차근 소개합니다.
         </div>
       )}
 
       {experts.length === 0 ? (
-        <div className="p-8 text-center text-gray-500 text-sm">
+        <div className="rounded-2xl bg-slate-50 px-5 py-16 text-center text-sm text-slate-500">
           조건에 맞는 전문가가 아직 없습니다.
         </div>
       ) : (
@@ -111,43 +111,53 @@ async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
         />
       )}
 
-      <Link
-        href={expertEntryHref}
-        className="flex gap-4 p-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50/40 transition-colors min-h-tap"
-      >
-        <div className="w-16 h-16 rounded-full bg-white border border-dashed border-gray-300 flex-shrink-0 flex items-center justify-center text-2xl text-gray-400">
-          +
-        </div>
-        <div className="min-w-0 flex-1 flex flex-col justify-center">
-          <p className="font-semibold text-gray-900">전문가로 등록하기</p>
-          <p className="text-sm text-gray-600 mt-1">
-            약 5분이면 프로필을 만들 수 있어요. 경력과 자격으로 나를 소개해보세요.
-          </p>
-        </div>
-      </Link>
+      <div className="flex flex-col gap-3 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-slate-500">전문가이신가요? 경력과 자격을 소개해보세요.</p>
+        <Link
+          href={expertEntryHref}
+          className="inline-flex min-h-tap items-center gap-3 self-start text-sm font-semibold text-primary hover:text-blue-700 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600"
+        >
+          프로필 만들기 <span aria-hidden>↗</span>
+        </Link>
+      </div>
     </>
   );
 }
 
 export default function ExpertsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
-    <main className="min-h-screen bg-white">
-      <nav className="flex items-center gap-3 px-4 py-4 sm:px-6 border-b border-gray-100">
-        <Link href="/home" className="text-sm text-gray-500 hover:text-gray-700">
-          ← 홈
+    <main className="relative isolate mx-auto min-h-screen max-w-4xl bg-white pb-16 pt-5 sm:pb-24 sm:pt-8">
+      <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>
+        <svg className="h-full w-full" viewBox="0 0 1200 800" preserveAspectRatio="xMaxYMid slice" fill="none">
+          <path d="M0 700C200 690 320 630 460 560S720 420 860 320S1080 150 1200 110" stroke="var(--color-primary)" strokeOpacity="0.1" strokeWidth="2" />
+          <path d="M0 640C260 630 460 590 660 500S980 300 1200 250" stroke="var(--color-motion)" strokeOpacity="0.35" strokeWidth="1.5" />
+          <path d="M0 760C280 745 440 700 640 630S960 470 1200 400" stroke="var(--color-motion)" strokeOpacity="0.3" strokeWidth="1.5" />
+          <circle cx="860" cy="320" r="6" fill="white" stroke="var(--color-primary)" strokeOpacity="0.2" strokeWidth="2" />
+        </svg>
+      </div>
+      <nav aria-label="페이지 경로">
+        <Link href="/home" className="inline-flex min-h-tap items-center gap-2 text-sm text-slate-500 transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-blue-600">
+          <span aria-hidden>←</span> 홈
         </Link>
-        <h1 className="text-lg font-semibold text-gray-900">전문가 찾기</h1>
       </nav>
 
-      <div className="px-4 py-4 sm:px-6 max-w-2xl mx-auto space-y-4">
-        <Suspense fallback={null}>
-          <FiltersWithData />
-        </Suspense>
+      <header className="relative overflow-hidden pb-9 pt-7 sm:pb-12 sm:pt-10">
+        <div className="relative">
+          <h1 className="text-hero font-extrabold tracking-tight text-slate-900 sm:text-4xl">전문가 <span className="text-primary">탐색</span></h1>
+          <p className="mt-3 text-sm text-slate-500 sm:text-base">경력과 자격으로, 나에게 맞는 전문가를.</p>
+        </div>
+      </header>
 
+      <Suspense fallback={null}>
+        <FiltersWithData />
+      </Suspense>
+
+      <section aria-labelledby="expert-results-title" className="mt-10 space-y-5 sm:mt-12 sm:space-y-6">
+        <h2 id="expert-results-title" className="text-base font-semibold text-slate-900">전문가 프로필</h2>
         <Suspense fallback={<ExpertListSkeleton />}>
           <ExpertResults searchParams={searchParams} />
         </Suspense>
-      </div>
+      </section>
     </main>
   );
 }

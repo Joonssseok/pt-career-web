@@ -25,6 +25,7 @@ function GrowthGraph() {
     <svg
       aria-hidden
       className="absolute inset-0 h-full w-full"
+      style={{ maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)' }}
       viewBox="0 0 1200 800"
       // 세로 화면(모바일)에서는 좌우가 잘리는데, 오른쪽(가파르게 올라가는 구간)이 남도록 xMax.
       preserveAspectRatio="xMaxYMid slice"

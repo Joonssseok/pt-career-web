@@ -103,11 +103,12 @@ export default async function Home() {
   }
 
   return (
-    <main className="relative -mx-5 flex min-h-svh flex-col items-center justify-center overflow-hidden bg-white px-5 text-center lg:-mx-8">
+    <main className="relative -mx-5 grid min-h-svh items-center overflow-hidden bg-white px-5 text-center lg:-mx-8" style={{ gridTemplateRows: '1fr auto 1fr' }}>
       <GrowthGraph />
       {/* 글자 뒤만 하얗게 비워 그래프 위에서도 잘 읽히게 한다. */}
       <div aria-hidden className="absolute inset-0 bg-radial from-white from-25% to-transparent to-65%" />
 
+      <div aria-hidden />
       <div className="relative flex w-full flex-col items-center">
         <h1 className="text-5xl font-extrabold tracking-tight text-slate-900 sm:text-7xl">
           PT <span className="text-primary">Career</span>
@@ -129,8 +130,10 @@ export default async function Home() {
         </Link>
 
       </div>
-      <div className="absolute inset-x-0 flex justify-center" style={{ bottom: '4pt' }}>
-        <SkipLandingCheckbox />
+      <div className="relative w-full self-stretch">
+        <div className="absolute inset-x-0 top-3/4 flex -translate-y-1/2 justify-center">
+          <SkipLandingCheckbox />
+        </div>
       </div>
     </main>
   );

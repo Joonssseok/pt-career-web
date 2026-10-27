@@ -1,4 +1,7 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { SkipLandingCheckbox } from '@/components/SkipLandingCheckbox';
 
 // 랜딩: 헤더 없이 전체 화면. 로고 + 한 줄 + 버튼 하나로 바로 전문가 탐색(/experts)으로 보낸다.
 // 배경은 "경력이 쌓여 올라가는" 성장 그래프가 반복해서 그려지는 애니메이션(globals.css 의 .landing-*).
@@ -92,7 +95,13 @@ function TracedEdge({ className }: { className: string }) {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const cookieStore = await cookies();
+  const skipUntil = Number(cookieStore.get('pt-career-skip-landing-until')?.value);
+  if (Number.isFinite(skipUntil) && skipUntil > Date.now()) {
+    redirect('/home');
+  }
+
   return (
     <main className="relative -mx-5 flex min-h-svh flex-col items-center justify-center overflow-hidden bg-white px-5 text-center lg:-mx-8">
       <GrowthGraph />
@@ -118,6 +127,10 @@ export default function Home() {
           <span aria-hidden className="absolute -right-1.5 -bottom-1.5 size-3 rounded-full border-2 border-primary bg-white" />
           <span className="relative">전문가 찾기</span>
         </Link>
+
+      </div>
+      <div className="absolute inset-x-0 flex justify-center" style={{ bottom: '4pt' }}>
+        <SkipLandingCheckbox />
       </div>
     </main>
   );

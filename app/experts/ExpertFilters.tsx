@@ -34,32 +34,33 @@ function MultiSelectField({
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         aria-expanded={open}
-        className={`w-full min-h-tap px-3 border rounded-lg text-sm font-medium text-left transition-colors ${
+        className={`flex w-full min-h-tap items-center justify-between rounded-xl border px-3 text-sm font-medium text-left transition-colors focus-visible:outline-2 focus-visible:outline-blue-600 ${
           selected.length > 0
-            ? 'border-blue-500 bg-blue-50 text-blue-700'
+            ? 'border-blue-200 bg-blue-50 text-blue-700'
             : open
               ? 'border-gray-400 bg-gray-50 text-gray-700'
-              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50/50'
         }`}
       >
         {label}
         {selected.length > 0 ? ` (${selected.length})` : ''}
+        <span aria-hidden className={`ml-auto text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}>⌄</span>
       </button>
 
       {open && (
-        <div className="mt-1 p-2 border border-gray-200 rounded-lg bg-white grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-56 overflow-y-auto">
+        <div className="mt-2 grid max-h-64 grid-cols-2 gap-1 overflow-y-auto rounded-xl border border-slate-100 bg-white p-2 sm:grid-cols-1">
           {options.map((opt) => (
             <label
               key={opt.value}
-              className="flex items-center gap-1.5 px-1.5 py-1 rounded text-xs text-gray-700 hover:bg-gray-50 cursor-pointer"
+              className="flex min-h-tap cursor-pointer items-center gap-2 rounded-lg px-2 py-2 text-xs text-slate-600 hover:bg-blue-50"
             >
               <input
                 type="checkbox"
                 checked={selected.includes(opt.value)}
                 onChange={() => onToggle(opt.value)}
-                className="flex-shrink-0"
+                className="size-4 shrink-0 accent-blue-600"
               />
-              <span className="truncate">{opt.label}</span>
+              <span className="min-w-0 leading-relaxed">{opt.label}</span>
             </label>
           ))}
         </div>
@@ -158,8 +159,8 @@ export function ExpertFilters({
   );
 
   return (
-    <div className="space-y-2">
-      <div className="flex gap-2">
+    <div className="space-y-4 rounded-2xl border border-blue-100 bg-linear-to-br from-blue-50/60 via-white to-white p-4 sm:p-6">
+      <div className="flex flex-wrap gap-2 sm:flex-nowrap">
         <input
           type="search"
           value={queryInput}
@@ -167,35 +168,38 @@ export function ExpertFilters({
           onKeyDown={(e) => {
             if (e.key === 'Enter') commitQuery();
           }}
-          placeholder="이름, 소개로 검색"
+          placeholder="이름·소개로 검색"
           aria-label="전문가 검색"
-          className="flex-1 min-w-0 min-h-tap px-3 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="min-h-14 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
         />
         <button
           type="button"
           onClick={commitQuery}
           aria-label="검색"
           title="검색"
-          className="min-h-tap min-w-tap px-3 border border-gray-300 rounded-lg bg-white text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+          className="flex min-h-14 min-w-14 items-center justify-center rounded-xl bg-primary px-4 text-white transition-colors hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         >
-          🔍
+          <svg aria-hidden width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+            <circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 4.5 4.5" />
+          </svg>
         </button>
         <button
           type="button"
           onClick={() => setShowAdvanced((prev) => !prev)}
           aria-expanded={showAdvanced}
-          className={`min-h-tap px-3 border rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+          className={`flex min-h-14 items-center gap-2 rounded-xl border px-4 text-sm font-medium whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
             showAdvanced
-              ? 'border-blue-500 bg-blue-50 text-blue-700'
-              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+              ? 'border-blue-200 bg-blue-50 text-blue-700'
+              : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50/50'
           }`}
         >
-          상세검색
+          <svg aria-hidden width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="2" fill="white" /><circle cx="15" cy="17" r="2" fill="white" /></svg>
+          필터
         </button>
       </div>
 
       {showAdvanced && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-1 gap-3 border-t border-blue-100/70 pt-4 sm:grid-cols-3">
           <MultiSelectField
             label="직군"
             selected={selectedProfessions}

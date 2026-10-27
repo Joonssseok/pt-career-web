@@ -4,6 +4,7 @@ import "./globals.css";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { AppFrame } from "@/components/AppFrame";
+import { HideOnHome } from "@/components/HideOnHome";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -36,7 +37,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className="font-sans">
-        <SiteHeader />
+        <HideOnHome>
+          <SiteHeader />
+        </HideOnHome>
         <AppFrame>
           {children}
           <SiteFooter />

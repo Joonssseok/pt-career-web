@@ -103,6 +103,7 @@ function SectionCard({
 }
 
 export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewProps) {
+  const coverImageUrl = getProfilePhotoUrl(expert.cover_image_path);
   const certifiedCount = expert.licenses.length;
 
   // 값이 있는 소셜 링크만 렌더링, 전부 비어 있으면 로고 줄 자체를 숨긴다.
@@ -131,11 +132,24 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
 
   return (
     <div>
-      {expert.cover_image_path && (
-        <div className="relative mb-6 h-40 overflow-hidden rounded-2xl bg-slate-50 sm:mb-8 sm:h-56">
-          <Image src={getProfilePhotoUrl(expert.cover_image_path) ?? ''} alt="" fill priority className="object-cover" />
-        </div>
-      )}
+      <div aria-label="프로필 커버" className="relative mb-5 aspect-[4/1] overflow-hidden rounded-2xl border border-blue-100 bg-linear-to-br from-blue-50 via-white to-sky-100 sm:mb-6">
+        {coverImageUrl ? (
+          <Image
+            src={coverImageUrl}
+            alt={`${expert.display_name ?? '전문가'}의 커버 이미지`}
+            fill
+            priority
+            sizes="(min-width: 1024px) 896px, 100vw"
+            className="object-cover object-center"
+          />
+        ) : (
+          <svg aria-hidden viewBox="0 0 1200 300" preserveAspectRatio="none" fill="none" className="h-full w-full">
+            <path d="M0 290C260 280 360 230 600 160S1000 40 1200 20" stroke="var(--color-primary)" strokeOpacity="0.2" strokeWidth="2" />
+            <path d="M0 330C280 310 460 260 720 190S1040 110 1200 80" stroke="var(--color-motion)" strokeOpacity="0.5" strokeWidth="2" />
+            <circle cx="600" cy="160" r="7" fill="white" stroke="var(--color-primary)" strokeOpacity="0.35" strokeWidth="2" />
+          </svg>
+        )}
+      </div>
 
       <div>
         <div className="relative isolate overflow-hidden rounded-3xl border border-blue-100 bg-white p-6 sm:p-10">

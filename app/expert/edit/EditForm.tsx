@@ -633,8 +633,8 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                     <div className="pt-4 border-t border-gray-100">
                       <h3 className="text-sm font-semibold text-gray-900 mb-2">디자인</h3>
                       <label className="block text-sm font-medium text-gray-900 mb-2">커버 이미지</label>
-                      {/* 공개 히어로(전체 폭 x h-48)와 비슷한 와이드 비율 미리보기 */}
-                      <div className="w-full aspect-[3/1] rounded-lg overflow-hidden bg-gradient-to-br from-blue-900 via-blue-600 to-blue-500 border border-gray-300 flex items-center justify-center">
+                      {/* 공개 프로필과 동일한 4:1 커버 비율로 미리보기한다. */}
+                      <div className="w-full aspect-[4/1] rounded-2xl overflow-hidden bg-linear-to-br from-blue-50 via-white to-sky-100 border border-blue-100 flex items-center justify-center">
                         {formData.coverImagePath ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
                           <img
@@ -643,8 +643,8 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="text-xs text-white/80 text-center px-2">
-                            커버 이미지가 없으면 기본 그라데이션이 표시됩니다
+                          <span className="text-xs text-slate-500 text-center px-2">
+                            커버 이미지가 없으면 기본 배너가 표시됩니다
                           </span>
                         )}
                       </div>
@@ -664,7 +664,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                       </label>
                       {errors.cover && <p className="text-xs text-red-500 mt-1">{errors.cover}</p>}
                       <p className="text-caption text-gray-400 mt-1">
-                        jpg/png/webp, 5MB 이하. 저장 버튼을 눌러야 공개 프로필에 반영됩니다.
+                        권장 1600×400px(4:1), jpg/png/webp, 5MB 이하. 저장 버튼을 눌러야 공개 프로필에 반영됩니다.
                       </p>
                     </div>
 

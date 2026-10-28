@@ -24,7 +24,7 @@ export async function SiteHeader() {
   }
 
   return (
-    <nav className="sticky top-0 z-40 h-24 border-b border-slate-200/70 bg-white/88 backdrop-blur-xl">
+    <nav className="sticky top-0 z-40 h-24 bg-white/88 backdrop-blur-xl">
       {/* 헤더 내용도 AppFrame과 동일한 1240px 폭/패딩으로 가운데 정렬해
           아래 콘텐츠와 좌우 경계가 일직선으로 맞도록 한다. */}
       <div className="mx-auto flex h-24 w-full max-w-page items-center justify-between px-5 lg:px-8">
@@ -100,6 +100,7 @@ export async function SiteHeader() {
           )}
         </div>
       </div>
+      <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 bg-linear-to-r from-transparent via-primary to-transparent" />
     </nav>
   );
 }

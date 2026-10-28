@@ -22,7 +22,7 @@ export function ExpertCard({ expert, variant = 'default' }: { expert: ExpertList
     <Link
       href={`/experts/${expert.id}`}
       className={isExplore
-        ? 'group flex min-h-tap items-start gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 transition-colors hover:border-blue-300 hover:bg-blue-50/20 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 sm:gap-6 sm:p-7'
+        ? 'group flex min-h-tap items-start gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 transition-colors hover:border-blue-300 hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-600 sm:gap-6 sm:p-7'
         : 'flex gap-4 p-4 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition-colors min-h-tap'}
     >
       <div className={isExplore

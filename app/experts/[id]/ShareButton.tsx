@@ -55,8 +55,9 @@ export function ShareButton({ profileId, displayName, headline }: ShareButtonPro
       <button
         type="button"
         onClick={handleShare}
-        className="block w-full min-h-tap px-4 py-3 border-2 border-blue-600 text-blue-600 font-medium rounded-lg hover:bg-slate-50 transition-colors text-center"
+        className="flex min-h-14 w-full items-center justify-center gap-3 rounded-xl border border-blue-200 bg-white px-5 py-3 text-center text-sm font-semibold text-primary transition-colors hover:border-blue-400 hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
       >
+        <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M12 16V3m-4 4 4-4 4 4M5 13v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" /></svg>
         프로필 공유하기
       </button>
       {message && (

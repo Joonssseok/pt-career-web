@@ -140,19 +140,21 @@ export default async function ExpertDetailPage({
   }));
 
   return (
-    <main className="relative min-h-screen bg-white">
-      <nav className="absolute top-3 left-3 z-20">
+    <main className="mx-auto min-h-screen max-w-4xl bg-white pb-16 pt-5 sm:pb-24 sm:pt-8">
+      <nav aria-label="페이지 경로" className="mb-6 sm:mb-8">
         <Link
           href="/experts"
-          className="text-sm text-white/90 hover:text-white drop-shadow-sm"
+          className="inline-flex min-h-tap items-center gap-2 text-sm text-slate-500 transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-blue-600"
         >
-          ← 목록
+          ← 전문가 탐색
         </Link>
       </nav>
 
-      <ExpertProfileView expert={expert} galleryImages={galleryImages} />
+      <div id="profile-details" className="scroll-mt-32">
+        <ExpertProfileView expert={expert} galleryImages={galleryImages} />
+      </div>
 
-      <div className="px-4 sm:px-6 max-w-2xl mx-auto pb-6">
+      <div className="mt-8 border-t border-slate-100 pt-6 sm:mt-12 sm:pt-8">
         <ShareButton
           profileId={expert.id}
           displayName={expert.display_name}

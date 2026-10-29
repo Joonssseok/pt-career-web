@@ -1,12 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { setOwnProfileVisibility } from '@/app/actions/profile';
 import { VisibilityToggle } from '@/components/profile-sections/VisibilityToggle';
 
 // 프로필 전체를 가리는 마스터 토글 — 켜져 있어야 각 섹션의 항목별 공개
 // 설정이 의미를 갖는다(꺼지면 항목 값과 무관하게 전체 비공개).
 export function ProfileVisibilityToggle({ initialVisible }: { initialVisible: boolean }) {
+  const router = useRouter();
   const [visible, setVisible] = useState(initialVisible);
   const [pending, setPending] = useState(false);
 
@@ -20,6 +22,7 @@ export function ProfileVisibilityToggle({ initialVisible }: { initialVisible: bo
       setVisible(!nextVisible);
       alert(result.error);
     }
+    if (result.ok) router.refresh();
     setPending(false);
   };
 

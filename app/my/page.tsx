@@ -1,103 +1,52 @@
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
-import Link from 'next/link'
-import { AccountSidebar } from '@/components/AccountSidebar'
-import { AccountInfoForm } from '@/components/AccountInfoForm'
-import { getOwnResumePhone } from '@/app/actions/profile'
-import { DeletionBanner } from './DeletionBanner'
-import { SuspensionBanner } from './SuspensionBanner'
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
+import { AccountSidebar } from '@/components/AccountSidebar';
+import { ProfileVisibilityToggle } from '@/components/ProfileVisibilityToggle';
+import { ProfileSharingTools } from '@/components/ProfileSharingTools';
+import { DeletionBanner } from './DeletionBanner';
+import { SuspensionBanner } from './SuspensionBanner';
 
-// "계정 정보" 전용 화면. 프로필 상태 배너/요약, 증빙 서류함은 "프로필 관리"
-// 쪽(/expert/edit)으로 이동했다 — 지시서 5절.
 export default async function MyPage() {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect('/login?next=/my')
-  }
-
-  const [{ data: profile }, phoneResult] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('deletion_requested_at, suspended_at, suspension_reason')
-      .eq('user_id', user.id)
-      .maybeSingle(),
-    getOwnResumePhone(),
-  ])
-
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login?next=/my');
+  const { data: profile, error } = await supabase.from('profiles')
+    .select('id, display_name, headline, verification_status, owner_visible, is_public, deletion_requested_at, suspended_at, suspension_reason')
+    .eq('user_id', user.id).maybeSingle();
+  if (error) throw new Error('프로필을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');
+  const canShare = !!profile && profile.verification_status === 'approved' && profile.owner_visible && profile.is_public && !profile.suspended_at && !profile.deletion_requested_at;
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-white md:flex-row">
       <AccountSidebar />
-      <div className="flex-1 min-w-0 max-w-2xl mx-auto px-4 py-8 w-full">
-        <div className="bg-white rounded-lg shadow p-8 space-y-6">
-          <div>
-            <h1 className="text-page-title font-bold text-gray-900">계정 정보</h1>
-            <p className="text-xs text-gray-400 mt-1">
-              가입일 {new Date(user.created_at).toLocaleDateString('ko-KR')}
-            </p>
-          </div>
-
-          <AccountInfoForm
-            initialEmail={user.email ?? ''}
-            initialPhone={phoneResult.ok ? phoneResult.phone : ''}
-            hasProfile={!!profile}
-          />
-
-          {profile?.suspended_at && (
-            <SuspensionBanner
-              suspendedAt={profile.suspended_at}
-              suspensionReason={profile.suspension_reason}
-            />
-          )}
-
-          {profile && (
-            <a
-              href="/api/resume"
-              className="block text-center min-h-tap flex items-center justify-center gap-2 bg-gray-100 text-gray-900 rounded-lg font-medium hover:bg-gray-200 transition"
-            >
-              📄 이력서 다운로드 (Word)
-            </a>
-          )}
-
-          {!profile && (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
-              <p className="text-sm text-blue-900">
-                아직 전문가 프로필이 없습니다. 프로필을 만들어 내 경력과 자격을 공개해보세요.
-              </p>
-              <Link
-                href="/expert/edit"
-                className="block text-center min-h-tap flex items-center justify-center bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
-              >
-                전문가 프로필 만들기
-              </Link>
+      <main className="min-w-0 flex-1 px-4 py-8 sm:px-8 sm:py-12">
+        <div className="mx-auto max-w-3xl space-y-6">
+          <header className="mb-8">
+            <p className="text-sm font-semibold text-primary">MY PT CAREER</p>
+            <h1 className="mt-2 text-page-title font-bold tracking-tight text-slate-950">마이페이지</h1>
+            <p className="mt-3 text-sm leading-relaxed text-slate-500">내 전문성을 정리하고, 프로필과 명함으로 연결하세요.</p>
+          </header>
+          {profile?.suspended_at && <SuspensionBanner suspendedAt={profile.suspended_at} suspensionReason={profile.suspension_reason} />}
+          {profile?.deletion_requested_at && <DeletionBanner deletionRequestedAt={profile.deletion_requested_at} />}
+          <section id="profile" className="scroll-mt-28 rounded-2xl border border-blue-100 bg-linear-to-br from-blue-50/70 to-white p-6 sm:p-8">
+            <h2 className="text-lg font-bold text-slate-950">프로필 관리</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">{profile ? `${profile.display_name || '내 프로필'}의 소개와 전문 이력을 관리하세요.` : '첫 프로필을 만들고 경력과 자격을 소개하세요.'}</p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link href="/expert/edit" className="inline-flex min-h-12 items-center rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-blue-700">{profile ? '프로필 수정' : '프로필 생성'}</Link>
+              {canShare && <Link href={`/experts/${profile.id}`} className="inline-flex min-h-12 items-center rounded-xl border border-blue-200 bg-white px-5 text-sm font-semibold text-primary">프로필 미리보기</Link>}
+              {profile && <a href="/api/resume" className="inline-flex min-h-12 items-center px-3 text-sm text-slate-600">이력서 다운로드</a>}
             </div>
-          )}
-
-          {profile?.deletion_requested_at && (
-            <DeletionBanner deletionRequestedAt={profile.deletion_requested_at} />
-          )}
-
-          <form
-            action={async () => {
-              'use server'
-              const supabase = await createClient()
-              await supabase.auth.signOut()
-              redirect('/login')
-            }}
-          >
-            <button
-              type="submit"
-              className="w-full min-h-tap bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition"
-            >
-              로그아웃
-            </button>
-          </form>
+            {profile && <div className="mt-5 flex items-center gap-4 text-sm text-slate-600"><span>프로필 전체 공개</span><ProfileVisibilityToggle initialVisible={profile.owner_visible} /></div>}
+            {!canShare && profile && <p className="mt-3 text-xs leading-relaxed text-slate-500">공개 승인 및 공개 설정 후 프로필 미리보기와 공유를 이용할 수 있습니다.</p>}
+          </section>
+          <ProfileSharingTools profileId={canShare ? profile!.id : null} displayName={profile?.display_name ?? ''} headline={profile?.headline ?? ''} />
+          <section id="account" className="scroll-mt-28 rounded-2xl border border-slate-200 p-6 sm:p-8">
+            <h2 className="text-lg font-bold text-slate-950">계정 설정</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500">로그인 정보와 계정 연락처, 약관 동의를 관리하세요.</p>
+            <Link href="/my/account" className="mt-4 inline-flex min-h-12 items-center text-sm font-semibold text-primary">계정 설정으로 이동 →</Link>
+          </section>
         </div>
-      </div>
+      </main>
     </div>
-  )
+  );
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { GRACE_PERIOD_DAYS } from '@/lib/constants/account-deletion';
+import { purgeDamoaFiles } from '@/lib/damoa/purge-files';
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -31,6 +32,7 @@ export async function GET(request: NextRequest) {
 
   for (const profile of expiredProfiles ?? []) {
     try {
+      await purgeDamoaFiles(supabase, profile.user_id);
       // Both buckets store a user's files under a `${user_id}/...` prefix
       // (profile-images: `${user_id}/photo.${ext}`; evidence-files:
       // `${user_id}/${randomUUID}.${ext}`), so listing the folder catches

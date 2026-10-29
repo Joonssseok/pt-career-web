@@ -119,7 +119,8 @@ export type Attachment = {
   name: string;
   size: number;
   type: string;
-  blob: Blob;
+  blob?: Blob;
+  path?: string;
 };
 export type Activity = {
   owner: string;
@@ -134,6 +135,7 @@ export type Activity = {
   details: Record<string, string>;
   files: Attachment[];
   updated: string;
+  revision?: string;
 };
 export function fileBytes(rows: Activity[]) {
   return rows.reduce((n, r) => n + r.files.reduce((s, f) => s + f.size, 0), 0);

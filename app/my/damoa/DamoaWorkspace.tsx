@@ -12,7 +12,13 @@ import {
   deleteActivity,
   loadActivities,
   saveActivity,
-} from "@/lib/damoa/browser-store";
+  loadFileUsage,
+  importBrowserActivities,
+  cleanupUnusedFiles,
+  FILE_LIMIT,
+  pendingBrowserActivities,
+} from "@/lib/damoa/server-store";
+import { loadActivities as loadBrowserActivities } from "@/lib/damoa/browser-store";
 
 type View = "records" | "files" | "summary";
 const inputClass =
@@ -53,21 +59,29 @@ function Icon({
   );
 }
 function FileLink({ file }: { file: Attachment }) {
-  const [url, setUrl] = useState("");
+  const [localUrl, setLocalUrl] = useState("");
   useEffect(() => {
+    if (!file.blob) return;
     const value = URL.createObjectURL(file.blob);
-    setUrl(value);
+    setLocalUrl(value);
     return () => URL.revokeObjectURL(value);
   }, [file.blob]);
+  const url = file.path ? `/api/damoa/files/${file.id}` : localUrl;
   return (
     <a
       href={url || undefined}
+      aria-disabled={!url}
       download={file.name}
       className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-100 bg-slate-50/70 p-3 hover:border-blue-200"
     >
       <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white text-primary">
         {file.type.startsWith("image/") && url ? (
-          <img src={url} alt="" className="h-full w-full object-cover" />
+          <img
+            src={url}
+            alt=""
+            className="h-full w-full object-cover"
+            loading="lazy"
+          />
         ) : (
           <Icon kind="folder" />
         )}
@@ -77,7 +91,8 @@ function FileLink({ file }: { file: Attachment }) {
           {file.name}
         </span>
         <span className="text-xs text-slate-400">
-          {(file.size / 1024 / 1024).toFixed(2)}MB · 다운로드
+          {(file.size / 1024 / 1024).toFixed(2)}MB ·{" "}
+          {url ? "다운로드" : "불러오는 중"}
         </span>
       </span>
     </a>
@@ -86,6 +101,61 @@ function FileLink({ file }: { file: Attachment }) {
 export function DamoaWorkspace({ owner }: { owner: string }) {
   const [records, setRecords] = useState<Activity[]>([]);
   const [ready, setReady] = useState(false);
+  const [serverUsed, setServerUsed] = useState(0);
+  const [legacy, setLegacy] = useState<Activity[]>([]);
+  const [migrating, setMigrating] = useState(false);
+  const [maintenance, setMaintenance] = useState(false);
+  async function refresh() {
+    const [rows, bytes] = await Promise.all([
+      loadActivities(owner),
+      loadFileUsage(owner),
+    ]);
+    setRecords(rows);
+    setServerUsed(bytes);
+    return rows;
+  }
+  async function migrate() {
+    setMigrating(true);
+    setLoadError("");
+    try {
+      const count = await importBrowserActivities(owner, legacy);
+      await refresh();
+      setLegacy(await pendingBrowserActivities(owner, legacy));
+      setNotice(
+        `${count}건을 서버에서 확인했습니다. 브라우저 원본은 그대로 유지됩니다.`,
+      );
+    } catch (error) {
+      setLoadError(
+        error instanceof Error
+          ? error.message
+          : "이전에 실패했습니다. 다시 시도해주세요.",
+      );
+      await refresh().catch(() => {});
+    } finally {
+      setMigrating(false);
+    }
+  }
+  async function cleanup() {
+    if (
+      !window.confirm(
+        "기록에 저장되지 않은 업로드 자료를 정리할까요? 다른 창에서 작성 중인 첨부 자료도 포함될 수 있습니다.",
+      )
+    )
+      return;
+    setMaintenance(true);
+    setLoadError("");
+    try {
+      await cleanupUnusedFiles(owner);
+      await refresh();
+      setNotice("기록에 사용하지 않는 업로드 자료를 정리했습니다.");
+    } catch (error) {
+      setLoadError(
+        error instanceof Error ? error.message : "자료를 정리하지 못했습니다.",
+      );
+    } finally {
+      setMaintenance(false);
+    }
+  }
   const [loadError, setLoadError] = useState("");
   const [notice, setNotice] = useState("");
   const [view, setView] = useState<View>("records");
@@ -110,10 +180,24 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
   const fileInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
     let active = true;
-    loadActivities(owner)
-      .then((rows) => {
+    Promise.all([
+      loadActivities(owner),
+      loadFileUsage(owner),
+      loadBrowserActivities(owner)
+        .catch(() => {
+          if (active)
+            setNotice(
+              "이 브라우저의 기존 기록을 읽지 못했습니다. 브라우저 저장소 허용 여부를 확인해주세요. 서버 기록은 정상적으로 이용할 수 있습니다.",
+            );
+          return [] as Activity[];
+        })
+        .then((rows) => pendingBrowserActivities(owner, rows)),
+    ])
+      .then(([rows, bytes, local]) => {
         if (active) {
           setRecords(rows);
+          setServerUsed(bytes);
+          setLegacy(local);
           setReady(true);
         }
       })
@@ -128,7 +212,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
     if (draft && !dialog.current?.open) dialog.current?.showModal();
     if (!draft) dialog.current?.close();
   }, [draft]);
-  const used = fileBytes(records);
+  const used = serverUsed;
   const category = CATEGORIES.find((c) => c.id === draft?.category);
   const visible = records.filter(
     (row) =>
@@ -179,6 +263,10 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
   }
   function attach(list: FileList | null) {
     if (!draft || !list) return;
+    if ([...list].some((file) => file.size > FILE_LIMIT)) {
+      setFormError("파일은 한 개당 10MB 이하로 첨부해주세요.");
+      return;
+    }
     const accepted = [...list].filter((file) =>
       ["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(
         file.type,
@@ -202,7 +290,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
     setDraft({ ...draft, files: [...draft.files, ...additions] });
     setFormError(
       accepted.length !== list.length
-        ? "이번 미리보기는 JPG·PNG·WebP·PDF만 첨부할 수 있습니다."
+        ? "JPG·PNG·WebP·PDF만 첨부할 수 있습니다."
         : "",
     );
   }
@@ -211,16 +299,24 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
       !draft ||
       saving ||
       !window.confirm(
-        "이 기록과 첨부 자료를 이 브라우저에서 삭제할까요? 복구할 수 없습니다.",
+        "서버에서 이 기록을 삭제할까요? 첨부 자료도 정리되며 복구할 수 없습니다.",
       )
     )
       return;
     setSaving(true);
     try {
-      await deleteActivity(owner, draft.id);
-      setRecords(await loadActivities(owner));
+      await deleteActivity(owner, draft.id, draft.revision);
+      let remaining = false;
+      await cleanupUnusedFiles(owner, draft.id).catch(() => {
+        remaining = true;
+      });
+      await refresh();
       setDraft(null);
-      setNotice("미리보기 기록을 삭제했습니다.");
+      setNotice(
+        remaining
+          ? "기록은 삭제했지만 첨부 자료 정리가 남았습니다. 업로드 정리 버튼으로 다시 시도해주세요."
+          : "서버에서 기록과 첨부 자료를 삭제했습니다.",
+      );
     } catch (error) {
       setFormError(
         error instanceof Error ? error.message : "삭제하지 못했습니다.",
@@ -241,9 +337,9 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
         updated: new Date().toISOString(),
       };
       await saveActivity(saved);
-      setRecords(await loadActivities(owner));
+      await refresh();
       setDraft(null);
-      setNotice("이 브라우저에 비공개로 저장했습니다.");
+      setNotice("계정의 서버 저장소에 비공개로 저장했습니다.");
     } catch (error) {
       setFormError(
         error instanceof Error
@@ -261,7 +357,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
           <Icon kind="lock" className="h-3.5 w-3.5" /> 나만의 비공개 기록함
         </span>
         <span className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1 font-medium text-primary">
-          미리보기
+          서버 보관
         </span>
       </div>
       <header className="relative overflow-hidden border-b border-slate-100 pb-9">
@@ -292,7 +388,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
           <div className="mt-6 flex flex-wrap gap-3">
             <button
               type="button"
-              disabled={!ready}
+              disabled={!ready || migrating || maintenance}
               onClick={() => start("write")}
               className={primaryClass}
             >
@@ -300,7 +396,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
             </button>
             <button
               type="button"
-              disabled={!ready}
+              disabled={!ready || migrating || maintenance}
               onClick={() => start("upload")}
               className={secondaryClass}
             >
@@ -311,8 +407,8 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
       </header>
       <div className="my-5 flex flex-col gap-3 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-500 sm:flex-row sm:items-center sm:justify-between">
         <p>
-          이 브라우저에만 저장되는 미리보기입니다. 서버 보관·AI 분석은 아직
-          연결되지 않았습니다.
+          로그인한 계정에 비공개로 보관됩니다. 브라우저 데이터를 지워도 서버
+          기록은 유지됩니다. AI 분석은 준비 중입니다.
         </p>
         <div className="shrink-0">
           <span>{(used / 1024 / 1024).toFixed(1)} / 100MB</span>
@@ -331,6 +427,42 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
           </div>
         </div>
       </div>
+      {ready && legacy.length > 0 && (
+        <section
+          className="mb-4 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-slate-600"
+          aria-label="브라우저 기록 이전"
+        >
+          <p>이 브라우저에만 있는 기존 기록 {legacy.length}건이 있습니다.</p>
+          <p className="mt-1 text-xs">
+            서버로 옮긴 뒤에도 브라우저 원본은 삭제하지 않습니다. 이미 옮긴
+            기록은 중복 저장하지 않습니다.
+          </p>
+          <button
+            type="button"
+            onClick={migrate}
+            disabled={migrating || maintenance}
+            className="mt-3 min-h-11 font-semibold text-primary"
+          >
+            {migrating ? "서버로 옮기는 중…" : "기존 기록 서버로 옮기기"}
+          </button>
+        </section>
+      )}
+      {ready && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+          <span>
+            파일당 최대 10MB · 개인당 100MB · 업로드 중에는 10MB를 임시
+            확보합니다.
+          </span>
+          <button
+            type="button"
+            onClick={cleanup}
+            disabled={maintenance || migrating || saving || !!draft}
+            className="min-h-11 text-slate-500"
+          >
+            {maintenance ? "정리 중…" : "사용하지 않는 업로드 정리"}
+          </button>
+        </div>
+      )}
       {loadError && (
         <p
           role="alert"
@@ -397,8 +529,8 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
             </p>
           </div>
           <p className="mt-5 text-xs leading-6 text-slate-500">
-            AI 입력 보조·묶음 추천 및 프로필 불러오기는 아직 연결되지
-            않았습니다. 외부 AI로 자료를 전송하지 않습니다.
+            AI 입력 보조·묶음 추천은 아직 연결되지 않았습니다. 외부 AI로 자료를
+            전송하지 않습니다.
           </p>
         </section>
       ) : (
@@ -531,7 +663,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                   <button
                     key={group}
                     type="button"
-                    disabled={!ready}
+                    disabled={!ready || migrating || maintenance}
                     onClick={() => {
                       start("write");
                       setCategorySearch(group);
@@ -714,9 +846,9 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                     <Icon kind="upload" /> 사진·자료 선택
                   </button>
                   <p className="mt-2 text-xs leading-6 text-slate-400">
-                    미리보기 지원: JPG·PNG·WebP·PDF · 모든 자료는 비공개
+                    JPG·PNG·WebP·PDF · 파일당 10MB · 모든 자료는 비공개
                     <br />
-                    브라우저 데이터 삭제 시 사라집니다. 중요한 원본은 별도로
+                    저장 버튼을 누르면 서버에 보관됩니다. 중요한 원본은 별도로
                     보관해주세요.
                   </p>
                   {draft.files.map((file) => (
@@ -805,13 +937,13 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                 )}
                 {draft.category === "other" && (
                   <p className="text-xs leading-6 text-slate-500">
-                    새 분류 제안은 이 브라우저에 보관됩니다. 운영자에게
+                    새 분류 제안은 기록과 함께 비공개로 보관됩니다. 운영자에게
                     제출하거나 통합하는 기능은 아직 연결되지 않았습니다.
                   </p>
                 )}
                 <p className="rounded-xl bg-blue-50 px-4 py-3 text-xs leading-6 text-blue-700">
-                  AI 입력 보조 준비 중 · 이번 미리보기에서는 자료를 분석하거나
-                  외부 AI에 전송하지 않습니다.
+                  AI 입력 보조 준비 중 · 현재는 자료를 분석하거나 외부 AI에
+                  전송하지 않습니다.
                 </p>
                 {formError && (
                   <p role="alert" className="text-sm text-red-600">

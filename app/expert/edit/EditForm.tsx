@@ -632,7 +632,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                     {/* 디자인 -- 공개 프로필 상단 히어로에 표시될 커버 이미지 */}
                     <div className="pt-4 border-t border-gray-100">
                       <h3 className="text-sm font-semibold text-gray-900 mb-2">디자인</h3>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">커버 이미지</label>
+                      <label className="block text-sm font-medium text-gray-900 mb-2">커버 이미지 (선택)</label>
                       {/* 공개 프로필과 동일한 4:1 커버 비율로 미리보기한다. */}
                       <div className="w-full aspect-[4/1] rounded-2xl overflow-hidden bg-linear-to-br from-blue-50 via-white to-sky-100 border border-blue-100 flex items-center justify-center">
                         {formData.coverImagePath ? (
@@ -644,7 +644,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                           />
                         ) : (
                           <span className="text-xs text-slate-500 text-center px-2">
-                            커버 이미지가 없으면 기본 배너가 표시됩니다
+                            커버 이미지를 등록하지 않으면 공개 프로필에 표시되지 않습니다.
                           </span>
                         )}
                       </div>

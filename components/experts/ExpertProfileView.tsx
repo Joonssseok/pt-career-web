@@ -132,8 +132,8 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
 
   return (
     <div>
-      <div aria-label="프로필 커버" className="relative mb-5 aspect-[4/1] overflow-hidden rounded-2xl border border-blue-100 bg-linear-to-br from-blue-50 via-white to-sky-100 sm:mb-6">
-        {coverImageUrl ? (
+      {coverImageUrl && (
+        <div aria-label="프로필 커버" className="relative mb-5 aspect-[4/1] overflow-hidden rounded-2xl border border-blue-100 bg-slate-50 sm:mb-6">
           <Image
             src={coverImageUrl}
             alt={`${expert.display_name ?? '전문가'}의 커버 이미지`}
@@ -142,14 +142,8 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
             sizes="(min-width: 1024px) 896px, 100vw"
             className="object-cover object-center"
           />
-        ) : (
-          <svg aria-hidden viewBox="0 0 1200 300" preserveAspectRatio="none" fill="none" className="h-full w-full">
-            <path d="M0 290C260 280 360 230 600 160S1000 40 1200 20" stroke="var(--color-primary)" strokeOpacity="0.2" strokeWidth="2" />
-            <path d="M0 330C280 310 460 260 720 190S1040 110 1200 80" stroke="var(--color-motion)" strokeOpacity="0.5" strokeWidth="2" />
-            <circle cx="600" cy="160" r="7" fill="white" stroke="var(--color-primary)" strokeOpacity="0.35" strokeWidth="2" />
-          </svg>
-        )}
-      </div>
+        </div>
+      )}
 
       <div>
         <div className="relative isolate overflow-hidden rounded-3xl border border-blue-100 bg-white p-6 sm:p-10">
@@ -174,7 +168,6 @@ export function ExpertProfileView({ expert, galleryImages }: ExpertProfileViewPr
               )}
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-medium text-primary">전문가 프로필</p>
               <h1 className="mt-2 text-hero font-extrabold tracking-tight text-slate-900 sm:text-4xl">{expert.display_name ?? '이름 미공개'}</h1>
               {expert.professions.length > 0 && (
                 <p className="mt-2 text-sm font-medium text-slate-500">{expert.professions.map((p) => p.name).join(' · ')}</p>

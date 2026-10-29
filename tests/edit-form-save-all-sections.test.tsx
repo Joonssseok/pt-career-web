@@ -26,6 +26,7 @@
  */
 import { forwardRef, useImperativeHandle } from 'react';
 import { render, act, fireEvent, waitFor } from '@testing-library/react';
+import { CommonProfileSaveContext, type CommonProfileSave } from '@/components/CommonProfileSaveContext';
 import EditForm from '@/app/expert/edit/EditForm';
 import { saveOwnProfile, submitProfile } from '@/app/actions/profile';
 
@@ -88,6 +89,18 @@ async function renderAndWaitForLoad() {
 }
 
 describe('EditForm save wiring', () => {
+  it('통합 기본정보는 중복 저장바 없이 부모 저장에서 기존 이미지·링크를 보존한다', async () => {
+    let parentSave: CommonProfileSave | null = null;
+    const { queryByRole, queryByText, container } = render(<CommonProfileSaveContext.Provider value={{register: callback => { parentSave = callback; }}}><EditForm embedded commonOnly /></CommonProfileSaveContext.Provider>);
+    await waitFor(() => expect(container.querySelector('input[name="displayName"]')).not.toBeNull());
+    await waitFor(() => expect(parentSave).not.toBeNull());
+    for (const name of ['기본 정보', '학력', '경력', '교육', '자격·면허', '근무기관', '상세정보 이미지']) expect(queryByRole('heading', { name, exact: true })).toBeNull();
+    expect(queryByText('공통 정보 저장')).toBeNull();
+    expect(container.querySelector('input[name="resumePhone"]')).toBeNull();
+    await act(async () => { await parentSave!(); });
+    expect(saveOwnProfile).toHaveBeenCalledWith(expect.objectContaining({ coverImagePath: 'user/cover.jpg', youtubeUrl: 'https://youtube.com/@existing' }));
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     (saveOwnProfile as jest.Mock).mockResolvedValue({ ok: true });

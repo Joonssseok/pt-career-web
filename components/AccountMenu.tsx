@@ -1,17 +1,19 @@
 "use client";
 
 import { createContext, useContext, useEffect, useId, useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const MenuContext = createContext<{
   open: string | null;
   toggle: (id: string) => void;
-}>({ open: null, toggle: () => {} });
+  activate: (id: string) => void;
+}>({ open: null, toggle: () => {}, activate: () => {} });
 export function AccountMenu({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const selected = pathname.startsWith("/my/damoa")
     ? "damoa"
-    : pathname.startsWith("/expert/edit")
+    : pathname.startsWith("/expert/edit") || pathname.startsWith("/my/profiles")
       ? "profile"
       : pathname.startsWith("/my/account") ||
           pathname.startsWith("/my/terms") ||
@@ -26,6 +28,7 @@ export function AccountMenu({ children }: { children: React.ReactNode }) {
     <MenuContext.Provider
       value={{
         open,
+        activate: (id) => setOpen(id),
         toggle: (id) => setOpen((current) => (current === id ? null : id)),
       }}
     >
@@ -38,29 +41,46 @@ export function AccountMenu({ children }: { children: React.ReactNode }) {
 export function AccountMenuSection({
   id,
   title,
+  href,
   children,
 }: {
   id: string;
   title: string;
+  href?: string;
   children: React.ReactNode;
 }) {
-  const { open, toggle } = useContext(MenuContext);
+  const { open, toggle, activate } = useContext(MenuContext);
   const panelId = useId();
   const expanded = open === id;
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => toggle(id)}
-        aria-expanded={expanded}
-        aria-controls={panelId}
-        className={`flex min-h-12 w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-bold transition-colors ${expanded ? "bg-blue-50 text-primary" : "text-slate-950 hover:bg-slate-50"}`}
-      >
-        {title}
-        <span aria-hidden="true" className="text-xs text-slate-400">
-          {expanded ? "▾" : "▸"}
-        </span>
-      </button>
+      {href ? (
+        <Link
+          href={href}
+          onClick={() => activate(id)}
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          className={`flex min-h-12 w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-bold transition-colors ${expanded ? "bg-blue-50 text-primary" : "text-slate-950 hover:bg-slate-50"}`}
+        >
+          {title}
+          <span aria-hidden="true" className="text-xs text-slate-400">
+            ▾
+          </span>
+        </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={() => toggle(id)}
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          className={`flex min-h-12 w-full items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-bold transition-colors ${expanded ? "bg-blue-50 text-primary" : "text-slate-950 hover:bg-slate-50"}`}
+        >
+          {title}
+          <span aria-hidden="true" className="text-xs text-slate-400">
+            {expanded ? "▾" : "▸"}
+          </span>
+        </button>
+      )}
       <div
         id={panelId}
         hidden={!expanded}

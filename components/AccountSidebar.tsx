@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { ProfileVisibilityToggle } from "@/components/ProfileVisibilityToggle";
-import { ProfileEditSectionLinksDesktop } from "@/components/ProfileEditSectionLinks";
+import { ProfileVersionLinks } from "@/components/ProfileVersionLinks";
+
 import { AccountMenu, AccountMenuSection } from "@/components/AccountMenu";
 import { AccountMobileDrawer } from "@/components/AccountMobileDrawer";
 
@@ -18,6 +18,11 @@ export async function AccountSidebar() {
     )
     .eq("user_id", user.id)
     .maybeSingle();
+  const { data: versions } = await supabase
+    .from("profile_versions")
+    .select("id,title,is_representative")
+    .eq("owner_id", user.id)
+    .order("created_at");
   const canPreview =
     profile?.verification_status === "approved" &&
     profile.owner_visible &&
@@ -31,6 +36,12 @@ export async function AccountSidebar() {
       <Link href="/my" className="block px-3 text-lg font-bold text-slate-950">
         마이페이지
       </Link>
+      <Link
+        href="/my/personal"
+        className="flex min-h-12 items-center rounded-xl px-3 text-sm font-bold text-slate-950 hover:bg-blue-50 hover:text-primary"
+      >
+        내정보 수정
+      </Link>
       <AccountMenuSection id="damoa" title="내활동 다모아">
         <a href="/my/damoa#records" className={linkClass}>
           활동 기록
@@ -42,39 +53,19 @@ export async function AccountSidebar() {
           AI 묶음 요약
         </a>
       </AccountMenuSection>
-      <AccountMenuSection id="profile" title="프로필 관리">
-        <Link href="/expert/edit" className={linkClass}>
-          {profile ? "프로필 수정" : "프로필 생성"}
-        </Link>
-        {profile && (
-          <>
-            <div className="my-2 flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-3">
-              <span className="text-xs text-slate-500">프로필 전체 공개</span>
-              <ProfileVisibilityToggle initialVisible={profile.owner_visible} />
-            </div>
-            <ProfileEditSectionLinksDesktop />
-          </>
-        )}
-        {canPreview ? (
-          <Link href={`/experts/${profile!.id}`} className={linkClass}>
-            프로필 미리보기
-          </Link>
-        ) : (
-          <p className="px-3 py-2 text-xs leading-relaxed text-slate-400">
-            공개 승인·공개 설정 후 미리보기 가능
-          </p>
-        )}
-        {profile && (
-          <a href="/api/resume" className={linkClass}>
-            이력서 다운로드
-          </a>
-        )}
+      <AccountMenuSection id="profile" title="프로필 관리" href="/my/profiles">
+        <ProfileVersionLinks
+          versions={(versions || []).map((v) => ({
+            ...v,
+            is_representative: v.is_representative && !!canPreview,
+          }))}
+        />
       </AccountMenuSection>
       <Link
         href="/my#share"
         className="block px-3 py-2 text-sm font-bold text-slate-950 hover:text-primary"
       >
-        공유하기
+        공유 설정
       </Link>
       <Link
         href="/my#card"

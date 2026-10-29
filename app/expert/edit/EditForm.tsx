@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { CommonProfileSaveContext } from '@/components/CommonProfileSaveContext';
+import { useContext, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   getOwnProfile,
@@ -86,7 +87,8 @@ function toSubmitMessage(rawError: string): string {
   return SUBMIT_ERROR_MESSAGE_MAP[rawError] ?? '제출 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.';
 }
 
-export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.ReactNode }) {
+export default function EditForm({ evidenceArchive, embedded = false, commonOnly = false }: { evidenceArchive?: React.ReactNode; embedded?: boolean; commonOnly?: boolean }) {
+  const commonSaveRegistry = useContext(CommonProfileSaveContext);
   // 조회가 끝나기 전까지는 false로 두어 아래 !termsChecked ? null : ... 분기가
   // 약관 동의 화면을 잘못 깜빡이지 않도록 한다(초기값 true였을 때, 이미 동의한
   // 사용자에게도 getOwnTermsAgreedAt() 응답 전까지 termsAgreed의 초기값 false를
@@ -430,6 +432,12 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
     }
   };
 
+  useEffect(() => {
+    if (!embedded) return;
+    commonSaveRegistry.register(saveAllSections);
+    return () => commonSaveRegistry.register(null);
+  });
+
   const handleSaveDraft = async () => {
     await saveAllSections();
   };
@@ -468,8 +476,9 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
   const showSections = termsAgreed && status !== 'pending';
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-8">
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className={embedded ? "bg-white" : "min-h-screen bg-gray-50 px-4 py-8"}>
+      <div className={embedded ? "space-y-6" : "max-w-2xl mx-auto space-y-6"}>
+        {!embedded && (
         <div>
           <p className="text-sm font-medium text-blue-600">내 프로필 관리</p>
           <h1 className="text-page-title font-semibold text-gray-900 mt-1">전문가 프로필</h1>
@@ -477,6 +486,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
             아래에서 순서대로 정보를 입력하고, 맨 아래 저장 바에서 임시저장하거나 검토를 위해 업로드하세요.
           </p>
         </div>
+        )}
 
         {!termsChecked ? null : !termsAgreed ? (
           <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-5">
@@ -519,7 +529,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
           </div>
         ) : (
           <>
-            {status && (
+            {!embedded && status && (
               <StatusBanner
                 status={status}
                 profileId={profileMeta?.id ?? null}
@@ -530,7 +540,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
             {showSections && (
               <>
                 <section id="basic" className="bg-white border border-gray-200 rounded-lg p-6 space-y-5">
-                  <h2 className="text-lg font-semibold text-gray-900">기본 정보</h2>
+                  {!embedded && <h2 className="text-lg font-semibold text-gray-900">기본 정보</h2>}
 
                   {formState === 'error' && errors.submit && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -609,23 +619,6 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                           )}
                         </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-900 mb-2">
-                            전화번호 <span className="text-gray-400 font-normal">(선택)</span>
-                          </label>
-                          <input
-                            type="tel"
-                            name="resumePhone"
-                            value={formData.resumePhone}
-                            onChange={handleChange}
-                            placeholder="예: 010-1234-5678"
-                            disabled={formState === 'loading'}
-                            className={getInputClass('resumePhone')}
-                          />
-                          <p className="text-caption text-gray-400 mt-1 leading-tight">
-                            이력서 다운로드 시에만 사용되며 공개 프로필에는 노출되지 않습니다.
-                          </p>
-                        </div>
                       </div>
                     </div>
 
@@ -664,10 +657,11 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                       </label>
                       {errors.cover && <p className="text-xs text-red-500 mt-1">{errors.cover}</p>}
                       <p className="text-caption text-gray-400 mt-1">
-                        권장 1600×400px(4:1), jpg/png/webp, 5MB 이하. 저장 버튼을 눌러야 공개 프로필에 반영됩니다.
+                        권장 1600×400px(4:1), jpg/png/webp, 5MB 이하. 공통 정보 저장 후 프로필 관리에서 공개본에 적용해주세요.
                       </p>
                     </div>
 
+                    {!embedded && <>
                     <div>
                       <label className="block text-sm font-medium text-gray-900 mb-2">한 줄 소개</label>
                       <input
@@ -723,6 +717,8 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                         <p className="text-xs text-red-500 mt-1">{errors.description}</p>
                       )}
                     </div>
+
+                    </>}
 
                     {/* 소셜링크 -- 아이콘을 클릭하면 그 플랫폼의 URL 입력창이
                         펼쳐진다(독립 토글). 값이 등록된 아이콘은 파란 강조 +
@@ -821,6 +817,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                   </p>
                 )}
 
+                {!commonOnly && <>
                 <section id="academic" className="bg-white border border-gray-200 rounded-lg p-6">
                   <h2 className="text-lg font-semibold text-gray-900 mb-4">학력</h2>
                   <AcademicSection
@@ -870,6 +867,9 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                   />
                 </section>
 
+                </>}
+
+                {!embedded && (
                 <div className="sticky bottom-0 z-30 bg-white border-t border-gray-200 -mx-4 px-4 py-4 sm:mx-0 sm:rounded-lg sm:border space-y-3">
                   {draftSaveState !== 'default' && (
                     <div
@@ -903,7 +903,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                       disabled={draftSaveState === 'loading'}
                       className="flex-1 min-h-tap px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center"
                     >
-                      {draftSaveState === 'loading' ? '저장 중...' : '임시저장'}
+                      {draftSaveState === 'loading' ? '저장 중...' : embedded ? '공통 정보 저장' : '임시저장'}
                     </button>
                     <button
                       type="button"
@@ -915,6 +915,7 @@ export default function EditForm({ evidenceArchive }: { evidenceArchive?: React.
                     </button>
                   </div>
                 </div>
+                )}
               </>
             )}
           </>
@@ -1010,8 +1011,8 @@ function StatusBanner({
           </Link>
         )}
         <p className="text-xs text-gray-600">
-          정보를 수정하고 저장하면 즉시 반영됩니다. 자격증·면허 증빙 파일만 별도로 관리자
-          검토를 거쳐 공개 배지가 표시됩니다.
+          공통 정보를 저장한 뒤 프로필 관리에서 공개본에 변경사항을 적용해주세요.
+          비공개 설정과 자격증·면허 검토 결과는 공개 제한에 계속 적용됩니다.
         </p>
       </div>
     );

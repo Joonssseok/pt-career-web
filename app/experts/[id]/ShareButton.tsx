@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 type ShareButtonProps = {
+  shareUrl?: string;
   profileId: string;
   displayName: string | null;
   headline: string | null;
 };
 
-export function ShareButton({ profileId, displayName, headline }: ShareButtonProps) {
+export function ShareButton({ profileId, displayName, headline, shareUrl }: ShareButtonProps) {
   const [message, setMessage] = useState<string | null>(null);
 
   const recordShareEvent = async (shareType: 'native_share' | 'copy_link') => {
@@ -25,7 +26,7 @@ export function ShareButton({ profileId, displayName, headline }: ShareButtonPro
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
+    const url = shareUrl ?? window.location.href;
 
     if (navigator.share) {
       try {

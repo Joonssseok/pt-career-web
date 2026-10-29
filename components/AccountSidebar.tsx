@@ -4,146 +4,34 @@ import { ProfileVisibilityToggle } from '@/components/ProfileVisibilityToggle';
 import { ProfileEditSectionLinksDesktop } from '@/components/ProfileEditSectionLinks';
 import { AccountMobileDrawer } from '@/components/AccountMobileDrawer';
 
-type ProfileSummary = {
-  id: string;
-  owner_visible: boolean;
-} | null;
-
-// 계층: 내 계정 관리(계정 정보/약관 동의) → 프로필 관리(공개 토글/내 프로필
-// 수정/이력서 만들기/프로필 미리보기) → 회원 탈퇴(최상위). 마이페이지/프로필
-// 수정/삭제 확인 등 계정 관련 화면 전반에 배치되는 공용 사이드바.
 export async function AccountSidebar() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return null;
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id, verification_status, owner_visible')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  const isApproved = profile?.verification_status === 'approved';
-
-  return (
-    <>
-      {/* 데스크톱: 좌측 고정 사이드바 */}
-      <aside className="hidden md:block w-64 flex-shrink-0 border-r border-gray-200 bg-white">
-        <div className="sticky top-16 max-h-[calc(100vh-4rem)] overflow-y-auto p-4">
-          <SidebarMenuContent profile={profile} isApproved={isApproved} />
-        </div>
-      </aside>
-
-      {/* 모바일: 햄버거 버튼 + 좌측 슬라이드 드로어 (메뉴 구성은 데스크톱과
-          동일: 계정 관리 → 프로필 관리 → 회원 탈퇴) */}
-      <AccountMobileDrawer>
-        <SidebarMenuContent profile={profile} isApproved={isApproved} />
-      </AccountMobileDrawer>
-    </>
-  );
-}
-
-function SidebarMenuContent({
-  profile,
-  isApproved,
-}: {
-  profile: ProfileSummary;
-  isApproved: boolean;
-}) {
-  return (
-    <div className="space-y-6">
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data: profile } = await supabase.from('profiles')
+    .select('id, verification_status, owner_visible, is_public, suspended_at, deletion_requested_at')
+    .eq('user_id', user.id).maybeSingle();
+  const canPreview = profile?.verification_status === 'approved' && profile.owner_visible && profile.is_public && !profile.suspended_at && !profile.deletion_requested_at;
+  const linkClass = 'flex min-h-11 items-center rounded-lg px-3 py-2 text-sm text-slate-600 transition-colors hover:bg-blue-50 hover:text-primary';
+  const menu = (
+    <nav aria-label="마이페이지 메뉴" className="space-y-7">
+      <Link href="/my" className="block px-3 text-lg font-bold text-slate-950">마이페이지</Link>
       <div>
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
-          내 계정 관리
-        </p>
-        <ul className="space-y-1">
-          <li>
-            <Link
-              href="/my"
-              className="block px-2 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 hover:text-blue-600 transition-colors"
-            >
-              계정 정보
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/my/terms"
-              className="block px-2 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 hover:text-blue-600 transition-colors"
-            >
-              약관 동의
-            </Link>
-          </li>
-        </ul>
+        <Link href="/my#profile" className="block px-3 text-sm font-bold text-slate-950">프로필 관리</Link>
+        <Link href="/expert/edit" className={linkClass}>{profile ? '프로필 수정' : '프로필 생성'}</Link>
+        {profile && <><div className="my-2 flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-3 py-3"><span className="text-xs text-slate-500">프로필 전체 공개</span><ProfileVisibilityToggle initialVisible={profile.owner_visible} /></div><ProfileEditSectionLinksDesktop /></>}
+        {canPreview ? <Link href={`/experts/${profile!.id}`} className={linkClass}>프로필 미리보기</Link> : <p className="px-3 py-2 text-xs leading-relaxed text-slate-400">공개 승인·공개 설정 후 미리보기 가능</p>}
+        {profile && <a href="/api/resume" className={linkClass}>이력서 다운로드</a>}
       </div>
-
-      <div className="space-y-3">
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">프로필 관리</p>
-
-        {profile && (
-          <div className="flex items-center justify-between gap-2 px-2 py-2 bg-gray-50 rounded-md">
-            <p className="text-xs font-medium text-gray-600">프로필 전체 공개</p>
-            <ProfileVisibilityToggle initialVisible={profile.owner_visible} />
-          </div>
-        )}
-
-        <ProfileEditSectionLinksDesktop />
-
-        {profile && (
-          <a
-            href="/api/resume"
-            className="block px-2 py-2 text-sm text-gray-700 rounded-md hover:bg-gray-50 hover:text-blue-600 transition-colors"
-          >
-            이력서 만들기
-          </a>
-        )}
-
-        <PublicPreviewLink profileId={profile?.id ?? null} isApproved={isApproved} />
+      <Link href="/my#share" className="block px-3 py-2 text-sm font-bold text-slate-950 hover:text-primary">공유하기</Link>
+      <Link href="/my#card" className="block px-3 py-2 text-sm font-bold text-slate-950 hover:text-primary">명함 생성</Link>
+      <div>
+        <Link href="/my/account" className="block px-3 text-sm font-bold text-slate-950">계정 설정</Link>
+        <Link href="/my/account" className={linkClass}>로그인 정보·연락처</Link>
+        <Link href="/my/terms" className={linkClass}>약관 동의</Link>
+        <Link href="/my/delete-account" className={linkClass}>회원 탈퇴</Link>
       </div>
-
-      <DeleteAccountLink />
-    </div>
+    </nav>
   );
-}
-
-function PublicPreviewLink({
-  profileId,
-  isApproved,
-}: {
-  profileId: string | null;
-  isApproved: boolean;
-}) {
-  return (
-    <div>
-      {profileId && isApproved ? (
-        <Link
-          href={`/experts/${profileId}`}
-          className="block px-2 py-2 text-sm text-blue-600 rounded-md hover:bg-blue-50 transition-colors"
-        >
-          프로필 미리보기
-        </Link>
-      ) : (
-        <p className="px-2 py-2 text-xs text-gray-400 leading-relaxed">
-          프로필 미리보기 — 아직 공개되지 않았습니다. 관리자 승인 후 볼 수 있어요.
-        </p>
-      )}
-    </div>
-  );
-}
-
-function DeleteAccountLink() {
-  return (
-    <div className="pt-4 border-t border-gray-100">
-      <Link
-        href="/my/delete-account"
-        className="block px-2 py-2 text-xs text-red-500 rounded-md hover:bg-red-50 hover:text-red-600 transition-colors"
-      >
-        회원 탈퇴
-      </Link>
-    </div>
-  );
+  return <><aside className="hidden w-64 shrink-0 border-r border-slate-100 bg-white md:block"><div className="sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto px-3 py-8">{menu}</div></aside><AccountMobileDrawer>{menu}</AccountMobileDrawer></>;
 }

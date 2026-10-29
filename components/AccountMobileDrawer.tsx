@@ -58,7 +58,9 @@ export function AccountMobileDrawer({ children }: { children: React.ReactNode })
 
       <div
         role="dialog"
-        aria-modal="true"
+        aria-modal={open ? true : undefined}
+        aria-hidden={!open}
+        inert={!open}
         aria-label="계정 메뉴"
         className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white shadow-xl overflow-y-auto transition-transform duration-200 ease-out ${
           open ? 'translate-x-0' : '-translate-x-full'
@@ -77,7 +79,9 @@ export function AccountMobileDrawer({ children }: { children: React.ReactNode })
             </span>
           </button>
         </div>
-        <div className="p-4 space-y-6">{children}</div>
+        <div className="p-4 space-y-6" onClick={(event) => {
+          if (event.target instanceof Element && event.target.closest('a')) closeDrawer();
+        }}>{children}</div>
       </div>
     </div>
   );

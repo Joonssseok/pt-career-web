@@ -92,11 +92,12 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
   useEffect(() => {
     const followMenu = () => {
       const target = window.location.hash.slice(1);
-      if (target === 'records' || target === 'files' || target === 'summary') setView(target);
+      if (target === "records" || target === "files" || target === "summary")
+        setView(target);
     };
     followMenu();
-    window.addEventListener('hashchange', followMenu);
-    return () => window.removeEventListener('hashchange', followMenu);
+    window.addEventListener("hashchange", followMenu);
+    return () => window.removeEventListener("hashchange", followMenu);
   }, []);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
@@ -571,15 +572,21 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                   {category ? "경험을 기록하세요" : "어떤 활동을 했나요?"}
                 </h2>
               </div>
-              <button
-                type="button"
-                aria-label="작성창 닫기"
-                onClick={close}
-                disabled={saving}
-                className="flex h-11 w-11 items-center justify-center rounded-full text-xl text-slate-400 hover:bg-slate-50"
-              >
-                ×
-              </button>
+              <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] text-slate-400 sm:text-xs">
+                  <Icon kind="lock" className="h-3.5 w-3.5" />
+                  나만 보는 기록
+                </span>
+                <button
+                  type="button"
+                  aria-label="작성창 닫기"
+                  onClick={close}
+                  disabled={saving}
+                  className="flex h-11 w-11 items-center justify-center rounded-full text-xl text-slate-400 hover:bg-slate-50"
+                >
+                  ×
+                </button>
+              </div>
             </div>
             {!category ? (
               <div className="p-6">
@@ -806,25 +813,25 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                   AI 입력 보조 준비 중 · 이번 미리보기에서는 자료를 분석하거나
                   외부 AI에 전송하지 않습니다.
                 </p>
-                {records.some((row) => row.id === draft.id) && (
-                  <button
-                    type="button"
-                    onClick={remove}
-                    disabled={saving}
-                    className="min-h-11 text-xs text-red-500"
-                  >
-                    기록 삭제
-                  </button>
-                )}
                 {formError && (
                   <p role="alert" className="text-sm text-red-600">
                     {formError}
                   </p>
                 )}
                 <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
-                  <span className="inline-flex items-center gap-1 text-xs text-slate-400">
-                    <Icon kind="lock" className="h-3.5 w-3.5" /> 나만 보는 기록
-                  </span>
+                  <div>
+                    {" "}
+                    {records.some((row) => row.id === draft.id) && (
+                      <button
+                        type="button"
+                        onClick={remove}
+                        disabled={saving}
+                        className="min-h-11 text-xs text-red-500"
+                      >
+                        기록 삭제
+                      </button>
+                    )}
+                  </div>
                   <button
                     type="submit"
                     disabled={saving || !ready}

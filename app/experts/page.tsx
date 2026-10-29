@@ -1,3 +1,4 @@
+import { representativeCards } from '@/lib/profile-versions/public';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { createClient } from '@/lib/supabase/server';
@@ -87,7 +88,7 @@ async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
     );
   }
 
-  const experts = (data ?? []) as ExpertListItem[];
+  const experts = await representativeCards(supabase,(data ?? []) as ExpertListItem[]);
   const isColdStart = (publicCount ?? 0) < COLD_START_THRESHOLD;
 
   return (

@@ -1,15 +1,22 @@
-import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { cache } from 'react';
-import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
-import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
-import { ShareButton } from './ShareButton';
-import { ExpertProfileView } from '@/components/experts/ExpertProfileView';
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { cache } from "react";
+import type { Metadata } from "next";
+import { createClient } from "@/lib/supabase/server";
+import { getProfilePhotoUrl } from "@/lib/storage/profile-photo-url";
+import { ShareButton } from "./ShareButton";
+import {
+  LIVE_PROFILE_PUBLISH_ENABLED,
+  applyVersion,
+  type Representative,
+} from "@/lib/profile-versions/types";
+import { ProfileActivitySections } from "@/components/ProfileActivitySections";
+import { ExpertProfileView } from "@/components/experts/ExpertProfileView";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 type ExpertDetail = {
+  representative?: Representative;
   id: string;
   display_name: string | null;
   // display_order 순(첫 번째 = 대표 직군). custom 슬롯은 name에 자유입력
@@ -36,7 +43,7 @@ type ExpertDetail = {
   workplace_longitude: number | null;
   specialties: { slug: string; name: string; is_primary: boolean }[];
   academic_records: {
-    level: 'graduate' | 'university' | 'high_school' | 'middle_school';
+    level: "graduate" | "university" | "high_school" | "middle_school";
     degree: string | null;
     school_name: string;
     major: string | null;
@@ -68,16 +75,28 @@ type ExpertDetail = {
 const fetchExpert = cache(async (id: string): Promise<ExpertDetail | null> => {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from('public_expert_detail')
-    .select('*')
-    .eq('id', id)
+    .from("public_expert_detail")
+    .select("*")
+    .eq("id", id)
     .maybeSingle();
 
   if (error || !data) {
     return null;
   }
 
-  return data as ExpertDetail;
+  if (!LIVE_PROFILE_PUBLISH_ENABLED) return data as ExpertDetail;
+  const { data: versions, error: versionError } = await supabase.rpc(
+    "get_representative_profiles",
+    { p_profile_ids: [id] },
+  );
+  if (versionError) throw new Error("공개 프로필을 불러오지 못했습니다.");
+  const representative = (versions as Representative[] | null)?.[0];
+  return representative
+    ? ({
+        ...applyVersion(representative.expert, representative.content),
+        representative,
+      } as ExpertDetail)
+    : (data as ExpertDetail);
 });
 
 export async function generateMetadata({
@@ -92,10 +111,13 @@ export async function generateMetadata({
     return {};
   }
 
-  const professionNames = expert.professions.map((p) => p.name).join(' · ');
-  const title = [expert.display_name, professionNames].filter(Boolean).join(' · ') || 'PT Career 전문가';
+  const professionNames = expert.professions.map((p) => p.name).join(" · ");
+  const title =
+    [expert.display_name, professionNames].filter(Boolean).join(" · ") ||
+    "PT Career 전문가";
   const description =
-    expert.headline ?? '경력과 자격으로 검증된 물리치료사, 트레이너, 재활 전문가를 찾아보세요.';
+    expert.headline ??
+    "경력과 자격으로 검증된 물리치료사, 트레이너, 재활 전문가를 찾아보세요.";
   const imageUrl = getProfilePhotoUrl(expert.profile_image_path);
 
   return {
@@ -104,7 +126,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      type: 'profile',
+      type: "profile",
       ...(imageUrl ? { images: [{ url: imageUrl }] } : {}),
     },
   };
@@ -128,15 +150,15 @@ export default async function ExpertDetailPage({
   // 프로필의 갤러리만 걸러주므로 추가 SECURITY DEFINER 함수는 필요 없다.
   const supabase = await createClient();
   const { data: galleryRows } = await supabase
-    .from('profile_gallery_images')
-    .select('id, image_path, caption')
-    .eq('profile_id', id)
-    .order('display_order');
+    .from("profile_gallery_images")
+    .select("id, image_path, caption")
+    .eq("profile_id", id)
+    .order("display_order");
 
   const galleryImages = (galleryRows ?? []).map((g) => ({
     id: g.id,
     imagePath: g.image_path,
-    caption: g.caption ?? '',
+    caption: g.caption ?? "",
   }));
 
   return (
@@ -151,7 +173,21 @@ export default async function ExpertDetailPage({
       </nav>
 
       <div id="profile-details" className="scroll-mt-32">
-        <ExpertProfileView expert={expert} galleryImages={galleryImages} />
+        <ExpertProfileView
+          expert={expert}
+          galleryImages={
+            expert.representative
+              ? expert.representative.content.sections.includes("gallery")
+                ? expert.representative.gallery
+                : []
+              : galleryImages
+          }
+        />
+        {expert.representative && (
+          <ProfileActivitySections
+            activities={expert.representative.content.activities}
+          />
+        )}
       </div>
 
       <div className="mt-8 border-t border-slate-100 pt-6 sm:mt-12 sm:pt-8">

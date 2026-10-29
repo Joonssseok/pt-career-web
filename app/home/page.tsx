@@ -1,3 +1,4 @@
+import { representativeCards } from '@/lib/profile-versions/public';
 import Link from 'next/link';
 import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
@@ -24,7 +25,7 @@ export default async function Home() {
     supabase.from('public_expert_list').select('*').limit(3),
     getNextOnboardingStep(),
   ]);
-  const experts = (expertsData ?? []) as ExpertListItem[];
+  const experts = await representativeCards(supabase,(expertsData ?? []) as ExpertListItem[]);
 
   return (
     <main className="flex min-h-screen flex-col bg-white">

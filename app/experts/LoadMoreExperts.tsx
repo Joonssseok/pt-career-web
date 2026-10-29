@@ -1,8 +1,9 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { ExpertCard, type ExpertListItem } from './ExpertCard';
+import { useState } from "react";
+import { representativeCards } from "@/lib/profile-versions/public";
+import { createClient } from "@/lib/supabase/client";
+import { ExpertCard, type ExpertListItem } from "./ExpertCard";
 
 export const EXPERTS_PAGE_SIZE = 20;
 
@@ -18,7 +19,7 @@ type Filters = {
 // "0개 선택 = 전체"가 더보기에서도 유지된다.
 function parseMulti(value: string | null): string[] | null {
   if (!value) return null;
-  const arr = value.split(',').filter(Boolean);
+  const arr = value.split(",").filter(Boolean);
   return arr.length > 0 ? arr : null;
 }
 
@@ -30,7 +31,9 @@ export function LoadMoreExperts({
   filters: Filters;
 }) {
   const [experts, setExperts] = useState(initialExperts);
-  const [hasMore, setHasMore] = useState(initialExperts.length === EXPERTS_PAGE_SIZE);
+  const [hasMore, setHasMore] = useState(
+    initialExperts.length === EXPERTS_PAGE_SIZE,
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
 
@@ -42,23 +45,33 @@ export function LoadMoreExperts({
     // query/다중선택 필터를 빠뜨리면 "더보기"로 다음 페이지를 불러올 때
     // 조건이 사라져 1페이지만 필터링되고 2페이지부터 전체 목록이 섞이는
     // 버그가 된다(PR #58에서 확인된 것과 동일한 함정, 다중선택에도 적용).
-    const { data, error: rpcError } = await supabase.rpc('search_public_experts', {
-      p_professions: parseMulti(filters.profession),
-      p_regions: parseMulti(filters.region),
-      p_specialty_slugs: parseMulti(filters.specialty),
-      p_query: filters.query,
-      p_limit: EXPERTS_PAGE_SIZE,
-      p_offset: experts.length,
-    });
-
-    setLoading(false);
+    const { data, error: rpcError } = await supabase.rpc(
+      "search_public_experts",
+      {
+        p_professions: parseMulti(filters.profession),
+        p_regions: parseMulti(filters.region),
+        p_specialty_slugs: parseMulti(filters.specialty),
+        p_query: filters.query,
+        p_limit: EXPERTS_PAGE_SIZE,
+        p_offset: experts.length,
+      },
+    );
 
     if (rpcError || !data) {
+      setLoading(false);
       setError(true);
       return;
     }
 
-    const next = data as ExpertListItem[];
+    let next: ExpertListItem[];
+    try {
+      next = await representativeCards(supabase, data as ExpertListItem[]);
+    } catch {
+      setLoading(false);
+      setError(true);
+      return;
+    }
+    setLoading(false);
     setExperts((prev) => [...prev, ...next]);
     setHasMore(next.length === EXPERTS_PAGE_SIZE);
   };
@@ -82,7 +95,7 @@ export function LoadMoreExperts({
           disabled={loading}
           className="w-full min-h-tap py-3 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? '불러오는 중...' : '더보기'}
+          {loading ? "불러오는 중..." : "더보기"}
         </button>
       )}
     </div>

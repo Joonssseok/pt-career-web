@@ -24,7 +24,7 @@ import {
   type ExpertProfileViewProps,
 } from "@/components/experts/ExpertProfileView";
 import { ProfileActivitySections } from "@/components/ProfileActivitySections";
-import { loadActivities } from "@/lib/damoa/browser-store";
+import { loadActivities } from "@/lib/damoa/server-store";
 import { CATEGORIES, type Activity } from "@/lib/damoa/categories";
 const field =
   "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
@@ -152,7 +152,7 @@ export function ProfileVersionManager({
     try {
       setImports(await loadActivities(owner));
     } catch {
-      setError("이 브라우저의 다모아 기록을 불러오지 못했습니다.");
+      setError("서버의 다모아 기록을 불러오지 못했습니다.");
     }
   }
   function addActivity(row: Activity) {

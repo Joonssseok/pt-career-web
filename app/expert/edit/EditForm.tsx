@@ -666,7 +666,7 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
                       </label>
                       {errors.cover && <p className="text-xs text-red-500 mt-1">{errors.cover}</p>}
                       <p className="text-caption text-gray-400 mt-1">
-                        권장 1600×400px(4:1), jpg/png/webp, 5MB 이하. 공통 정보 저장 후 프로필 관리에서 공개본에 적용해주세요.
+                        권장 1600×400px(4:1), JPG·PNG·WebP, 5MB 이하.
                       </p>
                     </div>
 

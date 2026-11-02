@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { SkipLandingCheckbox } from '@/components/SkipLandingCheckbox';
+import { LandingVisitTracker } from '@/components/LandingVisitTracker';
 
 // 랜딩: 헤더 없이 전체 화면. 로고 + 한 줄 + 버튼 하나로 바로 전문가 탐색(/experts)으로 보낸다.
 // 배경은 "경력이 쌓여 올라가는" 성장 그래프가 반복해서 그려지는 애니메이션(globals.css 의 .landing-*).
@@ -105,6 +105,7 @@ export default async function Home() {
 
   return (
     <main className="relative -mx-5 grid min-h-svh items-center overflow-hidden bg-white px-5 text-center lg:-mx-8" style={{ gridTemplateRows: '1fr auto 1fr' }}>
+      <LandingVisitTracker />
       <GrowthGraph />
       {/* 글자 뒤만 하얗게 비워 그래프 위에서도 잘 읽히게 한다. */}
       <div aria-hidden className="absolute inset-0 bg-radial from-white from-25% to-transparent to-65%" />
@@ -131,11 +132,7 @@ export default async function Home() {
         </Link>
 
       </div>
-      <div className="relative w-full self-stretch">
-        <div className="absolute inset-x-0 top-3/4 flex -translate-y-1/2 justify-center">
-          <SkipLandingCheckbox />
-        </div>
-      </div>
+      <div aria-hidden />
     </main>
   );
 }

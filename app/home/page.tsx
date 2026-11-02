@@ -1,175 +1,282 @@
-import { representativeCards } from '@/lib/profile-versions/public';
-import Link from 'next/link';
-import Image from 'next/image';
-import { createClient } from '@/lib/supabase/server';
-import { getNextOnboardingStep } from '@/lib/auth/get-next-onboarding-step';
-import { MotionPath } from '@/components/MotionPath';
-import { ExpertCard, type ExpertListItem } from '../experts/ExpertCard';
+import Link from "next/link";
+import { representativeCards } from "@/lib/profile-versions/public";
+import { createClient } from "@/lib/supabase/server";
+import { getNextOnboardingStep } from "@/lib/auth/get-next-onboarding-step";
+import { ExpertCard, type ExpertListItem } from "../experts/ExpertCard";
+import styles from "./home.module.css";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-// 실제 specialties 12개 중 6개만 노출하고 나머지는 "전체보기"로 연결.
-// slug/name은 DB 값 그대로 (임의 카테고리 추가 금지).
-const FEATURED_SPECIALTIES = [
-  { slug: 'weight-management', name: '다이어트·체형관리' },
-  { slug: 'strength-body-profile', name: '근력강화·바디프로필' },
-  { slug: 'posture-pain-management', name: '자세교정·통증관리' },
-  { slug: 'rehab-post-surgery', name: '재활운동·수술 후 회복' },
-  { slug: 'pilates-yoga-flexibility', name: '필라테스·요가·유연성' },
-  { slug: 'sports-performance', name: '스포츠 퍼포먼스' },
+const SPECIALTIES = [
+  {
+    slug: "weight-management",
+    name: "다이어트·체형관리",
+    hint: "건강한 일상의 시작",
+    path: "M7 4h10l2 16H5L7 4Zm2 4a3 3 0 0 1 6 0m-3-1v3",
+  },
+  {
+    slug: "strength-body-profile",
+    name: "근력강화·바디프로필",
+    hint: "꾸준히, 더 단단하게",
+    path: "M7 8v8m10-8v8M4 10v4m16-4v4M7 12h10",
+  },
+  {
+    slug: "posture-pain-management",
+    name: "자세교정·통증관리",
+    hint: "편안한 움직임을 위해",
+    path: "M12 3v3m0 3v3m0 3v6M7 7l5 2 5-2M6 18l6-3 6 3",
+  },
+  {
+    slug: "rehab-post-surgery",
+    name: "재활운동·수술 후 회복",
+    hint: "차근차근, 다시 일상으로",
+    path: "M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6V4Z",
+  },
+  {
+    slug: "pilates-yoga-flexibility",
+    name: "필라테스·요가·유연성",
+    hint: "몸의 균형을 찾는 시간",
+    path: "M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 3v5m-6-5 6 2 6-2M4 20l8-4 8 4H4Z",
+  },
+  {
+    slug: "sports-performance",
+    name: "스포츠 퍼포먼스",
+    hint: "움직임의 다음 단계",
+    path: "m4 18 5-5 4 3 7-10m-6 0h6v6",
+  },
 ];
+
+function Arrow({ diagonal = false }: { diagonal?: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d={diagonal ? "M6 18 18 6M6 6h12v12" : "M4 12h16m-6-6 6 6-6 6"} />
+    </svg>
+  );
+}
 
 export default async function Home() {
   const supabase = await createClient();
-  const [{ data: expertsData }, expertEntryHref] = await Promise.all([
-    supabase.from('public_expert_list').select('*').limit(3),
+  const [{ data: expertsData, error }, expertEntryHref] = await Promise.all([
+    supabase.from("public_expert_list").select("*").limit(3),
     getNextOnboardingStep(),
   ]);
-  const experts = await representativeCards(supabase,(expertsData ?? []) as ExpertListItem[]);
-
+  const experts = await representativeCards(
+    supabase,
+    (expertsData ?? []) as ExpertListItem[],
+  );
   return (
-    <main className="flex min-h-screen flex-col bg-white">
-      {/* Hero -- 이미지가 섹션 전체를 채우는 풀블리드 배경(컨테이너 1240px
-          폭 안에서만, 뷰포트 브레이크아웃은 하지 않음) + 좌측 텍스트 오버레이.
-          인물이 사진 우측에 있어 텍스트는 여백 있는 좌측에 배치. */}
-      <section className="relative overflow-hidden min-h-[520px] max-h-[640px] lg:max-h-none lg:min-h-[85vh]">
-        <Image
-          src="/images/hero-pt-session.jpg"
-          alt="태블릿을 들고 있는 트레이너"
-          fill
-          priority
-          sizes="(min-width: 1240px) 1240px, 100vw"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-white/95 via-white/75 to-white/30 lg:bg-gradient-to-r lg:from-white/92 lg:via-white/55 lg:to-transparent" />
-
-        <div className="relative z-10 flex h-full min-h-[520px] max-h-[640px] lg:max-h-none lg:min-h-[85vh] items-center px-4 py-12 sm:px-6 sm:py-16">
-          <div className="max-w-xl lg:max-w-md">
-            <h1 className="text-hero sm:text-4xl font-bold text-slate-900 leading-tight mb-4">
-              좋은 움직임은,
-              <br />
-              검증된 경력에서 시작됩니다.
-            </h1>
-            <p className="text-base sm:text-lg text-slate-600 mb-2 leading-relaxed">
-              재활·운동 전문가를 경력과 자격으로 확인해보세요.
-            </p>
-            <p className="text-xs text-slate-600 mb-8">
-              자격증은 관리자가 직접 검증하지만, 경력 소개글은 전문가 본인이 작성한
-              내용입니다.
-            </p>
-
-            <div className="space-y-3 sm:space-y-4 sm:max-w-sm">
-              <Link
-                href={expertEntryHref}
-                className="block w-full py-3 sm:py-4 px-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-brand active:scale-[0.97] transition-all text-center"
-              >
-                전문가 프로필 만들기
-              </Link>
-              <Link
-                href="/experts"
-                className="block w-full py-3 sm:py-4 px-4 bg-white border border-slate-200 hover:border-blue-200 text-slate-700 hover:text-blue-600 font-bold rounded-xl transition-colors text-center"
-              >
-                전문가 찾기
-              </Link>
-            </div>
-          </div>
+    <main className={styles.home}>
+      <section className={styles.hero}>
+        <div aria-hidden="true" className={styles.graph}>
+          <svg viewBox="0 0 800 540" fill="none">
+            <path
+              d="M0 445H800M0 335H800M0 225H800M0 115H800"
+              stroke="#dbeafe"
+              strokeWidth="1"
+            />
+            <path
+              d="M0 465C180 465 180 325 370 325S570 100 800 100"
+              stroke="#dbeafe"
+              strokeWidth="2"
+            />
+            <path
+              d="M0 485C180 485 205 375 390 375S575 175 800 175"
+              stroke="#93c5fd"
+              strokeWidth="2"
+            />
+            <path
+              className={styles.trace}
+              d="M0 510C190 510 230 420 410 420S590 250 800 250"
+              stroke="#2563eb"
+              strokeWidth="2"
+            />
+            <circle
+              cx="410"
+              cy="420"
+              r="7"
+              fill="white"
+              stroke="#2563eb"
+              strokeWidth="2"
+            />
+            <circle cx="745" cy="257" r="5" fill="#2563eb" />
+          </svg>
+        </div>
+        <div className={styles.heroContent}>
+          <p className={styles.eyebrow}>경험을 살펴보고, 나에게 맞는 연결로.</p>
+          <h1>
+            나에게 맞는 전문가,
+            <br />
+            <span>이력부터 살펴보세요.</span>
+          </h1>
+          <p className={styles.lead}>
+            운동과 재활, 함께할 사람을 찾는 새로운 기준.
+            <br className="hidden sm:block" /> 경력과 자격, 활동을 한곳에서
+            확인하세요.
+          </p>
+          <form
+            action="/experts"
+            method="get"
+            className={styles.search}
+            role="search"
+            aria-label="전문가 이름 검색"
+          >
+            <svg
+              aria-hidden="true"
+              width="21"
+              height="21"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+            >
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="m16 16 4 4" />
+            </svg>
+            <label htmlFor="home-expert-search" className="sr-only">
+              전문가 이름
+            </label>
+            <input
+              id="home-expert-search"
+              type="search"
+              name="query"
+              placeholder="전문가 이름으로 찾아보세요"
+              maxLength={100}
+            />
+            <button type="submit">
+              <span>전문가 찾기</span>
+              <Arrow />
+            </button>
+          </form>
+          <Link href="/experts" className={styles.allLink}>
+            이름을 몰라도 괜찮아요. 전체 전문가 둘러보기 <Arrow />
+          </Link>
         </div>
       </section>
 
-      <MotionPath />
+      <section className={styles.section} aria-labelledby="specialty-title">
+        <div className={styles.sectionHead}>
+          <div>
+            <p className={styles.eyebrow}>어떤 도움이 필요하신가요?</p>
+            <h2 id="specialty-title">원하는 분야에서 시작하세요.</h2>
+          </div>
+          <Link href="/experts" className={styles.more}>
+            전체 분야 <Arrow />
+          </Link>
+        </div>
+        <div className={styles.specialties}>
+          {SPECIALTIES.map((s) => (
+            <Link
+              key={s.slug}
+              href={`/experts?specialty=${s.slug}`}
+              className={styles.specialty}
+            >
+              <span className={styles.specialtyIcon}>
+                <svg
+                  aria-hidden="true"
+                  width="27"
+                  height="27"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d={s.path} />
+                </svg>
+              </span>
+              <span>
+                <strong>{s.name}</strong>
+                <span className={styles.hint}>{s.hint}</span>
+              </span>
+              <span className={styles.specialtyArrow}>
+                <Arrow diagonal />
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
 
-      {/* Quick Category Grid */}
-      <section className="bg-white px-4 py-8 sm:px-6">
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-page-title font-bold text-slate-900">분야별로 찾기</h2>
-            <Link href="/experts" className="text-sm font-medium text-blue-600 hover:text-blue-700">
-              전체보기
+      <section className={styles.section} aria-labelledby="experts-title">
+        <div className={styles.sectionHead}>
+          <div>
+            <p className={styles.eyebrow}>프로필에 담긴 경험을 만나보세요</p>
+            <h2 id="experts-title">함께할 전문가를 찾아보세요.</h2>
+          </div>
+          <Link href="/experts" className={styles.more}>
+            전체 전문가 <Arrow />
+          </Link>
+        </div>
+        {experts.length > 0 ? (
+          <div className={styles.experts}>
+            {experts.map((expert) => (
+              <ExpertCard key={expert.id} expert={expert} variant="explore" />
+            ))}
+          </div>
+        ) : (
+          <div className={styles.empty}>
+            <p>
+              {error
+                ? "전문가 목록을 잠시 불러오지 못했습니다."
+                : "공개 프로필을 하나씩 채워가고 있어요."}
+            </p>
+            <Link href={error ? "/experts" : expertEntryHref}>
+              {error
+                ? "전문가 탐색에서 다시 확인하기"
+                : "나의 프로필부터 만들어보기"}{" "}
+              <Arrow />
             </Link>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {FEATURED_SPECIALTIES.map((s) => (
-              <Link
-                key={s.slug}
-                href={`/experts?specialty=${s.slug}`}
-                className="bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-4 text-sm font-semibold text-slate-800 hover:text-blue-600"
-              >
-                {s.name}
-              </Link>
-            ))}
-          </div>
-        </div>
+        )}
+        <p className={styles.disclosure}>
+          자격 확인 배지는 제출 자료를 관리자가 확인한 항목에 표시됩니다. 경력과
+          소개는 전문가가 직접 작성합니다.
+        </p>
       </section>
 
-      <MotionPath />
-
-      {/* Verified Expert Cards */}
-      <section className="px-4 py-8 sm:px-6 bg-background">
+      <section className={styles.creator} aria-labelledby="creator-title">
         <div>
-          <h2 className="text-page-title font-bold text-slate-900 mb-4">인증된 전문가</h2>
-          <div className="space-y-3">
-            {experts.map((expert) => (
-              <ExpertCard key={expert.id} expert={expert} />
-            ))}
-
-            {/* 콜드스타트 안내 카드 -- 공개 전문가가 0명이 되어도 이 카드만
-                남아 섹션이 깨지지 않는다. */}
-            <div className="p-4 rounded-2xl border border-dashed border-blue-200 bg-blue-50/40">
-              <p className="text-sm text-blue-900 leading-relaxed">
-                지금은 등록된 전문가가 많지 않습니다. 초기 단계라 프로필을 하나씩
-                채워가고 있어요. 먼저 등록하면 가장 눈에 띄는 자리를 차지할 수
-                있습니다.
-              </p>
-              <Link
-                href={expertEntryHref}
-                className="inline-block mt-3 text-sm font-bold text-blue-600 hover:text-blue-700"
-              >
-                전문가로 등록하기 →
-              </Link>
-            </div>
-          </div>
+          <p className={styles.eyebrow}>전문가로 함께하기</p>
+          <h2 id="creator-title">
+            쌓아온 경험이,
+            <br />
+            나를 소개하는 프로필로.
+          </h2>
+          <p>
+            작은 활동부터 전문 경력까지.
+            <br />내 이력을 모으고, 하나의 주소로 공유하세요.
+          </p>
         </div>
-      </section>
-
-      <MotionPath />
-
-      {/* Trust 3-column */}
-      <section className="bg-white px-4 py-8 sm:px-6">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-5">
-            <p className="text-sm font-bold text-emerald-600 mb-1">자격 검증</p>
-            <p className="text-sm text-slate-600">
-              등록된 자격증은 관리자가 직접 확인 후에만 인증 배지가 붙습니다.
-            </p>
-          </div>
-          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-5">
-            <p className="text-sm font-bold text-emerald-600 mb-1">경력 자동 합산</p>
-            <p className="text-sm text-slate-600">
-              등록한 경력 기간이 겹치는 부분 없이 자동으로 합산되어 총 경력으로
-              표시됩니다.
-            </p>
-          </div>
-          <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-5">
-            <p className="text-sm font-bold text-emerald-600 mb-1">중개 없는 직접 연결</p>
-            <p className="text-sm text-slate-600">
-              서비스 내 채팅·예약·결제 없이 전화·이메일·SNS로 전문가에게 직접
-              연락합니다.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 전문가 등록 유도 배너 -- 커리어가이드/블로그 콘텐츠는 아직 없어 만들지 않음 */}
-      <section className="bg-background px-4 py-8 sm:px-6 pb-16">
-        <div className="bg-gradient-to-b from-blue-50/80 via-white to-gray-50 border border-blue-100 rounded-2xl p-6 text-center">
-          <p className="font-bold text-slate-900 mb-1">아직 프로필이 없으신가요?</p>
-          <p className="text-sm text-slate-600 mb-4">약 5분이면 경력과 자격으로 나를 소개할 수 있어요.</p>
-          <Link
-            href={expertEntryHref}
-            className="inline-block py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold rounded-xl shadow-brand active:scale-[0.97] transition-all"
-          >
-            전문가 프로필 만들기
+        <div className={styles.creatorAction}>
+          <Link href={expertEntryHref}>
+            전문가 프로필 만들기 <Arrow />
           </Link>
+          <span>이미 프로필이 있다면 마이페이지에서 관리할 수 있어요.</span>
+        </div>
+      </section>
+
+      <section className={styles.principles} aria-label="프로필 확인 안내">
+        <div>
+          <span>자격은 확인하고</span>
+          <p>제출 자료 확인 여부를 배지로 구분합니다.</p>
+        </div>
+        <div>
+          <span>경험은 살펴보고</span>
+          <p>전문가가 작성한 이력과 활동을 확인합니다.</p>
+        </div>
+        <div>
+          <span>연결은 직접</span>
+          <p>프로필에 등록된 연락처·SNS로 연결됩니다.</p>
         </div>
       </section>
     </main>

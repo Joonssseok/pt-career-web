@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   getOwnSelectedProfessions,
   getProfessions,
@@ -20,6 +20,9 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
   _props,
   ref
 ) {
+  const requiredDialog = useRef<HTMLDialogElement>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const [professions, setProfessions] = useState<Profession[]>([]);
   // 선택 순서를 보존한다 -- 첫 번째 항목이 is_primary가 된다.
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -35,7 +38,7 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
   useEffect(() => {
     Promise.all([getProfessions(), getOwnSelectedProfessions()]).then(
       ([professionsResult, selectedResult]) => {
-        if (!professionsResult.ok) return;
+        if (!professionsResult.ok || !selectedResult.ok) {setLoadError('직군을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');return;}
         setProfessions(professionsResult.professions);
         if (selectedResult.ok) {
           setSelectedIds(selectedResult.professions.map((p) => p.professionId));
@@ -46,9 +49,10 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
           );
           const custom = selectedResult.professions.find((p) => p.customLabel);
           if (custom?.customLabel) setCustomLabel(custom.customLabel);
+          setLoaded(true);
         }
       }
-    );
+    ).catch(()=>setLoadError('직군을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.'));
   }, []);
 
   const toggleProfession = (id: string) => {
@@ -69,14 +73,13 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
 
   const customSelected = customProfession != null && selectedIds.includes(customProfession.id);
 
-  const save = async (): Promise<{ ok: boolean; error?: string }> => {
+  const validate = (): {ok:boolean;error?:string} => {
+    if (!loaded) return {ok:false,error:loadError || '직군을 불러오는 중입니다. 잠시 후 저장해주세요.'};
     if (selectedIds.length === 0) {
-      // 아직 직군을 선택하지 않은 사용자 -- "선택됨: 0/5개" 안내가 이미 상시
-      // 노출되므로, 항상 실패할 RPC 호출은 조용히 건너뛴다(SpecialtySection과
-      // 동일한 처리).
-      return { ok: true };
+      setShowWarning(true);
+      requiredDialog.current?.showModal();
+      return {ok:false,error:'직군을 최소 1개 선택해주세요.'};
     }
-
     if (customSelected) {
       const trimmed = customLabel.trim();
       if (trimmed.length < 1 || trimmed.length > CUSTOM_LABEL_MAX) {
@@ -86,7 +89,11 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
       }
     }
     setCustomLabelError('');
-
+    return {ok:true};
+  };
+  const save = async (): Promise<{ok:boolean;error?:string}> => {
+    const checked=validate();
+    if(!checked.ok) return checked;
     const result = await replaceProfileProfessions(
       selectedIds.map((id) => ({
         professionId: id,
@@ -98,10 +105,12 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
     return result.ok ? { ok: true } : { ok: false, error: result.error };
   };
 
-  useImperativeHandle(ref, () => ({ save }), [selectedIds, customLabel, visibilityMap]);
+  useImperativeHandle(ref, () => ({ save, validate }), [selectedIds, customLabel, visibilityMap, loaded, loadError]);
 
   return (
     <div className="space-y-5">
+      {loadError && <p role="alert" className="text-sm text-red-600">{loadError}</p>}
+      <dialog ref={requiredDialog} aria-labelledby="required-profession-title" className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-red-100 bg-white p-6 shadow-xl backdrop:bg-slate-900/25"><h2 id="required-profession-title" className="font-bold text-slate-900">직군을 선택해주세요.</h2><p className="mt-3 text-sm text-slate-500">직군은 필수 항목입니다. 최소 1개를 선택한 뒤 저장해주세요.</p><div className="mt-5 flex justify-end"><button type="button" autoFocus onClick={()=>requiredDialog.current?.close()} className="min-h-11 rounded-xl bg-blue-50 px-5 text-sm font-semibold text-primary">확인</button></div></dialog>
       {showWarning && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-sm text-red-900 font-medium">
@@ -114,7 +123,7 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
       <div
         className={`border rounded-lg p-4 ${
           selectedIds.length === 0
-            ? 'bg-yellow-50 border-yellow-200'
+            ? 'bg-red-50 border-red-200 text-red-700'
             : 'bg-blue-50 border-blue-200'
         }`}
       >
@@ -122,7 +131,7 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
           선택됨: {selectedIds.length}/{MAX_SELECTION}개
         </p>
         {selectedIds.length === 0 && (
-          <p className="text-xs text-yellow-700 mt-1">최소 1개를 선택해주세요.</p>
+          <p className="text-xs text-red-700 mt-1">최소 1개를 선택해주세요.</p>
         )}
       </div>
 

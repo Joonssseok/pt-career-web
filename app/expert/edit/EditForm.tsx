@@ -365,6 +365,15 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
     setDraftSaveMessage('');
 
     const failed: string[] = [];
+    // Validate required selections before any section writes or form reload.
+    for (const section of [professionRef, specialtyRef]) {
+      const checked=section.current?.validate?.();
+      if(checked && !checked.ok) {
+        setDraftSaveState('error');
+        setDraftSaveMessage(checked.error||'선택 항목을 확인해주세요.');
+        return false;
+      }
+    }
 
     const validationErrors = validate();
     if (Object.keys(validationErrors).length > 0) {

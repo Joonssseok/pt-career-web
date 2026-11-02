@@ -1,12 +1,15 @@
 'use client';
 
-import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { getOwnSelectedSpecialtyIds, getSpecialties, replaceProfileSpecialties } from '@/app/actions/specialties';
 import type { SectionSaveHandle } from './types';
 
 type Specialty = { id: string; name: string; sort_order: number };
 
 const SpecialtySection = forwardRef<SectionSaveHandle, object>(function SpecialtySection(_props, ref) {
+  const requiredDialog=useRef<HTMLDialogElement>(null);
+  const [loaded,setLoaded]=useState(false);
+  const [loadError,setLoadError]=useState('');
   const [specialties, setSpecialties] = useState<Specialty[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   // specialty_id -> owner_visible. 항목별 공개 토글 UI는 제거됐지만, 과거에
@@ -19,10 +22,11 @@ const SpecialtySection = forwardRef<SectionSaveHandle, object>(function Specialt
   useEffect(() => {
     Promise.all([getSpecialties(), getOwnSelectedSpecialtyIds()]).then(
       ([specialtiesResult, selectedResult]) => {
-        if (!specialtiesResult.ok) return;
+        if (!specialtiesResult.ok || !selectedResult.ok) {setLoadError('전문분야를 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.');return;}
         setSpecialties(specialtiesResult.specialties);
         if (selectedResult.ok) {
           setSelectedIds(selectedResult.specialtyIds);
+          setLoaded(true);
           setVisibilityMap(
             Object.fromEntries(
               selectedResult.specialties.map((s) => [s.specialtyId, s.ownerVisible])
@@ -30,7 +34,7 @@ const SpecialtySection = forwardRef<SectionSaveHandle, object>(function Specialt
           );
         }
       }
-    );
+    ).catch(()=>setLoadError('전문분야를 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.'));
   }, []);
 
   const MIN_SELECTION = 1;
@@ -56,24 +60,30 @@ const SpecialtySection = forwardRef<SectionSaveHandle, object>(function Specialt
     });
   };
 
-  const save = async (): Promise<{ ok: boolean; error?: string }> => {
-    if (selectedIds.length === 0) {
-      // 전문분야를 아직 선택하지 않은 사용자 — 아래 "선택됨: 0/3개" 안내가 이미
-      // 상시 노출되므로, replaceProfileSpecialties가 항상 실패할 이 케이스는
-      // 굳이 호출하지 않고 조용히 건너뛴다(중복된 실패 알림 방지).
-      return { ok: true };
+  const validate=()=>{
+    if(!loaded) return {ok:false,error:loadError||'전문분야를 불러오는 중입니다. 잠시 후 저장해주세요.'};
+    if(selectedIds.length===0) {
+      setShowWarning(true);
+      requiredDialog.current?.showModal();
+      return {ok:false,error:'전문분야를 최소 1개 선택해주세요.'};
     }
-
+    return {ok:true};
+  };
+  const save = async (): Promise<{ ok: boolean; error?: string }> => {
+    const checked=validate();
+    if(!checked.ok) return checked;
     const result = await replaceProfileSpecialties(
       selectedIds.map((id) => ({ specialtyId: id, ownerVisible: visibilityMap[id] ?? true }))
     );
     return result.ok ? { ok: true } : { ok: false, error: result.error };
   };
 
-  useImperativeHandle(ref, () => ({ save }), [selectedIds, visibilityMap]);
+  useImperativeHandle(ref, () => ({ save, validate }), [selectedIds, visibilityMap, loaded, loadError]);
 
   return (
     <div className="space-y-6">
+      <dialog ref={requiredDialog} aria-labelledby="required-specialty-title" className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-red-100 bg-white p-6 shadow-xl backdrop:bg-slate-900/25"><h2 id="required-specialty-title" className="font-bold text-slate-900">전문분야를 선택해주세요.</h2><p className="mt-3 text-sm text-slate-500">전문분야는 필수 항목입니다. 1~3개를 선택한 뒤 저장해주세요.</p><div className="mt-5 flex justify-end"><button type="button" autoFocus onClick={()=>requiredDialog.current?.close()} className="min-h-11 rounded-xl bg-blue-50 px-5 text-sm font-semibold text-primary">확인</button></div></dialog>
+      {loadError&&<p role="alert" className="text-sm text-red-600">{loadError}</p>}
       {showWarning && (
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <p className="text-sm text-red-900 font-medium">
@@ -88,7 +98,7 @@ const SpecialtySection = forwardRef<SectionSaveHandle, object>(function Specialt
         <div
           className={`border rounded-lg p-4 ${
             selectedIds.length === 0
-              ? 'bg-yellow-50 border-yellow-200'
+              ? 'bg-red-50 border-red-200 text-red-700'
               : 'bg-blue-50 border-blue-200'
           }`}
         >
@@ -96,8 +106,8 @@ const SpecialtySection = forwardRef<SectionSaveHandle, object>(function Specialt
             선택됨: {selectedIds.length}/{MAX_SELECTION}개
           </p>
           {selectedIds.length === 0 && (
-            <p className="text-xs text-yellow-700 mt-1">
-              최소 1개를 선택해야 다음 단계로 진행할 수 있습니다.
+            <p className="text-xs text-red-700 mt-1">
+              최소 1개를 선택해주세요.
             </p>
           )}
         </div>

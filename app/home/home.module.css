@@ -16,14 +16,14 @@
   max-width: 770px;
 }
 .eyebrow {
-  font-size: 13px;
+  font-size: calc(13px + 1pt);
   font-weight: 600;
   color: #2563eb;
   margin: 0 0 16px;
   letter-spacing: 0.015em;
 }
 .hero h1 {
-  font-size: clamp(34px, 4.5vw, 60px);
+  font-size: calc(clamp(34px, 4.5vw, 60px) + 1pt);
   line-height: 1.22;
   letter-spacing: -0.055em;
   font-weight: 800;
@@ -33,7 +33,7 @@
   color: #2563eb;
 }
 .lead {
-  font-size: 17px;
+  font-size: calc(17px + 1pt);
   line-height: 1.9;
   color: #64748b;
   margin: 24px 0 30px;
@@ -79,7 +79,7 @@
   background: transparent;
   border: 0;
   outline: 0;
-  font-size: 15px;
+  font-size: calc(15px + 1pt);
   color: #0f172a;
   height: 48px;
 }
@@ -96,7 +96,7 @@
   border-radius: 11px;
   background: #2563eb;
   color: #fff;
-  font-size: 14px;
+  font-size: calc(14px + 1pt);
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
@@ -109,7 +109,7 @@
   align-items: center;
   gap: 10px;
   color: #64748b;
-  font-size: 12px;
+  font-size: calc(12px + 1pt);
   min-height: 44px;
   margin-top: 12px;
 }
@@ -130,12 +130,12 @@
   margin-bottom: 25px;
 }
 .sectionHead .eyebrow {
-  font-size: 12px;
+  font-size: calc(12px + 1pt);
   margin-bottom: 10px;
   color: #64748b;
 }
 .section h2 {
-  font-size: 26px;
+  font-size: calc(26px + 1pt);
   letter-spacing: -0.04em;
   line-height: 1.4;
   font-weight: 750;
@@ -145,7 +145,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  font-size: 13px;
+  font-size: calc(13px + 1pt);
   color: #64748b;
   white-space: nowrap;
   min-height: 44px;
@@ -175,7 +175,7 @@
 .specialty strong {
   display: block;
   font-weight: 650;
-  font-size: 15px;
+  font-size: calc(15px + 1pt);
   line-height: 1.6;
 }
 .specialtyIcon {
@@ -191,7 +191,7 @@
 }
 .hint {
   display: block;
-  font-size: 12px;
+  font-size: calc(12px + 1pt);
   color: #94a3b8;
   margin-top: 3px;
 }
@@ -208,7 +208,7 @@
   gap: 14px;
 }
 .disclosure {
-  font-size: 12px;
+  font-size: calc(12px + 1pt);
   line-height: 1.8;
   color: #94a3b8;
   margin-top: 17px;
@@ -221,14 +221,14 @@
 }
 .empty p {
   color: #64748b;
-  font-size: 15px;
+  font-size: calc(15px + 1pt);
 }
 .empty a {
   display: inline-flex;
   align-items: center;
   gap: 10px;
   color: #2563eb;
-  font-size: 14px;
+  font-size: calc(14px + 1pt);
   margin-top: 18px;
 }
 .creator {
@@ -242,17 +242,17 @@
   margin-top: 52px;
 }
 .creator .eyebrow {
-  font-size: 12px;
+  font-size: calc(12px + 1pt);
 }
 .creator h2 {
-  font-size: 30px;
+  font-size: calc(30px + 1pt);
   line-height: 1.4;
   font-weight: 750;
   letter-spacing: -0.04em;
   margin: 0;
 }
 .creator p:not(.eyebrow) {
-  font-size: 14px;
+  font-size: calc(14px + 1pt);
   line-height: 1.9;
   color: #64748b;
   margin: 18px 0 0;
@@ -269,7 +269,7 @@
   border-radius: 13px;
   padding: 17px 22px;
   color: #fff;
-  font-size: 14px;
+  font-size: calc(14px + 1pt);
   font-weight: 700;
 }
 .creatorAction a:hover {
@@ -277,7 +277,7 @@
 }
 .creatorAction span {
   display: block;
-  font-size: 11px;
+  font-size: calc(11px + 1pt);
   line-height: 1.8;
   color: #94a3b8;
   margin-top: 12px;
@@ -294,11 +294,11 @@
   padding-left: 25px;
 }
 .principles span {
-  font-size: 13px;
+  font-size: calc(13px + 1pt);
   font-weight: 650;
 }
 .principles p {
-  font-size: 12px;
+  font-size: calc(12px + 1pt);
   line-height: 1.8;
   color: #94a3b8;
   margin-top: 7px;
@@ -334,7 +334,7 @@
     gap: 24px;
   }
   .creator h2 {
-    font-size: 27px;
+    font-size: calc(27px + 1pt);
   }
 }
 @media (max-width: 600px) {
@@ -345,13 +345,13 @@
     padding: 45px 0 35px;
   }
   .hero h1 {
-    font-size: 34px;
+    font-size: calc(34px + 1pt);
   }
   .eyebrow {
-    font-size: 11px;
+    font-size: calc(11px + 1pt);
   }
   .lead {
-    font-size: 14px;
+    font-size: calc(14px + 1pt);
     line-height: 1.9;
     margin: 21px 0 24px;
   }
@@ -366,12 +366,12 @@
     border-radius: 13px;
   }
   .search input {
-    font-size: 12px;
+    font-size: calc(12px + 1pt);
     height: 44px;
   }
   .search button {
     padding: 0 12px;
-    font-size: 12px;
+    font-size: calc(12px + 1pt);
     min-height: 44px;
     gap: 7px;
   }
@@ -379,7 +379,7 @@
     width: 15px;
   }
   .allLink {
-    font-size: 11px;
+    font-size: calc(11px + 1pt);
     gap: 7px;
   }
   .section {
@@ -390,14 +390,14 @@
     margin-bottom: 19px;
   }
   .section h2 {
-    font-size: 21px;
+    font-size: calc(21px + 1pt);
   }
   .sectionHead .eyebrow {
-    font-size: 11px;
+    font-size: calc(11px + 1pt);
     margin-bottom: 7px;
   }
   .more {
-    font-size: 11px;
+    font-size: calc(11px + 1pt);
     gap: 5px;
   }
   .specialty {
@@ -405,7 +405,7 @@
     padding: 19px 7px 19px 0;
   }
   .specialty strong {
-    font-size: 12px;
+    font-size: calc(12px + 1pt);
   }
   .specialtyIcon {
     width: 34px;
@@ -419,7 +419,7 @@
     display: none;
   }
   .hint {
-    font-size: 10px;
+    font-size: calc(10px + 1pt);
     line-height: 1.6;
   }
   .creator {
@@ -429,10 +429,10 @@
     border-radius: 19px;
   }
   .creator h2 {
-    font-size: 26px;
+    font-size: calc(26px + 1pt);
   }
   .creator p:not(.eyebrow) {
-    font-size: 13px;
+    font-size: calc(13px + 1pt);
   }
   .creatorAction {
     margin-top: 24px;
@@ -451,14 +451,14 @@
     padding-left: 0;
   }
   .principles span {
-    font-size: 12px;
+    font-size: calc(12px + 1pt);
   }
   .principles p {
-    font-size: 11px;
+    font-size: calc(11px + 1pt);
     margin-top: 4px;
   }
   .disclosure {
-    font-size: 11px;
+    font-size: calc(11px + 1pt);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -510,7 +510,7 @@
   margin-bottom: 38px;
 }
 .home .sectionHead h2 {
-  font-size: clamp(24px, 3.1vw, 40px);
+  font-size: calc(clamp(24px, 3.1vw, 40px) + 1pt);
 }
 .home .specialties {
   width: 100%;
@@ -544,7 +544,7 @@
   width: 100%;
 }
 .home .creator h2 {
-  font-size: clamp(28px, 3.2vw, 42px);
+  font-size: calc(clamp(28px, 3.2vw, 42px) + 1pt);
 }
 .home .principles {
   width: 100%;
@@ -564,24 +564,24 @@
   border-top: 1px solid #e2e8f0;
 }
 .home + :global(footer) > p:first-child {
-  font-size: 16px;
+  font-size: calc(16px + 1pt);
   line-height: 1.4;
 }
 .home + :global(footer) dl {
   margin-top: 7px;
-  font-size: 11px;
+  font-size: calc(11px + 1pt);
   line-height: 1.5;
   row-gap: 3px;
   column-gap: 16px;
 }
 .home + :global(footer) nav {
   margin-top: 7px;
-  font-size: 11px;
+  font-size: calc(11px + 1pt);
   line-height: 1.5;
 }
 .home + :global(footer) > p:last-child {
   margin-top: 6px;
-  font-size: 10px;
+  font-size: calc(10px + 1pt);
   line-height: 1.5;
 }
 
@@ -593,12 +593,12 @@
   align-items: center;
   gap: 20px;
   min-height: 44px;
-  font-size: 12px;
+  font-size: calc(12px + 1pt);
   color: #94a3b8;
 }
 .scrollCue span {
   color: #2563eb;
-  font-size: 20px;
+  font-size: calc(20px + 1pt);
 }
 .sectionNav {
   position: fixed;
@@ -617,7 +617,7 @@
   gap: 12px;
   min-height: 44px;
   padding: 0 10px;
-  font-size: 11px;
+  font-size: calc(11px + 1pt);
   color: #94a3b8;
 }
 .navLabel {
@@ -673,7 +673,7 @@
     margin-bottom: 24px;
   }
   .home .sectionHead h2 {
-    font-size: 25px;
+    font-size: calc(25px + 1pt);
   }
   .home .specialties {
     grid-template-columns: 1fr;
@@ -682,10 +682,10 @@
     padding: 14px 4px;
   }
   .home .specialty strong {
-    font-size: 13px;
+    font-size: calc(13px + 1pt);
   }
   .home .hint {
-    font-size: 11px;
+    font-size: calc(11px + 1pt);
   }
   .home .specialtyArrow {
     display: block;
@@ -695,14 +695,14 @@
     padding: 28px 22px;
   }
   .home .creator h2 {
-    font-size: 27px;
+    font-size: calc(27px + 1pt);
   }
   .home .principles {
     padding-top: 22px;
     gap: 14px;
   }
   .scrollCue {
-    font-size: 11px;
+    font-size: calc(11px + 1pt);
     bottom: 14px;
   }
 }
@@ -721,7 +721,7 @@
     display: block;
   }
   .home .sectionHead h2 {
-    font-size: 24px;
+    font-size: calc(24px + 1pt);
     word-break: keep-all;
   }
   .home .sectionHead .more {
@@ -782,7 +782,7 @@
     padding: 9px 20px 8px;
   }
   .home + :global(footer) dl {
-    font-size: 10px;
+    font-size: calc(10px + 1pt);
     column-gap: 10px;
     row-gap: 2px;
   }
@@ -804,6 +804,6 @@
     margin-bottom: 16px;
   }
   .home .sectionHead h2 {
-    font-size: 22px;
+    font-size: calc(22px + 1pt);
   }
 }

@@ -21,32 +21,46 @@
   /* ---------- 글자 크기 ---------- */
   /* 홈페이지 히어로 제목 전용. 기존 text-3xl과 동일 크기 — sm 이상에서는 그대로
      sm:text-4xl을 함께 써서 시각적 크기를 바꾸지 않는다. */
-  --text-hero: 1.875rem;
-  --text-hero--line-height: 2.25rem;
+  --text-hero: calc(1.875rem + 1pt);
+  --text-hero--line-height: calc(2.25rem + 1pt);
   /* 그 외 모든 기능 페이지(로그인/마이페이지/edit/전문가 상세/관리자 등)의 <h1>
      통일 크기. 기존 text-2xl과 동일 크기. */
-  --text-page-title: 1.5rem;
-  --text-page-title--line-height: 2rem;
+  --text-page-title: calc(1.5rem + 1pt);
+  --text-page-title--line-height: calc(2rem + 1pt);
 
   /* 2026-08-13 지시서: 사이트 전반 글씨가 너무 작다는 피드백 -- 개별
      파일을 일일이 고치는 대신 Tailwind 기본 타입 스케일 자체를 이
      @theme에서 올린다. text-xs/sm/base/lg를 쓰는 모든 곳에 한 번에 반영된다. */
-  --text-xs: 0.8125rem; /* 12px -> 13px */
-  --text-xs--line-height: 1.125rem;
-  --text-sm: 0.9375rem; /* 14px -> 15px */
-  --text-sm--line-height: 1.375rem;
-  --text-base: 1.0625rem; /* 16px -> 17px */
-  --text-base--line-height: 1.625rem;
-  --text-lg: 1.1875rem; /* 18px -> 19px */
-  --text-lg--line-height: 1.75rem;
+  --text-xs: calc(0.8125rem + 1pt); /* 기존 13px + 1pt */
+  --text-xs--line-height: calc(1.125rem + 1pt);
+  --text-sm: calc(0.9375rem + 1pt); /* 기존 15px + 1pt */
+  --text-sm--line-height: calc(1.375rem + 1pt);
+  --text-base: calc(1.0625rem + 1pt); /* 기존 17px + 1pt */
+  --text-base--line-height: calc(1.625rem + 1pt);
+  --text-lg: calc(1.1875rem + 1pt); /* 기존 19px + 1pt */
+  --text-lg--line-height: calc(1.75rem + 1pt);
   /* 랜딩 "전문가 찾기" 버튼(넓은 화면): 위 설명 문구 text-lg(19px)보다 2px 크게 */
-  --text-landing-cta: 1.3125rem; /* 21px */
-  --text-landing-cta--line-height: 1.75rem;
+  --text-landing-cta: calc(1.3125rem + 1pt); /* 기존 21px + 1pt */
+  --text-landing-cta--line-height: calc(1.75rem + 1pt);
 
   /* 배지/보조 라벨처럼 고정 px로 작게 둬야 하는 글자. 줄높이는 부모를 따른다. */
-  --text-micro: 11px; /* text-micro */
-  --text-caption: 12px; /* text-caption */
-  --text-display: 36px; /* text-display (404 숫자) */
+  --text-micro: calc(11px + 1pt); /* text-micro */
+  --text-caption: calc(12px + 1pt); /* text-caption */
+  --text-display: calc(36px + 1pt); /* text-display (404 숫자) */
+
+  /* 사이트 전체 +1pt. rem 기준 크기는 유지해 여백·컨테이너는 확대하지 않는다. */
+  --text-xl: calc(1.25rem + 1pt);
+  --text-2xl: calc(1.5rem + 1pt);
+  --text-3xl: calc(1.875rem + 1pt);
+  --text-4xl: calc(2.25rem + 1pt);
+  --text-5xl: calc(3rem + 1pt);
+  --text-6xl: calc(3.75rem + 1pt);
+  --text-7xl: calc(4.5rem + 1pt);
+  --text-8xl: calc(6rem + 1pt);
+  --text-9xl: calc(8rem + 1pt);
+  --text-tiny: calc(10px + 1pt);
+  --text-profile-title-input: calc(17.33px + 1pt);
+  --text-profile-title-input-wide: calc(21.33px + 1pt);
 
   /* ---------- 색 ---------- */
   /* 2026-08-19 "Verified Motion" 리디자인 토큰. */
@@ -77,6 +91,7 @@ html {
 }
 
 body {
+  font-size: calc(1rem + 1pt);
   color: var(--color-ink);
 }
 

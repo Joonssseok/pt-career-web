@@ -716,7 +716,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                 </h2>
               </div>
               <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-                <span className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] text-slate-400 sm:text-xs">
+                <span className="inline-flex items-center gap-1 whitespace-nowrap text-micro text-slate-400 sm:text-xs">
                   <Icon kind="lock" className="h-3.5 w-3.5" />
                   나만 보는 기록
                 </span>

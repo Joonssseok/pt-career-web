@@ -432,13 +432,13 @@ export function ProfileVisualReview({
               : active.filter((row) => attachedFor(row).length > 0)
             ).map((row) => (
               <div key={row.key} className="py-3">
-                <p className="text-[11px] text-slate-400">{row.category}</p>
+                <p className="text-micro text-slate-400">{row.category}</p>
                 <p className="mt-1 break-words text-xs font-semibold leading-5 text-slate-700">
                   {row.title}
                 </p>
                 {tab === "results" ? (
                   <span
-                    className={`mt-2 inline-block rounded-full px-2 py-1 text-[11px] ${row.verified ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-400"}`}
+                    className={`mt-2 inline-block rounded-full px-2 py-1 text-micro ${row.verified ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-400"}`}
                   >
                     {row.reviewStatus === "pending"
                       ? "심사 중"
@@ -459,7 +459,7 @@ export function ProfileVisualReview({
                     </a>
                   ))
                 ) : (
-                  <p className="mt-2 text-[11px] text-slate-400">
+                  <p className="mt-2 text-micro text-slate-400">
                     첨부파일 없음
                   </p>
                 )}

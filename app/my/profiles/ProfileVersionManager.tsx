@@ -229,7 +229,7 @@ export function ProfileVersionManager({
                   <span
                     className={`rounded-full px-3 py-1 text-xs ${v.is_representative ? "bg-blue-50 text-primary" : "bg-slate-50 text-slate-500"}`}
                   >
-                    {v.is_representative ? "대표 프로필" : "비공개 초안"}
+                    {v.is_representative ? "대표 프로필" : "비공개"}
                   </span>
                 </div>
                 <p className="mt-3 text-sm text-slate-500">

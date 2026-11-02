@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ComingSoonButton } from "@/components/ComingSoonButton";
 import { createClient } from "@/lib/supabase/server";
 import { ProfileVersionLinks } from "@/components/ProfileVersionLinks";
 
@@ -49,9 +50,9 @@ export async function AccountSidebar() {
         <a href="/my/damoa#files" className={linkClass}>
           보관 자료
         </a>
-        <a href="/my/damoa#summary" className={linkClass}>
+        <ComingSoonButton className={`${linkClass} w-full text-left`}>
           AI 묶음 요약
-        </a>
+        </ComingSoonButton>
       </AccountMenuSection>
       <AccountMenuSection id="profile" title="프로필 관리" href="/my/profiles">
         <ProfileVersionLinks

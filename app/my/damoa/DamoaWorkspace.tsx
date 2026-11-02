@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ComingSoonButton } from "@/components/ComingSoonButton";
 import {
   Activity,
   Attachment,
@@ -162,8 +163,9 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
   useEffect(() => {
     const followMenu = () => {
       const target = window.location.hash.slice(1);
-      if (target === "records" || target === "files" || target === "summary")
-        setView(target);
+      if (target === "summary") {
+        setView("records");
+      } else if (target === "records" || target === "files") setView(target);
     };
     followMenu();
     window.addEventListener("hashchange", followMenu);
@@ -405,26 +407,29 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
           </div>
         </div>
       </header>
-      <div className="my-5 flex flex-col gap-3 rounded-xl bg-slate-50 px-4 py-3 text-xs leading-relaxed text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-        <p>
-          로그인한 계정에 비공개로 보관됩니다. 브라우저 데이터를 지워도 서버
-          기록은 유지됩니다. AI 분석은 준비 중입니다.
-        </p>
-        <div className="shrink-0">
+      <div className="my-5 rounded-xl bg-slate-50 px-4 py-4 text-xs text-slate-500">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <span className="font-medium text-slate-600">저장 공간</span>
           <span>{(used / 1024 / 1024).toFixed(1)} / 100MB</span>
+        </div>
+        <div
+          role="progressbar"
+          aria-label="첨부 자료 사용량"
+          aria-valuenow={Math.min(
+            100,
+            Math.max(0, (used / STORAGE_LIMIT) * 100),
+          )}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuetext={`${(used / 1024 / 1024).toFixed(1)}MB / 100MB 사용`}
+          className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200"
+        >
           <div
-            role="progressbar"
-            aria-label="첨부 자료 사용량"
-            aria-valuenow={Math.round((used / STORAGE_LIMIT) * 100)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            className="mt-1 h-1 w-28 overflow-hidden rounded bg-slate-200"
-          >
-            <div
-              className="h-full rounded bg-primary"
-              style={{ width: `${(used / STORAGE_LIMIT) * 100}%` }}
-            />
-          </div>
+            className="h-full rounded-full bg-primary transition-[width] motion-reduce:transition-none"
+            style={{
+              width: `${Math.min(100, Math.max(0, (used / STORAGE_LIMIT) * 100))}%`,
+            }}
+          />
         </div>
       </div>
       {ready && legacy.length > 0 && (
@@ -449,10 +454,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
       )}
       {ready && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
-          <span>
-            파일당 최대 10MB · 개인당 100MB · 업로드 중에는 10MB를 임시
-            확보합니다.
-          </span>
+          <span>파일당 최대 10MB · 개인당 100MB</span>
           <button
             type="button"
             onClick={cleanup}
@@ -488,20 +490,29 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
               ],
               ["summary", "AI 묶음 요약", null],
             ] as const
-          ).map(([key, label, count]) => (
-            <button
-              key={key}
-              type="button"
-              aria-pressed={view === key}
-              onClick={() => setView(key)}
-              className={`min-h-14 border-b-2 text-sm font-semibold ${view === key ? "border-primary text-primary" : "border-transparent text-slate-400 hover:text-slate-700"}`}
-            >
-              {label}
-              {count !== null && (
-                <span className="ml-1.5 text-xs">{count}</span>
-              )}
-            </button>
-          ))}
+          ).map(([key, label, count]) =>
+            key === "summary" ? (
+              <ComingSoonButton
+                key={key}
+                className="min-h-14 border-b-2 border-transparent text-sm font-semibold text-slate-400 hover:text-slate-700"
+              >
+                {label}
+              </ComingSoonButton>
+            ) : (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={view === key}
+                onClick={() => setView(key)}
+                className={`min-h-14 border-b-2 text-sm font-semibold ${view === key ? "border-primary text-primary" : "border-transparent text-slate-400 hover:text-slate-700"}`}
+              >
+                {label}
+                {count !== null && (
+                  <span className="ml-1.5 text-xs">{count}</span>
+                )}
+              </button>
+            ),
+          )}
         </div>
       </div>
       {view === "summary" ? (

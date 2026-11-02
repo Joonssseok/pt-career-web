@@ -85,6 +85,7 @@ export async function AccountSidebar() {
           회원 탈퇴
         </Link>
       </AccountMenuSection>
+      <Link href="/my/feedback" className="flex min-h-12 items-center rounded-xl px-3 text-sm font-bold text-slate-950 hover:bg-blue-50 hover:text-primary">제안·신고</Link>
     </AccountMenu>
   );
   return (

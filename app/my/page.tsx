@@ -118,6 +118,7 @@ export default async function MyPage() {
               representative?.content.headline ?? profile?.headline ?? ""
             }
           />
+          <section id="feedback" className="scroll-mt-28 rounded-2xl border border-slate-200 p-6 sm:p-8"><h2 className="text-lg font-bold text-slate-950">제안·신고</h2><p className="mt-2 text-sm leading-relaxed text-slate-500">서비스에 의견을 보내고 접수 내역을 확인하세요.</p><Link href="/my/feedback" className="mt-4 inline-flex min-h-12 items-center text-sm font-semibold text-primary">제안·신고로 이동 →</Link></section>
           <section
             id="account"
             className="scroll-mt-28 rounded-2xl border border-slate-200 p-6 sm:p-8"

@@ -5,7 +5,10 @@ import {
   type ExpertProfileViewProps,
 } from "@/components/experts/ExpertProfileView";
 import { profileActivityCards } from "@/components/ProfileActivitySections";
-import type { ProfileActivity } from "@/lib/profile-versions/types";
+import {
+  profileItemKey,
+  type ProfileActivity,
+} from "@/lib/profile-versions/types";
 import {
   emptyReviewChoice,
   type ReviewChoice,
@@ -15,7 +18,11 @@ import {
 type Section = Parameters<
   NonNullable<ExpertProfileViewProps["renderItemActions"]>
 >[0];
-type VisualItem = ReviewItem & { section?: Section; index?: number };
+type VisualItem = ReviewItem & {
+  section?: Section;
+  index?: number;
+  sourceKey?: string;
+};
 export function ProfileVisualReview({
   expert,
   activities,
@@ -97,7 +104,13 @@ export function ProfileVisualReview({
         )
       : undefined;
     records.push({
-      key: source?.key ?? `${section}:${index}`,
+      key: profileItemKey(
+        section,
+        section !== "introduction" && section !== "workplace"
+          ? expert?.[section][index]
+          : undefined,
+      ),
+      sourceKey: source?.key,
       title,
       category,
       source: source?.source ?? "damoa",
@@ -162,7 +175,9 @@ export function ProfileVisualReview({
     ...items.filter(
       (row) =>
         row.reviewStatus &&
-        !records.some((record) => record.key === row.key) &&
+        !records.some(
+          (record) => record.key === row.key || record.sourceKey === row.key,
+        ) &&
         choices[row.key]?.visible !== false,
     ),
   ];
@@ -382,8 +397,7 @@ export function ProfileVisualReview({
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
           <h2 className="font-bold text-slate-900">첨부파일</h2>
           <p className="mt-2 text-xs leading-5 text-slate-400">
-            미리보기 · 변경·첨부는 이 화면에만 유지되며 실제로 전송되지
-            않습니다.
+            첨부·심사 요청은 미리보기이며 실제로 전송되지 않습니다.
           </p>
           <div
             className="mt-4 flex border-b border-slate-100"

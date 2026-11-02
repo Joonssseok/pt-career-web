@@ -23,6 +23,7 @@ import {
   LIVE_PROFILE_PUBLISH_ENABLED,
   BASE_SECTIONS,
   applyVersion,
+  sameProfileContent,
   type ProfileVersion,
   type VersionContent,
 } from "@/lib/profile-versions/types";
@@ -91,7 +92,14 @@ export function ProfileVersionManager({
   const [imports, setImports] = useState<Activity[] | null>(null);
   const [reviewChoices, setReviewChoices] = useState<
     Record<string, ReviewChoice>
-  >({});
+  >(() =>
+    Object.fromEntries(
+      (selected?.draft_content.excluded ?? []).map((key) => [
+        key,
+        { visible: false, requested: false, files: {} },
+      ]),
+    ),
+  );
   const [reviewSources, setReviewSources] = useState<Activity[]>([]);
   const [reviewLicenses, setReviewLicenses] = useState<
     Awaited<ReturnType<typeof getOwnCertifications>>["certifications"]
@@ -184,7 +192,9 @@ export function ProfileVersionManager({
       owner,
     ],
   );
-  const previewExpert = expert ? applyVersion(expert, content) : null;
+  const previewExpert = expert
+    ? applyVersion(expert, { ...content, excluded: [] })
+    : null;
   const canPublish =
     base?.verification_status === "approved" &&
     base.is_public &&
@@ -193,7 +203,7 @@ export function ProfileVersionManager({
   const changed =
     !selected ||
     title !== selected.title ||
-    JSON.stringify(content) !== JSON.stringify(selected.draft_content);
+    !sameProfileContent(content, selected.draft_content);
   async function save() {
     setPending(true);
     setError("");
@@ -209,7 +219,7 @@ export function ProfileVersionManager({
       }
       setId(r.id);
       setMessage(
-        "프로필 내용과 순서를 저장했습니다. 항목 제외·첨부·심사 선택은 아직 미리보기입니다.",
+        "프로필 내용과 순서를 저장했습니다. 첨부·심사 요청은 아직 미리보기입니다.",
       );
       router.replace(`/my/profiles?profile=${r.id}`);
       router.refresh();
@@ -498,9 +508,18 @@ export function ProfileVersionManager({
               activities={content.activities}
               items={reviewItems}
               choices={reviewChoices}
-              onChange={(key, choice) =>
-                setReviewChoices((previous) => ({ ...previous, [key]: choice }))
-              }
+              onChange={(key, choice) => {
+                setReviewChoices((previous) => ({
+                  ...previous,
+                  [key]: choice,
+                }));
+                setContent((previous) => ({
+                  ...previous,
+                  excluded: choice.visible
+                    ? (previous.excluded ?? []).filter((item) => item !== key)
+                    : [...new Set([...(previous.excluded ?? []), key])],
+                }));
+              }}
               galleryImages={
                 content.sections.includes("gallery") ? galleryImages : []
               }

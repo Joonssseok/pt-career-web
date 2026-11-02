@@ -8,6 +8,7 @@ import { ShareButton } from "./ShareButton";
 import {
   LIVE_PROFILE_PUBLISH_ENABLED,
   applyVersion,
+  publicActivities,
   type Representative,
 } from "@/lib/profile-versions/types";
 import { profileActivityCards } from "@/components/ProfileActivitySections";
@@ -188,7 +189,7 @@ export default async function ExpertDetailPage({
           activitySections={
             expert.representative
               ? profileActivityCards({
-                  activities: expert.representative.content.activities,
+                  activities: publicActivities(expert.representative.content),
                 })
               : null
           }

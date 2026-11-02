@@ -1,4 +1,9 @@
-export type ReviewFile = { id: string; name: string; href: string };
+export type ReviewFile = {
+  id: string;
+  name: string;
+  href: string;
+  blob?: Blob;
+};
 export type ReviewItem = {
   key: string;
   title: string;

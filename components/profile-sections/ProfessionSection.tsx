@@ -132,6 +132,7 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
           <div key={profession.id}>
             <button
               type="button"
+              data-profile-dirty-control
               onClick={() => toggleProfession(profession.id)}
               className={`w-full p-3 rounded-lg border-2 text-left transition-all cursor-pointer ${
                 selectedIds.includes(profession.id)

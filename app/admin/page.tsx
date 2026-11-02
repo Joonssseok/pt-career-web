@@ -1,3 +1,4 @@
+import { EvidenceReviewQueue } from "./EvidenceReviewQueue";
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
@@ -80,6 +81,7 @@ export default async function AdminDashboardPage() {
       getAdminUsersList(),
     ]);
 
+  const {data: evidenceReviews,error: evidenceError}=await supabase.from("profile_item_reviews").select("id,version_id,item_key,item_snapshot,title,file_ids,public_file_ids,status,reason,updated_at").neq("status","draft").order("requested_at",{ascending:false}).limit(200);
   const pending = (data ?? []) as unknown as PendingProfile[];
   const allProfiles = (allProfilesData ?? []) as unknown as AdminProfileListItem[];
   const stats = statsResult.ok ? statsResult.stats : null;
@@ -104,6 +106,7 @@ export default async function AdminDashboardPage() {
       </nav>
 
       <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 space-y-8">
+        {evidenceError ? <p role="alert">증빙 심사 내역을 불러오지 못했습니다.</p> : <EvidenceReviewQueue rows={evidenceReviews??[]} />}
         {/* 1. 가입/검증 파이프라인 현황 */}
         <section>
           <h2 className="text-sm font-semibold text-gray-900 mb-3">가입 · 검증 현황</h2>

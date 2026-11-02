@@ -65,7 +65,7 @@ export async function loadFileUsage(owner: string): Promise<number> {
     0,
   );
 }
-async function upload(owner: string, activityId: string, file: Attachment) {
+export async function upload(owner: string, activityId: string, file: Attachment) {
   const client = createClient();
   if (file.path) return;
   if (!file.blob || file.blob.size !== file.size || file.blob.size > FILE_LIMIT)

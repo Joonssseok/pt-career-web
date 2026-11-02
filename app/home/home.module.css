@@ -807,3 +807,8 @@
     font-size: calc(22px + 1pt);
   }
 }
+
+/* Keep section navigation inside the content edge when side ads are visible. */
+@media (min-width: 1680px) and (min-height: 960px) {
+  .sectionNav { right: calc((100vw - 1240px) / 2 + 8px); }
+}

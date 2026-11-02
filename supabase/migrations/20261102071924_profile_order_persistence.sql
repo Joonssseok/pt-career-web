@@ -36,4 +36,3 @@ begin
 end $$;
 revoke all on function public.profile_version_content_valid(jsonb) from public;
 grant execute on function public.profile_version_content_valid(jsonb) to authenticated;
-

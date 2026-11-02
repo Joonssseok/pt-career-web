@@ -60,4 +60,3 @@ END;
 $test$;
 ROLLBACK;
 SELECT 'permission and approval matrix passed; fixture and schema rolled back' AS result;
-

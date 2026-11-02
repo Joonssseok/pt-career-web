@@ -63,9 +63,10 @@ jest.mock('@/app/actions/terms', () => ({
 // 9개 하위 섹션을 전부 "즉시 성공"하는 더미로 대체 -- 이 테스트가 보려는
 // 건 EditForm이 실제로 저장을 "언제" 트리거하는지와 saveOwnProfile에
 // "무엇을" 넘기는지지, 각 섹션 자체의 저장 로직이 아니다.
+let mockProfessionValid = true;
 function makeStubSection(name: string) {
   const Stub = forwardRef((_props, ref) => {
-    useImperativeHandle(ref, () => ({ save: async () => ({ ok: true }) }));
+    useImperativeHandle(ref, () => ({ save: async () => ({ ok: true }), validate: () => ({ok:name!=="ProfessionSection" || mockProfessionValid,error:"직군을 선택해주세요."}) }));
     return null;
   });
   Stub.displayName = name;
@@ -103,6 +104,7 @@ describe('EditForm save wiring', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockProfessionValid=true;
     (saveOwnProfile as jest.Mock).mockResolvedValue({ ok: true });
     (submitProfile as jest.Mock).mockResolvedValue({ ok: true });
   });
@@ -160,4 +162,15 @@ describe('EditForm save wiring', () => {
     await waitFor(() => expect(saveOwnProfile).toHaveBeenCalled());
     expect(submitProfile).not.toHaveBeenCalled();
   });
+});
+
+test('invalid required profession prevents any common profile writes',async()=>{
+  mockProfessionValid=false;
+  jest.clearAllMocks();
+  const {getByText}=await renderAndWaitForLoad();
+  await act(async()=>{fireEvent.click(getByText('임시저장'));});
+  expect(saveOwnProfile).not.toHaveBeenCalled();
+  expect(submitProfile).not.toHaveBeenCalled();
+  expect(getByText('직군을 선택해주세요.')).toBeTruthy();
+  mockProfessionValid=true;
 });

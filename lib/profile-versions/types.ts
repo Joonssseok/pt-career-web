@@ -19,6 +19,7 @@ export type VersionContent = {
   introduction: string;
   sections: string[];
   activities: ProfileActivity[];
+  order?: Record<string, string[]>;
 };
 export type ProfileVersion = {
   id: string;

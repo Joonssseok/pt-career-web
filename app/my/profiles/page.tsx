@@ -45,6 +45,14 @@ export default async function ProfileVersionsPage({
       .maybeSingle();
     expert = data as ExpertProfileViewProps["expert"] | null;
   }
+  const { data: gallery } = base
+    ? await supabase
+        .from("profile_gallery_images")
+        .select("id,image_path,caption")
+        .eq("profile_id", base.id)
+        .eq("owner_visible", true)
+        .order("display_order")
+    : { data: [] };
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       <AccountSidebar />
@@ -57,6 +65,11 @@ export default async function ProfileVersionsPage({
           startNew={query.new === "1"}
           base={base}
           expert={expert}
+          galleryImages={(gallery ?? []).map((row) => ({
+            id: row.id,
+            imagePath: row.image_path,
+            caption: row.caption ?? "",
+          }))}
           commonEditor={<EditForm embedded commonOnly />}
         />
       </main>

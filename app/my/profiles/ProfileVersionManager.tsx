@@ -1,10 +1,17 @@
 "use client";
+import { ProfileVisualReview } from "./ProfileVisualReview";
+import { getOwnCertifications } from "@/app/actions/certification";
+import { getEvidenceFileUrl } from "@/lib/storage/evidence-file-url";
+import {
+  type ReviewItem,
+  type ReviewChoice,
+} from "@/lib/profile-versions/review-preview";
 import { ProfileTitleCard } from "@/components/ProfileTitleCard";
 import {
   CommonProfileSaveContext,
   type CommonProfileSave,
 } from "@/components/CommonProfileSaveContext";
-import { useRef, useMemo, useState } from "react";
+import { useRef, useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -19,11 +26,7 @@ import {
   type ProfileVersion,
   type VersionContent,
 } from "@/lib/profile-versions/types";
-import {
-  ExpertProfileView,
-  type ExpertProfileViewProps,
-} from "@/components/experts/ExpertProfileView";
-import { ProfileActivitySections } from "@/components/ProfileActivitySections";
+import { type ExpertProfileViewProps } from "@/components/experts/ExpertProfileView";
 import { loadActivities } from "@/lib/damoa/server-store";
 import { CATEGORIES, type Activity } from "@/lib/damoa/categories";
 const field =
@@ -48,8 +51,10 @@ export function ProfileVersionManager({
   base,
   expert,
   commonEditor,
+  galleryImages = [],
 }: {
   commonEditor?: React.ReactNode;
+  galleryImages?: ExpertProfileViewProps["galleryImages"];
   owner: string;
   versions: ProfileVersion[];
   selectedId?: string;
@@ -84,6 +89,102 @@ export function ProfileVersionManager({
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [imports, setImports] = useState<Activity[] | null>(null);
+  const [reviewChoices, setReviewChoices] = useState<
+    Record<string, ReviewChoice>
+  >({});
+  const [reviewSources, setReviewSources] = useState<Activity[]>([]);
+  const [reviewLicenses, setReviewLicenses] = useState<
+    Awaited<ReturnType<typeof getOwnCertifications>>["certifications"]
+  >([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewReload, setReviewReload] = useState(0);
+  useEffect(() => {
+    if (step !== "preview") return;
+    let current = true;
+    setReviewLoading(true);
+    setReviewError("");
+    Promise.allSettled([loadActivities(owner), getOwnCertifications()]).then(
+      ([records, licenses]) => {
+        if (!current) return;
+        setReviewSources(records.status === "fulfilled" ? records.value : []);
+        setReviewLicenses(
+          licenses.status === "fulfilled" && licenses.value.ok
+            ? licenses.value.certifications
+            : [],
+        );
+        if (
+          records.status === "rejected" ||
+          licenses.status === "rejected" ||
+          !licenses.value.ok
+        ) {
+          setReviewError(
+            "일부 자료를 불러오지 못했습니다. 다시 불러온 뒤 심사 자료를 선택해주세요.",
+          );
+        }
+        setReviewLoading(false);
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [step, owner, reviewReload]);
+  const reviewItems = useMemo<ReviewItem[]>(
+    () => [
+      ...content.activities.map((activity) => {
+        const source = reviewSources.find(
+          (row) => row.owner === owner && row.id === activity.id,
+        );
+        return {
+          key: "damoa:" + activity.id,
+          title: activity.title,
+          category: activity.category,
+          period: activity.period,
+          source: "damoa" as const,
+          files: (source?.files ?? [])
+            .filter((file) => !!file.path)
+            .map((file) => ({
+              id: file.id,
+              name: file.name,
+              href: "/api/damoa/files/" + encodeURIComponent(file.id),
+            })),
+        };
+      }),
+      ...(content.sections.includes("licenses")
+        ? reviewLicenses.map((license) => ({
+            key: "license:" + license.id,
+            title: license.name,
+            category: "자격·면허",
+            period: license.issueDate,
+            source: "license" as const,
+            verified: license.verificationStatus === "verified",
+            reviewStatus: ["pending", "verified", "rejected"].includes(
+              license.verificationStatus ?? "",
+            )
+              ? (license.verificationStatus as
+                  "pending" | "verified" | "rejected")
+              : undefined,
+            files: license.documentPath
+              ? [
+                  {
+                    id: license.id,
+                    name: license.name + " 증빙파일",
+                    href: getEvidenceFileUrl(license.documentPath)!,
+                  },
+                ]
+              : [],
+          }))
+        : []),
+    ],
+    [
+      content.activities,
+      content.sections,
+      reviewSources,
+      reviewLicenses,
+      owner,
+    ],
+  );
+  const previewExpert = expert ? applyVersion(expert, content) : null;
   const canPublish =
     base?.verification_status === "approved" &&
     base.is_public &&
@@ -107,7 +208,9 @@ export function ProfileVersionManager({
         return false;
       }
       setId(r.id);
-      setMessage("비공개 초안을 저장했습니다. 공개본은 변경되지 않았습니다.");
+      setMessage(
+        "프로필 내용과 순서를 저장했습니다. 항목 제외·첨부·심사 선택은 아직 미리보기입니다.",
+      );
       router.replace(`/my/profiles?profile=${r.id}`);
       router.refresh();
       return true;
@@ -167,16 +270,11 @@ export function ProfileVersionManager({
       ],
     });
   }
-  function move(index: number, offset: number) {
-    const rows = [...content.activities];
-    const target = index + offset;
-    if (target < 0 || target >= rows.length) return;
-    [rows[index], rows[target]] = [rows[target], rows[index]];
-    setContent({ ...content, activities: rows });
-  }
   return (
-    <div className="mx-auto max-w-3xl">
-      <header className="mb-8">
+    <div
+      className={`mx-auto ${editing && step === "preview" ? "max-w-none" : "max-w-3xl"}`}
+    >
+      <header hidden={editing && step === "preview"} className="mb-8">
         <p className="text-xs font-semibold tracking-wider text-primary">
           MY PROFILES
         </p>
@@ -244,7 +342,9 @@ export function ProfileVersionManager({
         </>
       ) : (
         <>
-          <ProfileTitleCard value={title} onChange={setTitle} />
+          {step === "write" && (
+            <ProfileTitleCard value={title} onChange={setTitle} />
+          )}
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
             <Link
               href="/my/profiles"
@@ -315,8 +415,9 @@ export function ProfileVersionManager({
                     프로필에 담을 활동
                   </h2>
                   <p className="mt-2 text-xs leading-6 text-slate-500">
-                    다모아의 활동 내용만 가져옵니다. 개인 메모와 원본 첨부는
-                    포함하지 않습니다.
+                    다모아의 활동을 골라 담은 뒤, 공개 전 확인에서 첨부 자료와
+                    심사 요청 여부를 선택할 수 있습니다. 개인 메모는 가져오지
+                    않습니다.
                   </p>
                   <button
                     type="button"
@@ -328,7 +429,7 @@ export function ProfileVersionManager({
                   {imports && (
                     <div className="mt-2 rounded-xl bg-slate-50 p-4">
                       <p className="mb-2 text-xs text-slate-500">
-                        현재 브라우저에 보관된 기록
+                        내 다모아에 보관된 기록
                       </p>
                       {imports.length ? (
                         imports.map((row) => (
@@ -388,99 +489,25 @@ export function ProfileVersionManager({
               </div>
             </div>
           ) : (
-            <div className="space-y-6">
-              <section className="rounded-2xl border border-blue-100 bg-blue-50/30 p-5">
-                <h2 className="text-sm font-bold text-slate-800">
-                  공통 이력 표시
-                </h2>
-                <div className="mt-3 flex flex-wrap gap-4">
-                  {BASE_SECTIONS.map((section) => (
-                    <label
-                      key={section.id}
-                      className="flex min-h-11 items-center gap-2 text-sm text-slate-600"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={content.sections.includes(section.id)}
-                        onChange={(e) =>
-                          setContent({
-                            ...content,
-                            sections: e.target.checked
-                              ? [...content.sections, section.id]
-                              : content.sections.filter(
-                                  (s) => s !== section.id,
-                                ),
-                          })
-                        }
-                        className="accent-blue-600"
-                      />
-                      {section.label}
-                    </label>
-                  ))}
-                </div>
-                {content.activities.map((a, i) => (
-                  <div
-                    key={a.id}
-                    className="mt-2 flex items-center gap-2 rounded-xl bg-white p-3 text-sm"
-                  >
-                    <span className="min-w-0 flex-1 truncate">{a.title}</span>
-                    <button
-                      aria-label={`${a.title} 위로`}
-                      disabled={i === 0}
-                      onClick={() => move(i, -1)}
-                      className="min-h-11 px-2 disabled:opacity-30"
-                    >
-                      ↑
-                    </button>
-                    <button
-                      aria-label={`${a.title} 아래로`}
-                      disabled={i === content.activities.length - 1}
-                      onClick={() => move(i, 1)}
-                      className="min-h-11 px-2 disabled:opacity-30"
-                    >
-                      ↓
-                    </button>
-                    <button
-                      onClick={() =>
-                        setContent({
-                          ...content,
-                          activities: content.activities.filter(
-                            (row) => row.id !== a.id,
-                          ),
-                        })
-                      }
-                      className="min-h-11 text-xs text-slate-500"
-                    >
-                      이 프로필에서 빼기
-                    </button>
-                  </div>
-                ))}
-                <p className="mt-3 text-xs leading-6 text-slate-400">
-                  제목은 공개 화면에 표시되지 않습니다. 활동을 빼도 다모아
-                  원본은 남습니다.
-                </p>
-              </section>
-              {expert ? (
-                <ExpertProfileView
-                  expert={applyVersion(expert, content)}
-                  galleryImages={[]}
-                />
-              ) : (
-                <section className="rounded-2xl border border-slate-200 p-6">
-                  <h2 className="text-xl font-bold">
-                    {base?.display_name || "내 프로필"}
-                  </h2>
-                  <p className="mt-3 text-primary">{content.headline}</p>
-                  <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-slate-600">
-                    {content.introduction}
-                  </p>
-                  <p className="mt-4 text-xs text-slate-400">
-                    기본 프로필 공개 승인 전입니다.
-                  </p>
-                </section>
-              )}
-              <ProfileActivitySections activities={content.activities} />
-            </div>
+            <ProfileVisualReview
+              order={content.order}
+              onOrderChange={(order) =>
+                setContent((previous) => ({ ...previous, order }))
+              }
+              expert={previewExpert}
+              activities={content.activities}
+              items={reviewItems}
+              choices={reviewChoices}
+              onChange={(key, choice) =>
+                setReviewChoices((previous) => ({ ...previous, [key]: choice }))
+              }
+              galleryImages={
+                content.sections.includes("gallery") ? galleryImages : []
+              }
+              loading={reviewLoading}
+              error={reviewError}
+              retry={() => setReviewReload((count) => count + 1)}
+            />
           )}
           {error && (
             <p role="alert" className="mt-4 text-sm text-red-600">
@@ -497,9 +524,9 @@ export function ProfileVersionManager({
               type="button"
               disabled={pending || !title.trim()}
               onClick={save}
-              className={primary}
+              className="min-h-12 rounded-xl border border-blue-200 px-5 text-sm font-semibold text-primary disabled:opacity-40"
             >
-              {pending ? "처리 중…" : "비공개 저장"}
+              {pending ? "처리 중…" : "프로필 저장"}
             </button>
             {id && (
               <button
@@ -508,24 +535,9 @@ export function ProfileVersionManager({
                 onClick={publish}
                 className="min-h-12 rounded-xl border border-blue-200 px-5 text-sm font-semibold text-primary disabled:opacity-40"
               >
-                공개 저장 / 대표프로필 설정
+                공개프로필 업로드
               </button>
             )}
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => {
-                setId(null);
-                setTitle(`${title} 복사본`.slice(0, 80));
-                setMessage(
-                  "복사본입니다. 새 제목으로 저장하면 별도 프로필이 됩니다.",
-                );
-                setStep("write");
-              }}
-              className="min-h-12 px-3 text-sm text-slate-500"
-            >
-              복제하기
-            </button>
           </div>
           {!canPublish && (
             <p className="text-xs leading-6 text-slate-400">

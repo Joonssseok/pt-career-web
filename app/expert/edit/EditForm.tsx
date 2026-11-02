@@ -241,7 +241,7 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
       }
 
       const ext = EXT_BY_TYPE[file.type];
-      const path = `${user.id}/photo.${ext}`;
+      const path = `${user.id}/${embedded ? crypto.randomUUID() : "photo"}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from('profile-images')
@@ -294,7 +294,7 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
       }
 
       const ext = EXT_BY_TYPE[file.type];
-      const path = `${user.id}/cover.${ext}`;
+      const path = `${user.id}/${embedded ? crypto.randomUUID() : "cover"}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from('profile-images')

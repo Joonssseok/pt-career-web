@@ -108,6 +108,7 @@ const SpecialtySection = forwardRef<SectionSaveHandle, object>(function Specialt
             <button
               key={specialty.id}
               type="button"
+              data-profile-dirty-control
               onClick={() => toggleSpecialty(specialty.id)}
               className={`p-4 rounded-lg border-2 text-left transition-all cursor-pointer ${
                 selectedIds.includes(specialty.id)

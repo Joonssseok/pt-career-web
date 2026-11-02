@@ -1,3 +1,4 @@
+import { ProfileEvidencePublic } from "@/components/ProfileEvidencePublic";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
@@ -203,6 +204,7 @@ export default async function ExpertDetailPage({
         />
       </div>
 
+      <ProfileEvidencePublic profileId={id} />
       <div className="mt-8 border-t border-slate-100 pt-6 sm:mt-12 sm:pt-8">
         <ShareButton
           profileId={expert.id}

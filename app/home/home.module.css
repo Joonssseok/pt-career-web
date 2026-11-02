@@ -469,3 +469,341 @@
     transition: none;
   }
 }
+
+/* Only /home participates in page-level snapping; other routes keep ordinary scrolling. */
+:global(html):has(.home) {
+  scroll-snap-type: y mandatory;
+  scroll-padding-top: calc(96px + var(--home-search-height, 84px));
+  scroll-behavior: smooth;
+}
+.home {
+  padding-bottom: 0;
+}
+.home > .hero,
+.home > .section,
+.home > .creator {
+  min-height: calc(
+    100svh - 96px - var(--home-search-height, 84px) -
+      var(--home-footer-height, 160px)
+  );
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(36px, 6vh, 80px) 0 88px;
+  margin: 0;
+  border: 0;
+}
+.home > .hero {
+  min-height: calc(
+    100svh - 96px - var(--home-search-height, 84px) -
+      var(--home-footer-height, 160px)
+  );
+}
+.home > .section {
+  gap: 0;
+}
+.home .sectionHead {
+  width: 100%;
+  margin-bottom: 38px;
+}
+.home .sectionHead h2 {
+  font-size: clamp(24px, 3.1vw, 40px);
+}
+.home .specialties {
+  width: 100%;
+}
+.home .specialty {
+  padding-top: 32px;
+  padding-bottom: 32px;
+}
+.home .experts {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
+.home .experts > a {
+  flex-direction: column;
+}
+.home .experts > a:only-child {
+  flex-direction: row;
+  max-width: 800px;
+}
+.home > .creator {
+  background: white;
+  border-radius: 0;
+}
+.creatorCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 48px;
+  background: linear-gradient(110deg, #eff6ff, #f8fbff);
+  border-radius: 24px;
+  width: 100%;
+}
+.home .creator h2 {
+  font-size: clamp(28px, 3.2vw, 42px);
+}
+.home .principles {
+  width: 100%;
+  padding: 32px 0 0;
+}
+.home + :global(footer) {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  width: min(100%, 1240px);
+  min-height: 0;
+  padding: 12px 24px 10px;
+  display: block;
+  background: white;
+  border-top: 1px solid #e2e8f0;
+}
+.home + :global(footer) > p:first-child {
+  font-size: 16px;
+  line-height: 1.4;
+}
+.home + :global(footer) dl {
+  margin-top: 7px;
+  font-size: 11px;
+  line-height: 1.5;
+  row-gap: 3px;
+  column-gap: 16px;
+}
+.home + :global(footer) nav {
+  margin-top: 7px;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.home + :global(footer) > p:last-child {
+  margin-top: 6px;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.scrollCue {
+  position: absolute;
+  left: 0;
+  bottom: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 44px;
+  font-size: 12px;
+  color: #94a3b8;
+}
+.scrollCue span {
+  color: #2563eb;
+  font-size: 20px;
+}
+.sectionNav {
+  position: fixed;
+  right: max(16px, calc((100vw - 1440px) / 2));
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sectionNav a {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 10px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+.navLabel {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.sectionNav a:hover .navLabel,
+.sectionNav a:focus-visible .navLabel,
+.sectionNav a[aria-current] .navLabel {
+  opacity: 1;
+}
+.navDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition:
+    background 0.2s,
+    transform 0.2s;
+}
+.sectionNav a[aria-current] {
+  color: #2563eb;
+}
+.sectionNav a[aria-current] .navDot {
+  background: #2563eb;
+  transform: scale(1.5);
+}
+@media (max-width: 1200px) {
+  .sectionNav {
+    right: 0;
+  }
+  .navLabel {
+    display: none;
+  }
+  .sectionNav a {
+    min-width: 32px;
+    justify-content: center;
+    padding: 0;
+  }
+}
+@media (max-width: 600px) {
+  .home {
+    padding-right: 16px;
+  }
+  .home > .hero,
+  .home > .section,
+  .home > .creator {
+    padding-top: 36px;
+    padding-bottom: 65px;
+  }
+  .home .sectionHead {
+    align-items: flex-start;
+    margin-bottom: 24px;
+  }
+  .home .sectionHead h2 {
+    font-size: 25px;
+  }
+  .home .specialties {
+    grid-template-columns: 1fr;
+  }
+  .home .specialty {
+    padding: 14px 4px;
+  }
+  .home .specialty strong {
+    font-size: 13px;
+  }
+  .home .hint {
+    font-size: 11px;
+  }
+  .home .specialtyArrow {
+    display: block;
+  }
+  .home .creatorCard {
+    display: block;
+    padding: 28px 22px;
+  }
+  .home .creator h2 {
+    font-size: 27px;
+  }
+  .home .principles {
+    padding-top: 22px;
+    gap: 14px;
+  }
+  .scrollCue {
+    font-size: 11px;
+    bottom: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :global(html):has(.home) {
+    scroll-behavior: auto;
+  }
+  .navDot,
+  .navLabel {
+    transition: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .home .sectionHead {
+    display: block;
+  }
+  .home .sectionHead h2 {
+    font-size: 24px;
+    word-break: keep-all;
+  }
+  .home .sectionHead .more {
+    margin-top: 8px;
+    min-height: 32px;
+    justify-content: flex-start;
+  }
+  .sectionNav a {
+    min-width: 44px;
+  }
+}
+
+.home {
+  padding-top: var(--home-search-height, 84px);
+  padding-bottom: var(--home-footer-height, 160px);
+}
+.fixedSearch {
+  position: fixed;
+  top: 96px;
+  left: 0;
+  width: 100%;
+  z-index: 35;
+  background: white;
+  border-bottom: 1px solid #eef2f7;
+}
+.fixedSearchInner {
+  max-width: 1120px;
+  width: calc(100% - 48px);
+  margin: auto;
+  padding: 10px 0;
+}
+.fixedSearch .search {
+  margin: 0 auto;
+  max-width: 700px;
+  box-shadow: none;
+}
+.sectionNav {
+  top: calc(
+    (
+        100svh + 96px + var(--home-search-height, 84px) -
+          var(--home-footer-height, 160px)
+      ) /
+      2
+  );
+}
+.home > .hero,
+.home > .section,
+.home > .creator {
+  padding-top: 24px;
+  padding-bottom: 48px;
+}
+.home .specialty {
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+@media (max-width: 600px) {
+  .home + :global(footer) {
+    padding: 9px 20px 8px;
+  }
+  .home + :global(footer) dl {
+    font-size: 10px;
+    column-gap: 10px;
+    row-gap: 2px;
+  }
+  .fixedSearchInner {
+    width: calc(100% - 40px);
+    padding: 8px 0;
+  }
+  .home > .hero,
+  .home > .section,
+  .home > .creator {
+    padding-top: 24px;
+    padding-bottom: 45px;
+  }
+  .home .specialty {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .home .sectionHead {
+    margin-bottom: 16px;
+  }
+  .home .sectionHead h2 {
+    font-size: 22px;
+  }
+}

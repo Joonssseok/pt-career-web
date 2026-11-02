@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getNextOnboardingStep } from "@/lib/auth/get-next-onboarding-step";
 import { ExpertCard, type ExpertListItem } from "../experts/ExpertCard";
 import styles from "./home.module.css";
+import { HomeSectionNav } from "./HomeSectionNav";
 
 export const dynamic = "force-dynamic";
 
@@ -76,7 +77,46 @@ export default async function Home() {
   );
   return (
     <main className={styles.home}>
-      <section className={styles.hero}>
+      <div className={styles.fixedSearch} data-home-search>
+        <div className={styles.fixedSearchInner}>
+          <form
+            action="/experts"
+            method="get"
+            className={styles.search}
+            role="search"
+            aria-label="전문가 이름 검색"
+          >
+            <svg
+              aria-hidden="true"
+              width="21"
+              height="21"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+            >
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="m16 16 4 4" />
+            </svg>
+            <label htmlFor="home-expert-search" className="sr-only">
+              전문가 이름
+            </label>
+            <input
+              id="home-expert-search"
+              type="search"
+              name="query"
+              placeholder="전문가 이름으로 찾아보세요"
+              maxLength={100}
+            />
+            <button type="submit">
+              <span>전문가 찾기</span>
+              <Arrow />
+            </button>
+          </form>
+        </div>
+      </div>
+      <HomeSectionNav />
+      <section id="home-intro" className={styles.hero} aria-label="전문가 검색">
         <div aria-hidden="true" className={styles.graph}>
           <svg viewBox="0 0 800 540" fill="none">
             <path
@@ -123,47 +163,21 @@ export default async function Home() {
             <br className="hidden sm:block" /> 경력과 자격, 활동을 한곳에서
             확인하세요.
           </p>
-          <form
-            action="/experts"
-            method="get"
-            className={styles.search}
-            role="search"
-            aria-label="전문가 이름 검색"
-          >
-            <svg
-              aria-hidden="true"
-              width="21"
-              height="21"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.6"
-            >
-              <circle cx="10.5" cy="10.5" r="6.5" />
-              <path d="m16 16 4 4" />
-            </svg>
-            <label htmlFor="home-expert-search" className="sr-only">
-              전문가 이름
-            </label>
-            <input
-              id="home-expert-search"
-              type="search"
-              name="query"
-              placeholder="전문가 이름으로 찾아보세요"
-              maxLength={100}
-            />
-            <button type="submit">
-              <span>전문가 찾기</span>
-              <Arrow />
-            </button>
-          </form>
+
           <Link href="/experts" className={styles.allLink}>
             이름을 몰라도 괜찮아요. 전체 전문가 둘러보기 <Arrow />
           </Link>
         </div>
+        <a href="#home-fields" className={styles.scrollCue}>
+          스크롤하여 분야 살펴보기 <span aria-hidden>↓</span>
+        </a>
       </section>
 
-      <section className={styles.section} aria-labelledby="specialty-title">
+      <section
+        id="home-fields"
+        className={styles.section}
+        aria-labelledby="specialty-title"
+      >
         <div className={styles.sectionHead}>
           <div>
             <p className={styles.eyebrow}>어떤 도움이 필요하신가요?</p>
@@ -207,7 +221,11 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className={styles.section} aria-labelledby="experts-title">
+      <section
+        id="home-experts"
+        className={styles.section}
+        aria-labelledby="experts-title"
+      >
         <div className={styles.sectionHead}>
           <div>
             <p className={styles.eyebrow}>프로필에 담긴 경험을 만나보세요</p>
@@ -244,39 +262,44 @@ export default async function Home() {
         </p>
       </section>
 
-      <section className={styles.creator} aria-labelledby="creator-title">
-        <div>
-          <p className={styles.eyebrow}>전문가로 함께하기</p>
-          <h2 id="creator-title">
-            쌓아온 경험이,
-            <br />
-            나를 소개하는 프로필로.
-          </h2>
-          <p>
-            작은 활동부터 전문 경력까지.
-            <br />내 이력을 모으고, 하나의 주소로 공유하세요.
-          </p>
+      <section
+        id="home-create"
+        className={styles.creator}
+        aria-labelledby="creator-title"
+      >
+        <div className={styles.creatorCard}>
+          <div>
+            <p className={styles.eyebrow}>전문가로 함께하기</p>
+            <h2 id="creator-title">
+              쌓아온 경험이,
+              <br />
+              나를 소개하는 프로필로.
+            </h2>
+            <p>
+              작은 활동부터 전문 경력까지.
+              <br />내 이력을 모으고, 하나의 주소로 공유하세요.
+            </p>
+          </div>
+          <div className={styles.creatorAction}>
+            <Link href={expertEntryHref}>
+              전문가 프로필 만들기 <Arrow />
+            </Link>
+            <span>이미 프로필이 있다면 마이페이지에서 관리할 수 있어요.</span>
+          </div>
         </div>
-        <div className={styles.creatorAction}>
-          <Link href={expertEntryHref}>
-            전문가 프로필 만들기 <Arrow />
-          </Link>
-          <span>이미 프로필이 있다면 마이페이지에서 관리할 수 있어요.</span>
-        </div>
-      </section>
-
-      <section className={styles.principles} aria-label="프로필 확인 안내">
-        <div>
-          <span>자격은 확인하고</span>
-          <p>제출 자료 확인 여부를 배지로 구분합니다.</p>
-        </div>
-        <div>
-          <span>경험은 살펴보고</span>
-          <p>전문가가 작성한 이력과 활동을 확인합니다.</p>
-        </div>
-        <div>
-          <span>연결은 직접</span>
-          <p>프로필에 등록된 연락처·SNS로 연결됩니다.</p>
+        <div className={styles.principles} aria-label="프로필 확인 안내">
+          <div>
+            <span>자격은 확인하고</span>
+            <p>제출 자료 확인 여부를 배지로 구분합니다.</p>
+          </div>
+          <div>
+            <span>경험은 살펴보고</span>
+            <p>전문가가 작성한 이력과 활동을 확인합니다.</p>
+          </div>
+          <div>
+            <span>연결은 직접</span>
+            <p>프로필에 등록된 연락처·SNS로 연결됩니다.</p>
+          </div>
         </div>
       </section>
     </main>

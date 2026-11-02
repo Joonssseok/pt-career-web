@@ -1,16 +1,19 @@
 import type { ProfileActivity } from "@/lib/profile-versions/types";
-export function ProfileActivitySections({
+export function profileActivityCards({
   activities,
+  renderItemActions,
 }: {
   activities: ProfileActivity[];
+  renderItemActions?: (id: string) => React.ReactNode;
 }) {
   if (!activities.length) return null;
   const groups = [...new Set(activities.map((a) => a.category))];
   return (
-    <div className="mt-6 space-y-5">
+    <>
       {groups.map((group) => (
         <section
           key={group}
+          data-order-key={"activity:" + group}
           className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-7"
         >
           <h2 className="text-base font-bold text-slate-900">{group}</h2>
@@ -19,7 +22,8 @@ export function ProfileActivitySections({
             {activities
               .filter((a) => a.category === group)
               .map((a) => (
-                <article key={a.id}>
+                <article key={a.id} data-order-key={a.id}>
+                  {renderItemActions?.(a.id)}
                   <h3 className="text-sm font-semibold text-slate-800">
                     {a.title}
                   </h3>
@@ -41,6 +45,11 @@ export function ProfileActivitySections({
           </div>
         </section>
       ))}
-    </div>
+    </>
   );
+}
+export function ProfileActivitySections(
+  props: Parameters<typeof profileActivityCards>[0],
+) {
+  return <div className="mt-6 space-y-5">{profileActivityCards(props)}</div>;
 }

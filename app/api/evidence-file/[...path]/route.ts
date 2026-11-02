@@ -1,19 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path: string[] }> },
 ) {
   const { path: pathSegments } = await params;
-  const path = pathSegments.join('/');
+  const path = pathSegments.join("/");
 
   const supabase = await createClient();
-  const { data, error } = await supabase.storage.from('evidence-files').download(path);
+  const { data, error } = await supabase.storage
+    .from("evidence-files")
+    .download(path);
 
   if (error || !data) {
     if (error) {
-      console.error('[evidence-file] download error:', error);
+      console.error("[evidence-file] download error:", error);
     }
     return new NextResponse(null, { status: 404 });
   }
@@ -22,8 +24,8 @@ export async function GET(
 
   return new NextResponse(buffer, {
     headers: {
-      'Content-Type': data.type || 'application/octet-stream',
-      'Cache-Control': 'private, max-age=3600',
+      "Content-Type": data.type || "application/octet-stream",
+      "Cache-Control": "private, no-store",
     },
   });
 }

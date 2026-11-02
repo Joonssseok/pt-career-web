@@ -10,7 +10,7 @@ import {
   applyVersion,
   type Representative,
 } from "@/lib/profile-versions/types";
-import { ProfileActivitySections } from "@/components/ProfileActivitySections";
+import { profileActivityCards } from "@/components/ProfileActivitySections";
 import { ExpertProfileView } from "@/components/experts/ExpertProfileView";
 
 export const dynamic = "force-dynamic";
@@ -65,6 +65,8 @@ type ExpertDetail = {
     description: string | null;
   }[];
   licenses: {
+    id?: string;
+    document_public?: boolean;
     license_name: string;
     issuing_organization: string | null;
     acquired_date: string | null;
@@ -84,6 +86,13 @@ const fetchExpert = cache(async (id: string): Promise<ExpertDetail | null> => {
     return null;
   }
 
+  const { data: licenses, error: licenseError } = await supabase.rpc(
+    "get_public_license_details",
+    { p_profile_id: id },
+  );
+  if (licenseError && licenseError.code !== "PGRST202")
+    throw new Error("자격·면허를 불러오지 못했습니다.");
+  if (!licenseError) data.licenses = licenses || [];
   if (!LIVE_PROFILE_PUBLISH_ENABLED) return data as ExpertDetail;
   const { data: versions, error: versionError } = await supabase.rpc(
     "get_representative_profiles",
@@ -175,6 +184,14 @@ export default async function ExpertDetailPage({
       <div id="profile-details" className="scroll-mt-32">
         <ExpertProfileView
           expert={expert}
+          order={expert.representative?.content.order}
+          activitySections={
+            expert.representative
+              ? profileActivityCards({
+                  activities: expert.representative.content.activities,
+                })
+              : null
+          }
           galleryImages={
             expert.representative
               ? expert.representative.content.sections.includes("gallery")
@@ -183,11 +200,6 @@ export default async function ExpertDetailPage({
               : galleryImages
           }
         />
-        {expert.representative && (
-          <ProfileActivitySections
-            activities={expert.representative.content.activities}
-          />
-        )}
       </div>
 
       <div className="mt-8 border-t border-slate-100 pt-6 sm:mt-12 sm:pt-8">

@@ -31,7 +31,7 @@ export function ProfileVersionLinks({
               <span className="block truncate">{v.title}</span>
             </Link>
             {v.is_representative && (
-              <span className="shrink-0 rounded-md bg-blue-50 px-1.5 py-1 text-[10px] font-semibold text-primary">
+              <span className="shrink-0 rounded-md bg-blue-50 px-1.5 py-1 text-tiny font-semibold text-primary">
                 공개프로필
               </span>
             )}

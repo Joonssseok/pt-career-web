@@ -25,7 +25,7 @@ export function ProfileTitleCard({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="예: 취업 준비용 / 운동 지도 소개"
-        className="mt-3 min-h-14 w-full border-0 border-b border-slate-200 bg-white px-0 py-3 text-[17.33px] font-semibold text-slate-800 outline-none placeholder:font-normal placeholder:text-slate-300 focus:border-primary sm:text-[21.33px]"
+        className="mt-3 min-h-14 w-full border-0 border-b border-slate-200 bg-white px-0 py-3 text-profile-title-input font-semibold text-slate-800 outline-none placeholder:font-normal placeholder:text-slate-300 focus:border-primary sm:text-profile-title-input-wide"
       />
     </section>
   );

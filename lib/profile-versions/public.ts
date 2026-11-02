@@ -18,6 +18,9 @@ export async function representativeCards(
           ...row,
           display_name: v.expert.display_name,
           headline: v.content.headline,
+          total_experience_years: v.expert.total_experience_years,
+          workplace_region: v.expert.workplace_region,
+          workplace_center_name: v.expert.workplace_center_name,
         }
       : row;
   });

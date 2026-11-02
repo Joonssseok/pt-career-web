@@ -1,3 +1,4 @@
+import { AdminFeedbackQueue } from "@/components/feedback/AdminFeedbackQueue";
 import { EvidenceReviewQueue } from "./EvidenceReviewQueue";
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -107,6 +108,7 @@ export default async function AdminDashboardPage() {
 
       <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 space-y-8">
         {evidenceError ? <p role="alert">증빙 심사 내역을 불러오지 못했습니다.</p> : <EvidenceReviewQueue rows={evidenceReviews??[]} />}
+        <AdminFeedbackQueue />
         {/* 1. 가입/검증 파이프라인 현황 */}
         <section>
           <h2 className="text-sm font-semibold text-gray-900 mb-3">가입 · 검증 현황</h2>

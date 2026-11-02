@@ -17,6 +17,7 @@ export function SiteFooter() {
         <Link href="/about" className="hover:text-primary">서비스 소개</Link>
         <Link href="/terms" className="hover:text-primary">이용약관</Link>
         <Link href="/privacy" className="font-semibold text-slate-800 hover:text-primary">개인정보처리방침</Link>
+        <Link href="/feedback" className="hover:text-primary">제안·신고</Link>
       </nav>
       <p className="mt-5 text-xs text-slate-500">© 2026 PT Career. 신뢰할 수 있는 전문가 찾기</p>
     </footer>

@@ -1,0 +1,30 @@
+begin;
+do $$
+declare u uuid; administrator uuid; ticket uuid:=gen_random_uuid(); stamp timestamptz; denied boolean; n int; i int;
+begin
+ select id into u from auth.users where not public.is_admin(id) limit 1;
+ select user_id into administrator from public.admin_users limit 1;
+ if u is null or administrator is null then raise exception 'fixture unavailable'; end if;
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ execute 'set local role authenticated';
+ perform public.submit_feedback(ticket,'suggestion','서비스 개선','검증용 제안','검증을 위한 예시 의견입니다. 실제 접수가 아닙니다.','');
+ perform public.submit_feedback(ticket,'suggestion','서비스 개선','검증용 제안','검증을 위한 예시 의견입니다. 실제 접수가 아닙니다.','');
+ select count(*) into n from public.feedback_tickets where id=ticket;if n<>1 then raise exception 'duplicate ticket';end if;
+ select updated_at into stamp from public.feedback_tickets where id=ticket;
+ denied:=false;begin perform public.update_feedback(ticket,'resolved','인증 없는 변경',stamp);exception when others then denied:=true;end;if not denied then raise exception 'owner escalated status';end if;
+ perform set_config('request.jwt.claim.sub',gen_random_uuid()::text,true);
+ select count(*) into n from public.feedback_tickets where id=ticket;if n<>0 then raise exception 'other owner read';end if;
+ denied:=false;begin perform public.submit_feedback(ticket,'suggestion','서비스 개선','검증용 제안','검증을 위한 예시 의견입니다. 실제 접수가 아닙니다.','');exception when others then denied:=true;end;if not denied then raise exception 'other owner replay';end if;
+ perform set_config('request.jwt.claim.sub',administrator::text,true);
+ select count(*) into n from public.feedback_tickets where id=ticket;if n<>1 then raise exception 'admin cannot read';end if;
+ perform public.update_feedback(ticket,'reviewing','확인하고 있습니다.',stamp);
+ select updated_at into stamp from public.feedback_tickets where id=ticket;
+ perform public.update_feedback(ticket,'resolved','검증을 완료했습니다.',stamp);
+ denied:=false;begin perform public.update_feedback(ticket,'resolved','오래된 응답',stamp);exception when others then denied:=true;end;if not denied then raise exception 'stale update';end if;
+ perform set_config('request.jwt.claim.sub',u::text,true);
+ if not exists(select 1 from public.feedback_tickets where id=ticket and status='resolved' and reply='검증을 완료했습니다.') then raise exception 'owner cannot read result';end if;
+ for i in 1..4 loop perform public.submit_feedback(gen_random_uuid(),'report','기타 신고','검증용 신고','검증을 위한 예시 신고입니다. 실제 접수가 아닙니다.','');end loop;
+ denied:=false;begin perform public.submit_feedback(gen_random_uuid(),'report','기타 신고','한도 검증','한도를 확인하는 검증용 신고 내용입니다.','');exception when others then denied:=true;end;if not denied then raise exception 'rate limit ignored';end if;
+ if has_table_privilege('anon','public.feedback_tickets','select') or has_table_privilege('authenticated','public.feedback_tickets','update') then raise exception 'table access too broad';end if;
+end $$;
+rollback;

@@ -71,7 +71,10 @@ export async function POST(request: NextRequest) {
     }
   }
   const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!secret) return new NextResponse(null, { status: 503 });
+  if (!secret) {
+    console.error("[statistics] server credential missing");
+    return new NextResponse(null, { status: 503 });
+  }
   const service = createServiceClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     secret,
@@ -91,7 +94,11 @@ export async function POST(request: NextRequest) {
       visitor_id,
     },
   });
-  if (error) return new NextResponse(null, { status: 503 });
+  if (error) {
+    // Supabase error code/message only: never log credentials or event payloads.
+    console.error("[statistics] collection failed", { code: error.code, message: error.message });
+    return new NextResponse(null, { status: 503 });
+  }
   const response = skip();
   response.cookies.set(ANALYTICS_COOKIE, visitor_id, {
     httpOnly: true,

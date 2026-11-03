@@ -74,7 +74,7 @@ export async function getAdminAuditLog(filters: {
     p_to: filters.to || null,
     p_action_type: filters.actionType || null,
     p_admin_user_id: filters.adminUserId || null,
-    p_limit: filters.limit ?? 20,
+    p_limit: filters.limit ?? 10,
     p_offset: filters.offset ?? 0,
   });
 

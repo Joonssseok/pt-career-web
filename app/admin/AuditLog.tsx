@@ -1,51 +1,76 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { getAdminAuditLog, type AdminAuditLogEntry, type AdminUserOption } from '@/app/actions/admin';
+import { useEffect, useState } from "react";
+import {
+  getAdminAuditLog,
+  type AdminAuditLogEntry,
+  type AdminUserOption,
+} from "@/app/actions/admin";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZES = [5, 10, 20, 30, 50];
 
 const ACTION_LABEL: Record<string, string> = {
-  profile_approved: '승인',
-  profile_rejected: '반려',
-  license_verified: '자격증 인증',
-  license_rejected: '자격증 반려',
+  profile_approved: "승인",
+  profile_rejected: "반려",
+  license_verified: "자격증 인증",
+  license_rejected: "자격증 반려",
 };
 
-const APPROVAL_ACTION_TYPES = new Set(['profile_approved', 'license_verified']);
+const APPROVAL_ACTION_TYPES = new Set(["profile_approved", "license_verified"]);
 
 export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
+  const [pageSize, setPageSize] = useState(10);
+  const [error, setError] = useState("");
   const [entries, setEntries] = useState<AdminAuditLogEntry[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(false);
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [actionType, setActionType] = useState('');
-  const [adminUserId, setAdminUserId] = useState('');
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [actionType, setActionType] = useState("");
+  const [adminUserId, setAdminUserId] = useState("");
 
-  const fetchPage = async (offset: number, append: boolean) => {
+  const fetchPage = async (
+    offset: number,
+    append: boolean,
+    limit = pageSize,
+  ) => {
     setLoading(true);
-    const result = await getAdminAuditLog({
-      from: from ? new Date(from).toISOString() : undefined,
-      to: to ? new Date(to).toISOString() : undefined,
-      actionType: (actionType || undefined) as
-        | 'profile_approved'
-        | 'profile_rejected'
-        | 'license_verified'
-        | 'license_rejected'
-        | undefined,
-      adminUserId: adminUserId || undefined,
-      limit: PAGE_SIZE,
-      offset,
-    });
-    setLoading(false);
-    setLoaded(true);
+    setError("");
+    if (!append) {
+      setEntries([]);
+      setHasMore(false);
+      setLoaded(false);
+    }
+    try {
+      const result = await getAdminAuditLog({
+        from: from ? new Date(from).toISOString() : undefined,
+        to: to ? new Date(to).toISOString() : undefined,
+        actionType: (actionType || undefined) as
+          | "profile_approved"
+          | "profile_rejected"
+          | "license_verified"
+          | "license_rejected"
+          | undefined,
+        adminUserId: adminUserId || undefined,
+        limit,
+        offset,
+      });
+      if (!result.ok) {
+        setError("감사로그를 불러오지 못했습니다. 다시 조회해주세요.");
+        return;
+      }
+      setLoaded(true);
 
-    if (!result.ok) return;
-
-    setEntries((prev) => (append ? [...prev, ...result.entries] : result.entries));
-    setHasMore(result.entries.length === PAGE_SIZE);
+      setEntries((prev) =>
+        append ? [...prev, ...result.entries] : result.entries,
+      );
+      setHasMore(result.entries.length === limit);
+    } catch {
+      setError("감사로그를 불러오지 못했습니다. 다시 조회해주세요.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -105,14 +130,42 @@ export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
         </label>
       </div>
 
-      <button
-        type="button"
-        onClick={() => fetchPage(0, false)}
-        disabled={loading}
-        className="min-h-tap px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-      >
-        {loading ? '조회 중...' : '조회'}
-      </button>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => fetchPage(0, false)}
+          disabled={loading}
+          className="min-h-tap px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        >
+          {loading ? "조회 중..." : "조회"}
+        </button>
+        <label className="flex items-center gap-2 text-xs text-gray-600">
+          표시 개수
+          <select
+            value={pageSize}
+            disabled={loading}
+            onChange={(e) => {
+              const size = Number(e.target.value);
+              if (!PAGE_SIZES.includes(size)) return;
+              setPageSize(size);
+              void fetchPage(0, false, size);
+            }}
+            className="min-h-tap rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 disabled:opacity-50"
+          >
+            {PAGE_SIZES.map((size) => (
+              <option key={size} value={size}>
+                {size}개씩
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {error && (
+        <p role="alert" className="text-sm text-red-600">
+          {error}
+        </p>
+      )}
 
       {loaded && entries.length === 0 && (
         <div className="p-8 text-center text-gray-500 text-sm bg-white rounded-lg border border-gray-200">
@@ -128,24 +181,29 @@ export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
                 <span
                   className={
                     APPROVAL_ACTION_TYPES.has(e.action_type)
-                      ? 'text-green-700 font-medium'
-                      : 'text-red-700 font-medium'
+                      ? "text-green-700 font-medium"
+                      : "text-red-700 font-medium"
                   }
                 >
                   {ACTION_LABEL[e.action_type] ?? e.action_type}
                 </span>
                 <span className="text-xs text-gray-400">
-                  {new Date(e.created_at).toLocaleString('ko-KR')}
+                  {new Date(e.created_at).toLocaleString("ko-KR")}
                 </span>
               </div>
               <p className="text-gray-900 mt-1">
-                {e.target_display_name ?? '이름 미입력'}
+                {e.target_display_name ?? "이름 미입력"}
                 {e.target_license_name && (
-                  <span className="text-gray-500"> · {e.target_license_name}</span>
+                  <span className="text-gray-500">
+                    {" "}
+                    · {e.target_license_name}
+                  </span>
                 )}
               </p>
               {e.memo && <p className="text-gray-600 mt-0.5">사유: {e.memo}</p>}
-              <p className="text-xs text-gray-400 mt-1">처리: {e.admin_email ?? e.admin_user_id}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                처리: {e.admin_email ?? e.admin_user_id}
+              </p>
             </div>
           ))}
         </div>
@@ -158,7 +216,7 @@ export function AuditLog({ admins }: { admins: AdminUserOption[] }) {
           disabled={loading}
           className="w-full min-h-tap py-3 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
         >
-          {loading ? '불러오는 중...' : '더 보기'}
+          {loading ? "불러오는 중..." : "더 보기"}
         </button>
       )}
     </div>

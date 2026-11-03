@@ -365,8 +365,8 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
     setDraftSaveMessage('');
 
     const failed: string[] = [];
-    // Validate required selections before any section writes or form reload.
-    for (const section of [professionRef, specialtyRef]) {
+    // Validate loaded sections and required selections before any writes or reload.
+    for (const section of [professionRef, specialtyRef, extraLinksRef]) {
       const checked=section.current?.validate?.();
       if(checked && !checked.ok) {
         setDraftSaveState('error');

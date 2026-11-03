@@ -64,9 +64,15 @@ jest.mock('@/app/actions/terms', () => ({
 // 건 EditForm이 실제로 저장을 "언제" 트리거하는지와 saveOwnProfile에
 // "무엇을" 넘기는지지, 각 섹션 자체의 저장 로직이 아니다.
 let mockProfessionValid = true;
+let mockExtraLinksError = '';
 function makeStubSection(name: string) {
   const Stub = forwardRef((_props, ref) => {
-    useImperativeHandle(ref, () => ({ save: async () => ({ ok: true }), validate: () => ({ok:name!=="ProfessionSection" || mockProfessionValid,error:"직군을 선택해주세요."}) }));
+    useImperativeHandle(ref, () => ({
+      save: async () => ({ ok: true }),
+      validate: () => name === 'ExtraLinksSection' && mockExtraLinksError
+        ? { ok: false, error: mockExtraLinksError }
+        : { ok: name !== 'ProfessionSection' || mockProfessionValid, error: '직군을 선택해주세요.' },
+    }));
     return null;
   });
   Stub.displayName = name;
@@ -105,6 +111,7 @@ describe('EditForm save wiring', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockProfessionValid=true;
+    mockExtraLinksError='';
     (saveOwnProfile as jest.Mock).mockResolvedValue({ ok: true });
     (submitProfile as jest.Mock).mockResolvedValue({ ok: true });
   });
@@ -161,6 +168,18 @@ describe('EditForm save wiring', () => {
 
     await waitFor(() => expect(saveOwnProfile).toHaveBeenCalled());
     expect(submitProfile).not.toHaveBeenCalled();
+  });
+
+  it.each(['추가 링크를 불러오는 중입니다.', '추가 링크를 불러오지 못했습니다.'])('추가 링크 준비 실패 시 부모 저장도 다른 정보를 쓰지 않는다: %s', async (error) => {
+    mockExtraLinksError = error;
+    let parentSave: CommonProfileSave | null = null;
+    const {container} = render(<CommonProfileSaveContext.Provider value={{register: callback => { parentSave = callback; }}}><EditForm embedded commonOnly /></CommonProfileSaveContext.Provider>);
+    await waitFor(() => expect(container.querySelector('input[name="displayName"]')).not.toBeNull());
+    await waitFor(() => expect(parentSave).not.toBeNull());
+    await act(async () => { expect(await parentSave!()).toBe(false); });
+    expect(saveOwnProfile).not.toHaveBeenCalled();
+    expect(submitProfile).not.toHaveBeenCalled();
+    mockExtraLinksError = '';
   });
 });
 

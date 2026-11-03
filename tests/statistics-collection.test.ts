@@ -31,7 +31,7 @@ function req(body: unknown = payload, headers: Record<string, string> = {}) {
 beforeEach(() => {
   jest.clearAllMocks();
   process.env.VERCEL_ENV = "production";
-  process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-key";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "sb_secret_test_server_key";
   process.env.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co";
   process.env.CRON_SECRET = "test-cron";
   rpc.mockResolvedValue({ data: null, error: null });
@@ -147,4 +147,20 @@ test("campaign URLs require HTTPS without credentials", () => {
     null,
   ])
     expect(validHttps(u)).toBe(false);
+});
+
+test("SDK error messages containing header values never enter application logs", async () => {
+  const log = jest.spyOn(console, "error").mockImplementation(() => {});
+  try {
+    rpc.mockResolvedValue({
+      error: { code: "", message: "Headers.set: private-key is invalid" },
+    });
+    await POST(req());
+    expect(log).toHaveBeenCalledWith("[statistics] collection failed", {
+      code: "unknown",
+    });
+    expect(JSON.stringify(log.mock.calls)).not.toContain("private-key");
+  } finally {
+    log.mockRestore();
+  }
 });

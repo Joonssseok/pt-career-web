@@ -1,3 +1,4 @@
+import { normalizeServiceKey } from "@/lib/supabase/service-key";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
       return r;
     }
   }
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const secret = normalizeServiceKey(process.env.SUPABASE_SERVICE_ROLE_KEY);
   if (!secret) {
     console.error("[statistics] server credential missing");
     return new NextResponse(null, { status: 503 });
@@ -95,8 +96,10 @@ export async function POST(request: NextRequest) {
     },
   });
   if (error) {
-    // Supabase error code/message only: never log credentials or event payloads.
-    console.error("[statistics] collection failed", { code: error.code, message: error.message });
+    // SDK messages can contain invalid header values; log only the error code.
+    console.error("[statistics] collection failed", {
+      code: error.code || "unknown",
+    });
     return new NextResponse(null, { status: 503 });
   }
   const response = skip();

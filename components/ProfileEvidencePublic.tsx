@@ -10,9 +10,9 @@ export async function ProfileEvidencePublic({
   });
   if (error || !data?.length) return null;
   return (
-    <section className="mt-6 rounded-2xl border border-slate-200 p-6">
+    <section className="mt-4 rounded-2xl border border-slate-200 p-4 sm:p-5">
       <h2 className="font-bold">인증 내역</h2>
-      <div className="mt-4 space-y-4">
+      <div className="mt-3 space-y-3">
         {data.map(
           (row: {
             id: string;

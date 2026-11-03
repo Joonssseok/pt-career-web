@@ -128,8 +128,8 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-7">
-      <h2 className="mb-5 flex items-center gap-3 text-base font-bold tracking-tight text-slate-900">
+    <section className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5">
+      <h2 className="mb-3 flex items-center gap-3 text-base font-bold tracking-tight text-slate-900">
         <span aria-hidden className="h-4 w-0.5 rounded-full bg-primary" />
         {title}
         {action && <span className="ml-auto">{action}</span>}
@@ -180,7 +180,7 @@ export function ExpertProfileView({
       {coverImageUrl && (
         <div
           aria-label="프로필 커버"
-          className="relative mb-5 aspect-[4/1] overflow-hidden rounded-2xl border border-blue-100 bg-slate-50 sm:mb-6"
+          className="relative mb-3 aspect-[4/1] overflow-hidden rounded-2xl border border-blue-100 bg-slate-50 sm:mb-4"
         >
           <Image
             src={coverImageUrl}
@@ -194,7 +194,7 @@ export function ExpertProfileView({
       )}
 
       <div>
-        <div className="relative isolate overflow-hidden rounded-3xl border border-blue-100 bg-white p-6 sm:p-10">
+        <div className="relative isolate min-h-[180px] overflow-hidden rounded-3xl border border-blue-100 bg-white p-5 sm:px-8 sm:py-6">
           <svg
             aria-hidden
             viewBox="0 0 900 320"
@@ -224,7 +224,7 @@ export function ExpertProfileView({
               strokeWidth="2"
             />
           </svg>
-          <div className="relative flex items-start gap-4 sm:items-center sm:gap-8">
+          <div className="relative flex items-start gap-4 sm:items-center sm:gap-6">
             <div className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-blue-50 text-motion sm:size-32">
               {expert.profile_image_path ? (
                 <Image
@@ -251,16 +251,16 @@ export function ExpertProfileView({
               )}
             </div>
             <div className="min-w-0">
-              <h1 className="mt-2 text-hero font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+              <h1 className="text-hero font-extrabold tracking-tight text-slate-900 sm:text-4xl">
                 {expert.display_name ?? "이름 미공개"}
               </h1>
               {expert.professions.length > 0 && (
-                <p className="mt-2 text-sm font-medium text-slate-500">
+                <p className="mt-1 text-sm font-medium text-slate-500">
                   {expert.professions.map((p) => p.name).join(" · ")}
                 </p>
               )}
               {expert.headline && (
-                <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
+                <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
                   {expert.headline}
                 </p>
               )}
@@ -268,7 +268,7 @@ export function ExpertProfileView({
           </div>
 
           {socialLinks.length > 0 && (
-            <div className="relative mt-6 flex flex-wrap items-center gap-3">
+            <div className="relative mt-4 flex flex-wrap items-center gap-3">
               {socialLinks.map(({ label, Icon, url }) => (
                 <a
                   key={label}
@@ -286,7 +286,7 @@ export function ExpertProfileView({
           )}
 
           {expert.extra_links.length > 0 && (
-            <div className="relative mt-4 flex flex-wrap gap-2">
+            <div className="relative mt-3 flex flex-wrap gap-2">
               {expert.extra_links.map((link, i) => (
                 <a
                   key={`${link.label}-${i}`}
@@ -307,32 +307,32 @@ export function ExpertProfileView({
         {(expert.total_experience_years != null ||
           certifiedCount > 0 ||
           expert.workplace_region) && (
-          <div className="mt-5 flex overflow-hidden rounded-2xl border border-blue-100 bg-blue-50/40 sm:mt-6">
-            <div className="min-w-0 flex-1 px-2 py-5 text-center">
-              <div className="text-xl font-extrabold tracking-tight text-primary sm:text-2xl">
+          <dl className="mt-3 grid min-h-20 grid-cols-3 overflow-hidden rounded-2xl border border-blue-100 bg-blue-50/40">
+            <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 py-4">
+              <dt className="text-xs font-medium text-slate-500">경력</dt>
+              <dd className="text-base font-bold tracking-tight text-primary sm:text-lg">
                 {expert.total_experience_years != null
                   ? `${expert.total_experience_years}년`
                   : "-"}
-              </div>
-              <div className="mt-1 text-xs text-slate-500">경력</div>
+              </dd>
             </div>
-            <div className="min-w-0 flex-1 border-l border-blue-100 px-2 py-5 text-center">
-              <div className="text-xl font-extrabold tracking-tight text-primary sm:text-2xl">
+            <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 border-l border-blue-100 px-2 py-4">
+              <dt className="text-xs font-medium text-slate-500">자격/면허</dt>
+              <dd className="text-base font-bold tracking-tight text-primary sm:text-lg">
                 {certifiedCount}개
-              </div>
-              <div className="mt-1 text-xs text-slate-500">자격/면허</div>
+              </dd>
             </div>
-            <div className="min-w-0 flex-1 border-l border-blue-100 px-2 py-5 text-center">
-              <div className="text-xl font-extrabold tracking-tight text-primary sm:text-2xl">
+            <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 border-l border-blue-100 px-2 py-4">
+              <dt className="text-xs font-medium text-slate-500">지역</dt>
+              <dd className="min-w-0 break-words text-base font-bold tracking-tight text-primary sm:text-lg">
                 {expert.workplace_region ?? "미등록"}
-              </div>
-              <div className="mt-1 text-xs text-slate-500">지역</div>
+              </dd>
             </div>
-          </div>
+          </dl>
         )}
 
         {(expert.workplace_external_contact_url || expert.workplace_phone) && (
-          <div className="mt-5 flex gap-3">
+          <div className="mt-3 flex gap-3">
             {expert.workplace_external_contact_url && (
               <a
                 data-profile-contact
@@ -364,7 +364,7 @@ export function ExpertProfileView({
                   <span
                     key={s.slug}
                     data-order-key={s.slug}
-                    className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700"
+                    className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700"
                   >
                     {s.name}
                   </span>
@@ -376,7 +376,7 @@ export function ExpertProfileView({
           {expert.introduction && (
             <SectionCard data-order-key="introduction" title="소개">
               {renderItemActions?.("introduction", 0)}
-              <p className="whitespace-pre-wrap text-sm leading-loose text-slate-600 sm:text-base">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600 sm:text-base">
                 {expert.introduction}
               </p>
             </SectionCard>
@@ -384,7 +384,7 @@ export function ExpertProfileView({
 
           {sortedExperiences.length > 0 && (
             <SectionCard data-order-key="experiences" title="경력">
-              <ul className="ml-1 space-y-6 border-l border-blue-100 pl-5">
+              <ul className="ml-1 space-y-4 border-l border-blue-100 pl-5">
                 {sortedExperiences.map((e, i) => (
                   <li
                     key={i}
@@ -433,7 +433,7 @@ export function ExpertProfileView({
                   <li
                     key={i}
                     data-order-key={JSON.stringify(a)}
-                    className="py-4 first:pt-0 last:pb-0"
+                    className="py-3 first:pt-0 last:pb-0"
                   >
                     {renderItemActions?.("academic_records", i)}
                     <div className="text-base font-semibold text-slate-900">
@@ -464,7 +464,7 @@ export function ExpertProfileView({
                   <li
                     key={i}
                     data-order-key={JSON.stringify(e)}
-                    className="py-4 first:pt-0 last:pb-0"
+                    className="py-3 first:pt-0 last:pb-0"
                   >
                     {renderItemActions?.("educations", i)}
                     <div className="text-base font-semibold text-slate-900">
@@ -496,7 +496,7 @@ export function ExpertProfileView({
                   <li
                     key={i}
                     data-order-key={l.id || JSON.stringify(l)}
-                    className={`${renderItemActions ? "grid grid-cols-[32px_minmax(0,1fr)_44px]" : "flex"} items-start gap-3 py-4 first:pt-0 last:pb-0`}
+                    className={`${renderItemActions ? "grid grid-cols-[32px_minmax(0,1fr)_44px]" : "flex"} items-start gap-3 py-3 first:pt-0 last:pb-0`}
                   >
                     <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-700">
                       ✓
@@ -608,8 +608,8 @@ function GalleryCard({ images }: { images: GalleryImage[] }) {
   const preview = images.slice(0, 6);
 
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-7">
-      <h2 className="mb-5 flex items-center gap-3 text-base font-bold tracking-tight text-slate-900">
+    <section className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5">
+      <h2 className="mb-3 flex items-center gap-3 text-base font-bold tracking-tight text-slate-900">
         <span aria-hidden className="h-4 w-0.5 rounded-full bg-primary" />
         활동 갤러리
         <a

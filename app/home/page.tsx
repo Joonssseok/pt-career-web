@@ -34,6 +34,42 @@ const SPECIALTIES = [
     path: "M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6V4Z",
   },
   {
+    slug: "prenatal-postnatal",
+    name: "산전·산후 운동",
+    hint: "변화하는 몸을 위한 움직임",
+    path: "M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm-3 4 3-2 3 3a4 4 0 0 1 0 7h-3m-2-6-2 5-1 4m5-3 3 3",
+  },
+  {
+    slug: "youth-exercise",
+    name: "소아·청소년 운동",
+    hint: "건강하게 자라는 시간",
+    path: "M12 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 3v6m-5-5 5 2 5-2m-5 5-4 5m4-5 4 5",
+  },
+  {
+    slug: "senior-fall-prevention",
+    name: "시니어·낙상예방",
+    hint: "안정적인 일상의 걸음",
+    path: "M10 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 3-2 5 4 2 1 5m-5-7-3 7m5-12 4 4h4m0 0v8",
+  },
+  {
+    slug: "conditioning",
+    name: "체력향상·컨디셔닝",
+    hint: "일상에 더하는 활력",
+    path: "m13 3-8 11h6l-1 7 9-12h-6l1-6Z",
+  },
+  {
+    slug: "chronic-special-populations",
+    name: "만성질환·특수집단 운동",
+    hint: "나의 상태에 맞춘 운동",
+    path: "M20 5c-3-3-6-1-8 1C10 4 7 2 4 5c-4 4 1 9 8 15 7-6 12-11 8-15ZM5 12h4l2-4 2 7 2-3h4",
+  },
+  {
+    slug: "sport-specific-training",
+    name: "종목별 트레이닝",
+    hint: "나의 종목에 맞는 훈련",
+    path: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 0c-5 5-5 13 0 18m0-18c5 5 5 13 0 18M3 12h18",
+  },
+  {
     slug: "pilates-yoga-flexibility",
     name: "필라테스·요가·유연성",
     hint: "몸의 균형을 찾는 시간",
@@ -109,7 +145,7 @@ export default async function Home() {
               maxLength={100}
             />
             <button type="submit">
-              <span>전문가 찾기</span>
+              <span>검색</span>
               <Arrow />
             </button>
           </form>
@@ -158,6 +194,11 @@ export default async function Home() {
             <br />
             <span>이력부터 살펴보세요.</span>
           </h1>
+          <div
+            id="home-search-anchor"
+            className={styles.searchAnchor}
+            aria-hidden="true"
+          />
           <p className={styles.lead}>
             운동과 재활, 함께할 사람을 찾는 새로운 기준.
             <br className="hidden sm:block" /> 경력과 자격, 활동을 한곳에서
@@ -183,9 +224,6 @@ export default async function Home() {
             <p className={styles.eyebrow}>어떤 도움이 필요하신가요?</p>
             <h2 id="specialty-title">원하는 분야에서 시작하세요.</h2>
           </div>
-          <Link href="/experts" className={styles.more}>
-            전체 분야 <Arrow />
-          </Link>
         </div>
         <div className={styles.specialties}>
           {SPECIALTIES.map((s) => (

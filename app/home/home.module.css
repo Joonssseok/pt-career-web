@@ -482,10 +482,7 @@
 .home > .hero,
 .home > .section,
 .home > .creator {
-  min-height: calc(
-    100svh - 96px - var(--home-search-height, 84px) -
-      var(--home-footer-height, 160px)
-  );
+  min-height: calc(100svh - 96px - var(--home-search-height, 84px));
   scroll-snap-align: start;
   scroll-snap-stop: always;
   position: relative;
@@ -497,10 +494,16 @@
   border: 0;
 }
 .home > .hero {
-  min-height: calc(
-    100svh - 96px - var(--home-search-height, 84px) -
-      var(--home-footer-height, 160px)
-  );
+  min-height: calc(100svh - 96px);
+}
+.home .heroContent {
+  width: 100%;
+  max-width: none;
+  text-align: center;
+}
+.searchAnchor {
+  height: var(--home-search-height, 84px);
+  margin-top: 24px;
 }
 .home > .section {
   gap: 0;
@@ -551,12 +554,9 @@
   padding: 32px 0 0;
 }
 .home + :global(footer) {
-  position: fixed;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 35;
-  width: min(100%, 1240px);
+  scroll-snap-align: end;
+  scroll-snap-stop: always;
+  width: 100%;
   min-height: 0;
   padding: 12px 24px 10px;
   display: block;
@@ -606,51 +606,36 @@
   top: 50%;
   transform: translateY(-50%);
   z-index: 30;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  width: 44px;
+  grid-template-rows: repeat(4, 44px);
 }
 .sectionNav a {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
+  position: relative;
+  display: block;
+  width: 44px;
   min-height: 44px;
-  padding: 0 10px;
-  font-size: calc(11px + 1pt);
-  color: #94a3b8;
 }
-.navLabel {
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.sectionNav a:hover .navLabel,
-.sectionNav a:focus-visible .navLabel,
-.sectionNav a[aria-current] .navLabel {
-  opacity: 1;
-}
-.navDot {
-  width: 6px;
-  height: 6px;
+.progressTrack {
+  position: absolute;
+  inset: 0;
+  width: 4px;
+  margin: 0 auto;
   border-radius: 999px;
+  overflow: hidden;
   background: #cbd5e1;
-  transition:
-    background 0.2s,
-    transform 0.2s;
+  pointer-events: none;
 }
-.sectionNav a[aria-current] {
-  color: #2563eb;
-}
-.sectionNav a[aria-current] .navDot {
+.progressFill {
+  display: block;
+  width: 100%;
   background: #2563eb;
-  transform: scale(1.5);
+  border-radius: inherit;
+  transition: height 0.35s ease;
 }
 @media (max-width: 1200px) {
   .sectionNav {
     right: 0;
-  }
-  .navLabel {
-    display: none;
   }
   .sectionNav a {
     min-width: 32px;
@@ -676,7 +661,7 @@
     font-size: calc(25px + 1pt);
   }
   .home .specialties {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .home .specialty {
     padding: 14px 4px;
@@ -710,8 +695,7 @@
   :global(html):has(.home) {
     scroll-behavior: auto;
   }
-  .navDot,
-  .navLabel {
+  .progressFill {
     transition: none;
   }
 }
@@ -735,8 +719,8 @@
 }
 
 .home {
-  padding-top: var(--home-search-height, 84px);
-  padding-bottom: var(--home-footer-height, 160px);
+  padding-top: 0;
+  padding-bottom: 0;
 }
 .fixedSearch {
   position: fixed;
@@ -744,8 +728,21 @@
   left: 0;
   width: 100%;
   z-index: 35;
+  transform: translate3d(0, var(--home-search-offset, calc(50svh - 96px)), 0);
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .fixedSearch {
+    transition:
+      background-color 0.2s,
+      border-color 0.2s;
+  }
+}
+.fixedSearch[data-docked="true"] {
   background: white;
-  border-bottom: 1px solid #eef2f7;
+  border-bottom-color: #eef2f7;
 }
 .fixedSearchInner {
   max-width: 1120px;
@@ -754,18 +751,13 @@
   padding: 10px 0;
 }
 .fixedSearch .search {
+  pointer-events: auto;
   margin: 0 auto;
   max-width: 700px;
   box-shadow: none;
 }
 .sectionNav {
-  top: calc(
-    (
-        100svh + 96px + var(--home-search-height, 84px) -
-          var(--home-footer-height, 160px)
-      ) /
-      2
-  );
+  top: calc((100svh + 96px + var(--home-search-height, 84px)) / 2);
 }
 .home > .hero,
 .home > .section,
@@ -774,8 +766,20 @@
   padding-bottom: 48px;
 }
 .home .specialty {
-  padding-top: 20px;
-  padding-bottom: 20px;
+  gap: 12px;
+  padding: 16px 12px 16px 0;
+}
+.home .specialtyIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+}
+.home .specialty strong {
+  font-size: calc(14px + 1pt);
+  word-break: keep-all;
+}
+.home .hint {
+  font-size: calc(11px + 1pt);
 }
 @media (max-width: 600px) {
   .home + :global(footer) {
@@ -797,8 +801,25 @@
     padding-bottom: 45px;
   }
   .home .specialty {
-    padding-top: 10px;
-    padding-bottom: 10px;
+    min-height: 64px;
+    gap: 8px;
+    padding: 10px 4px;
+  }
+  .home .specialtyIcon {
+    width: 28px;
+    height: 32px;
+    border-radius: 8px;
+  }
+  .home .specialtyIcon svg {
+    width: 20px;
+  }
+  .home .specialty strong {
+    font-size: calc(12px + 1pt);
+    line-height: 1.5;
+  }
+  .home .hint,
+  .home .specialtyArrow {
+    display: none;
   }
   .home .sectionHead {
     margin-bottom: 16px;
@@ -810,5 +831,7 @@
 
 /* Keep section navigation inside the content edge when side ads are visible. */
 @media (min-width: 1680px) and (min-height: 960px) {
-  .sectionNav { right: calc((100vw - 1240px) / 2 + 8px); }
+  .sectionNav {
+    right: calc((100vw - 1240px) / 2 + 8px);
+  }
 }

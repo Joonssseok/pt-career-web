@@ -29,27 +29,26 @@ export async function SiteHeader() {
           아래 콘텐츠와 좌우 경계가 일직선으로 맞도록 한다. */}
       <div className="mx-auto flex h-24 w-full max-w-page items-center justify-between px-5 lg:px-8">
         {/* 왼쪽: 로고 + 전역 내비게이션(로그인 여부와 무관하게 항상 표시).
-            items-baseline: "전문가 찾기"(작은 글씨)가 로고의 베이스라인에 맞춰
-            한 단계 아래로 내려앉아 브랜드의 하위 항목으로 읽히게 한다. */}
+            로고 위치를 유지하며 메뉴·계정 항목의 글자 높이를 아래쪽으로 맞춘다. */}
         <div className="flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-baseline sm:gap-6 lg:gap-9">
           <Link href="/" className="whitespace-nowrap text-hero font-extrabold tracking-tight text-slate-900 sm:text-4xl">
             PT <span className="text-primary">Career</span>
           </Link>
           <Link
             href="/experts"
-            className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors translate-y-px"
+            className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors translate-y-[10px]"
           >
-            전문가 찾기
+            전문가 탐색
           </Link>
           <Link
             href="/about"
-            className="hidden sm:inline text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors translate-y-px"
+            className="hidden sm:inline text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors translate-y-[10px]"
           >
             서비스 소개
           </Link>
         </div>
 
-        <div className="flex shrink-0 items-center gap-4 sm:gap-6 lg:gap-9">
+        <div className="flex shrink-0 translate-y-[18px] items-center gap-4 sm:gap-6 lg:gap-9">
           {user ? (
             <>
               {welcomeName && (

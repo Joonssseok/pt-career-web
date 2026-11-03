@@ -77,7 +77,7 @@ export function LoadMoreExperts({
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 [&>a]:border-y-blue-200 [&>a:hover]:border-y-blue-300">
       {experts.map((expert) => (
         <ExpertCard key={expert.id} expert={expert} variant="explore" />
       ))}

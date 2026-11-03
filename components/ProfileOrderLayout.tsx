@@ -217,7 +217,7 @@ export function ProfileOrderLayout({
     });
   }
   return (
-    <div className="mt-8 space-y-5 sm:mt-10 sm:space-y-6">
+    <div className="mt-5 space-y-3 sm:mt-6 sm:space-y-4">
       {walk(children, "sections")}
     </div>
   );

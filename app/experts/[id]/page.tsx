@@ -173,8 +173,8 @@ export default async function ExpertDetailPage({
   }));
 
   return (
-    <main className="mx-auto min-h-screen max-w-4xl bg-white pb-16 pt-5 sm:pb-24 sm:pt-8">
-      <nav aria-label="페이지 경로" className="mb-6 sm:mb-8">
+    <main className="mx-auto min-h-screen max-w-4xl bg-white pb-10 pt-4 sm:pb-14 sm:pt-5">
+      <nav aria-label="페이지 경로" className="mb-4 sm:mb-5">
         <Link
           href="/experts"
           className="inline-flex min-h-tap items-center gap-2 text-sm text-slate-500 transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-blue-600"
@@ -205,7 +205,7 @@ export default async function ExpertDetailPage({
       </div>
 
       <ProfileEvidencePublic profileId={id} />
-      <div className="mt-8 border-t border-slate-100 pt-6 sm:mt-12 sm:pt-8">
+      <div className="mt-5 border-t border-slate-100 pt-4 sm:mt-6 sm:pt-5">
         <ShareButton
           profileId={expert.id}
           displayName={expert.display_name}

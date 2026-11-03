@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { trackEvent } from '@/lib/analytics';
 import { REGIONS } from '@/lib/constants/regions';
 
 type Specialty = { id: string; name: string; slug: string };
@@ -108,6 +109,7 @@ export function ExpertFilters({
   const committedQuery = params.get('query') ?? '';
 
   const updateFilter = (key: string, value: string) => {
+    trackEvent("search");
     setParamsString((prev) => {
       const next = new URLSearchParams(prev);
       if (value) {

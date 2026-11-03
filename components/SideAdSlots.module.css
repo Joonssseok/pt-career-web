@@ -1,4 +1,6 @@
-.rails { display: none; }
+.rails {
+  display: none;
+}
 @media (min-width: 1680px) and (min-height: 960px) {
   .rails {
     display: block;
@@ -6,10 +8,56 @@
     inset: 0 0 var(--ad-footer-height) 0;
     pointer-events: none;
   }
-  .rail { position: absolute; top: 0; bottom: 0; width: 160px; }
-  .left { right: calc(50% + 620px + 24px); }
-  .right { left: calc(50% + 620px + 24px); }
-  .sticky { position: sticky; top: 116px; padding-top: 20px; }
-  .homeRails .sticky { top: calc(116px + var(--home-search-height, 84px)); }
-  .banner { width: 160px; height: 600px; background: #fff; }
+  .rail {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 160px;
+  }
+  .left {
+    right: calc(50% + 620px + 24px);
+  }
+  .right {
+    left: calc(50% + 620px + 24px);
+  }
+  .sticky {
+    position: sticky;
+    top: 116px;
+    padding-top: 20px;
+  }
+  .homeRails .sticky {
+    top: calc(116px + var(--home-search-height, 84px));
+  }
+  .banner {
+    width: 160px;
+    height: 600px;
+    background: #fff;
+  }
+}
+
+.activeBanner {
+  position: relative;
+  display: block;
+  width: 160px;
+  height: 600px;
+  pointer-events: auto;
+}
+.activeBanner img {
+  display: block;
+  width: 160px;
+  height: 600px;
+  object-fit: cover;
+}
+.activeBanner:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 4px;
+}
+.label {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 2px 5px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #475569;
+  font-size: 11px;
 }

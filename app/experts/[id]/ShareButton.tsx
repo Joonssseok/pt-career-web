@@ -1,7 +1,7 @@
 'use client';
 
+import { trackEvent } from "@/lib/analytics";
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 
 type ShareButtonProps = {
   shareUrl?: string;
@@ -10,15 +10,8 @@ type ShareButtonProps = {
   headline: string | null;
 };
 
-export function ShareButton({ profileId, displayName, headline, shareUrl }: ShareButtonProps) {
+export function ShareButton({ displayName, headline, shareUrl }: ShareButtonProps) {
   const [message, setMessage] = useState<string | null>(null);
-
-  const recordShareEvent = async (shareType: 'native_share' | 'copy_link') => {
-    const supabase = createClient();
-    await supabase
-      .from('share_events')
-      .insert({ profile_id: profileId, share_type: shareType, referrer_domain: null });
-  };
 
   const showMessage = (text: string) => {
     setMessage(text);
@@ -35,7 +28,7 @@ export function ShareButton({ profileId, displayName, headline, shareUrl }: Shar
           text: headline ?? undefined,
           url,
         });
-        await recordShareEvent('native_share');
+        trackEvent("share");
       } catch {
         // 사용자가 공유 시트를 취소한 경우 — 이벤트 기록하지 않음
       }
@@ -44,7 +37,7 @@ export function ShareButton({ profileId, displayName, headline, shareUrl }: Shar
 
     try {
       await navigator.clipboard.writeText(url);
-      await recordShareEvent('copy_link');
+      trackEvent("share");
       showMessage('링크가 복사되었습니다');
     } catch {
       showMessage('링크 복사에 실패했습니다');

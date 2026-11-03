@@ -272,6 +272,7 @@ export function ExpertProfileView({
               {socialLinks.map(({ label, Icon, url }) => (
                 <a
                   key={label}
+                  data-profile-contact
                   href={url}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -289,6 +290,7 @@ export function ExpertProfileView({
               {expert.extra_links.map((link, i) => (
                 <a
                   key={`${link.label}-${i}`}
+                  data-profile-contact
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -333,6 +335,7 @@ export function ExpertProfileView({
           <div className="mt-5 flex gap-3">
             {expert.workplace_external_contact_url && (
               <a
+                data-profile-contact
                 href={expert.workplace_external_contact_url}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -343,6 +346,7 @@ export function ExpertProfileView({
             )}
             {expert.workplace_phone && (
               <a
+                data-profile-contact
                 href={`tel:${expert.workplace_phone}`}
                 className="flex min-h-14 flex-1 items-center justify-center rounded-xl border border-blue-100 bg-white px-4 text-center text-sm font-semibold text-primary transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-600"
               >
@@ -562,6 +566,7 @@ export function ExpertProfileView({
               <div className="flex gap-2 mt-3">
                 {expert.workplace_phone && (
                   <a
+                    data-profile-contact
                     href={`tel:${expert.workplace_phone}`}
                     className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
                   >
@@ -570,6 +575,7 @@ export function ExpertProfileView({
                 )}
                 {expert.workplace_external_contact_url && (
                   <a
+                    data-profile-contact
                     href={expert.workplace_external_contact_url}
                     target="_blank"
                     rel="noopener noreferrer"

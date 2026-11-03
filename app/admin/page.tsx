@@ -1,3 +1,9 @@
+import { cookies } from "next/headers";
+import { EXCLUDE_COOKIE } from "@/lib/analytics";
+import type { LiveData } from "@/lib/admin-live";
+import { TrafficPanel, CampaignPanel, OperationsPanel } from "./LivePanels";
+import { BrowserExclusion } from "./LiveControls";
+import { MemberList, type Member } from "./MemberList";
 import { AdRevenueEstimator } from "./AdRevenueEstimator";
 import { AdminFeedbackQueue } from "@/components/feedback/AdminFeedbackQueue";
 import { EvidenceReviewQueue } from "./EvidenceReviewQueue";
@@ -49,7 +55,12 @@ function professionNames(p: PendingProfile): string {
 export default async function AdminDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string }>;
+  searchParams: Promise<{
+    view?: string;
+    days?: string;
+    member?: string;
+    offset?: string;
+  }>;
 }) {
   const supabase = await createClient();
 
@@ -67,12 +78,25 @@ export default async function AdminDashboardPage({
     redirect("/");
   }
 
+  const query = await searchParams;
+  const days = [1, 7, 30].includes(Number(query.days))
+    ? Number(query.days)
+    : 30;
+  const memberQuery = (query.member || "").slice(0, 100);
+  const offset = Math.min(
+    100000,
+    Math.max(0, Math.floor(Number(query.offset) || 0)),
+  );
+  const jar = await cookies();
+  const excluded = jar.has(EXCLUDE_COOKIE);
   const [
     { data, error },
     { data: allProfilesData, error: allProfilesError },
     statsResult,
     kpisResult,
     adminsResult,
+    liveResult,
+    membersResult,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -94,9 +118,16 @@ export default async function AdminDashboardPage({
     getAdminDashboardStats(),
     getAdminReviewKpis(),
     getAdminUsersList(),
+    supabase.rpc("get_admin_live_data", { p_days: days }),
+    query.view === "profiles"
+      ? supabase.rpc("get_admin_members", {
+          p_query: memberQuery,
+          p_offset: offset,
+        })
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
-  const query = await searchParams;
+  const live = liveResult.error ? null : (liveResult.data as LiveData | null);
   const views = [
     "overview",
     "profiles",
@@ -230,6 +261,10 @@ export default async function AdminDashboardPage({
           </nav>
         </aside>
         <div className="min-w-0 space-y-7">
+          <BrowserExclusion
+            excluded={excluded}
+            showDetails={view === "traffic"}
+          />
           <div>
             <h2 className="text-xl font-bold text-slate-900">{selected[1]}</h2>
             <p className="mt-2 text-sm leading-6 text-slate-500">
@@ -239,14 +274,17 @@ export default async function AdminDashboardPage({
           {view === "overview" && (
             <>
               <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
-                <StatCard label="오늘 방문자" value="미연결" />
+                <StatCard
+                  label="오늘 방문 브라우저"
+                  value={live?.today_visitors ?? "조회 실패"}
+                />
                 <StatCard
                   label="전체 가입 계정"
                   value={stats?.total_signups ?? "조회 실패"}
                 />
                 <StatCard
-                  label="공개 설정 프로필"
-                  value={stats?.public_count ?? "조회 실패"}
+                  label="실제 공개 프로필"
+                  value={live?.public_profiles ?? "조회 실패"}
                 />
                 <StatCard
                   label="오늘 생성된 프로필"
@@ -281,28 +319,32 @@ export default async function AdminDashboardPage({
                   />
                 </div>
               </section>
-              <section className="rounded-2xl border border-slate-200 p-5 sm:p-6">
-                <h3 className="font-bold">성장의 두 가지 흐름</h3>
-                <div className="mt-5 grid gap-5 sm:grid-cols-2">
-                  <div>
-                    <p className="text-xs font-semibold text-primary">이용자</p>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">
-                      방문 → 전문가 탐색 → 프로필 열람 → 연락처·SNS 클릭
-                    </p>
+
+              {live && (
+                <section className="rounded-2xl border border-slate-200 p-5 sm:p-6">
+                  <h3 className="font-bold">최근 {days}일 이용 현황</h3>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                    <StatCard label="새 가입 계정" value={live.signups} />
+                    <StatCard
+                      label="전문가 검색"
+                      value={
+                        live.events.find((e) => e.kind === "search")?.total ?? 0
+                      }
+                    />
+                    <StatCard
+                      label="프로필 연락 링크 클릭"
+                      value={
+                        live.events.find((e) => e.kind === "contact")?.total ??
+                        0
+                      }
+                    />
                   </div>
-                  <div>
-                    <p className="text-xs font-semibold text-primary">전문가</p>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">
-                      가입 → 활동 기록 → 프로필 작성 → 공개 → 공유
-                    </p>
-                  </div>
-                </div>
-                <p className="mt-5 border-t border-slate-100 pt-4 text-xs leading-6 text-slate-400">
-                  단계별 전환 통계는 미연결입니다. 연락처 클릭과 실제 상담
-                  성사는 별도 지표입니다. 공개 설정 수는 공개 여부를 켠 프로필
-                  기준으로, 실제 검색 노출 수와 다를 수 있습니다.
-                </p>
-              </section>
+                  <p className="mt-4 text-xs leading-6 text-slate-500">
+                    방문 통계는 연결 이후부터 집계합니다. 연락 링크 클릭은 실제
+                    상담 성사와 다르며, 같은 사람이 여러 번 클릭할 수 있습니다.
+                  </p>
+                </section>
+              )}
             </>
           )}
           {view === "profiles" && (
@@ -321,7 +363,11 @@ export default async function AdminDashboardPage({
                     <StatCard label="반려" value={stats.rejected_count} />
                     <StatCard
                       label={`공개 전문가 (목표 ${LAUNCH_TARGET_PUBLIC_PROFILES}명)`}
-                      value={`${stats.public_count} / ${LAUNCH_TARGET_PUBLIC_PROFILES}`}
+                      value={
+                        live
+                          ? `${live.public_profiles} / ${LAUNCH_TARGET_PUBLIC_PROFILES}`
+                          : "조회 실패"
+                      }
                     />
                   </div>
                 ) : (
@@ -331,6 +377,17 @@ export default async function AdminDashboardPage({
                 )}
               </section>
 
+              {membersResult.error ? (
+                <p role="alert" className="text-sm text-red-600">
+                  가입 계정 명부를 불러오지 못했습니다.
+                </p>
+              ) : (
+                <MemberList
+                  rows={(membersResult.data || []) as Member[]}
+                  query={memberQuery}
+                  offset={offset}
+                />
+              )}
               {/* 전체 프로필 검색 -- 승인·게시된 프로필 등 상태 무관하게 상세로
             들어갈 수 있는 유일한 경로(임시조치 등은 /admin/[id]에서만 가능). */}
               <section>
@@ -347,8 +404,8 @@ export default async function AdminDashboardPage({
               </section>
 
               <p className="text-xs leading-6 text-slate-400">
-                목록은 최근 프로필 최대 200개 기준입니다. 전체 계정
-                명부·가입일·미작성 회원 조회는 별도 연결이 필요합니다.
+                프로필 검색은 최근 200개 기준입니다. 전체 가입 계정은 위
+                명부에서 50명씩 조회할 수 있습니다.
               </p>
             </>
           )}
@@ -431,75 +488,28 @@ export default async function AdminDashboardPage({
             </>
           )}
           {view === "feedback" && <AdminFeedbackQueue />}
-          {view === "traffic" && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <StatCard label="오늘 방문자" value="미연결" />
-                <StatCard label="최근 30일 페이지 조회" value="미연결" />
-              </div>
-              <ConnectionCard
-                title="방문·행동 통계를 연결할 공간입니다."
-                description="실제 방문 통계가 연결되면 오늘·최근 7일·최근 30일의 추이와 유입 경로, PC·모바일 비율을 보여줍니다. 현재 수치를 수집하거나 표시하고 있지 않습니다."
-              />
-              <section className="rounded-2xl border border-slate-200 p-6">
-                <h3 className="font-bold">측정 기준</h3>
-                <ul className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                  <li>비회원 포함 방문자와 로그인 회원 활동을 구분합니다.</li>
-                  <li>
-                    방문자 수와 반복 열람을 포함한 페이지 조회 수를 구분합니다.
-                  </li>
-                  <li>
-                    관리자·테스트 방문 제외 여부와 수집 시작일을 표시합니다.
-                  </li>
-                  <li>
-                    데이터가 없거나 연결되지 않은 값은 0으로 표시하지 않습니다.
-                  </li>
-                </ul>
-              </section>
-            </>
+          {["overview", "traffic", "ads", "operations"].includes(view) &&
+            !live && (
+              <p
+                role="alert"
+                className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+              >
+                운영 데이터를 불러오지 못했습니다. 잠시 후 새로고침해주세요.
+                조회 실패를 0으로 표시하지 않습니다.
+              </p>
+            )}
+          {view === "traffic" && live && (
+            <TrafficPanel data={live} days={days} />
           )}
-          {view === "ads" && (
+          {view === "ads" && live && (
             <>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {["왼쪽", "오른쪽"].map((side) => (
-                  <section
-                    key={side}
-                    className="rounded-2xl border border-slate-200 p-5"
-                  >
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h3 className="font-bold">{side} 배너</h3>
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500">
-                        현재 비노출
-                      </span>
-                    </div>
-                    <p className="mt-3 text-sm text-slate-600">
-                      160 × 600px · 홈 / 전문가 탐색
-                    </p>
-                    <p className="mt-2 text-xs leading-6 text-slate-400">
-                      흰색 빈 영역으로 유지합니다. 숨긴 자리는 광고 노출로
-                      집계하지 않습니다.
-                    </p>
-                  </section>
-                ))}
-              </div>
+              <CampaignPanel data={live} days={days} />
               <AdRevenueEstimator />
-              <ConnectionCard
-                title="광고 계약·실적은 아직 미연결입니다."
-                description="광고주·게재 기간·계약 금액·청구·입금·미수금과 실제 노출·클릭은 연결 후 관리합니다. 계산기의 예상 금액은 실제 매출이나 권장 시세가 아닙니다."
-              />
             </>
           )}
           {view === "operations" && (
             <>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <StatCard label="전체 파일 저장량" value="미연결" />
-                <StatCard label="서버·저장소 비용" value="미연결" />
-              </div>
-              <p className="text-sm leading-7 text-slate-500">
-                다모아 개인당 한도는 100MB입니다. 전체 사용량·백업 성공
-                여부·최근 배포 상태는 운영 시스템 연결 후 표시합니다. 개인 자료
-                원문은 이 화면에서 조회하지 않습니다.
-              </p>
+              {live && <OperationsPanel data={live} />}
               {/* 2-2. 감사로그 */}
               <section>
                 <h2 className="text-sm font-semibold text-gray-900 mb-3">
@@ -507,11 +517,6 @@ export default async function AdminDashboardPage({
                 </h2>
                 <AuditLog admins={admins} />
               </section>
-              <p className="text-xs leading-6 text-slate-400">
-                위 이력은 기존 프로필·자격 승인/반려 기록입니다. 증빙 심사 및
-                제안·신고의 모든 변경을 통합한 감사 기록은 아직 연결되지
-                않았습니다.
-              </p>
             </>
           )}
         </div>
@@ -551,20 +556,5 @@ function TaskLink({
         {value} <span aria-hidden="true">↗</span>
       </span>
     </Link>
-  );
-}
-function ConnectionCard({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
-  return (
-    <section className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-6">
-      <span className="text-xs font-semibold text-slate-400">미연결</span>
-      <h3 className="mt-3 font-bold text-slate-800">{title}</h3>
-      <p className="mt-3 text-sm leading-7 text-slate-500">{description}</p>
-    </section>
   );
 }

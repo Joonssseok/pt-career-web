@@ -33,6 +33,7 @@ export function ProfileVisualReview({
   error,
   retry,
   galleryImages = [],
+  detailImages = [],
   order = {},
   onOrderChange,
   evidence,
@@ -64,6 +65,7 @@ export function ProfileVisualReview({
   error: string;
   retry: () => void;
   galleryImages?: ExpertProfileViewProps["galleryImages"];
+  detailImages?: ExpertProfileViewProps["detailImages"];
 }) {
   const [removing, setRemoving] = useState<VisualItem | null>(null);
   const removeDialog = useRef<HTMLDialogElement>(null);
@@ -449,6 +451,7 @@ export function ProfileVisualReview({
             })}
             expert={shownExpert}
             galleryImages={galleryImages}
+            detailImages={detailImages}
             renderItemActions={(section, index) =>
               actions(indexes(section)[index])
             }

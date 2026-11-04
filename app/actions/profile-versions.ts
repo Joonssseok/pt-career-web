@@ -9,21 +9,40 @@ export async function saveProfileVersion(
   id: string | null,
   title: string,
   content: VersionContent,
+  detailImages?: { ids: string[]; revision: string | null },
 ) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false as const, error: "로그인이 필요합니다." };
-  const { data, error } = await supabase.rpc("save_profile_version", {
-    p_id: id,
-    p_title: title,
-    p_content: content,
-  });
-  if (error) return { ok: false as const, error: error.message };
+  const { data, error } = detailImages
+    ? await supabase.rpc("save_profile_with_detail_images", {
+        p_id: id,
+        p_title: title,
+        p_content: content,
+        p_files: detailImages.ids,
+        p_expected: detailImages.revision,
+      })
+    : await supabase.rpc("save_profile_version", {
+        p_id: id,
+        p_title: title,
+        p_content: content,
+      });
+  if (error)
+    return {
+      ok: false as const,
+      error: detailImages
+        ? "프로필과 이미지를 저장하지 못했습니다. 다른 창의 변경 여부와 저장 공간을 확인한 뒤 다시 시도해주세요."
+        : error.message,
+    };
   revalidatePath("/my", "layout");
   revalidatePath("/expert/edit", "layout");
-  return { ok: true as const, id: data as string };
+  return {
+    ok: true as const,
+    id: detailImages ? (data.id as string) : (data as string),
+    detailRevision: detailImages ? (data.revision as string) : undefined,
+  };
 }
 export async function publishProfileVersion(id: string) {
   if (!LIVE_PROFILE_PUBLISH_ENABLED)

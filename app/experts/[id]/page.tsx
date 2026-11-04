@@ -15,6 +15,8 @@ import {
 import { profileActivityCards } from "@/components/ProfileActivitySections";
 import { ExpertProfileView } from "@/components/experts/ExpertProfileView";
 import { detailImageSrc } from "@/lib/profile-versions/detail-images";
+import { ProfileUnavailable } from "@/components/ProfileUnavailable";
+import { getUnavailableProfileState, isProfileId } from "@/lib/profile-sharing/access";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +80,7 @@ type ExpertDetail = {
 };
 
 const fetchExpert = cache(async (id: string): Promise<ExpertDetail | null> => {
+  if (!isProfileId(id)) return null;
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("public_expert_detail")
@@ -85,9 +88,8 @@ const fetchExpert = cache(async (id: string): Promise<ExpertDetail | null> => {
     .eq("id", id)
     .maybeSingle();
 
-  if (error || !data) {
-    return null;
-  }
+  if (error) throw new Error("프로필을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+  if (!data) return null;
 
   const { data: licenses, error: licenseError } = await supabase.rpc(
     "get_public_license_details",
@@ -120,7 +122,7 @@ export async function generateMetadata({
   const expert = await fetchExpert(id);
 
   if (!expert) {
-    return {};
+    return { title: "프로필 안내", robots: { index: false, follow: false } };
   }
 
   const professionNames = expert.professions.map((p) => p.name).join(" · ");
@@ -150,11 +152,13 @@ export default async function ExpertDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-
+  if (!isProfileId(id)) notFound();
   const expert = await fetchExpert(id);
 
   if (!expert) {
-    notFound();
+    const state = await getUnavailableProfileState(id);
+    if (!state) notFound();
+    return <ProfileUnavailable state={state} />;
   }
 
   // public_expert_detail 뷰를 건드리지 않고 별도 쿼리로 가져온다(지시서 2-5) --

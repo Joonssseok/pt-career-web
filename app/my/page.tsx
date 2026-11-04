@@ -30,13 +30,18 @@ export default async function MyPage() {
     profile.is_public &&
     !profile.suspended_at &&
     !profile.deletion_requested_at;
-  const { data: representativeRows } =
+  const { data: representativeRows, error: representativeError } =
     profile && LIVE_PROFILE_PUBLISH_ENABLED
       ? await supabase.rpc("get_representative_profiles", {
           p_profile_ids: [profile.id],
         })
-      : { data: null };
+      : { data: null, error: null };
   const representative = representativeRows?.[0];
+  const { data: publishedVersion, error: publishedError } = profile
+    ? await supabase.from("profile_versions").select("published_at")
+        .eq("profile_id", profile.id).not("published_at", "is", null)
+        .limit(1).maybeSingle()
+    : { data: null, error: null };
   return (
     <div className="flex min-h-screen flex-col bg-white md:flex-row">
       <AccountSidebar />
@@ -113,7 +118,9 @@ export default async function MyPage() {
           </section>
           <ProfileSharingTools
             profileId={canShare ? profile!.id : null}
-            displayName={profile?.display_name ?? ""}
+            published={!!publishedVersion?.published_at}
+            availabilityError={!!publishedError || !!representativeError}
+            displayName={representative?.expert.display_name ?? profile?.display_name ?? ""}
             headline={
               representative?.content.headline ?? profile?.headline ?? ""
             }

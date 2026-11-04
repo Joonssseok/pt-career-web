@@ -11,6 +11,10 @@ import {
 import { ProfileDetailImageEditor } from "../components/ProfileDetailImageEditor";
 import { ProfileDetailImages } from "../components/ProfileDetailImages";
 import {
+  ExpertProfileView,
+  type ExpertProfileViewProps,
+} from "../components/experts/ExpertProfileView";
+import {
   validateDetailImages,
   DETAIL_IMAGE_LIMIT,
   type EditableDetailImage,
@@ -132,6 +136,61 @@ test("long public images keep their natural height and do not render an empty se
   view.rerender(<ProfileDetailImages images={[]} />);
   expect(view.container.textContent).toBe("");
 });
+test.each([false, true])(
+  "detail images remain after all entered information despite an old saved order (editing: %s)",
+  (editing) => {
+    const expert = {
+      id: "p",
+      display_name: "전문가",
+      headline: "소개",
+      introduction: "입력한 소개",
+      professions: [],
+      specialties: [{ slug: "field", name: "전문 분야", is_primary: true }],
+      academic_records: [],
+      educations: [],
+      experiences: [],
+      licenses: [],
+      extra_links: [],
+      total_experience_years: 0,
+      profile_image_path: null,
+      cover_image_path: null,
+    } as unknown as ExpertProfileViewProps["expert"];
+    render(
+      <ExpertProfileView
+        expert={expert}
+        galleryImages={[]}
+        detailImages={initial}
+        order={{
+          sections: [
+            "detail_images",
+            "activity",
+            "introduction",
+            "specialties",
+          ],
+        }}
+        onOrderChange={editing ? jest.fn() : undefined}
+        activitySections={
+          <section data-order-key="activity" title="활동">
+            <h2>마지막 활동</h2>
+          </section>
+        }
+      />,
+    );
+    expect(
+      screen
+        .getAllByRole("heading", { level: 2 })
+        .map((node) => node.textContent),
+    ).toEqual(["전문 분야", "마지막 활동", "소개", "상세 이미지"]);
+    const images = screen.getByRole("region", { name: "상세 이미지" });
+    expect(images.closest("[data-order-target]")).toBeNull();
+    expect(within(images).queryByRole("button")).toBeNull();
+    expect(
+      within(images)
+        .getAllByRole("img")
+        .map((image) => image.getAttribute("src")),
+    ).toEqual(["/one", "/two"]);
+  },
+);
 function manager(ok = true) {
   const content = {
     headline: "소개",

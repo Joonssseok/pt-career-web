@@ -95,6 +95,25 @@ body {
   color: var(--color-ink);
 }
 
+/* Keep the rail visible without changing its shape on hover or while dragging. */
+.profile-order-rail {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 3px;
+  height: 27px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translate(-50%, -50%);
+}
+.profile-order-handle:focus-visible,
+[data-order-dragging] > [data-order-handle] .profile-order-handle {
+  color: var(--color-primary);
+}
+@media (prefers-reduced-motion: reduce) {
+  .profile-order-handle { transition: none; }
+}
+
 /* ---------- 랜딩 배경 그래프 애니메이션 ---------- */
 /* 성장 곡선이 왼쪽에서 오른쪽으로 그려졌다가 잠시 머문 뒤 사라지기를 반복한다.
    path 에 pathLength="1" 을 줘서 길이와 무관하게 dash 1 로 계산한다. */

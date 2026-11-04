@@ -386,20 +386,24 @@ export function ExpertProfileView({
             </SectionCard>
           )}
 
-          {detailImages.length > 0 && (
-            <ProfileDetailImages
-              data-order-key="detail_images"
-              images={detailImages}
-            />
-          )}
           {sortedExperiences.length > 0 && (
             <SectionCard data-order-key="experiences" title="경력">
-              <ul className="ml-1 space-y-4 border-l border-blue-100 pl-5">
+              <ul
+                className={
+                  onOrderChange
+                    ? "divide-y divide-slate-100"
+                    : "ml-1 space-y-4 border-l border-blue-100 pl-5"
+                }
+              >
                 {sortedExperiences.map((e, i) => (
                   <li
                     key={i}
                     data-order-key={JSON.stringify(e)}
-                    className="relative before:absolute before:-left-6 before:top-1.5 before:size-2 before:rounded-full before:border-2 before:border-primary before:bg-white"
+                    className={
+                      onOrderChange
+                        ? "py-3 first:pt-0 last:pb-0"
+                        : "relative before:absolute before:-left-6 before:top-1.5 before:size-2 before:rounded-full before:border-2 before:border-primary before:bg-white"
+                    }
                   >
                     {renderItemActions?.(
                       "experiences",
@@ -492,28 +496,46 @@ export function ExpertProfileView({
           )}
 
           {expert.licenses.length > 0 && (
-            <SectionCard
-              data-order-key="licenses"
-              title="자격/면허"
-              action={
-                <span className="text-xs font-semibold text-emerald-700">
-                  관리자 인증
-                </span>
-              }
-            >
+            <SectionCard data-order-key="licenses" title="자격/면허">
               <ul className="divide-y divide-gray-100">
                 {expert.licenses.map((l, i) => (
                   <li
                     key={i}
                     data-order-key={l.id || JSON.stringify(l)}
-                    className={`${renderItemActions ? "grid grid-cols-[32px_minmax(0,1fr)_44px]" : "flex"} items-start gap-3 py-3 first:pt-0 last:pb-0`}
+                    className="flex items-start gap-3 py-3 first:pt-0 last:pb-0"
                   >
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-sm font-bold text-emerald-700">
-                      ✓
-                    </span>
-                    <div className="min-w-0">
-                      <div className="break-words text-sm font-semibold text-slate-900 sm:text-base">
-                        {l.license_name}
+                    <div className="min-w-0 flex-1">
+                      <div className="inline-flex max-w-full items-center gap-1.5 text-sm font-semibold text-slate-900 sm:text-base">
+                        <span className="min-w-0 break-words">
+                          {l.license_name}
+                        </span>
+                        {/* The public license source includes verified, public records only. */}
+                        <span
+                          role="img"
+                          aria-label="인증완료"
+                          tabIndex={0}
+                          className="group/certified relative inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-primary outline-offset-2 focus-visible:outline-2 focus-visible:outline-primary"
+                        >
+                          <svg
+                            aria-hidden="true"
+                            width="16"
+                            height="16"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="m3 8 3.2 3.2L13 4.5" />
+                          </svg>
+                          <span
+                            role="tooltip"
+                            className="pointer-events-none invisible absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-normal text-white opacity-0 transition-opacity group-hover/certified:visible group-hover/certified:opacity-100 group-focus-visible/certified:visible group-focus-visible/certified:opacity-100 motion-reduce:transition-none"
+                          >
+                            인증완료
+                          </span>
+                        </span>
                       </div>
                       {l.issuing_organization && (
                         <div className="mt-1 break-words text-xs text-slate-500">
@@ -531,16 +553,8 @@ export function ExpertProfileView({
                         </a>
                       )}
                     </div>
-                    {/* get_public_licenses()가 verification_status='verified' AND
-                        is_public=true인 행만 반환하므로, 여기 나오는 항목은 전부
-                        관리자 인증을 거친 것이다. */}
-                    <span
-                      className={`${renderItemActions ? "col-start-2 row-start-2 justify-self-start" : "ml-auto"} shrink-0 rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700`}
-                    >
-                      인증됨
-                    </span>
                     {renderItemActions && (
-                      <span className="col-start-3 row-span-2 row-start-1">
+                      <span className="w-11 shrink-0">
                         {renderItemActions("licenses", i)}
                       </span>
                     )}
@@ -609,6 +623,11 @@ export function ExpertProfileView({
           )}
           {activitySections}
         </ProfileOrderLayout>
+        {detailImages.length > 0 && (
+          <div className="mt-3 sm:mt-4">
+            <ProfileDetailImages images={detailImages} />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -89,6 +89,8 @@ function toSubmitMessage(rawError: string): string {
 
 export default function EditForm({ evidenceArchive, embedded = false, commonOnly = false }: { evidenceArchive?: React.ReactNode; embedded?: boolean; commonOnly?: boolean }) {
   const commonSaveRegistry = useContext(CommonProfileSaveContext);
+  const OptionalSection = embedded ? 'details' : 'div';
+  const linksDetails = useRef<HTMLDetailsElement>(null);
   // 조회가 끝나기 전까지는 false로 두어 아래 !termsChecked ? null : ... 분기가
   // 약관 동의 화면을 잘못 깜빡이지 않도록 한다(초기값 true였을 때, 이미 동의한
   // 사용자에게도 getOwnTermsAgreedAt() 응답 전까지 termsAgreed의 초기값 false를
@@ -369,6 +371,7 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
     for (const section of [professionRef, specialtyRef, extraLinksRef]) {
       const checked=section.current?.validate?.();
       if(checked && !checked.ok) {
+        if (section === extraLinksRef && linksDetails.current) linksDetails.current.open = true;
         setDraftSaveState('error');
         setDraftSaveMessage(checked.error||'선택 항목을 확인해주세요.');
         return false;
@@ -548,7 +551,7 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
 
             {showSections && (
               <>
-                <section id="basic" className="bg-white border border-gray-200 rounded-lg p-6 space-y-5">
+                <section id="basic" className={embedded ? "space-y-5" : "bg-white border border-gray-200 rounded-lg p-6 space-y-5"}>
                   {!embedded && <h2 className="text-lg font-semibold text-gray-900">기본 정보</h2>}
 
                   {formState === 'error' && errors.submit && (
@@ -571,11 +574,11 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
                       <form>으로 남겨두면 버튼 없이도 Enter로 handleSubmit이
                       조용히 실행될 부작용이 있어 <div>로 바꿨다. */}
                   <div className="space-y-5">
-                    <div className="flex gap-6">
+                    <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
                       {/* 이력서 증명사진 자리 — 실제 증명사진 규격(3.5:4.5)에 가까운 비율 박스.
                           용도(신원 확인용 증명사진)는 그대로 두고 크기만 확대(112x144 → 144x184). */}
-                      <div className="flex-shrink-0 flex flex-col items-center gap-2">
-                        <div className="w-36 h-[11.5rem] rounded-lg overflow-hidden bg-gray-50 border border-gray-300 flex items-center justify-center">
+                      <div className="flex-shrink-0 flex flex-col items-center gap-2 self-start">
+                        <div className={`${embedded ? "w-24 h-32" : "w-36 h-[11.5rem]"} rounded-xl overflow-hidden bg-slate-50 border border-slate-200 flex items-center justify-center`}>
                           {formData.profileImagePath ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
@@ -587,7 +590,7 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
                             <span className="text-xs text-gray-400 text-center px-2">증명사진</span>
                           )}
                         </div>
-                        <label className="text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer transition-colors">
+                        <label className="inline-flex min-h-11 items-center text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer transition-colors">
                           {imageUploading
                             ? '⏳ 업로드 중...'
                             : formData.profileImagePath
@@ -604,18 +607,19 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
                         {errors.image && (
                           <p className="text-xs text-red-500 text-center">{errors.image}</p>
                         )}
-                        <p className="text-caption text-gray-400 text-center leading-tight">
+                        {!embedded && <p className="text-caption text-gray-400 text-center leading-tight">
                           승인 후 공개 프로필에 표시됩니다
-                        </p>
+                        </p>}
                       </div>
 
                       <div className="flex-1 min-w-0 space-y-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-900 mb-2">
+                          <label htmlFor="profile-display-name" className="block text-sm font-medium text-gray-900 mb-2">
                             이름/활동명 <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="text"
+                            id="profile-display-name"
                             name="displayName"
                             value={formData.displayName}
                             onChange={handleChange}
@@ -623,6 +627,7 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
                             disabled={formState === 'loading'}
                             className={getInputClass('displayName')}
                           />
+                          {embedded && <p className="mt-2 text-xs leading-6 text-slate-400">공개 프로필에 표시할 이름을 입력해주세요.</p>}
                           {errors.displayName && (
                             <p className="text-xs text-red-500 mt-1">{errors.displayName}</p>
                           )}
@@ -631,10 +636,24 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
                       </div>
                     </div>
 
+                  <div className="pt-5 border-t border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                      직군 <span className="text-red-500">*</span>
+                    </h3>
+                    <ProfessionSection ref={professionRef} compact={embedded} />
+                  </div>
+
+                  <div className="pt-5 border-t border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">전문분야 <span className="text-red-500">*</span><span className="ml-2 text-xs font-normal text-slate-400">1~3개 선택</span></h3>
+                    <SpecialtySection ref={specialtyRef} compact={embedded} />
+                  </div>
+
                     {/* 디자인 -- 공개 프로필 상단 히어로에 표시될 커버 이미지 */}
-                    <div className="pt-4 border-t border-gray-100">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-2">디자인</h3>
-                      <label className="block text-sm font-medium text-gray-900 mb-2">커버 이미지 (선택)</label>
+                    <OptionalSection className="group border-t border-slate-100 pt-4">
+                      {embedded && <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-slate-800 [&::-webkit-details-marker]:hidden"><span>커버 이미지 <span className="ml-2 text-xs font-normal text-slate-400">선택</span></span><span aria-hidden className="text-slate-400 transition-transform group-open:rotate-180">⌄</span></summary>}
+                      <div className={embedded ? "mt-3" : ""}>
+                      {!embedded && <h3 className="text-sm font-semibold text-gray-900 mb-2">디자인</h3>}
+                      {!embedded && <label className="block text-sm font-medium text-gray-900 mb-2">커버 이미지 (선택)</label>}
                       {/* 공개 프로필과 동일한 4:1 커버 비율로 미리보기한다. */}
                       <div className="w-full aspect-[4/1] rounded-2xl overflow-hidden bg-linear-to-br from-blue-50 via-white to-sky-100 border border-blue-100 flex items-center justify-center">
                         {formData.coverImagePath ? (
@@ -668,7 +687,8 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
                       <p className="text-caption text-gray-400 mt-1">
                         권장 1600×400px(4:1), JPG·PNG·WebP, 5MB 이하.
                       </p>
-                    </div>
+                      </div>
+                    </OptionalSection>
 
                     {!embedded && <>
                     <div>
@@ -729,14 +749,17 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
 
                     </>}
 
+                    <OptionalSection ref={(element: HTMLElement | null) => { linksDetails.current = element instanceof HTMLDetailsElement ? element : null; }} className="group border-t border-slate-100 pt-4">
+                      {embedded && <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-slate-800 [&::-webkit-details-marker]:hidden"><span>소셜·추가 링크 <span className="ml-2 text-xs font-normal text-slate-400">선택</span></span><span aria-hidden className="text-slate-400 transition-transform group-open:rotate-180">⌄</span></summary>}
+                      <div className={embedded ? "mt-3 space-y-5" : ""}>
                     {/* 소셜링크 -- 아이콘을 클릭하면 그 플랫폼의 URL 입력창이
                         펼쳐진다(독립 토글). 값이 등록된 아이콘은 파란 강조 +
                         체크 배지로 표시. http(s) 형식은 저장 시 서버에서 검증.
                         kakaoUrl(개인 카카오톡 채널)은 근무기관의 "공식 문의처"
                         (workplaces.external_contact_url)와 별개 필드다. */}
-                    <div className="pt-4 border-t border-gray-100 space-y-3">
+                    <div className={embedded ? "space-y-3" : "pt-4 border-t border-gray-100 space-y-3"}>
                       <h3 className="text-sm font-semibold text-gray-900">소셜링크</h3>
-                      <div className="flex gap-2">
+                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
                         {(
                           [
                             { name: 'youtubeUrl', label: '유튜브', Icon: YoutubeIcon },
@@ -757,7 +780,7 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
                               }
                               aria-expanded={open}
                               title={label}
-                              className={`relative flex flex-col items-center gap-1 flex-1 py-2.5 rounded-lg border-2 transition-colors ${
+                              className={`relative flex flex-col items-center gap-1 flex-1 min-h-14 py-2.5 rounded-lg border transition-colors ${
                                 filled
                                   ? 'border-blue-500 bg-blue-50 text-blue-700'
                                   : open
@@ -805,22 +828,13 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
                     </div>
 
                     <ExtraLinksSection ref={extraLinksRef} />
+                      </div>
+                    </OptionalSection>
                   </div>
 
-                  <div className="pt-5 border-t border-gray-100">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">
-                      직군 <span className="text-red-500">*</span>
-                    </h3>
-                    <ProfessionSection ref={professionRef} />
-                  </div>
-
-                  <div className="pt-5 border-t border-gray-100">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-3">전문분야</h3>
-                    <SpecialtySection ref={specialtyRef} />
-                  </div>
                 </section>
 
-                {!profileMeta?.hasBasicInfo && (
+                {!embedded && !profileMeta?.hasBasicInfo && (
                   <p className="text-xs text-gray-500 px-1">
                     먼저 기본 정보를 저장해야 아래 섹션들이 정상적으로 저장됩니다.
                   </p>

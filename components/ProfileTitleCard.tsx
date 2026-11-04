@@ -7,12 +7,12 @@ export function ProfileTitleCard({
   onChange: (value: string) => void;
 }) {
   return (
-    <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-6">
+    <section className="mb-5 rounded-xl bg-slate-50 px-5 py-4">
       <label
         htmlFor="profile-management-title"
         className="flex flex-wrap items-baseline gap-x-2 gap-y-1"
       >
-        <span className="text-xl font-bold tracking-tight text-slate-900">
+        <span className="text-sm font-semibold text-slate-800">
           프로필 제목
         </span>
         <span className="text-xs font-normal text-slate-400 sm:text-sm">
@@ -25,7 +25,7 @@ export function ProfileTitleCard({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="예: 취업 준비용 / 운동 지도 소개"
-        className="mt-3 min-h-14 w-full border-0 border-b border-slate-200 bg-white px-0 py-3 text-profile-title-input font-semibold text-slate-800 outline-none placeholder:font-normal placeholder:text-slate-300 focus:border-primary sm:text-profile-title-input-wide"
+        className="mt-2 min-h-12 w-full rounded-lg border border-transparent bg-transparent px-2 py-2 text-profile-title-input font-medium text-slate-800 outline-none placeholder:font-normal placeholder:text-slate-400 focus:border-blue-300 focus:bg-white focus:ring-2 focus:ring-blue-100 sm:text-profile-title-input-wide"
       />
     </section>
   );

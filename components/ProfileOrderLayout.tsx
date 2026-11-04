@@ -51,13 +51,14 @@ export function ProfileOrderLayout({
       <span
         key="order-handle"
         data-order-handle
-        className={`absolute ${group === "sections" ? "-left-3" : "-left-6"} top-1/2 z-20 -translate-y-1/2`}
+        className={`absolute z-20 ${group === "sections" ? "-left-8 top-4" : "left-0 top-1/2 -translate-y-1/2"}`}
       >
         <button
           type="button"
           aria-label={`${label} 순서 이동`}
-          title="잡아서 원하는 위치로 끌어주세요"
-          className="flex size-6 cursor-grab active:cursor-grabbing touch-none items-center justify-center rounded-md border border-slate-100 bg-white text-sm text-slate-300 shadow-sm hover:border-blue-200 hover:text-blue-600 focus-visible:outline-blue-600"
+          title="드래그해서 순서 변경 · 위아래 방향키로도 이동할 수 있어요"
+          aria-keyshortcuts="ArrowUp ArrowDown"
+          className="profile-order-handle relative flex h-9 w-7 touch-none cursor-grab items-center justify-center rounded-full border border-transparent bg-transparent text-slate-300 transition-colors hover:border-blue-100 hover:bg-blue-50 hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 active:cursor-grabbing active:bg-blue-100"
           onKeyDown={(event) => {
             const i = keys.indexOf(key);
             if (event.key === "ArrowUp" && i > 0) {
@@ -126,7 +127,7 @@ export function ProfileOrderLayout({
             };
           }}
         >
-          ☰
+          <span aria-hidden="true" className="profile-order-rail" />
         </button>
       </span>
     );
@@ -175,7 +176,12 @@ export function ProfileOrderLayout({
           : walk(node.props.children, key || group);
       const element = cloneElement(node, { key: node.key ?? i }, nested);
       if (!key) return element;
-      if (!onChange || key === "specialties" || group === "specialties")
+      if (
+        !onChange ||
+        key === "specialties" ||
+        group === "specialties" ||
+        movableKeys.length < 2
+      )
         return element;
       const label =
         typeof (node.props as { title?: string }).title === "string"
@@ -186,7 +192,8 @@ export function ProfileOrderLayout({
       const attrs = {
         "data-order-group": group,
         "data-order-target": key,
-        className: `relative ${over === group + key && drag?.token !== group + key ? "before:absolute before:inset-x-0 before:-top-3 before:h-0.5 before:bg-blue-500" : ""}`,
+        "data-order-dragging": drag?.token === group + key || undefined,
+        className: `relative ${group !== "sections" ? "pl-9" : ""} ${over === group + key && drag?.token !== group + key ? "before:absolute before:inset-x-0 before:-top-3 before:h-0.5 before:bg-blue-500" : ""}`,
         style:
           drag?.token === group + key
             ? {

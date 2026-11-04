@@ -83,7 +83,7 @@ test("pointer drag changes order only after release, and ignores missing targets
 test("specialties stays first even with previous custom order and has no drag handle", () => {
   render(
     <ProfileOrderLayout
-      order={{ sections: ["career", "specialties"] }}
+      order={{ sections: ["career", "specialties", "education"] }}
       onChange={() => {}}
     >
       <section data-order-key="career" title="경력">
@@ -92,11 +92,15 @@ test("specialties stays first even with previous custom order and has no drag ha
       <section data-order-key="specialties" title="전문분야">
         <h2>전문분야</h2>
       </section>
+      <section data-order-key="education" title="학력">
+        <h2>학력</h2>
+      </section>
     </ProfileOrderLayout>,
   );
   expect(screen.getAllByRole("heading").map((n) => n.textContent)).toEqual([
     "전문분야",
     "경력",
+    "학력",
   ]);
   expect(
     screen.queryByRole("button", { name: "전문분야 순서 이동" }),
@@ -107,7 +111,47 @@ test("specialties stays first even with previous custom order and has no drag ha
   expect(screen.getAllByRole("heading").map((n) => n.textContent)).toEqual([
     "전문분야",
     "경력",
+    "학력",
   ]);
+});
+
+test("a single entry has no item handle, while its section can still be moved", () => {
+  render(
+    <ProfileOrderLayout onChange={() => {}}>
+      <section data-order-key="education" title="학력">
+        <h2>학력</h2>
+        <ul>
+          <li data-order-key="one">대학교 한 곳</li>
+        </ul>
+      </section>
+      <section data-order-key="career" title="경력">
+        <h2>경력</h2>
+        <ul>
+          <li data-order-key="job">직장 한 곳</li>
+        </ul>
+      </section>
+    </ProfileOrderLayout>,
+  );
+  expect(screen.getByRole("button", { name: "학력 순서 이동" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "경력 순서 이동" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "항목 순서 이동" })).toBeNull();
+  expect(
+    screen.getAllByRole("listitem").map((item) => item.textContent),
+  ).toEqual(["대학교 한 곳", "직장 한 곳"]);
+});
+
+test("one movable section has no handle when there is nothing to reorder", () => {
+  render(
+    <ProfileOrderLayout onChange={() => {}}>
+      <section data-order-key="specialties" title="전문분야">
+        <h2>전문분야</h2>
+      </section>
+      <section data-order-key="career" title="경력">
+        <h2>경력</h2>
+      </section>
+    </ProfileOrderLayout>,
+  );
+  expect(screen.queryByRole("button")).toBeNull();
 });
 
 test("saved JSON order is restored without editor controls on a fresh render", () => {

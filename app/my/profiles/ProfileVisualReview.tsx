@@ -526,13 +526,33 @@ export function ProfileVisualReview({
                 </p>
                 {tab === "results" ? (
                   <span
-                    className={`mt-2 inline-block rounded-full px-2 py-1 text-micro ${row.verified ? "bg-emerald-50 text-emerald-700" : "bg-slate-50 text-slate-400"}`}
+                    className={
+                      row.verified
+                        ? "mt-2 inline-flex items-center gap-1.5 text-micro text-black"
+                        : "mt-2 inline-block rounded-full bg-slate-50 px-2 py-1 text-micro text-slate-400"
+                    }
                   >
+                    {row.verified && (
+                      <svg
+                        aria-hidden="true"
+                        className="shrink-0 text-primary"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 16 16"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="m3 8 3.2 3.2L13 4.5" />
+                      </svg>
+                    )}
                     {row.reviewStatus === "pending"
                       ? "심사 중"
                       : row.reviewStatus === "rejected"
                         ? "반려"
-                        : "인증 완료"}
+                        : "인증완료"}
                   </span>
                 ) : attachedFor(row).length ? (
                   attachedFor(row).map((file) => (

@@ -769,6 +769,12 @@ export function ProfileVisualReview({
               />
               관리자 승인 후 선택한 파일 공개
             </label>
+            {publicSelection.length > 0 && (
+              <p className="ml-6 text-xs leading-5 text-slate-500">
+                타인에게 제공되는 사본에 PT Career 워터마크와 보이지 않는 식별
+                표식이 들어갑니다. 본인의 원본은 그대로 보관됩니다.
+              </p>
+            )}
             {publicSelection.length > 0 &&
               available
                 .filter((f) => selection.includes(f.id))

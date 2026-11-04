@@ -29,6 +29,7 @@ begin
  perform set_config('request.jwt.claim.sub','',true);
  select count(*) into n from public.public_profile_item_reviews(profile); if n<>1 then raise exception 'approved badge missing'; end if;
  select count(*) into n from public.profile_review_file(rid,file); if n<>0 then raise exception 'private file leaked'; end if;
+ select count(*) into n from public.public_profile_evidence_file(rid,file); if n<>0 then raise exception 'private file copy source leaked'; end if;
  perform set_config('request.jwt.claim.sub',u::text,true);
  select updated_at into stamp from public.profile_item_reviews where id=rid;
  execute 'set local role authenticated';
@@ -37,7 +38,8 @@ begin
  perform set_config('request.jwt.claim.sub',a::text,true);
  perform public.decide_profile_item_review(rid,'verified','confirmed',(result->>'updated_at')::timestamptz);
  perform set_config('request.jwt.claim.sub','',true);
- select count(*) into n from public.profile_review_file(rid,file); if n<>1 then raise exception 'opted-in approved file missing'; end if;
+ select count(*) into n from public.public_profile_evidence_file(rid,file); if n<>1 then raise exception 'public copy source missing'; end if;
+ select count(*) into n from public.profile_review_file(rid,file); if n<>0 then raise exception 'anonymous original access'; end if;
  perform set_config('request.jwt.claim.sub',u::text,true);
  denied:=false; begin perform public.damoa_claim_file_delete(file); exception when others then denied:=true; end;
  if not denied then raise exception 'referenced proof deleted'; end if;

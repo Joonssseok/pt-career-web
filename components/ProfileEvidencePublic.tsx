@@ -12,6 +12,10 @@ export async function ProfileEvidencePublic({
   return (
     <section className="mt-4 rounded-2xl border border-slate-200 p-4 sm:p-5">
       <h2 className="font-bold">인증 내역</h2>
+      <p className="mt-2 text-xs leading-5 text-slate-500">
+        방문자에게 제공되는 사본에는 PT Career 워터마크와 보이지 않는 식별
+        표식이 포함됩니다.
+      </p>
       <div className="mt-3 space-y-3">
         {data.map(
           (row: {

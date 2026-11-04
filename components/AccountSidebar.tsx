@@ -68,12 +68,6 @@ export async function AccountSidebar() {
       >
         공유 설정
       </Link>
-      <Link
-        href="/my#card"
-        className="block px-3 py-2 text-sm font-bold text-slate-950 hover:text-primary"
-      >
-        명함 생성
-      </Link>
       <AccountMenuSection id="account" title="계정 설정">
         <Link href="/my/account" className={linkClass}>
           로그인 정보·연락처

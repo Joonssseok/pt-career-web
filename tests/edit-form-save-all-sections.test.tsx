@@ -104,6 +104,9 @@ describe('EditForm save wiring', () => {
     for (const name of ['기본 정보', '학력', '경력', '교육', '자격·면허', '근무기관', '상세정보 이미지']) expect(queryByRole('heading', { name, exact: true })).toBeNull();
     expect(queryByText('공통 정보 저장')).toBeNull();
     expect(container.querySelector('input[name="resumePhone"]')).toBeNull();
+    const optionalSections = container.querySelectorAll('details');
+    expect(optionalSections).toHaveLength(2);
+    for (const section of optionalSections) expect(section.open).toBe(false);
     await act(async () => { await parentSave!(); });
     expect(saveOwnProfile).toHaveBeenCalledWith(expect.objectContaining({ coverImagePath: 'user/cover.jpg', youtubeUrl: 'https://youtube.com/@existing' }));
   });
@@ -177,6 +180,8 @@ describe('EditForm save wiring', () => {
     await waitFor(() => expect(container.querySelector('input[name="displayName"]')).not.toBeNull());
     await waitFor(() => expect(parentSave).not.toBeNull());
     await act(async () => { expect(await parentSave!()).toBe(false); });
+    const links = Array.from(container.querySelectorAll('details')).find(section => section.querySelector('summary')?.textContent?.includes('소셜·추가 링크'));
+    expect(links?.open).toBe(true);
     expect(saveOwnProfile).not.toHaveBeenCalled();
     expect(submitProfile).not.toHaveBeenCalled();
     mockExtraLinksError = '';

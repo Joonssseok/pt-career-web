@@ -422,17 +422,23 @@ export function ProfileVersionManager({
   }
   return (
     <div className={`mx-auto ${editing ? "max-w-none" : "max-w-3xl"}`}>
-      <header hidden={editing && step === "preview"} className="mb-8">
+      <header hidden={editing && step === "preview"} className="mb-7">
         <p className="text-xs font-semibold tracking-wider text-primary">
           MY PROFILES
         </p>
-        <h1 className="mt-3 text-3xl font-extrabold text-slate-950">
-          프로필 관리
+        <h1 className="mt-2 text-page-title font-bold text-slate-950">
+          {editing ? "프로필 작성" : "프로필 관리"}
         </h1>
-        <p className="mt-3 text-sm leading-7 text-slate-500">
-          여러 프로필을 만들 수 있어요!
-          <br />
-          프로필을 생성하고, 대표 프로필을 선택하고 홍보하세요!
+        <p className="mt-2 text-sm leading-6 text-slate-500">
+          {editing ? (
+            "나를 소개할 정보를 채우고, 공개 전 화면을 확인해보세요."
+          ) : (
+            <>
+              여러 프로필을 만들 수 있어요!
+              <br />
+              프로필을 생성하고, 대표 프로필을 선택하고 홍보하세요!
+            </>
+          )}
         </p>
       </header>
       {!editing ? (
@@ -493,15 +499,12 @@ export function ProfileVersionManager({
           <div
             className={
               step === "write"
-                ? "grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_200px]"
+                ? "grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_200px]"
                 : ""
             }
           >
             <div className="min-w-0">
-              {step === "write" && (
-                <ProfileTitleCard value={title} onChange={setTitle} />
-              )}
-              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
                 <Link
                   href="/my/profiles"
                   className="min-h-11 py-3 text-sm text-slate-500"
@@ -512,6 +515,7 @@ export function ProfileVersionManager({
                   <button
                     type="button"
                     onClick={() => setStep("write")}
+                    aria-current={step === "write" ? "step" : undefined}
                     className={`min-h-11 rounded-lg px-3 text-sm ${step === "write" ? "bg-blue-50 text-primary" : "text-slate-500"}`}
                   >
                     1. 작성
@@ -519,26 +523,47 @@ export function ProfileVersionManager({
                   <button
                     type="button"
                     onClick={openPreview}
+                    aria-current={step === "preview" ? "step" : undefined}
                     className={`min-h-11 rounded-lg px-3 text-sm ${step === "preview" ? "bg-blue-50 text-primary" : "text-slate-500"}`}
                   >
                     2. 공개 전 확인
                   </button>
                 </div>
               </div>
-              <div hidden={step !== "write"} className="mb-6">
+              {step === "write" && (
+                <ProfileTitleCard value={title} onChange={setTitle} />
+              )}
+              <div hidden={step !== "write"} className="mb-5">
                 {commonEditor && (
-                  <details
-                    open
-                    className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"
+                  <section
+                    id="profile-basics"
+                    aria-labelledby="profile-basics-title"
+                    className="scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"
                   >
-                    <summary className="cursor-pointer text-lg font-bold text-slate-900">
-                      기본정보
-                    </summary>
+                    <div className="mb-5 flex items-start gap-3">
+                      <span
+                        aria-hidden
+                        className="pt-0.5 text-sm font-medium tabular-nums text-primary"
+                      >
+                        01
+                      </span>
+                      <div>
+                        <h2
+                          id="profile-basics-title"
+                          className="text-lg font-semibold text-slate-900"
+                        >
+                          기본정보
+                        </h2>
+                        <p className="mt-1 text-xs leading-6 text-slate-500">
+                          사진과 이름, 나를 찾는 기준이 될 직군과 분야를
+                          정해주세요.
+                        </p>
+                      </div>
+                    </div>
                     <CommonProfileSaveContext.Provider
                       value={commonSaveRegistry}
                     >
                       <div
-                        className="mt-5"
                         onChangeCapture={() => setCommonDirty(true)}
                         onClickCapture={(event) => {
                           const button = (event.target as HTMLElement).closest(
@@ -560,28 +585,81 @@ export function ProfileVersionManager({
                         {commonEditor}
                       </div>
                     </CommonProfileSaveContext.Provider>
-                  </details>
+                  </section>
                 )}
               </div>
               {step === "write" ? (
-                <div className="space-y-6">
-                  <div className="space-y-5 rounded-2xl border border-slate-200 p-6">
-                    <label className="block text-sm font-semibold text-slate-700">
-                      한 줄 소개
+                <div className="space-y-5">
+                  <section
+                    id="profile-introduction"
+                    aria-labelledby="profile-introduction-title"
+                    className="scroll-mt-28 space-y-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span
+                        aria-hidden
+                        className="pt-0.5 text-sm font-medium tabular-nums text-primary"
+                      >
+                        02
+                      </span>
+                      <div>
+                        <h2
+                          id="profile-introduction-title"
+                          className="text-lg font-semibold text-slate-900"
+                        >
+                          나를 소개해요
+                        </h2>
+                        <p className="mt-1 text-xs leading-6 text-slate-500">
+                          어떤 일을 하고, 어떤 도움을 줄 수 있는지 알려주세요.
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between gap-3">
+                        <label
+                          htmlFor="profile-headline"
+                          className="text-sm font-medium text-slate-800"
+                        >
+                          한 줄 소개
+                        </label>
+                        <span
+                          aria-hidden
+                          className="text-xs tabular-nums text-slate-400"
+                        >
+                          {content.headline.length}/100
+                        </span>
+                      </div>
                       <input
+                        id="profile-headline"
                         maxLength={100}
+                        placeholder="예: 꾸준히 움직이는 일상을 돕는 운동 전문가입니다."
                         value={content.headline}
                         onChange={(e) =>
                           setContent({ ...content, headline: e.target.value })
                         }
                         className={field}
                       />
-                    </label>
-                    <label className="block text-sm font-semibold text-slate-700">
-                      상세 소개
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between gap-3">
+                        <label
+                          htmlFor="profile-introduction-input"
+                          className="text-sm font-medium text-slate-800"
+                        >
+                          상세 소개
+                        </label>
+                        <span
+                          aria-hidden
+                          className="text-xs tabular-nums text-slate-400"
+                        >
+                          {content.introduction.length.toLocaleString()}/5,000
+                        </span>
+                      </div>
                       <textarea
+                        id="profile-introduction-input"
                         rows={5}
                         maxLength={5000}
+                        placeholder="주로 하는 일, 나만의 강점, 함께하고 싶은 대상을 자유롭게 적어보세요."
                         value={content.introduction}
                         onChange={(e) =>
                           setContent({
@@ -591,7 +669,38 @@ export function ProfileVersionManager({
                         }
                         className={field}
                       />
-                    </label>
+                    </div>
+                  </section>
+                  <section
+                    id="profile-images"
+                    aria-labelledby="profile-images-title"
+                    className="scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"
+                  >
+                    <div className="mb-5 flex items-start gap-3">
+                      <span
+                        aria-hidden
+                        className="pt-0.5 text-sm font-medium tabular-nums text-primary"
+                      >
+                        03
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2
+                            id="profile-images-title"
+                            className="text-lg font-semibold text-slate-900"
+                          >
+                            이미지로 더 보여주세요
+                          </h2>
+                          <span className="text-xs font-normal text-slate-400">
+                            선택
+                          </span>
+                        </div>
+                        <p className="mt-1 text-xs leading-6 text-slate-500">
+                          활동 사진이나 직접 만든 소개 이미지를 첨부할 수
+                          있어요.
+                        </p>
+                      </div>
+                    </div>
                     <ProfileDetailImageEditor
                       images={detailImages}
                       onChange={setDetailImages}
@@ -621,85 +730,113 @@ export function ProfileVersionManager({
                         </button>
                       </p>
                     )}
-                    <div className="border-t border-slate-100 pt-5">
-                      <h2 className="font-bold text-slate-800">
-                        프로필에 담을 활동
-                      </h2>
-                      <p className="mt-2 text-xs leading-6 text-slate-500">
-                        다모아의 활동을 골라 담은 뒤, 공개 전 확인에서 첨부
-                        자료와 심사 요청 여부를 선택할 수 있습니다. 개인 메모는
-                        가져오지 않습니다.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={bringActivities}
-                        className="mt-3 min-h-11 text-sm font-semibold text-primary"
+                  </section>
+                  <section
+                    id="profile-activities"
+                    aria-labelledby="profile-activities-title"
+                    className="scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span
+                        aria-hidden
+                        className="pt-0.5 text-sm font-medium tabular-nums text-primary"
                       >
-                        ＋ 다모아에서 골라 담기
-                      </button>
-                      {imports && (
-                        <div className="mt-2 rounded-xl bg-slate-50 p-4">
-                          <p className="mb-2 text-xs text-slate-500">
-                            내 다모아에 보관된 기록
-                          </p>
-                          {imports.length ? (
-                            imports.map((row) => (
-                              <label
-                                key={row.id}
-                                className="flex min-h-11 items-center gap-3 text-sm text-slate-600"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={content.activities.some(
-                                    (a) => a.id === row.id,
-                                  )}
-                                  onChange={(e) => {
-                                    if (e.target.checked) addActivity(row);
-                                    else
-                                      setContent({
-                                        ...content,
-                                        activities: content.activities.filter(
-                                          (a) => a.id !== row.id,
-                                        ),
-                                      });
-                                  }}
-                                  className="accent-blue-600"
-                                />
-                                {row.title || "보관한 자료"}
-                              </label>
-                            ))
-                          ) : (
-                            <p className="text-sm text-slate-500">
-                              기록이 없습니다.{" "}
-                              <Link href="/my/damoa" className="text-primary">
-                                다모아에 기록하기
-                              </Link>
-                            </p>
-                          )}
-                        </div>
-                      )}
-                      {content.activities.map((a) => (
-                        <div
-                          key={a.id}
-                          className="mt-3 rounded-xl border border-slate-100 p-4"
-                        >
+                        04
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h2
+                            id="profile-activities-title"
+                            className="text-lg font-semibold text-slate-900"
+                          >
+                            프로필에 담을 활동
+                          </h2>
                           <span className="text-xs text-primary">
-                            {a.category}
+                            {content.activities.length}개 선택
                           </span>
-                          <p className="mt-1 text-sm font-semibold text-slate-700">
-                            {a.title}
-                          </p>
-                          <p className="mt-1 text-sm text-slate-500">
-                            {a.description}
-                          </p>
                         </div>
-                      ))}
+                        <p className="mt-1 text-xs leading-6 text-slate-500">
+                          다모아에 모아둔 학력·경력·활동 중 이 프로필에 보여줄
+                          내용을 골라주세요.
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-xs leading-6 text-slate-400">
-                      학력·경력·교육 등은 다모아에서 골라 담습니다. AI 구성
-                      추천은 아직 연결되지 않았습니다.
+                    <button
+                      type="button"
+                      onClick={bringActivities}
+                      aria-expanded={imports !== null}
+                      className="mt-5 inline-flex min-h-11 items-center rounded-xl border border-blue-200 px-4 text-sm font-medium text-primary transition hover:bg-blue-50"
+                    >
+                      ＋ 다모아에서 골라 담기
+                    </button>
+                    {imports && (
+                      <div className="mt-2 rounded-xl bg-slate-50 p-4">
+                        <p className="mb-2 text-xs text-slate-500">
+                          내 다모아에 보관된 기록
+                        </p>
+                        {imports.length ? (
+                          imports.map((row) => (
+                            <label
+                              key={row.id}
+                              className="flex min-h-11 items-center gap-3 text-sm text-slate-600"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={content.activities.some(
+                                  (a) => a.id === row.id,
+                                )}
+                                onChange={(e) => {
+                                  if (e.target.checked) addActivity(row);
+                                  else
+                                    setContent({
+                                      ...content,
+                                      activities: content.activities.filter(
+                                        (a) => a.id !== row.id,
+                                      ),
+                                    });
+                                }}
+                                className="accent-blue-600"
+                              />
+                              {row.title || "보관한 자료"}
+                            </label>
+                          ))
+                        ) : (
+                          <p className="text-sm text-slate-500">
+                            기록이 없습니다.{" "}
+                            <Link href="/my/damoa" className="text-primary">
+                              다모아에 기록하기
+                            </Link>
+                          </p>
+                        )}
+                      </div>
+                    )}
+                    {content.activities.map((a) => (
+                      <div
+                        key={a.id}
+                        className="mt-3 rounded-xl border border-slate-100 p-4"
+                      >
+                        <span className="text-xs text-primary">
+                          {a.category}
+                        </span>
+                        <p className="mt-1 text-sm font-semibold text-slate-700">
+                          {a.title}
+                        </p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {a.description}
+                        </p>
+                      </div>
+                    ))}
+                    {content.activities.length === 0 && !imports && (
+                      <p className="mt-4 text-xs leading-6 text-slate-400">
+                        아직 담은 활동이 없어요. 작은 경험부터 하나씩
+                        추가해보세요.
+                      </p>
+                    )}
+                    <p className="mt-5 border-t border-slate-100 pt-4 text-xs leading-6 text-slate-500">
+                      개인 메모는 가져오지 않아요. 증빙자료와 심사 요청은 공개
+                      전 확인에서 선택할 수 있습니다.
                     </p>
-                  </div>
+                  </section>
                 </div>
               ) : (
                 <ProfileVisualReview
@@ -790,24 +927,70 @@ export function ProfileVersionManager({
             {step === "write" && (
               <aside
                 aria-label="작성 작업"
-                className="order-first xl:order-last xl:sticky xl:top-28 xl:self-start rounded-2xl border border-slate-200 bg-white p-4"
+                className="order-first rounded-2xl border border-slate-200 bg-white p-4 xl:order-last xl:sticky xl:top-28 xl:self-start"
               >
-                <button
-                  type="button"
-                  disabled={pending || !title.trim()}
-                  onClick={save}
-                  className="min-h-12 w-full rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-40"
+                <div className="hidden xl:block">
+                  <h2 className="px-2 text-sm font-semibold text-slate-800">
+                    작성 항목
+                  </h2>
+                  <nav
+                    aria-label="작성 항목 바로가기"
+                    className="mb-5 mt-3 space-y-1"
+                  >
+                    {[
+                      ["profile-basics", "기본정보"],
+                      ["profile-introduction", "소개"],
+                      ["profile-images", "첨부 이미지"],
+                      ["profile-activities", "활동 선택"],
+                    ].map(([target, label], index) => (
+                      <a
+                        key={target}
+                        href={`#${target}`}
+                        className="flex min-h-11 items-center gap-3 rounded-lg px-2 text-sm text-slate-500 transition hover:bg-blue-50 hover:text-primary"
+                      >
+                        <span className="text-xs tabular-nums text-slate-400">
+                          0{index + 1}
+                        </span>
+                        {label}
+                      </a>
+                    ))}
+                  </nav>
+                </div>
+                <p
+                  className="mb-3 flex items-center gap-2 text-xs text-slate-500"
+                  role="status"
                 >
-                  {pending ? "저장 중…" : "저장"}
-                </button>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={openPreview}
-                  className="mt-3 min-h-12 w-full rounded-xl border border-blue-200 px-4 text-sm font-semibold text-primary disabled:opacity-40"
-                >
-                  공개 전 확인
-                </button>
+                  <span
+                    aria-hidden
+                    className={`size-1.5 rounded-full ${changed ? "bg-amber-400" : "bg-blue-400"}`}
+                  />
+                  {pending
+                    ? "저장하고 있습니다"
+                    : changed
+                      ? "변경사항 저장 필요"
+                      : "저장된 프로필"}
+                </p>
+                <div className="grid grid-cols-2 gap-2 xl:grid-cols-1">
+                  <button
+                    type="button"
+                    disabled={pending || !title.trim()}
+                    onClick={save}
+                    className="min-h-12 w-full rounded-xl bg-primary px-4 text-sm font-semibold text-white disabled:opacity-40"
+                  >
+                    {pending ? "저장 중…" : "저장"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={openPreview}
+                    className="min-h-12 w-full rounded-xl border border-blue-200 px-4 text-sm font-semibold text-primary disabled:opacity-40"
+                  >
+                    공개 전 확인
+                  </button>
+                </div>
+                <p className="mt-3 hidden text-xs leading-5 text-slate-400 xl:block">
+                  저장한 뒤 공개 전 확인에서 최종 화면을 살펴보세요.
+                </p>
               </aside>
             )}
           </div>

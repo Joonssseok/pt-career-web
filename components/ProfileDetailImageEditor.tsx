@@ -34,20 +34,16 @@ export function ProfileDetailImageEditor({
     onChange([...images, ...added]);
   };
   return (
-    <section
-      className="border-t border-slate-100 pt-5"
-      aria-labelledby="detail-images-label"
-    >
+    <section className="space-y-3" aria-labelledby="detail-images-label">
       <div className="flex items-center justify-between gap-3">
-        <h2 id="detail-images-label" className="font-bold text-slate-800">
+        <h3
+          id="detail-images-label"
+          className="text-sm font-medium text-slate-800"
+        >
           첨부파일
-        </h2>
+        </h3>
         <span className="text-xs text-slate-400">{images.length}/20장</span>
       </div>
-      <p className="mt-2 text-sm leading-6 text-slate-500">
-        나를 소개하는 상세 이미지를 넣어보세요. 긴 이미지도 잘리지 않고 위에서
-        아래로 이어집니다.
-      </p>
       <input
         ref={input}
         aria-label="상세 이미지 선택"
@@ -70,7 +66,7 @@ export function ProfileDetailImageEditor({
           e.preventDefault();
           if (!disabled) add(Array.from(e.dataTransfer.files));
         }}
-        className="mt-3 flex min-h-28 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-blue-200 bg-blue-50/40 p-4 text-sm font-semibold text-primary transition hover:bg-blue-50 disabled:opacity-50"
+        className="flex min-h-28 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-blue-200 bg-blue-50/40 p-5 text-sm font-medium text-primary transition hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50"
       >
         <svg
           aria-hidden
@@ -88,11 +84,9 @@ export function ProfileDetailImageEditor({
           클릭하거나 이미지를 이곳으로 끌어 놓으세요
         </span>
       </button>
-      <p className="mt-2 text-xs leading-5 text-slate-400">
-        JPG · PNG · WebP / 한 장당 20MB / 프로필 전용 200MB
-      </p>
-      <p className="mt-1 text-xs text-slate-400">
-        내활동 다모아 저장 공간과 별도로 제공됩니다.
+      <p className="text-xs leading-6 text-slate-400">
+        JPG · PNG · WebP · 한 장당 20MB · 전용 공간 200MB
+        <br />긴 이미지도 원본 비율로 표시해요. 다모아 저장 공간과는 별도입니다.
       </p>
       {error && (
         <p role="alert" className="mt-2 text-sm text-red-600">

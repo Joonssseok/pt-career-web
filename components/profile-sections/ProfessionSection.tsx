@@ -16,8 +16,8 @@ const CUSTOM_LABEL_MAX = 20;
 
 // SpecialtySection과 동일한 체크박스 그리드 패턴. 차이는 "직접 입력" 슬롯
 // (slug='custom') 하나가 있고, 체크 시 자유입력 텍스트 필드가 나타난다는 점.
-const ProfessionSection = forwardRef<SectionSaveHandle, object>(function ProfessionSection(
-  _props,
+const ProfessionSection = forwardRef<SectionSaveHandle, { compact?: boolean }>(function ProfessionSection(
+  { compact = false },
   ref
 ) {
   const requiredDialog = useRef<HTMLDialogElement>(null);
@@ -108,7 +108,7 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
   useImperativeHandle(ref, () => ({ save, validate }), [selectedIds, customLabel, visibilityMap, loaded, loadError]);
 
   return (
-    <div className="space-y-5">
+    <div className={compact ? "space-y-3" : "space-y-5"}>
       {loadError && <p role="alert" className="text-sm text-red-600">{loadError}</p>}
       <dialog ref={requiredDialog} aria-labelledby="required-profession-title" className="m-auto w-[calc(100%-2rem)] max-w-sm rounded-2xl border border-red-100 bg-white p-6 shadow-xl backdrop:bg-slate-900/25"><h2 id="required-profession-title" className="font-bold text-slate-900">직군을 선택해주세요.</h2><p className="mt-3 text-sm text-slate-500">직군은 필수 항목입니다. 최소 1개를 선택한 뒤 저장해주세요.</p><div className="mt-5 flex justify-end"><button type="button" autoFocus onClick={()=>requiredDialog.current?.close()} className="min-h-11 rounded-xl bg-blue-50 px-5 text-sm font-semibold text-primary">확인</button></div></dialog>
       {showWarning && (
@@ -121,7 +121,7 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
 
       {/* Selection Count */}
       <div
-        className={`border rounded-lg p-4 ${
+        className={`border rounded-lg ${compact ? 'px-3 py-2' : 'p-4'} ${
           selectedIds.length === 0
             ? 'bg-red-50 border-red-200 text-red-700'
             : 'bg-blue-50 border-blue-200'
@@ -136,14 +136,15 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
       </div>
 
       {/* Professions Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${compact ? 'gap-2' : 'gap-3'}`}>
         {professions.map((profession) => (
           <div key={profession.id}>
             <button
               type="button"
               data-profile-dirty-control
+              aria-pressed={selectedIds.includes(profession.id)}
               onClick={() => toggleProfession(profession.id)}
-              className={`w-full p-3 rounded-lg border-2 text-left transition-all cursor-pointer ${
+              className={`min-h-11 w-full p-3 rounded-lg ${compact ? 'border' : 'border-2'} text-left transition-colors cursor-pointer ${
                 selectedIds.includes(profession.id)
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 bg-white hover:border-gray-300'
@@ -189,7 +190,8 @@ const ProfessionSection = forwardRef<SectionSaveHandle, object>(function Profess
       </div>
 
       {/* Summary */}
-      {selectedIds.length > 0 && (
+      {compact && <p className="text-xs leading-5 text-slate-400">처음 선택한 직군이 대표로 표시됩니다. 최대 {MAX_SELECTION}개까지 선택할 수 있어요.</p>}
+      {!compact && selectedIds.length > 0 && (
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <p className="text-sm font-medium text-gray-900 mb-2">선택된 직군:</p>
           <div className="flex flex-wrap gap-2">

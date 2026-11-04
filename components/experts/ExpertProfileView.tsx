@@ -6,6 +6,8 @@ import {
 import { getProfilePhotoUrl } from "@/lib/storage/profile-photo-url";
 import { getGalleryImageUrl } from "@/lib/storage/gallery-image-url";
 import { GalleryFullScroll } from "@/components/GalleryFullScroll";
+import { ProfileDetailImages } from "@/components/ProfileDetailImages";
+import type { DetailImage } from "@/lib/profile-versions/detail-images";
 import {
   YoutubeIcon,
   InstagramIcon,
@@ -82,6 +84,7 @@ export type ExpertProfileViewProps = {
     extra_links: { label: string; url: string }[];
   };
   galleryImages: GalleryImage[];
+  detailImages?: DetailImage[];
   order?: ProfileOrder;
   onOrderChange?: (order: ProfileOrder) => void;
   activitySections?: React.ReactNode;
@@ -142,6 +145,7 @@ function SectionCard({
 export function ExpertProfileView({
   expert,
   galleryImages,
+  detailImages = [],
   renderItemActions,
   order,
   onOrderChange,
@@ -382,6 +386,12 @@ export function ExpertProfileView({
             </SectionCard>
           )}
 
+          {detailImages.length > 0 && (
+            <ProfileDetailImages
+              data-order-key="detail_images"
+              images={detailImages}
+            />
+          )}
           {sortedExperiences.length > 0 && (
             <SectionCard data-order-key="experiences" title="경력">
               <ul className="ml-1 space-y-4 border-l border-blue-100 pl-5">

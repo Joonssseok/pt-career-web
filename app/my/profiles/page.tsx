@@ -5,6 +5,7 @@ import { AccountSidebar } from "@/components/AccountSidebar";
 import type { ExpertProfileViewProps } from "@/components/experts/ExpertProfileView";
 import type { ProfileVersion } from "@/lib/profile-versions/types";
 import { ProfileVersionManager } from "./ProfileVersionManager";
+import { getOwnProfileDetailImages } from "@/app/actions/profile-detail-images";
 export default async function ProfileVersionsPage({
   searchParams,
 }: {
@@ -70,6 +71,11 @@ export default async function ProfileVersionsPage({
             imagePath: row.image_path,
             caption: row.caption ?? "",
           }))}
+          detailImagesState={
+            query.profile
+              ? await getOwnProfileDetailImages(query.profile)
+              : undefined
+          }
           commonEditor={<EditForm embedded commonOnly />}
         />
       </main>

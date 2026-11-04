@@ -14,6 +14,7 @@ import {
 } from "@/lib/profile-versions/types";
 import { profileActivityCards } from "@/components/ProfileActivitySections";
 import { ExpertProfileView } from "@/components/experts/ExpertProfileView";
+import { detailImageSrc } from "@/lib/profile-versions/detail-images";
 
 export const dynamic = "force-dynamic";
 
@@ -171,6 +172,19 @@ export default async function ExpertDetailPage({
     imagePath: g.image_path,
     caption: g.caption ?? "",
   }));
+  const detailResult = await supabase.rpc("public_profile_detail_images", {
+    p_profile: id,
+  });
+  if (detailResult.error && detailResult.error.code !== "PGRST202")
+    throw new Error("상세 이미지를 불러오지 못했습니다.");
+  const detailImages = (detailResult.data ?? []).map(
+    (row: { id: string; bytes: number }) => ({
+      id: row.id,
+      name: "",
+      size: Number(row.bytes),
+      src: detailImageSrc(row.id),
+    }),
+  );
 
   return (
     <main className="mx-auto min-h-screen max-w-4xl bg-white pb-10 pt-4 sm:pb-14 sm:pt-5">
@@ -185,6 +199,7 @@ export default async function ExpertDetailPage({
 
       <div id="profile-details" className="scroll-mt-32">
         <ExpertProfileView
+          detailImages={detailImages}
           expert={expert}
           order={expert.representative?.content.order}
           activitySections={

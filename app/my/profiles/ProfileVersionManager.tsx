@@ -36,6 +36,13 @@ import {
 import { type ExpertProfileViewProps } from "@/components/experts/ExpertProfileView";
 import { loadActivities } from "@/lib/damoa/server-store";
 import { CATEGORIES, type Activity } from "@/lib/damoa/categories";
+import { ProfileDetailImageEditor } from "@/components/ProfileDetailImageEditor";
+import {
+  type EditableDetailImage,
+  type DetailImagesState,
+} from "@/lib/profile-versions/detail-images";
+import { uploadDetailImage } from "@/lib/profile-versions/upload-detail-image";
+import { getOwnProfileDetailImages } from "@/app/actions/profile-detail-images";
 const field =
   "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100";
 const primary =
@@ -59,7 +66,9 @@ export function ProfileVersionManager({
   expert,
   commonEditor,
   galleryImages = [],
+  detailImagesState = { ok: true, images: [], revision: null },
 }: {
+  detailImagesState?: DetailImagesState;
   commonEditor?: React.ReactNode;
   galleryImages?: ExpertProfileViewProps["galleryImages"];
   owner: string;
@@ -92,6 +101,40 @@ export function ProfileVersionManager({
     },
   );
   const [commonDirty, setCommonDirty] = useState(false);
+  const [detailImages, setDetailImages] = useState<EditableDetailImage[]>(
+    detailImagesState.images,
+  );
+  const [savedDetailIds, setSavedDetailIds] = useState(
+    detailImagesState.images.map((row) => row.id),
+  );
+  const [detailRevision, setDetailRevision] = useState(
+    detailImagesState.revision,
+  );
+  const [detailReady, setDetailReady] = useState(detailImagesState.ok);
+  const detailGroup = useRef(crypto.randomUUID());
+  const detailChanged =
+    JSON.stringify(detailImages.map((row) => row.id)) !==
+    JSON.stringify(savedDetailIds);
+  const [uploadMessage, setUploadMessage] = useState("");
+  // The editor unmounts on preview; keep blob URLs alive until the whole manager
+  // unmounts or the image is removed, rather than revoking them on step changes.
+  const imageUrls = useRef(new Set<string>());
+  useEffect(() => {
+    const used = new Set(detailImages.map((image) => image.src));
+    for (const image of detailImages)
+      if (image.src.startsWith("blob:")) imageUrls.current.add(image.src);
+    for (const url of imageUrls.current)
+      if (!used.has(url)) {
+        URL.revokeObjectURL(url);
+        imageUrls.current.delete(url);
+      }
+  }, [detailImages]);
+  useEffect(
+    () => () => {
+      for (const url of imageUrls.current) URL.revokeObjectURL(url);
+    },
+    [],
+  );
   const [saved, setSaved] = useState({
     title: selected?.title || "",
     content: selected?.draft_content,
@@ -220,6 +263,7 @@ export function ProfileVersionManager({
     !base.suspended_at &&
     !base.deletion_requested_at;
   const changed =
+    detailChanged ||
     commonDirty ||
     !saved.content ||
     title !== saved.title ||
@@ -232,12 +276,37 @@ export function ProfileVersionManager({
         setError("기본정보를 저장하지 못했습니다. 입력 내용을 확인해주세요.");
         return false;
       }
-      const r = await saveProfileVersion(id, title, content);
+      let imageSave: { ids: string[]; revision: string | null } | undefined;
+      if (detailChanged) {
+        if (!detailReady) {
+          setError("첨부파일을 다시 불러온 뒤 저장해주세요.");
+          return false;
+        }
+        const ids: string[] = [];
+        for (const [index, image] of detailImages.entries()) {
+          if (image.file)
+            setUploadMessage(
+              `이미지 업로드 중 · ${index + 1}/${detailImages.length}`,
+            );
+          ids.push(await uploadDetailImage(owner, detailGroup.current, image));
+        }
+        imageSave = { ids, revision: detailRevision };
+      }
+      const r = imageSave
+        ? await saveProfileVersion(id, title, content, imageSave)
+        : await saveProfileVersion(id, title, content);
       if (!r.ok) {
         setError(r.error);
         return false;
       }
       setId(r.id);
+      if (imageSave) {
+        setSavedDetailIds(imageSave.ids);
+        setDetailRevision(r.detailRevision ?? null);
+        setDetailImages((current) =>
+          current.map(({ file, ...image }) => image),
+        );
+      }
       setSaved({ title, content });
       setCommonDirty(false);
       setMessage("프로필을 저장했습니다.");
@@ -248,6 +317,7 @@ export function ProfileVersionManager({
       setError("저장하지 못했습니다. 다시 시도해주세요.");
       return false;
     } finally {
+      setUploadMessage("");
       setPending(false);
     }
   }
@@ -259,6 +329,10 @@ export function ProfileVersionManager({
       return;
     }
     if (!id || pending) return;
+    if (!detailReady) {
+      setError("첨부파일을 다시 불러온 뒤 공개해주세요.");
+      return;
+    }
     if (changed) {
       setError("먼저 변경 내용을 저장해주세요.");
       return;
@@ -518,6 +592,35 @@ export function ProfileVersionManager({
                         className={field}
                       />
                     </label>
+                    <ProfileDetailImageEditor
+                      images={detailImages}
+                      onChange={setDetailImages}
+                      disabled={pending || !detailReady}
+                    />
+                    {!detailReady && (
+                      <p role="alert" className="text-sm text-red-600">
+                        첨부파일을 불러오지 못했습니다. 기존 이미지는 변경되지
+                        않습니다.
+                        <button
+                          type="button"
+                          className="ml-2 underline"
+                          onClick={async () => {
+                            if (!id) return;
+                            const result = await getOwnProfileDetailImages(id);
+                            if (result.ok) {
+                              setDetailImages(result.images);
+                              setSavedDetailIds(
+                                result.images.map((row) => row.id),
+                              );
+                              setDetailRevision(result.revision);
+                              setDetailReady(true);
+                            }
+                          }}
+                        >
+                          다시 불러오기
+                        </button>
+                      </p>
+                    )}
                     <div className="border-t border-slate-100 pt-5">
                       <h2 className="font-bold text-slate-800">
                         프로필에 담을 활동
@@ -600,6 +703,7 @@ export function ProfileVersionManager({
                 </div>
               ) : (
                 <ProfileVisualReview
+                  detailImages={detailImages}
                   evidence={evidence}
                   onSaveEvidence={saveEvidence}
                   evidenceDisabled={!id || changed}
@@ -643,6 +747,11 @@ export function ProfileVersionManager({
                   {message}
                 </p>
               )}
+              {uploadMessage && (
+                <p role="status" className="mt-4 text-sm text-primary">
+                  {uploadMessage}
+                </p>
+              )}
               {step === "preview" && (
                 <div className="my-6 flex flex-wrap gap-3">
                   <button
@@ -656,7 +765,9 @@ export function ProfileVersionManager({
                   {id && (
                     <button
                       type="button"
-                      disabled={pending || !canPublish || changed}
+                      disabled={
+                        pending || !canPublish || changed || !detailReady
+                      }
                       onClick={publish}
                       className="min-h-12 rounded-xl border border-blue-200 px-5 text-sm font-semibold text-primary disabled:opacity-40"
                     >

@@ -169,7 +169,10 @@ export function ProfileOrderLayout({
         ? sorted[index++]
         : original;
       const key = node.props["data-order-key"];
-      const nested = walk(node.props.children, key || group);
+      const nested =
+        node.props.children === undefined
+          ? undefined
+          : walk(node.props.children, key || group);
       const element = cloneElement(node, { key: node.key ?? i }, nested);
       if (!key) return element;
       if (!onChange || key === "specialties" || group === "specialties")

@@ -71,6 +71,14 @@ test("수정할 때 기존 서버 시각을 보내 동시 수정 충돌을 방�
   );
   expect(rpc.mock.calls[0][1].p_content).not.toHaveProperty("owner");
 });
+test("지역과 주관을 기존 상세 정보와 함께 저장하고 다시 읽음", async () => {
+  const a = row({ details: { 지역: "성남시", 주관: "자원봉사센터", "본인 역할": "진행 보조" } });
+  rpc.mockResolvedValue({ data: server(a), error: null });
+  const saved = await saveActivity(a);
+  expect(rpc.mock.calls[0][1].p_content.details).toEqual(a.details);
+  expect(saved.details).toEqual(a.details);
+});
+
 test("업로드 실패 시 기록 저장 성공으로 처리하지 않음", async () => {
   const a = row({
     files: [

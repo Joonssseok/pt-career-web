@@ -178,6 +178,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [detailed, setDetailed] = useState(false);
+  const [draggingFiles, setDraggingFiles] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const fileInput = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -227,6 +228,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
     row.files.map((file) => ({ file, title: row.title || "보관한 자료" })),
   );
   function start(mode: "write" | "upload") {
+    setDraggingFiles(false);
     setFormError("");
     setCategorySearch("");
     setDetailed(false);
@@ -264,7 +266,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
     setDraft(null);
   }
   function attach(list: FileList | null) {
-    if (!draft || !list) return;
+    if (!draft || !list || saving) return;
     if ([...list].some((file) => file.size > FILE_LIMIT)) {
       setFormError("파일은 한 개당 10MB 이하로 첨부해주세요.");
       return;
@@ -700,7 +702,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
         ref={dialog}
         onCancel={(e) => {
           e.preventDefault();
-          close();
+          e.stopPropagation();
         }}
         className="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-2xl border-0 bg-white p-0 shadow-xl backdrop:bg-slate-950/30"
       >
@@ -812,6 +814,26 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                   />
                 </label>
                 <label className="block text-sm font-medium text-slate-600">
+                  지역
+                  <input
+                    maxLength={1000}
+                    value={draft.details["지역"] || ""}
+                    onChange={(e) => setDraft({ ...draft, details: { ...draft.details, 지역: e.target.value } })}
+                    placeholder="예: 경기도 성남시"
+                    className={inputClass}
+                  />
+                </label>
+                <label className="block text-sm font-medium text-slate-600">
+                  주관
+                  <input
+                    maxLength={1000}
+                    value={draft.details["주관"] || ""}
+                    onChange={(e) => setDraft({ ...draft, details: { ...draft.details, 주관: e.target.value } })}
+                    placeholder="예: 성남시 자원봉사센터"
+                    className={inputClass}
+                  />
+                </label>
+                <label className="block text-sm font-medium text-slate-600">
                   날짜·기간{" "}
                   <span className="font-normal text-slate-400">· 선택</span>
                   <input
@@ -852,9 +874,25 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                   <button
                     type="button"
                     onClick={() => fileInput.current?.click()}
-                    className="mt-2 flex min-h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-blue-200 bg-blue-50/30 text-sm text-primary"
+                    disabled={saving}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      if (!saving) setDraggingFiles(true);
+                    }}
+                    onDragLeave={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node | null))
+                        setDraggingFiles(false);
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDraggingFiles(false);
+                      attach(e.dataTransfer.files);
+                    }}
+                    className={`mt-2 flex min-h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed text-sm text-primary ${draggingFiles ? "border-primary bg-blue-100" : "border-blue-200 bg-blue-50/30"}`}
                   >
                     <Icon kind="upload" /> 사진·자료 선택
+                    <span className="text-xs text-slate-500">클릭하거나 사진·자료를 끌어놓으세요.</span>
                   </button>
                   <p className="mt-2 text-xs leading-6 text-slate-400">
                     JPG·PNG·WebP·PDF · 파일당 10MB · 모든 자료는 비공개

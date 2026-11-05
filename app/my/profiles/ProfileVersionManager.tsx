@@ -26,6 +26,7 @@ import {
 } from "@/app/actions/profile-versions";
 import {
   activityForProfile,
+  activityOrganizer,
   LIVE_PROFILE_PUBLISH_ENABLED,
   BASE_SECTIONS,
   applyVersion,
@@ -33,6 +34,8 @@ import {
   type ProfileVersion,
   type VersionContent,
 } from "@/lib/profile-versions/types";
+import { editProfileItem } from "@/lib/profile-versions/item-edit";
+import { PROFILE_PRESENTATION_STORAGE_ENABLED } from "@/lib/profile-versions/presentation";
 import { type ExpertProfileViewProps } from "@/components/experts/ExpertProfileView";
 import { loadActivities } from "@/lib/damoa/server-store";
 import { CATEGORIES, type Activity } from "@/lib/damoa/categories";
@@ -254,6 +257,14 @@ export function ProfileVersionManager({
       owner,
     ],
   );
+  const previewActivities = content.activities.map((activity) => {
+    const source = reviewSources.find(
+      (row) => row.id === activity.id && row.owner === owner,
+    );
+    return activity.organizer === undefined && source
+      ? { ...activity, organizer: activityOrganizer(source.details) }
+      : activity;
+  });
   const previewExpert = expert
     ? applyVersion(expert, { ...content, excluded: [] })
     : null;
@@ -265,10 +276,23 @@ export function ProfileVersionManager({
   const changed =
     detailChanged ||
     commonDirty ||
+    !sameProfileContent(content, {
+      ...content,
+      activities: previewActivities,
+    }) ||
     !saved.content ||
     title !== saved.title ||
     !sameProfileContent(content, saved.content);
   async function save() {
+    if (
+      !PROFILE_PRESENTATION_STORAGE_ENABLED &&
+      content.activities.some((a) => a.presentation)
+    ) {
+      setError(
+        "표시 설정은 현재 미리보기입니다. 서버 저장 연결이 완료된 뒤 저장할 수 있습니다.",
+      );
+      return false;
+    }
     setPending(true);
     setError("");
     try {
@@ -292,9 +316,10 @@ export function ProfileVersionManager({
         }
         imageSave = { ids, revision: detailRevision };
       }
+      const nextContent = { ...content, activities: previewActivities };
       const r = imageSave
-        ? await saveProfileVersion(id, title, content, imageSave)
-        : await saveProfileVersion(id, title, content);
+        ? await saveProfileVersion(id, title, nextContent, imageSave)
+        : await saveProfileVersion(id, title, nextContent);
       if (!r.ok) {
         setError(r.error);
         return false;
@@ -307,7 +332,8 @@ export function ProfileVersionManager({
           current.map(({ file, ...image }) => image),
         );
       }
-      setSaved({ title, content });
+      setContent(nextContent);
+      setSaved({ title, content: nextContent });
       setCommonDirty(false);
       setMessage("프로필을 저장했습니다.");
       router.replace(`/my/profiles?profile=${r.id}`);
@@ -849,7 +875,29 @@ export function ProfileVersionManager({
                     setContent((previous) => ({ ...previous, order }))
                   }
                   expert={previewExpert}
-                  activities={content.activities}
+                  activities={previewActivities}
+                  onEdit={(key, values) => {
+                    const next = editProfileItem(
+                      { ...content, activities: previewActivities },
+                      previewExpert,
+                      key,
+                      values,
+                      crypto.randomUUID(),
+                    );
+                    setContent(next);
+                    if (!key.startsWith("damoa:") && key !== "introduction:0")
+                      setReviewChoices((previous) => ({
+                        ...previous,
+                        [key]: { visible: false, requested: false, files: {} },
+                      }));
+                    setEvidence((previous) => ({
+                      ...previous,
+                      rows: previous.rows.filter((row) => row.item_key !== key),
+                    }));
+                    setMessage(
+                      "수정 내용을 반영했습니다. 프로필 저장을 눌러주세요.",
+                    );
+                  }}
                   items={reviewItems}
                   choices={reviewChoices}
                   onChange={(key, choice) => {

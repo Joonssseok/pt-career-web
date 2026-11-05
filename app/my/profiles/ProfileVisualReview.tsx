@@ -5,6 +5,11 @@ import {
   type ExpertProfileViewProps,
 } from "@/components/experts/ExpertProfileView";
 import { profileActivityCards } from "@/components/ProfileActivitySections";
+import { editableProfileItem } from "@/lib/profile-versions/item-edit";
+import {
+  ProfileItemEditDialog,
+  type ItemEditField,
+} from "./ProfileItemEditDialog";
 import {
   profileItemKey,
   type ProfileActivity,
@@ -29,6 +34,7 @@ export function ProfileVisualReview({
   items,
   choices,
   onChange,
+  onEdit,
   loading,
   error,
   retry,
@@ -61,6 +67,7 @@ export function ProfileVisualReview({
   items: ReviewItem[];
   choices: Record<string, ReviewChoice>;
   onChange: (key: string, choice: ReviewChoice) => void;
+  onEdit?: (key: string, values: Record<string, string>) => void;
   loading: boolean;
   error: string;
   retry: () => void;
@@ -68,6 +75,10 @@ export function ProfileVisualReview({
   detailImages?: ExpertProfileViewProps["detailImages"];
 }) {
   const [removing, setRemoving] = useState<VisualItem | null>(null);
+  const [editingItem, setEditingItem] = useState<{
+    row: VisualItem;
+    fields: ItemEditField[];
+  } | null>(null);
   const removeDialog = useRef<HTMLDialogElement>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [target, setTarget] = useState<VisualItem | null>(null);
@@ -199,8 +210,18 @@ export function ProfileVisualReview({
           ].map((file) => [file.id, file]),
         ).values(),
       ];
-      row.reviewStatus = stored.status === "draft" ? undefined : stored.status;
-      row.verified = stored.status === "verified";
+      const activity = activities.find((a) => row.key === "damoa:" + a.id);
+      const sameSnapshot =
+        !activity ||
+        (!!stored.item_snapshot &&
+          JSON.stringify(activity, Object.keys(activity).sort()) ===
+            JSON.stringify(
+              stored.item_snapshot,
+              Object.keys(stored.item_snapshot).sort(),
+            ));
+      row.reviewStatus =
+        !sameSnapshot || stored.status === "draft" ? undefined : stored.status;
+      row.verified = sameSnapshot && stored.status === "verified";
     }
   }
   const visible = (row: VisualItem) => choices[row.key]?.visible !== false;
@@ -248,6 +269,59 @@ export function ProfileVisualReview({
     );
     dialog.current?.showModal();
   }
+  function openItemEditor(row: VisualItem) {
+    const item = editableProfileItem(row.key, expert, activities);
+    const fields: ItemEditField[] =
+      row.section === "introduction"
+        ? [
+            {
+              key: "description",
+              label: "소개",
+              value: expert?.introduction ?? "",
+              multiline: true,
+              maxLength: 5000,
+            },
+          ]
+        : item
+          ? [
+              {
+                key: "title",
+                label: "항목 이름",
+                value: item.title,
+                required: true,
+                maxLength: 150,
+              },
+              {
+                key: "organizer",
+                label: "주관·기관",
+                value: item.organizer ?? "",
+                maxLength: 1000,
+              },
+              {
+                key: "period",
+                label: "날짜·기간",
+                value: item.period,
+                maxLength: 100,
+              },
+              {
+                key: "description",
+                label: "설명",
+                value: item.description,
+                multiline: true,
+                maxLength: 5000,
+              },
+              {
+                key: "learning",
+                label: "배운 점·결과",
+                value: item.learning,
+                multiline: true,
+                maxLength: 5000,
+              },
+            ]
+          : [];
+    if (fields.length) setEditingItem({ row, fields });
+    setExpanded(null);
+  }
   function actions(row?: VisualItem) {
     if (!row) return null;
     return (
@@ -292,17 +366,11 @@ export function ProfileVisualReview({
             </button>
             <button
               type="button"
-              disabled
-              className="block min-h-10 w-full px-3 text-left text-xs text-slate-300"
+              disabled={!onEdit}
+              onClick={() => openItemEditor(row)}
+              className="block min-h-11 w-full rounded-lg px-3 text-left text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:text-slate-300"
             >
-              내용 수정 · 준비 중
-            </button>
-            <button
-              type="button"
-              disabled
-              className="block min-h-10 w-full px-3 text-left text-xs text-slate-300"
-            >
-              순서 변경 · 준비 중
+              수정
             </button>
           </span>
         )}
@@ -621,6 +689,24 @@ export function ProfileVisualReview({
           )}
         </div>
       </aside>
+      {editingItem && (
+        <ProfileItemEditDialog
+          key={editingItem.row.key}
+          title={editingItem.row.title}
+          fields={editingItem.fields}
+          presentation={
+            editableProfileItem(editingItem.row.key, expert, activities)
+              ?.presentation
+          }
+          note={
+            editingItem.row.section === "licenses"
+              ? "수정한 자격에는 원본의 인증 표시가 자동으로 이어지지 않습니다."
+              : undefined
+          }
+          onClose={() => setEditingItem(null)}
+          onApply={(values) => onEdit?.(editingItem.row.key, values)}
+        />
+      )}
       <dialog
         ref={removeDialog}
         aria-labelledby="remove-profile-item-title"

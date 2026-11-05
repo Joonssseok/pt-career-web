@@ -1,4 +1,9 @@
 import type { ProfileActivity } from "@/lib/profile-versions/types";
+import { ProfileSectionCard } from "@/components/experts/ProfileSectionCard";
+import {
+  publicActivity,
+  hasPublicActivityContent,
+} from "@/lib/profile-versions/presentation";
 export function profileActivityCards({
   activities,
   renderItemActions,
@@ -6,44 +11,75 @@ export function profileActivityCards({
   activities: ProfileActivity[];
   renderItemActions?: (id: string) => React.ReactNode;
 }) {
+  activities = renderItemActions
+    ? activities
+    : activities.filter(hasPublicActivityContent);
   if (!activities.length) return null;
   const groups = [...new Set(activities.map((a) => a.category))];
   return (
     <>
       {groups.map((group) => (
-        <section
+        <ProfileSectionCard
           key={group}
           data-order-key={"activity:" + group}
-          className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"
+          title={group}
         >
-          <h2 className="text-base font-bold text-slate-900">{group}</h2>
-          <p className="mt-1 text-xs text-slate-400">본인이 작성한 활동 기록</p>
-          <div className="mt-3 space-y-4">
+          <div className="divide-y divide-gray-100">
             {activities
               .filter((a) => a.category === group)
-              .map((a) => (
-                <article key={a.id} data-order-key={a.id}>
-                  {renderItemActions?.(a.id)}
-                  <h3 className="text-sm font-semibold text-slate-800">
-                    {a.title}
-                  </h3>
-                  {a.period && (
-                    <p className="mt-1 text-xs text-slate-400">{a.period}</p>
-                  )}
-                  {a.description && (
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">
-                      {a.description}
-                    </p>
-                  )}
-                  {a.learning && (
-                    <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-500">
-                      {a.learning}
-                    </p>
-                  )}
-                </article>
-              ))}
+              .map((a) => {
+                const shown = publicActivity(a);
+                const subtitle = a.presentation
+                  ? [shown.organizer, shown.period].filter(Boolean).join(" · ")
+                  : a.organizer ||
+                    (!/자격|면허|교육|연수/.test(a.category) ? a.period : "");
+                return (
+                  <article
+                    key={a.id}
+                    data-order-key={a.id}
+                    className="py-3 first:pt-0 last:pb-0"
+                  >
+                    {renderItemActions?.(a.id)}
+                    {shown.title && (
+                      <h3 className="text-base font-semibold text-slate-900">
+                        {shown.title}
+                      </h3>
+                    )}
+                    {subtitle && (
+                      <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+                    )}
+                    {shown.description &&
+                      a.presentation?.description !== "expand" && (
+                        <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-600 sm:text-base">
+                          {shown.description}
+                        </p>
+                      )}
+                    {shown.description &&
+                      a.presentation?.description === "expand" && (
+                        <details className="mt-2 text-sm text-slate-600">
+                          <summary className="cursor-pointer text-primary">
+                            설명 더보기
+                          </summary>
+                          <p className="mt-2 whitespace-pre-wrap leading-relaxed sm:text-base">
+                            {shown.description}
+                          </p>
+                        </details>
+                      )}
+                    {shown.learning && (
+                      <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-600 sm:text-base">
+                        {shown.learning}
+                      </p>
+                    )}
+                    {renderItemActions && !hasPublicActivityContent(a) && (
+                      <p className="text-sm text-slate-400">
+                        이 항목은 프로필에 표시되지 않습니다.
+                      </p>
+                    )}
+                  </article>
+                );
+              })}
           </div>
-        </section>
+        </ProfileSectionCard>
       ))}
     </>
   );

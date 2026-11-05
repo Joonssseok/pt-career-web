@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { ProfileSectionCard as SectionCard } from "./ProfileSectionCard";
 import {
   ProfileOrderLayout,
   type ProfileOrder,
@@ -118,27 +119,6 @@ function LinkIcon() {
         d="M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 1 1 0 10h-2M8 12h8"
       />
     </svg>
-  );
-}
-
-function SectionCard({
-  title,
-  action,
-  children,
-}: {
-  title: string;
-  action?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5">
-      <h2 className="mb-3 flex items-center gap-3 text-base font-bold tracking-tight text-slate-900">
-        <span aria-hidden className="h-4 w-0.5 rounded-full bg-primary" />
-        {title}
-        {action && <span className="ml-auto">{action}</span>}
-      </h2>
-      {children}
-    </section>
   );
 }
 
@@ -505,7 +485,7 @@ export function ExpertProfileView({
                     className="flex items-start gap-3 py-3 first:pt-0 last:pb-0"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="inline-flex max-w-full items-center gap-1.5 text-sm font-semibold text-slate-900 sm:text-base">
+                      <div className="inline-flex max-w-full items-center gap-1.5 text-base font-semibold text-slate-900">
                         <span className="min-w-0 break-words">
                           {l.license_name}
                         </span>
@@ -538,7 +518,7 @@ export function ExpertProfileView({
                         </span>
                       </div>
                       {l.issuing_organization && (
-                        <div className="mt-1 break-words text-xs text-slate-500">
+                        <div className="mt-1 break-words text-sm text-slate-500">
                           {l.issuing_organization}
                         </div>
                       )}

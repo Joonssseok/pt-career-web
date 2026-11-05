@@ -1,5 +1,4 @@
 import { ProfileEvidencePublic } from "@/components/ProfileEvidencePublic";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import type { Metadata } from "next";
@@ -192,15 +191,6 @@ export default async function ExpertDetailPage({
 
   return (
     <main className="mx-auto min-h-screen max-w-4xl bg-white pb-10 pt-4 sm:pb-14 sm:pt-5">
-      <nav aria-label="페이지 경로" className="mb-4 sm:mb-5">
-        <Link
-          href="/experts"
-          className="inline-flex min-h-tap items-center gap-2 text-sm text-slate-500 transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-blue-600"
-        >
-          ← 전문가 탐색
-        </Link>
-      </nav>
-
       <div id="profile-details" className="scroll-mt-32">
         <ExpertProfileView
           detailImages={detailImages}

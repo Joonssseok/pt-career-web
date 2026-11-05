@@ -136,12 +136,6 @@ export default function ExpertsPage({ searchParams }: { searchParams: SearchPara
           <circle cx="860" cy="320" r="6" fill="white" stroke="var(--color-primary)" strokeOpacity="0.2" strokeWidth="2" />
         </svg>
       </div>
-      <nav aria-label="페이지 경로">
-        <Link href="/home" className="inline-flex min-h-tap items-center gap-2 text-sm text-slate-500 transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-blue-600">
-          <span aria-hidden>←</span> 홈
-        </Link>
-      </nav>
-
       <header className="relative overflow-hidden pb-9 pt-7 sm:pb-12 sm:pt-10">
         <div className="relative">
           <h1 className="text-hero font-extrabold tracking-tight text-slate-900 sm:text-4xl">전문가 <span className="text-primary">탐색</span></h1>

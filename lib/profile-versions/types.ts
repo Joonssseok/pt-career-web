@@ -1,4 +1,9 @@
 import type { ExpertProfileViewProps } from "@/components/experts/ExpertProfileView";
+import {
+  publicActivity,
+  hasPublicActivityContent,
+  type ItemPresentation,
+} from "./presentation";
 export const BASE_SECTIONS = [
   { id: "experiences", label: "경력" },
   { id: "academic_records", label: "학력" },
@@ -13,6 +18,8 @@ export type ProfileActivity = {
   period: string;
   description: string;
   learning: string;
+  organizer?: string;
+  presentation?: ItemPresentation;
 };
 export type VersionContent = {
   headline: string;
@@ -65,9 +72,13 @@ export function profileItemKey(section: string, row?: object): string {
   return `${section}:${JSON.stringify(value, Object.keys(value).sort())}`;
 }
 export function publicActivities(content: VersionContent) {
-  return content.activities.filter(
-    (row) => !content.excluded?.includes("damoa:" + row.id),
-  );
+  return content.activities
+    .filter(
+      (row) =>
+        !content.excluded?.includes("damoa:" + row.id) &&
+        hasPublicActivityContent(row),
+    )
+    .map(publicActivity);
 }
 export function applyVersion(
   base: ExpertProfileViewProps["expert"],
@@ -125,6 +136,7 @@ export function activityForProfile(
     period: string;
     description: string;
     learning: string;
+    details?: Record<string, string>;
   },
   category: string,
 ): ProfileActivity {
@@ -135,7 +147,28 @@ export function activityForProfile(
     period: row.period,
     description: row.description,
     learning: row.learning,
+    ...(row.details ? { organizer: activityOrganizer(row.details) } : {}),
   };
+}
+
+export function activityOrganizer(details: Record<string, string>) {
+  return (
+    [
+      "주관",
+      "주관 기관",
+      "교육 기관",
+      "발급 기관",
+      "주최 기관",
+      "기관·회사명",
+      "실습 기관",
+      "학교명",
+      "단체명",
+      "연구·발행 기관",
+      "기관",
+    ]
+      .map((key) => details[key]?.trim())
+      .find(Boolean) ?? ""
+  );
 }
 
 // 사용자가 실제 공개 전환을 요청했고 소유자·공개 범위 검증을 적용한다.

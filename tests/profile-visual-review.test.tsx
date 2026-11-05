@@ -1,5 +1,6 @@
 /** @jest-environment jsdom */
 import { useState } from "react";
+import { waitFor } from "@testing-library/react";
 import {
   cleanup,
   fireEvent,
@@ -135,10 +136,11 @@ test("plus opens details and selecting Damoa evidence in the dialog adds it to t
   expect(
     (
       screen.getByRole("button", {
-        name: "내용 수정 · 준비 중",
+        name: "수정",
       }) as HTMLButtonElement
     ).disabled,
   ).toBe(true);
+  expect(screen.queryByRole("button", { name: /순서 변경/ })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "증빙자료 첨부" }));
   const modal = screen.getByRole("dialog", { name: "증빙자료 첨부" });
   fireEvent.click(within(modal).getByRole("checkbox", { name: "확인서.pdf" }));

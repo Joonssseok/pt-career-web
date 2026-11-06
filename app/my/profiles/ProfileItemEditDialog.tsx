@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { formatActivityPeriod } from "@/lib/activity-period";
 import type { ItemPresentation } from "@/lib/profile-versions/presentation";
 
 export type ItemEditField = {
@@ -27,7 +28,12 @@ export function ProfileItemEditDialog({
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [values, setValues] = useState(() =>
-    Object.fromEntries(fields.map((f) => [f.key, f.value])),
+    Object.fromEntries(
+      fields.map((f) => [
+        f.key,
+        f.key === "period" ? formatActivityPeriod(f.value) : f.value,
+      ]),
+    ),
   );
   const [display, setDisplay] = useState<ItemPresentation>(
     () =>
@@ -70,6 +76,9 @@ export function ProfileItemEditDialog({
           try {
             await onApply({
               ...values,
+              ...(values.period !== undefined
+                ? { period: formatActivityPeriod(values.period) }
+                : {}),
               ...(titleField
                 ? {
                     presentation_title: String(display.title),
@@ -110,66 +119,105 @@ export function ProfileItemEditDialog({
           </button>
         </div>
         {titleField && (
-          <label className="block text-sm font-semibold text-slate-900">
-            프로필에 표시할 항목 이름
-            <input
-              value={values.title}
-              required={titleField.required}
-              maxLength={titleField.maxLength ?? 150}
-              disabled={busy}
-              onChange={(e) =>
-                setValues((old) => ({ ...old, title: e.target.value }))
-              }
-              className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            />
-            <span className="mt-2 block text-xs font-normal text-slate-500">
-              이 프로필에서 사용할 이름이에요. 다모아 원본 이름은 바뀌지 않아요.
-            </span>
-          </label>
-        )}
-        <fieldset disabled={busy}>
-          <legend className="mb-2 text-sm font-semibold text-slate-900">
-            프로필에 보여줄 정보
-          </legend>
-          <div className="divide-y divide-slate-100 rounded-xl border border-slate-200 px-4">
-            {fields
-              .filter((f) => ["title", "organizer", "period"].includes(f.key))
-              .map((f) => {
-                const key = f.key as "title" | "organizer" | "period";
-                return (
-                  <label
-                    key={key}
-                    className="flex min-h-16 cursor-pointer items-center gap-3 py-3"
-                  >
-                    <input
-                      type="checkbox"
-                      aria-label={`${f.label} 표시`}
-                      checked={display[key]}
-                      onChange={(e) =>
-                        setDisplay((old) => ({
-                          ...old,
-                          [key]: e.target.checked,
-                        }))
-                      }
-                      className="size-4 shrink-0 accent-blue-600"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-sm font-medium text-slate-800">
-                        {f.label}
-                      </span>
-                      <span className="mt-0.5 block break-words text-xs text-slate-500">
-                        {values[key] || "입력된 정보가 없어요"}
-                      </span>
-                    </span>
-                    <span
-                      className={`shrink-0 text-xs ${display[key] ? "text-primary" : "text-slate-400"}`}
+          <fieldset disabled={busy} className="border-b border-slate-100 pb-5">
+            <legend className="mb-3 text-sm font-semibold text-slate-900">
+              프로필에 보여줄 정보
+            </legend>
+            <div className="flex flex-wrap gap-x-5 gap-y-3">
+              {fields
+                .filter((f) =>
+                  ["title", "organizer", "period", "description"].includes(
+                    f.key,
+                  ),
+                )
+                .map((f) => {
+                  const key = f.key as
+                    "title" | "organizer" | "period" | "description";
+                  return (
+                    <label
+                      key={key}
+                      className="inline-flex min-h-9 cursor-pointer items-center gap-2 text-sm text-slate-700"
                     >
-                      {display[key] ? "표시" : "숨김"}
-                    </span>
-                  </label>
-                );
-              })}
-          </div>
+                      <input
+                        type="checkbox"
+                        aria-label={`${f.label} 표시`}
+                        checked={
+                          key === "description"
+                            ? display.description !== "hidden"
+                            : display[key]
+                        }
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setDisplay((old) =>
+                            key === "description"
+                              ? {
+                                  ...old,
+                                  description: checked ? "inline" : "hidden",
+                                }
+                              : { ...old, [key]: checked },
+                          );
+                        }}
+                        className="size-4 accent-blue-600"
+                      />
+                      {f.label}
+                    </label>
+                  );
+                })}
+            </div>
+          </fieldset>
+        )}
+        <fieldset disabled={busy} className="space-y-4">
+          <legend className="mb-2 text-sm font-semibold text-slate-900">
+            내용 수정
+          </legend>
+          {fields
+            .filter((f) => f.key !== "learning")
+            .map((f) => {
+              const props = {
+                value: values[f.key],
+                required: f.required,
+                maxLength: f.maxLength ?? 1000,
+                onChange: (
+                  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+                ) => setValues((old) => ({ ...old, [f.key]: e.target.value })),
+                onBlur:
+                  f.key === "period"
+                    ? () =>
+                        setValues((old) => ({
+                          ...old,
+                          period: formatActivityPeriod(old.period),
+                        }))
+                    : undefined,
+                className:
+                  "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-normal outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100",
+              };
+              return (
+                <label
+                  key={f.key}
+                  className="block text-sm font-medium text-slate-700"
+                >
+                  {f.key === "title" ? "프로필에 표시할 항목 이름" : f.label}
+                  {f.multiline ? (
+                    <textarea {...props} rows={3} />
+                  ) : (
+                    <input
+                      {...props}
+                      placeholder={
+                        f.key === "period"
+                          ? "예: 2026년 12월 ~ 2027년 4월"
+                          : undefined
+                      }
+                    />
+                  )}
+                </label>
+              );
+            })}
+          {titleField && (
+            <p className="text-xs text-slate-500">
+              이 프로필의 내용만 바뀌며 다모아 원본은 유지돼요. 체크한 정보만
+              공개됩니다.
+            </p>
+          )}
         </fieldset>
         <section
           aria-label="설정 미리보기"
@@ -190,7 +238,7 @@ export function ProfileItemEditDialog({
                 <p className="mt-1 text-sm text-slate-500">
                   {[
                     display.organizer ? values.organizer : "",
-                    display.period ? values.period : "",
+                    display.period ? formatActivityPeriod(values.period) : "",
                   ]
                     .filter(Boolean)
                     .join(" · ")}
@@ -218,44 +266,6 @@ export function ProfileItemEditDialog({
             </p>
           )}
         </section>
-        <details className="rounded-xl border border-slate-200 p-4">
-          <summary className="cursor-pointer text-sm font-medium text-slate-600">
-            표시 문구 수정
-          </summary>
-          <div className="mt-4 space-y-4">
-            {fields
-              .filter((f) => !["learning", "title"].includes(f.key))
-              .map((f) => {
-                const props = {
-                  value: values[f.key],
-                  required: f.required,
-                  maxLength: f.maxLength ?? 1000,
-                  disabled: busy,
-                  onChange: (
-                    e: React.ChangeEvent<
-                      HTMLInputElement | HTMLTextAreaElement
-                    >,
-                  ) =>
-                    setValues((old) => ({ ...old, [f.key]: e.target.value })),
-                  className:
-                    "mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100",
-                };
-                return (
-                  <label
-                    key={f.key}
-                    className="block text-sm font-medium text-slate-600"
-                  >
-                    {f.label}
-                    {f.multiline ? (
-                      <textarea {...props} rows={3} />
-                    ) : (
-                      <input {...props} />
-                    )}
-                  </label>
-                );
-              })}
-          </div>
-        </details>
         {note && <p className="text-xs leading-6 text-slate-500">{note}</p>}
         {error && (
           <p role="alert" className="text-sm text-red-600">

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { formatActivityPeriod } from "@/lib/activity-period";
 import { ProfileSectionCard as SectionCard } from "./ProfileSectionCard";
 import {
   ProfileOrderLayout,
@@ -410,8 +411,11 @@ export function ExpertProfileView({
                     )}
                     {e.start_date && (
                       <div className="mt-2 text-xs text-slate-500">
-                        {e.start_date} ~{" "}
-                        {e.is_current ? "현재" : (e.end_date ?? "")}
+                        {formatActivityPeriod(
+                          [e.start_date, e.is_current ? "현재" : e.end_date]
+                            .filter(Boolean)
+                            .join(" ~ "),
+                        )}
                       </div>
                     )}
                   </li>
@@ -440,9 +444,11 @@ export function ExpertProfileView({
                     </div>
                     {(a.start_date || a.end_date) && (
                       <div className="mt-2 text-xs text-slate-500">
-                        {a.start_date ?? ""}
-                        {a.start_date && a.end_date ? " ~ " : ""}
-                        {a.end_date ?? ""}
+                        {formatActivityPeriod(
+                          [a.start_date, a.end_date]
+                            .filter(Boolean)
+                            .join(" ~ "),
+                        )}
                       </div>
                     )}
                   </li>

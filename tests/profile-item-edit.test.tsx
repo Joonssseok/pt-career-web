@@ -91,6 +91,7 @@ test("editing an activity preserves the source, identity, period and ordering", 
     ...activity,
     title: "다른 교육명",
     organizer: "새 주관",
+    period: "2026년 1월",
   });
   expect(activity.title).toBe("교육명");
   expect(next.order).toBe(content.order);
@@ -117,7 +118,7 @@ test("common license edits create a profile-only copy without transferring verif
     category: "자격·면허",
     title: "수정 면허",
     organizer: "수정 기관",
-    period: "2020",
+    period: "2020년",
     description: "",
     learning: "",
   });
@@ -178,21 +179,21 @@ test("plus opens an edit dialog, cancel does not apply, apply passes only this i
   fireEvent.click(screen.getByRole("button", { name: "교육명 세부항목" }));
   expect(screen.queryByRole("button", { name: /순서 변경/ })).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "수정", exact: true }));
-  fireEvent.change(screen.getByLabelText("주관·기관"), {
+  fireEvent.change(screen.getByRole("textbox", { name: "주관·기관", exact: true }), {
     target: { value: "취소할 기관" },
   });
   fireEvent.click(screen.getByRole("button", { name: "취소", exact: true }));
   expect(onEdit).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "교육명 세부항목" }));
   fireEvent.click(screen.getByRole("button", { name: "수정", exact: true }));
-  fireEvent.change(screen.getByLabelText("주관·기관"), {
+  fireEvent.change(screen.getByRole("textbox", { name: "주관·기관", exact: true }), {
     target: { value: "수정 기관" },
   });
   fireEvent.click(screen.getByRole("button", { name: "반영", exact: true }));
   await waitFor(() =>
     expect(onEdit).toHaveBeenCalledWith(
       "damoa:a",
-      expect.objectContaining({ organizer: "수정 기관", period: "2026-01" }),
+      expect.objectContaining({ organizer: "수정 기관", period: "2026년 1월" }),
     ),
   );
   expect(activity.organizer).toBe("교육기관");

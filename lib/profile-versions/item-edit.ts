@@ -1,5 +1,6 @@
 import type { ExpertProfileViewProps } from "@/components/experts/ExpertProfileView";
 import { presentationFromValues } from "./presentation";
+import { formatActivityPeriod } from "@/lib/activity-period";
 import {
   profileItemKey,
   type ProfileActivity,
@@ -153,7 +154,7 @@ export function editProfileItem(
     ...source,
     title: values.title.trim(),
     organizer: values.organizer.trim(),
-    period: values.period,
+    period: formatActivityPeriod(values.period),
     description: values.description,
     learning: values.learning,
     ...(presentation ? { presentation } : {}),

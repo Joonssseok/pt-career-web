@@ -1,4 +1,5 @@
 import type { ProfileActivity } from "@/lib/profile-versions/types";
+import { formatActivityPeriod } from "@/lib/activity-period";
 import { ProfileSectionCard } from "@/components/experts/ProfileSectionCard";
 import {
   publicActivity,
@@ -30,9 +31,13 @@ export function profileActivityCards({
               .map((a) => {
                 const shown = publicActivity(a);
                 const subtitle = a.presentation
-                  ? [shown.organizer, shown.period].filter(Boolean).join(" · ")
+                  ? [shown.organizer, formatActivityPeriod(shown.period)]
+                      .filter(Boolean)
+                      .join(" · ")
                   : a.organizer ||
-                    (!/자격|면허|교육|연수/.test(a.category) ? a.period : "");
+                    (!/자격|면허|교육|연수/.test(a.category)
+                      ? formatActivityPeriod(a.period)
+                      : "");
                 return (
                   <article
                     key={a.id}

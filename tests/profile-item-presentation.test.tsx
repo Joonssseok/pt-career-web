@@ -56,10 +56,29 @@ test("settings start with information choices, hide description and omit learnin
   );
   expect(screen.getByRole("dialog", { name: "항목 설정" })).toBeTruthy();
   expect(screen.queryByLabelText("배운 점·결과")).toBeNull();
+  const choices = screen.getByRole("group", { name: "프로필에 보여줄 정보" });
+  const titleInput = screen.getByRole("textbox", {
+    name: "프로필에 표시할 항목 이름",
+  });
+  expect(
+    choices.compareDocumentPosition(titleInput) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  expect((screen.getByRole("textbox", { name: "주관·기관", exact: true }) as HTMLInputElement).value).toBe(
+    "주관처",
+  );
+  expect((screen.getByRole("textbox", { name: "날짜·기간", exact: true }) as HTMLInputElement).value).toBe(
+    "2026년",
+  );
+  expect(screen.queryByText("표시 문구 수정")).toBeNull();
   const preview = within(screen.getByLabelText("설정 미리보기"));
   expect(preview.getByText("교육명")).toBeTruthy();
   expect(preview.getByText("주관처")).toBeTruthy();
   expect(preview.queryByText("2026")).toBeNull();
+  expect(preview.queryByText("공개할 설명")).toBeNull();
+  fireEvent.click(screen.getByRole("checkbox", { name: "설명 표시" }));
+  expect(preview.getByText("공개할 설명")).toBeTruthy();
+  fireEvent.click(screen.getByRole("checkbox", { name: "설명 표시" }));
   expect(preview.queryByText("공개할 설명")).toBeNull();
   fireEvent.click(screen.getByRole("checkbox", { name: "항목 이름 표시" }));
   expect(preview.queryByText("교육명")).toBeNull();

@@ -39,11 +39,12 @@ test('region and organizer follow the activity name and are included when saved'
   fireEvent.change(screen.getByPlaceholderText('어떤 경험인지 짧게 적어주세요'), { target: { value: '지역 봉사' } });
   fireEvent.change(screen.getByLabelText('지역'), { target: { value: '성남시' } });
   fireEvent.change(screen.getByLabelText('주관'), { target: { value: '자원봉사센터' } });
+  fireEvent.change(screen.getByLabelText(/날짜·기간/), { target: { value: '26년 12월 ~ 27년 4월' } });
   const region = screen.getByLabelText('지역');
   const organizer = screen.getByLabelText('주관');
   expect(region.compareDocumentPosition(organizer) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: '비공개로 저장' }));
-  await waitFor(() => expect(saveActivity).toHaveBeenCalledWith(expect.objectContaining({ details: { 지역: '성남시', 주관: '자원봉사센터' } })));
+  await waitFor(() => expect(saveActivity).toHaveBeenCalledWith(expect.objectContaining({ period: '2026년 12월 ~ 2027년 4월', details: { 지역: '성남시', 주관: '자원봉사센터' } })));
 });
 
 test('dropping an oversized image keeps the file size limit', async () => {

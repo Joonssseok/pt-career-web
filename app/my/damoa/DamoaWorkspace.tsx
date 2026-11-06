@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { formatActivityPeriod } from "@/lib/activity-period";
 import { ComingSoonButton } from "@/components/ComingSoonButton";
 import {
   Activity,
@@ -338,6 +339,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
       const saved = {
         ...draft,
         title: draft.title.trim(),
+        period: formatActivityPeriod(draft.period),
         updated: new Date().toISOString(),
       };
       await saveActivity(saved);
@@ -623,7 +625,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                       </span>
                     </div>
                     <p className="mt-2 text-xs text-slate-400">
-                      {row.period || "기간 미입력"} · 첨부 {row.files.length}개
+                      {formatActivityPeriod(row.period) || "기간 미입력"} · 첨부 {row.files.length}개
                       · 비공개
                     </p>
                     {row.description && (
@@ -840,7 +842,8 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                     maxLength={100}
                     value={draft.period}
                     onChange={(e) => update("period", e.target.value)}
-                    placeholder="예: 2026. 10. 24. / 2025–현재 / 2024년"
+                    onBlur={() => update("period", formatActivityPeriod(draft.period))}
+                    placeholder="예: 2026년 / 2026년 12월 / 26년 12월 ~ 27년 4월"
                     className={inputClass}
                   />
                 </label>

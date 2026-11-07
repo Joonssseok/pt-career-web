@@ -93,6 +93,32 @@ beforeAll(() => {
   URL.revokeObjectURL = jest.fn();
 });
 afterEach(cleanup);
+
+test("an excluded workplace preview removes its old affiliation and region as the public view does", () => {
+  render(
+    <ProfileVisualReview
+      expert={{
+        ...expert,
+        workplace_center_name: "이전 소속",
+        workplace_region: "이전 지역",
+        workplace_address: "이전 주소",
+        workplace_address_detail: "상세 주소",
+      }}
+      activities={[]}
+      items={[]}
+      choices={{
+        "workplace:0": { visible: false, requested: false, files: {} },
+      }}
+      onChange={() => {}}
+      loading={false}
+      error=""
+      retry={() => {}}
+    />,
+  );
+  const canvas = screen.getByLabelText("공개 프로필 편집 미리보기");
+  for (const value of ["이전 소속", "이전 지역", "이전 주소", "상세 주소"])
+    expect(within(canvas).queryByText(value)).toBeNull();
+});
 test("public view has no editing buttons, preview removes the intended sorted row and can restore it", () => {
   const normal = render(
     <ExpertProfileView expert={expert} galleryImages={[]} />,

@@ -425,7 +425,10 @@ export function ProfileVisualReview({
         ),
         ...(records.some((row) => row.section === "workplace" && !visible(row))
           ? {
+              workplace_center_name: null,
+              workplace_region: null,
               workplace_address: null,
+              workplace_address_detail: null,
               workplace_phone: null,
               workplace_external_contact_url: null,
               workplace_website_url: null,

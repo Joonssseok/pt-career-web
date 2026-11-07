@@ -341,7 +341,11 @@ export function ExpertProfileView({
           </div>
         )}
 
-        <ProfileOrderLayout order={order} onChange={onOrderChange}>
+        <ProfileOrderLayout
+          order={order}
+          onChange={onOrderChange}
+          combineSimilarSections
+        >
           {expert.specialties.length > 0 && (
             <SectionCard data-order-key="specialties" title="전문 분야">
               <div className="flex flex-wrap gap-2">

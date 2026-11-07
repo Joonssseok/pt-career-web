@@ -23,16 +23,62 @@ export function moveProfileItem(keys: string[], from: string, to: string) {
 type Props = {
   children?: ReactNode;
   "data-order-key"?: string;
+  "data-order-scope"?: string;
   className?: string;
 };
+const sectionFamilies: Record<string, string> = {
+  "activity:경력": "experiences",
+  "activity:학력": "academic_records",
+  "activity:교육 이수": "educations",
+  "activity:교육·연수": "educations",
+  "activity:자격·면허": "licenses",
+  "activity:자격/면허": "licenses",
+  "activity:근무 기관": "workplace",
+  "activity:소개": "introduction",
+};
+
+function combineSections(nodes: ReactNode[]) {
+  const result: ReactNode[] = [];
+  const indexes = new Map<string, number>();
+  for (const node of nodes) {
+    if (!isValidElement<Props>(node) || !node.props["data-order-key"]) {
+      result.push(node);
+      continue;
+    }
+    const key = node.props["data-order-key"]!;
+    const family = sectionFamilies[key] ?? key;
+    const index = indexes.get(family);
+    if (index === undefined) {
+      indexes.set(family, result.length);
+      result.push(node);
+      continue;
+    }
+    const previous = result[index] as ReactElement<Props>;
+    const preferred = key === family ? node : previous;
+    // Keep each source's saved item-order scope while sharing one visible card.
+    result[index] = cloneElement(
+      preferred,
+      {},
+      <div className="space-y-3">
+        <div data-order-scope={previous.props["data-order-key"]}>
+          {previous.props.children}
+        </div>
+        <div data-order-scope={key}>{node.props.children}</div>
+      </div>,
+    );
+  }
+  return result;
+}
 export function ProfileOrderLayout({
   children,
   order = {},
   onChange,
+  combineSimilarSections = false,
 }: {
   children: ReactNode;
   order?: ProfileOrder;
   onChange?: (order: ProfileOrder) => void;
+  combineSimilarSections?: boolean;
 }) {
   const [drag, setDrag] = useState<{
     token: string;
@@ -140,7 +186,10 @@ export function ProfileOrderLayout({
     );
   }
   function walk(nodes: ReactNode, group: string): ReactNode {
-    const list = flatten(nodes);
+    const list =
+      group === "sections" && combineSimilarSections
+        ? combineSections(flatten(nodes))
+        : flatten(nodes);
     const marked = list.filter(
       (n): n is ReactElement<Props> =>
         isValidElement<Props>(n) && !!n.props["data-order-key"],
@@ -173,7 +222,10 @@ export function ProfileOrderLayout({
       const nested =
         node.props.children === undefined
           ? undefined
-          : walk(node.props.children, key || group);
+          : walk(
+              node.props.children,
+              key || node.props["data-order-scope"] || group,
+            );
       const element = cloneElement(node, { key: node.key ?? i }, nested);
       if (!key) return element;
       if (

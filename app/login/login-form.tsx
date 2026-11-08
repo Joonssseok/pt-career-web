@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { getSafeRedirectUrl } from '@/lib/auth/safe-redirect'
+import { beginPinEnrollment } from '@/app/actions/account-pin'
 import Link from 'next/link'
 
 export default function LoginForm() {
@@ -62,6 +63,11 @@ export default function LoginForm() {
       if (loginError) {
         setError('이메일 또는 비밀번호가 올바르지 않습니다')
       } else {
+        const enrollment = await beginPinEnrollment()
+        if (!enrollment.ok) {
+          setError(enrollment.error)
+          return
+        }
         router.push(nextUrl)
         router.refresh()
       }

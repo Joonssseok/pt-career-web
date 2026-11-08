@@ -8,6 +8,13 @@ export function isAccountPin(value: unknown): value is string {
   return typeof value === "string" && /^[0-9]{6}$/.test(value);
 }
 
+export function maskAccountEmail(email: string): string {
+  const at = email.lastIndexOf("@");
+  return at > 0 && at < email.length - 1
+    ? `${email.slice(0, Math.min(at, 2))}***${email.slice(at)}`
+    : "";
+}
+
 export function parseAccountPinState(value: unknown): AccountPinState | null {
   if (!value || typeof value !== "object") return null;
   const state = value as Record<string, unknown>;

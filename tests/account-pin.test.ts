@@ -1,6 +1,7 @@
 import {
   accountPinError,
   isAccountPin,
+  maskAccountEmail,
   parseAccountPinState,
 } from "../lib/auth/account-pin";
 import {
@@ -13,6 +14,11 @@ import {
 const rpc = jest.fn();
 const getUser = jest.fn();
 const resetPasswordForEmail = jest.fn();
+const clearPinEnrollment = jest.fn();
+jest.mock("../lib/auth/pin-enrollment", () => ({
+  startPinEnrollment: jest.fn(),
+  clearPinEnrollment: () => clearPinEnrollment(),
+}));
 jest.mock("../lib/supabase/server", () => ({
   createClient: async () => ({ rpc, auth: { getUser, resetPasswordForEmail } }),
 }));
@@ -103,7 +109,11 @@ test("signed-out visitor doesn't get an enrollment modal; malformed status is an
 });
 test("recovery is only sent to authenticated member email, with PIN callback", async () => {
   resetPasswordForEmail.mockResolvedValue({ error: null });
-  expect((await requestPinRecovery()).ok).toBe(true);
+  expect(await requestPinRecovery()).toEqual({
+    ok: true,
+    error: "",
+    recipient: "pi***@example.invalid",
+  });
   expect(resetPasswordForEmail).toHaveBeenCalledWith(
     "pin-test@example.invalid",
     { redirectTo: "http://localhost:3002/auth/callback?next=/my/pin-reset" },
@@ -111,4 +121,20 @@ test("recovery is only sent to authenticated member email, with PIN callback", a
   getUser.mockResolvedValue({ data: { user: null } });
   expect((await requestPinRecovery()).ok).toBe(false);
   expect(resetPasswordForEmail).toHaveBeenCalledTimes(1);
+});
+
+test("recovery recipient stays masked, including short email names", () => {
+  expect(maskAccountEmail("a@example.invalid")).toBe("a***@example.invalid");
+  expect(maskAccountEmail("ab@example.invalid")).toBe("ab***@example.invalid");
+  expect(maskAccountEmail("long.name@example.invalid")).toBe("lo***@example.invalid");
+  expect(maskAccountEmail("invalid")).toBe("");
+  expect(maskAccountEmail("@example.invalid")).toBe("");
+});
+
+test("failed email request never returns recipient or provider error details", async () => {
+  resetPasswordForEmail.mockResolvedValue({ error: { message: "sensitive-provider-content" } });
+  expect(await requestPinRecovery()).toEqual({
+    ok: false,
+    error: "메일을 보내지 못했습니다. 잠시 후 다시 요청해주세요.",
+  });
 });

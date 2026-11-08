@@ -4,7 +4,7 @@ import { personalGateOpen } from "@/lib/auth/personal-info-gate";
 import { AccountSidebar } from "@/components/AccountSidebar";
 import { getOwnResumePhone } from "@/app/actions/profile";
 import { getProfilePhotoUrl } from "@/lib/storage/profile-photo-url";
-import { PersonalPasswordGate } from "./PersonalPasswordGate";
+import { PersonalPinGate } from "./PersonalPinGate";
 export const dynamic = "force-dynamic";
 export default async function PersonalInfoPage() {
   const supabase = await createClient();
@@ -74,7 +74,7 @@ export default async function PersonalInfoPage() {
     <div className="flex min-h-screen flex-col md:flex-row">
       <AccountSidebar />
       <main className="min-w-0 flex-1 px-4 py-10 sm:px-8">
-        {verified ? form : <PersonalPasswordGate />}
+        {verified ? form : <PersonalPinGate />}
       </main>
     </div>
   );

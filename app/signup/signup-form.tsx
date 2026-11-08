@@ -92,9 +92,12 @@ export default function SignUpForm() {
         // agreeToTerms() gate (PR #24) catches it after the user confirms.
         if (signUpData.session) {
           await agreeToTerms()
+          router.push('/my')
+          router.refresh()
+          return
         }
         setMessage(
-          '회원가입이 완료되었습니다. 이메일을 확인하여 계정을 활성화해주세요.'
+          '이메일을 확인한 뒤 로그인하여 6자리 PIN을 설정하면 가입이 마무리됩니다.'
         )
         setTimeout(() => router.push('/login'), 3000)
       }
@@ -118,6 +121,7 @@ export default function SignUpForm() {
               전문가 등록, 이렇게 진행돼요
             </p>
             <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+              <li>로그인 확인 후 6자리 PIN 설정</li>
               <li>가입 후 프로필 작성 — 약 5분</li>
               <li>프로필 사진과, 경력 또는 자격·면허 1개가 필요해요</li>
               <li>업로드하면 바로 공개돼요 (자격증 증빙 파일만 관리자 확인 후 배지 표시)</li>

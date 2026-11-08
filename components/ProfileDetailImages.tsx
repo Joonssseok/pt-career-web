@@ -3,10 +3,7 @@ import type { DetailImage } from "@/lib/profile-versions/detail-images";
 export function ProfileDetailImages({ images }: { images: DetailImage[] }) {
   if (!images.length) return null;
   return (
-    <section
-      className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white"
-      aria-label="상세 이미지"
-    >
+    <section className="overflow-hidden bg-white" aria-label="상세 이미지">
       <h2 className="sr-only">상세 이미지</h2>
       {images.map((image, index) => (
         // Preserve the source proportions and avoid proxy resizing of very tall images.

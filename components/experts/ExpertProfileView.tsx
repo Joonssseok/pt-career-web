@@ -11,6 +11,12 @@ import { GalleryFullScroll } from "@/components/GalleryFullScroll";
 import { ProfileDetailImages } from "@/components/ProfileDetailImages";
 import type { DetailImage } from "@/lib/profile-versions/detail-images";
 import styles from "./ExpertProfileView.module.css";
+import { profileItemKey } from "@/lib/profile-versions/types";
+import {
+  ProfileEvidencePublic,
+  ProfileVerificationMark,
+  type PublicItemReview,
+} from "@/components/ProfileEvidencePublic";
 import {
   YoutubeIcon,
   InstagramIcon,
@@ -91,7 +97,10 @@ export type ExpertProfileViewProps = {
   order?: ProfileOrder;
   onOrderChange?: (order: ProfileOrder) => void;
   activitySections?: React.ReactNode;
+  profileActions?: React.ReactNode;
   stickySummary?: boolean;
+  itemReviews?: ReadonlyMap<string, PublicItemReview>;
+  verifiedCareerCount?: number | null;
   renderItemActions?: (
     section:
       | "experiences"
@@ -133,10 +142,16 @@ export function ExpertProfileView({
   order,
   onOrderChange,
   activitySections,
+  profileActions,
   stickySummary = false,
+  itemReviews,
+  verifiedCareerCount,
 }: ExpertProfileViewProps) {
   const coverImageUrl = getProfilePhotoUrl(expert.cover_image_path);
-  const certifiedCount = expert.licenses.length;
+  const certifiedCount =
+    verifiedCareerCount !== undefined
+      ? verifiedCareerCount
+      : (itemReviews?.size ?? null);
 
   // 값이 있는 소셜 링크만 렌더링, 전부 비어 있으면 로고 줄 자체를 숨긴다.
   const socialLinks = [
@@ -246,7 +261,7 @@ export function ExpertProfileView({
                   </svg>
                 )}
               </div>
-              <div className="min-w-0">
+              <div className={`min-w-0 flex-1 ${profileActions ? "sm:pr-28" : ""}`}>
                 <h1
                   className={`${styles.name} text-hero font-extrabold tracking-tight text-slate-900 sm:text-4xl`}
                 >
@@ -264,10 +279,15 @@ export function ExpertProfileView({
                 )}
               </div>
             </div>
+            {profileActions && (
+              <div className="relative z-10 mt-3 flex justify-end sm:absolute sm:bottom-4 sm:right-4 sm:mt-0">
+                {profileActions}
+              </div>
+            )}
           </div>
 
           {(expert.total_experience_years != null ||
-            certifiedCount > 0 ||
+            certifiedCount !== null ||
             expert.workplace_region) && (
             <dl
               aria-label="프로필 요약"
@@ -281,12 +301,17 @@ export function ExpertProfileView({
                     : "-"}
                 </dd>
               </div>
-              <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 border-l border-blue-100 px-2 py-4">
+              <div
+                title="현재 공개 중인 항목 중 관리자 점검을 통과한 내역 수"
+                className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 border-l border-blue-100 px-2 py-4"
+              >
                 <dt className="text-xs font-medium text-slate-500">
-                  자격/면허
+                  인증 경력
                 </dt>
                 <dd className="text-base font-bold tracking-tight text-primary sm:text-lg">
-                  {certifiedCount}개
+                  {certifiedCount === null
+                    ? "확인 필요"
+                    : `${certifiedCount}건`}
                 </dd>
               </div>
               <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 border-l border-blue-100 px-2 py-4">
@@ -360,6 +385,7 @@ export function ExpertProfileView({
         )}
 
         <ProfileOrderLayout
+          className={styles.document}
           order={order}
           onChange={onOrderChange}
           combineSimilarSections
@@ -383,30 +409,23 @@ export function ExpertProfileView({
           {expert.introduction && (
             <SectionCard data-order-key="introduction" title="소개">
               {renderItemActions?.("introduction", 0)}
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-600 sm:text-base">
+              <p className="whitespace-pre-wrap text-sm leading-6 text-slate-600 sm:text-base">
                 {expert.introduction}
+                <ProfileEvidencePublic
+                  review={itemReviews?.get("introduction:0")}
+                />
               </p>
             </SectionCard>
           )}
 
           {sortedExperiences.length > 0 && (
             <SectionCard data-order-key="experiences" title="경력">
-              <ul
-                className={
-                  onOrderChange
-                    ? "divide-y divide-slate-100"
-                    : "ml-1 space-y-4 border-l border-blue-100 pl-5"
-                }
-              >
+              <ul className="divide-y divide-slate-100">
                 {sortedExperiences.map((e, i) => (
                   <li
                     key={i}
                     data-order-key={JSON.stringify(e)}
-                    className={
-                      onOrderChange
-                        ? "py-3 first:pt-0 last:pb-0"
-                        : "relative before:absolute before:-left-6 before:top-1.5 before:size-2 before:rounded-full before:border-2 before:border-primary before:bg-white"
-                    }
+                    className="py-2 first:pt-0 last:pb-0"
                   >
                     {renderItemActions?.(
                       "experiences",
@@ -414,6 +433,11 @@ export function ExpertProfileView({
                     )}
                     <div className="text-base font-semibold text-slate-900">
                       {e.organization_name}
+                      <ProfileEvidencePublic
+                        review={itemReviews?.get(
+                          profileItemKey("experiences", e),
+                        )}
+                      />
                       {/* (전)/(현)은 is_current 기준 -- 항목별 기간 비공개로 날짜가
                           NULL이어도 그대로 표시한다(PR #54/#57과 동일 근거). */}
                       <span
@@ -426,17 +450,17 @@ export function ExpertProfileView({
                         {e.is_current ? "현" : "전"}
                       </span>
                     </div>
-                    {e.position && (
-                      <div className="mt-1 text-sm text-slate-500">
-                        {e.position}
-                      </div>
-                    )}
-                    {e.start_date && (
-                      <div className="mt-2 text-xs text-slate-500">
-                        {formatActivityPeriod(
-                          [e.start_date, e.is_current ? "현재" : e.end_date]
-                            .filter(Boolean)
-                            .join(" ~ "),
+                    {(e.position || e.start_date) && (
+                      <div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm text-slate-500">
+                        {e.position && <span>{e.position}</span>}
+                        {e.start_date && (
+                          <span className="text-xs">
+                            {formatActivityPeriod(
+                              [e.start_date, e.is_current ? "현재" : e.end_date]
+                                .filter(Boolean)
+                                .join(" ~ "),
+                            )}
+                          </span>
                         )}
                       </div>
                     )}
@@ -453,26 +477,33 @@ export function ExpertProfileView({
                   <li
                     key={i}
                     data-order-key={JSON.stringify(a)}
-                    className="py-3 first:pt-0 last:pb-0"
+                    className="py-2 first:pt-0 last:pb-0"
                   >
                     {renderItemActions?.("academic_records", i)}
                     <div className="text-base font-semibold text-slate-900">
                       {a.school_name}
                       {a.major ? ` · ${a.major}` : ""}
-                    </div>
-                    <div className="mt-1 text-sm text-slate-500">
-                      {ACADEMIC_LEVEL_LABELS[a.level] ?? a.level}
-                      {a.degree ? `(${a.degree})` : ""}
-                    </div>
-                    {(a.start_date || a.end_date) && (
-                      <div className="mt-2 text-xs text-slate-500">
-                        {formatActivityPeriod(
-                          [a.start_date, a.end_date]
-                            .filter(Boolean)
-                            .join(" ~ "),
+                      <ProfileEvidencePublic
+                        review={itemReviews?.get(
+                          profileItemKey("academic_records", a),
                         )}
-                      </div>
-                    )}
+                      />
+                    </div>
+                    <div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm text-slate-500">
+                      <span>
+                        {ACADEMIC_LEVEL_LABELS[a.level] ?? a.level}
+                        {a.degree ? `(${a.degree})` : ""}
+                      </span>
+                      {(a.start_date || a.end_date) && (
+                        <span className="text-xs">
+                          {formatActivityPeriod(
+                            [a.start_date, a.end_date]
+                              .filter(Boolean)
+                              .join(" ~ "),
+                          )}
+                        </span>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -486,14 +517,19 @@ export function ExpertProfileView({
                   <li
                     key={i}
                     data-order-key={JSON.stringify(e)}
-                    className="py-3 first:pt-0 last:pb-0"
+                    className="py-2 first:pt-0 last:pb-0"
                   >
                     {renderItemActions?.("educations", i)}
                     <div className="text-base font-semibold text-slate-900">
                       {e.education_name}
+                      <ProfileEvidencePublic
+                        review={itemReviews?.get(
+                          profileItemKey("educations", e),
+                        )}
+                      />
                     </div>
                     {e.organization_name && (
-                      <div className="mt-1 text-sm text-slate-500">
+                      <div className="mt-0.5 text-sm text-slate-500">
                         {e.organization_name}
                       </div>
                     )}
@@ -510,43 +546,25 @@ export function ExpertProfileView({
                   <li
                     key={i}
                     data-order-key={l.id || JSON.stringify(l)}
-                    className="flex items-start gap-3 py-3 first:pt-0 last:pb-0"
+                    className="flex items-start gap-3 py-2 first:pt-0 last:pb-0"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="inline-flex max-w-full items-center gap-1.5 text-base font-semibold text-slate-900">
                         <span className="min-w-0 break-words">
                           {l.license_name}
                         </span>
-                        {/* The public license source includes verified, public records only. */}
-                        <span
-                          role="img"
-                          aria-label="인증완료"
-                          tabIndex={0}
-                          className="group/certified relative inline-flex size-5 shrink-0 items-center justify-center rounded-sm text-primary outline-offset-2 focus-visible:outline-2 focus-visible:outline-primary"
-                        >
-                          <svg
-                            aria-hidden="true"
-                            width="16"
-                            height="16"
-                            viewBox="0 0 16 16"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="m3 8 3.2 3.2L13 4.5" />
-                          </svg>
-                          <span
-                            role="tooltip"
-                            className="pointer-events-none invisible absolute bottom-full left-1/2 z-30 mb-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-normal text-white opacity-0 transition-opacity group-hover/certified:visible group-hover/certified:opacity-100 group-focus-visible/certified:visible group-focus-visible/certified:opacity-100 motion-reduce:transition-none"
-                          >
-                            인증완료
-                          </span>
-                        </span>
+                        {itemReviews?.has(profileItemKey("licenses", l)) ? (
+                          <ProfileEvidencePublic
+                            review={itemReviews.get(
+                              profileItemKey("licenses", l),
+                            )}
+                          />
+                        ) : (
+                          <ProfileVerificationMark />
+                        )}
                       </div>
                       {l.issuing_organization && (
-                        <div className="mt-1 break-words text-sm text-slate-500">
+                        <div className="mt-0.5 break-words text-sm text-slate-500">
                           {l.issuing_organization}
                         </div>
                       )}
@@ -585,6 +603,9 @@ export function ExpertProfileView({
               {expert.workplace_center_name && (
                 <div className="text-base font-semibold text-slate-900">
                   {expert.workplace_center_name}
+                  <ProfileEvidencePublic
+                    review={itemReviews?.get("workplace:0")}
+                  />
                 </div>
               )}
               {expert.workplace_address && (

@@ -2,15 +2,21 @@ import type { ProfileActivity } from "@/lib/profile-versions/types";
 import { formatActivityPeriod } from "@/lib/activity-period";
 import { ProfileSectionCard } from "@/components/experts/ProfileSectionCard";
 import {
+  ProfileEvidencePublic,
+  type PublicItemReview,
+} from "@/components/ProfileEvidencePublic";
+import {
   publicActivity,
   hasPublicActivityContent,
 } from "@/lib/profile-versions/presentation";
 export function profileActivityCards({
   activities,
   renderItemActions,
+  itemReviews,
 }: {
   activities: ProfileActivity[];
   renderItemActions?: (id: string) => React.ReactNode;
+  itemReviews?: ReadonlyMap<string, PublicItemReview>;
 }) {
   activities = renderItemActions
     ? activities
@@ -30,6 +36,7 @@ export function profileActivityCards({
               .filter((a) => a.category === group)
               .map((a) => {
                 const shown = publicActivity(a);
+                const review = itemReviews?.get("damoa:" + a.id);
                 const subtitle = a.presentation
                   ? [shown.organizer, formatActivityPeriod(shown.period)]
                       .filter(Boolean)
@@ -42,36 +49,40 @@ export function profileActivityCards({
                   <article
                     key={a.id}
                     data-order-key={a.id}
-                    className="py-3 first:pt-0 last:pb-0"
+                    className="py-2 first:pt-0 last:pb-0"
                   >
                     {renderItemActions?.(a.id)}
                     {shown.title && (
                       <h3 className="text-base font-semibold text-slate-900">
                         {shown.title}
+                        <ProfileEvidencePublic review={review} />
                       </h3>
                     )}
+                    {!shown.title && <ProfileEvidencePublic review={review} />}
                     {subtitle && (
-                      <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
+                      <p className="mt-0.5 text-sm text-slate-500">
+                        {subtitle}
+                      </p>
                     )}
                     {shown.description &&
                       a.presentation?.description !== "expand" && (
-                        <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-600 sm:text-base">
+                        <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-600 sm:text-base">
                           {shown.description}
                         </p>
                       )}
                     {shown.description &&
                       a.presentation?.description === "expand" && (
-                        <details className="mt-2 text-sm text-slate-600">
+                        <details className="mt-1 text-sm text-slate-600">
                           <summary className="cursor-pointer text-primary">
                             설명 더보기
                           </summary>
-                          <p className="mt-2 whitespace-pre-wrap leading-relaxed sm:text-base">
+                          <p className="mt-1 whitespace-pre-wrap leading-6 sm:text-base">
                             {shown.description}
                           </p>
                         </details>
                       )}
                     {shown.learning && (
-                      <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-600 sm:text-base">
+                      <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-600 sm:text-base">
                         {shown.learning}
                       </p>
                     )}

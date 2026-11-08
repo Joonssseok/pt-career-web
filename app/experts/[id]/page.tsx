@@ -1,14 +1,16 @@
-import { ProfileEvidencePublic } from "@/components/ProfileEvidencePublic";
+import { publicItemReviews } from "@/lib/profile-evidence/public-reviews";
+import { publicReviewCount } from "@/lib/profile-evidence/public-review-count";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { getProfilePhotoUrl } from "@/lib/storage/profile-photo-url";
-import { ShareButton } from "./ShareButton";
+import { ProfileHeaderActions } from "./ShareButton";
 import {
   LIVE_PROFILE_PUBLISH_ENABLED,
   applyVersion,
   publicActivities,
+  profileItemKey,
   type Representative,
 } from "@/lib/profile-versions/types";
 import { profileActivityCards } from "@/components/ProfileActivitySections";
@@ -192,19 +194,46 @@ export default async function ExpertDetailPage({
       src: detailImageSrc(row.id),
     }),
   );
+  const activities = expert.representative
+    ? publicActivities(expert.representative.content)
+    : [];
+  const visibleKeys = new Set([
+    ...(expert.introduction ? ["introduction:0"] : []),
+    ...(expert.workplace_center_name ? ["workplace:0"] : []),
+    ...(
+      ["experiences", "academic_records", "educations", "licenses"] as const
+    ).flatMap((section) =>
+      expert[section].map((row) => profileItemKey(section, row)),
+    ),
+    ...activities.map((row) => "damoa:" + row.id),
+  ]);
+  const [itemReviews, verifiedCareerCount] = await Promise.all([
+    publicItemReviews(id, visibleKeys),
+    publicReviewCount(supabase, id),
+  ]);
 
   return (
     <main className="mx-auto min-h-screen max-w-4xl bg-white pb-10 pt-4 sm:pb-14 sm:pt-5">
       <div id="profile-details" className="scroll-mt-32">
         <ExpertProfileView
           stickySummary
+          profileActions={
+            <ProfileHeaderActions
+              profileId={expert.id}
+              displayName={expert.display_name}
+              headline={expert.headline}
+            />
+          }
           detailImages={detailImages}
           expert={expert}
+          itemReviews={itemReviews}
+          verifiedCareerCount={verifiedCareerCount}
           order={expert.representative?.content.order}
           activitySections={
             expert.representative
               ? profileActivityCards({
-                  activities: publicActivities(expert.representative.content),
+                  activities,
+                  itemReviews,
                 })
               : null
           }
@@ -218,14 +247,6 @@ export default async function ExpertDetailPage({
         />
       </div>
 
-      <ProfileEvidencePublic profileId={id} />
-      <div className="mt-5 border-t border-slate-100 pt-4 sm:mt-6 sm:pt-5">
-        <ShareButton
-          profileId={expert.id}
-          displayName={expert.display_name}
-          headline={expert.headline}
-        />
-      </div>
     </main>
   );
 }

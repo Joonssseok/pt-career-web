@@ -77,7 +77,9 @@ export function ProfileVersionManager({
   galleryImages = [],
   detailImagesState = { ok: true, images: [], revision: null },
   previewData,
+  publishedVerifiedCount = null,
 }: {
+  publishedVerifiedCount?: number | null;
   previewData?: {
     sources: Activity[];
     licenses: Awaited<
@@ -1014,6 +1016,9 @@ export function ProfileVersionManager({
                 </div>
               ) : (
                 <ProfileVisualReview
+                  verifiedCareerCount={
+                    selected?.is_representative ? publishedVerifiedCount : 0
+                  }
                   damoaFiles={damoaFiles}
                   publishAction={
                     <div className="space-y-3">

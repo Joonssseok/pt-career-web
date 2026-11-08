@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { AppFrame } from "@/components/AppFrame";
 import { HideOnHome } from "@/components/HideOnHome";
+import { AccountPinEnrollment } from "@/components/auth/AccountPinEnrollment";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -47,6 +48,7 @@ export default function RootLayout({
           <SiteFooter />
         </AppFrame>
         <SiteStatistics />
+        <AccountPinEnrollment />
       </body>
     </html>
   );

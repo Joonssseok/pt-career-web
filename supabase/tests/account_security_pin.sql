@@ -87,4 +87,3 @@ end $$;
 reset role;
 rollback;
 select 'account_pin_security_checks_passed_and_rolled_back' as result;
-

@@ -627,17 +627,18 @@ function GalleryCard({ images }: { images: GalleryImage[] }) {
   const preview = images.slice(0, 6);
 
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5">
-      <h2 className="mb-3 flex items-center gap-3 text-base font-bold tracking-tight text-slate-900">
-        <span aria-hidden className="h-4 w-0.5 rounded-full bg-primary" />
-        활동 갤러리
+    <SectionCard
+      data-order-key="gallery"
+      title="활동 갤러리"
+      action={
         <a
           href="#gallery-full"
-          className="ml-auto text-xs font-semibold text-blue-600"
+          className="text-xs font-semibold text-blue-600"
         >
           전체 보기
         </a>
-      </h2>
+      }
+    >
       <div className="grid grid-cols-3 gap-1.5">
         {preview.map((img) => (
           <div
@@ -661,6 +662,6 @@ function GalleryCard({ images }: { images: GalleryImage[] }) {
       >
         <GalleryFullScroll images={images} />
       </div>
-    </section>
+    </SectionCard>
   );
 }

@@ -3,6 +3,9 @@ export type ReviewFile = {
   name: string;
   href: string;
   blob?: Blob;
+  type?: string;
+  size?: number;
+  activityTitle?: string;
 };
 export type ReviewItem = {
   key: string;

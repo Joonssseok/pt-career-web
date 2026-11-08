@@ -9,17 +9,19 @@ import {
 import LoginForm from "../app/login/login-form";
 import SignUpForm from "../app/signup/signup-form";
 const signInWithPassword = jest.fn();
+const signInWithOAuth = jest.fn();
 const signUp = jest.fn();
 const beginPinEnrollment = jest.fn();
 const agreeToTerms = jest.fn();
 const push = jest.fn();
 const refresh = jest.fn();
+let loginSearch = "next=/my/profiles";
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ push, refresh }),
-  useSearchParams: () => new URLSearchParams("next=/my/profiles"),
+  useSearchParams: () => new URLSearchParams(loginSearch),
 }));
 jest.mock("../lib/supabase/client", () => ({
-  createClient: () => ({ auth: { signInWithPassword, signUp } }),
+  createClient: () => ({ auth: { signInWithPassword, signInWithOAuth, signUp } }),
 }));
 jest.mock("../app/actions/account-pin", () => ({
   beginPinEnrollment: () => beginPinEnrollment(),
@@ -29,6 +31,7 @@ jest.mock("../app/actions/terms", () => ({
 }));
 beforeEach(() => {
   jest.clearAllMocks();
+  loginSearch = "next=/my/profiles";
   beginPinEnrollment.mockResolvedValue({ ok: true });
 });
 afterEach(cleanup);
@@ -51,6 +54,30 @@ test("email login success starts enrollment before navigation", async () => {
     push.mock.invocationCallOrder[0],
   );
 });
+test.each(["", "next=https%3A%2F%2Foutside.invalid"])(
+  "email login without a valid return path lands on home: %s",
+  async (search) => {
+    loginSearch = search;
+    signInWithPassword.mockResolvedValue({ error: null });
+    render(<LoginForm />);
+    fillLogin();
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/home"));
+    expect(beginPinEnrollment).toHaveBeenCalledTimes(1);
+  },
+);
+test.each([["", "/home"], ["next=/my/profiles", "/my/profiles"]])(
+  "Google login uses the same safe destination as email: %s",
+  async (search, destination) => {
+    loginSearch = search;
+    signInWithOAuth.mockResolvedValue({ error: null });
+    render(<LoginForm />);
+    fireEvent.click(screen.getByRole("button", { name: "Google로 계속하기" }));
+    await waitFor(() => expect(signInWithOAuth).toHaveBeenCalledTimes(1));
+    const target = new URL(signInWithOAuth.mock.calls[0][0].options.redirectTo);
+    expect(target.pathname).toBe("/auth/callback");
+    expect(target.searchParams.get("next")).toBe(destination);
+  },
+);
 test("failed login never starts enrollment", async () => {
   signInWithPassword.mockResolvedValue({ error: { message: "fake-error" } });
   render(<LoginForm />);

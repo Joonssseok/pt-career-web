@@ -163,7 +163,6 @@ export function ProfileSharingTools({
           ) : (
             <Link href="/my/profiles" className={`mt-6 ${primaryClass}`}>프로필 관리로 이동</Link>
           )}
-          <p className="mt-5 text-caption text-slate-500">QR코드는 정식 도메인 연결 후 제공할 예정이에요.</p>
         </div>
       ) : (
         <>
@@ -185,7 +184,7 @@ export function ProfileSharingTools({
               <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" className="text-primary"><path d="m10 13 4-4M8 15l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0m2 12a4 4 0 0 0 6 0l4-4a4 4 0 0 0-6-6l-1 1" /></svg>
               링크 복사
             </button>
-            <button type="button" disabled aria-describedby="share-qr-note" className={actionClass}>
+            <button type="button" disabled className={actionClass}>
               <span aria-hidden="true" className="font-bold">QR</span>
               <span>QR코드 복사</span><span className="rounded bg-slate-200 px-2 text-micro">준비 중</span>
             </button>
@@ -194,7 +193,6 @@ export function ProfileSharingTools({
               {sharing ? '공유 메뉴 열림' : '카카오톡 공유'}
             </button>
           </div>
-          <p id="share-qr-note" className="mt-3 text-caption leading-relaxed text-slate-500">QR코드는 정식 도메인 연결 후 제공할 예정이에요.</p>
           <p className="mt-1 text-caption leading-relaxed text-slate-500">카카오톡은 기기의 공유 메뉴에서 직접 선택해주세요.</p>
 
           <section id="card" aria-labelledby="profile-card-title" className="mt-8 scroll-mt-28 border-t border-slate-200 pt-6">

@@ -23,7 +23,7 @@ export default function LoginForm() {
     setError('')
 
     try {
-      const redirectTo = `${window.location.origin}/auth/callback?next=/my`
+      const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextUrl)}`
 
       const { error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: 'google',

@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { getProfilePhotoUrl } from "@/lib/storage/profile-photo-url";
 import { CATEGORIES } from "@/lib/damoa/categories";
 import { AccountSidebar } from "@/components/AccountSidebar";
-import { ProfileVisibilityToggle } from "@/components/ProfileVisibilityToggle";
 import { ProfileSharingTools } from "@/components/ProfileSharingTools";
 import { MyDashboard, type MyDashboardData } from "./MyDashboard";
 import { DeletionBanner } from "./DeletionBanner";
@@ -160,11 +159,6 @@ export default async function MyPage() {
         )}
         <MyDashboard
           data={data}
-          visibility={
-            profile ? (
-              <ProfileVisibilityToggle initialVisible={profile.owner_visible} />
-            ) : null
-          }
           sharing={
             <ProfileSharingTools
               compact

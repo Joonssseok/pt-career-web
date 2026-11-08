@@ -70,6 +70,8 @@ export function reviewSubmissionPlan(
         publicIds,
         expected: previous?.updated_at ?? null,
         legacyVerified: !!legacyVerified,
+        verified:
+          !!legacyVerified || !!(unchanged && previous.status === "verified"),
         request:
           files.length > 0 &&
           !legacyVerified &&

@@ -7,6 +7,7 @@ import {
 import { profileActivityCards } from "@/components/ProfileActivitySections";
 import {
   connectedReviewFiles,
+  reviewSubmissionPlan,
   type ReviewAttachment,
 } from "@/lib/profile-versions/review-submission";
 import {
@@ -27,6 +28,8 @@ import {
   type ReviewFile,
   type ReviewItem,
 } from "@/lib/profile-versions/review-preview";
+import { ProfileReadOnlyPreview } from "./ProfileReadOnlyPreview";
+import type { PublicItemReview } from "@/components/ProfileEvidencePublic";
 export function ProfileVisualReview({
   expert,
   activities,
@@ -48,7 +51,11 @@ export function ProfileVisualReview({
   damoaFiles = [],
   activityRegion,
   verifiedCareerCount = null,
+  previewOpen = false,
+  onPreviewClose = () => {},
 }: {
+  previewOpen?: boolean;
+  onPreviewClose?: () => void;
   verifiedCareerCount?: number | null;
   activityRegion?: string;
   damoaFiles?: ReviewFile[];
@@ -119,6 +126,24 @@ export function ProfileVisualReview({
   const visible = (row: VisualItem) => choices[row.key]?.visible !== false;
   const active = records.filter(visible);
   const deleted = records.filter((row) => !visible(row));
+  const previewReviews = new Map<string, PublicItemReview>(
+    reviewSubmissionPlan(records, choices, evidence?.rows ?? [], attachments)
+      .filter((row) => row.verified)
+      .map((row) => {
+        const stored = evidence?.rows.find((item) => item.item_key === row.key);
+        return [
+          row.key,
+          {
+            id: stored?.id ?? "legacy",
+            files: stored
+              ? row.files
+                  .filter((file) => row.publicIds.includes(file.id))
+                  .map(({ id, name }) => ({ id, name }))
+              : [],
+          },
+        ];
+      }),
+  );
   const reviewRows = [
     ...active.filter((row) => !!row.reviewStatus),
     ...items.filter(
@@ -420,6 +445,21 @@ export function ProfileVisualReview({
   }
   return (
     <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_250px]">
+      {shownExpert && (
+        <ProfileReadOnlyPreview
+          open={previewOpen}
+          onClose={onPreviewClose}
+          expert={shownExpert}
+          activities={activities.filter(
+            (row) => choices["damoa:" + row.id]?.visible !== false,
+          )}
+          itemReviews={previewReviews}
+          verifiedCareerCount={verifiedCareerCount}
+          order={order}
+          galleryImages={galleryImages}
+          detailImages={detailImages}
+        />
+      )}
       <div className="min-w-0" aria-label="공개 프로필 편집 미리보기">
         {shownExpert ? (
           <ExpertProfileView

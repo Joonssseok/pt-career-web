@@ -50,16 +50,11 @@ function shortDate(value: string) {
 
 export function MyDashboard({
   data,
-  visibility,
   sharing,
 }: {
   data: MyDashboardData;
-  visibility?: ReactNode;
   sharing: ReactNode;
 }) {
-  const representative = data.versions.find(
-    (version) => version.representative,
-  );
   const metrics = [
     {
       label: "내 프로필",
@@ -253,46 +248,6 @@ export function MyDashboard({
                 <Link href="/my/personal">내정보 수정</Link>
               </div>
             </div>
-            <div className={styles.publicState}>
-              <span>현재 프로필</span>
-              <span
-                className={
-                  data.canShare ? styles.blueLabel : styles.neutralLabel
-                }
-              >
-                {data.availabilityError
-                  ? "확인 필요"
-                  : data.canShare
-                    ? "공개 중"
-                    : "비공개"}
-              </span>
-            </div>
-            <strong className={styles.representativeTitle}>
-              {representative?.title ||
-                (data.profileId
-                  ? "대표 프로필을 선택해주세요."
-                  : "아직 프로필이 없어요.")}
-            </strong>
-            {data.headline && (
-              <p className={styles.headline}>{data.headline}</p>
-            )}
-            {visibility && (
-              <div className={styles.visibility}>
-                <span>프로필 전체 공개</span>
-                {visibility}
-              </div>
-            )}
-            <Link
-              href={
-                data.canShare && data.profileId
-                  ? `/experts/${data.profileId}`
-                  : "/my/profiles"
-              }
-              className={styles.outlineButton}
-            >
-              {data.canShare ? "공개 프로필 보기" : "프로필 관리로 이동"}
-              <span aria-hidden="true">↗</span>
-            </Link>
           </section>
 
           <section

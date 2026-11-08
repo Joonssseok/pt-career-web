@@ -237,13 +237,9 @@ export function ProfileOrderLayout({
             );
       const element = cloneElement(node, { key: node.key ?? i }, nested);
       if (!key) return element;
-      if (
-        !onChange ||
-        key === "specialties" ||
-        group === "specialties" ||
-        movableKeys.length < 2
-      )
+      if (!onChange || key === "specialties" || group === "specialties")
         return element;
+      const canMove = movableKeys.length >= 2;
       const label =
         typeof (node.props as { title?: string }).title === "string"
           ? (node.props as { title?: string }).title!
@@ -276,12 +272,12 @@ export function ProfileOrderLayout({
             key: node.key ?? i,
             className: attrs.className + " " + (node.props.className || ""),
           },
-          handle(group, key, movableKeys, label),
+          canMove ? handle(group, key, movableKeys, label) : null,
           nested,
         );
       return (
         <div {...attrs} key={key}>
-          {handle(group, key, movableKeys, label)}
+          {canMove && handle(group, key, movableKeys, label)}
           {element}
         </div>
       );

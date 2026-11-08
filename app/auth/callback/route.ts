@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { validateRedirectUrl } from '@/lib/auth/safe-redirect'
+import { startPinEnrollment } from '@/lib/auth/pin-enrollment'
 
 const ERROR_CODE_MAP: Record<string, string> = {
   invalid_code: 'missing_code',
@@ -53,9 +54,16 @@ export async function GET(request: NextRequest) {
       redirectUrl = nextUrl
     }
 
+    if (redirectUrl !== '/my/pin-reset' && redirectUrl !== '/reset-password') {
+      const started = await startPinEnrollment(supabase)
+      if (!started) {
+        return NextResponse.redirect(new URL('/login?error=server_error', request.url))
+      }
+    }
+
     return NextResponse.redirect(new URL(redirectUrl, request.url))
   } catch (err) {
-    console.error('[AUTH_CALLBACK] threw:', err)
+    console.error('[AUTH_CALLBACK] Error category: CALLBACK_FAILED')
     return NextResponse.redirect(
       new URL('/login?error=server_error', request.url)
     )

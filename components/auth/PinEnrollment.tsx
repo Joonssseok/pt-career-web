@@ -15,41 +15,15 @@ export function PinEnrollment({ initial }: { initial: Result }) {
   const pathname = usePathname();
   const router = useRouter();
   const exempt =
-    pathname === "/reset-password" || pathname === "/forgot-password";
+    pathname === "/reset-password" ||
+    pathname === "/forgot-password" ||
+    pathname === "/my/pin-reset";
   const required =
     result.signedIn && (!result.state || !result.state.configured) && !exempt;
 
   useEffect(() => {
     setResult(initial);
   }, [initial]);
-  useEffect(() => {
-    const {
-      data: { subscription },
-    } = createClient().auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_OUT")
-        setResult({ signedIn: false, state: null, error: "" });
-      if (event === "SIGNED_IN") {
-        setResult({
-          signedIn: true,
-          state: null,
-          error: "PIN 설정 여부를 확인하고 있습니다.",
-        });
-        // Leave the Auth callback before making another authenticated request.
-        void Promise.resolve().then(async () => {
-          try {
-            setResult(await getAccountPinState());
-          } catch {
-            setResult({
-              signedIn: true,
-              state: null,
-              error: accountPinError(null),
-            });
-          }
-        });
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
   useEffect(() => {
     if (required && !dialog.current?.open) dialog.current?.showModal();
     if (!required && dialog.current?.open) dialog.current.close();

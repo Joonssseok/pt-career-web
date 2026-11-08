@@ -9,12 +9,14 @@ import {
 import { PinSetupForm } from "../components/auth/PinSetupForm";
 import { PersonalPinGate } from "../app/my/personal/PersonalPinGate";
 import { PinEnrollment } from "../components/auth/PinEnrollment";
+import { AccountPinEnrollment } from "../components/auth/AccountPinEnrollment";
+import { PinRecovery } from "../app/my/pin-reset/PinRecovery";
 const saveAccountPin = jest.fn();
 const confirmAccountPin = jest.fn();
 const getAccountPinState = jest.fn();
+const requestPinRecovery = jest.fn();
 const refresh = jest.fn();
-const unsubscribe = jest.fn();
-let eventCallback: (event: string) => void;
+const pinEnrollmentPending = jest.fn();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ refresh }),
   usePathname: () => "/my",
@@ -23,16 +25,14 @@ jest.mock("../app/actions/account-pin", () => ({
   saveAccountPin: (...args: unknown[]) => saveAccountPin(...args),
   confirmAccountPin: (...args: unknown[]) => confirmAccountPin(...args),
   getAccountPinState: () => getAccountPinState(),
+  requestPinRecovery: () => requestPinRecovery(),
 }));
 jest.mock("../lib/supabase/client", () => ({
-  createClient: () => ({
-    auth: {
-      onAuthStateChange: (fn: typeof eventCallback) => {
-        eventCallback = fn;
-        return { data: { subscription: { unsubscribe } } };
-      },
-    },
-  }),
+  createClient: () => ({ auth: {} }),
+}));
+jest.mock("../lib/supabase/server", () => ({ createClient: async () => ({}) }));
+jest.mock("../lib/auth/pin-enrollment", () => ({
+  pinEnrollmentPending: () => pinEnrollmentPending(),
 }));
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () {
@@ -80,17 +80,19 @@ test("Google and email member both enroll; Escape cannot dismiss mandatory modal
   fireEvent(dialog, new Event("close"));
   expect(dialog.hasAttribute("open")).toBe(true);
 });
-test("new login without PIN opens popup even when root layout was mounted signed out", async () => {
+test("existing signed-in member without fresh-login marker never gets an automatic popup", async () => {
+  pinEnrollmentPending.mockResolvedValue(false);
+  expect(await AccountPinEnrollment()).toBeNull();
+  expect(getAccountPinState).not.toHaveBeenCalled();
+});
+test("fresh login without PIN opens popup through server marker, independent of SDK focus events", async () => {
+  pinEnrollmentPending.mockResolvedValue(true);
   getAccountPinState.mockResolvedValue({
     signedIn: true,
     state: { configured: false, verified: false, recovery_allowed: false },
     error: "",
   });
-  render(
-    <PinEnrollment initial={{ signedIn: false, state: null, error: "" }} />,
-  );
-  expect(screen.queryByRole("dialog")).toBeNull();
-  eventCallback("SIGNED_IN");
+  render((await AccountPinEnrollment())!);
   await waitFor(() => expect(screen.getByRole("dialog")).toBeTruthy());
 });
 test("configured member is not forced to enroll; personal PIN uses verify action", async () => {
@@ -112,4 +114,19 @@ test("configured member is not forced to enroll; personal PIN uses verify action
   fireEvent.click(screen.getByRole("button", { name: "PIN 확인" }));
   await waitFor(() => expect(refresh).toHaveBeenCalled());
   expect(confirmAccountPin).toHaveBeenCalledWith("012345");
+});
+
+test("recovery acknowledges the request with masked destination, not mailbox delivery", async () => {
+  requestPinRecovery.mockResolvedValue({
+    ok: true,
+    error: "",
+    recipient: "pi***@example.invalid",
+  });
+  render(<PinRecovery allowed={false} />);
+  fireEvent.click(screen.getByRole("button", { name: "확인 링크 받기" }));
+  const status = await screen.findByRole("status");
+  expect(status.textContent).toContain("pi***@example.invalid");
+  expect(status.textContent).toContain("발송을 요청했습니다");
+  expect(status.textContent).not.toContain("보냈습니다");
+  expect(screen.getByRole("button", { name: "확인 링크 받기" })).toHaveProperty("disabled", true);
 });

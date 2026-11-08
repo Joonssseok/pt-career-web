@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { agreeToTerms } from '@/app/actions/terms'
+import { beginPinEnrollment } from '@/app/actions/account-pin'
 import Link from 'next/link'
 
 export default function SignUpForm() {
@@ -92,6 +93,11 @@ export default function SignUpForm() {
         // agreeToTerms() gate (PR #24) catches it after the user confirms.
         if (signUpData.session) {
           await agreeToTerms()
+          const enrollment = await beginPinEnrollment()
+          if (!enrollment.ok) {
+            setError(enrollment.error)
+            return
+          }
           router.push('/my')
           router.refresh()
           return

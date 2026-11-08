@@ -19,7 +19,7 @@ export function PinRecovery({ allowed }: { allowed: boolean }) {
       const result = await requestPinRecovery();
       if (result.ok)
         setMessage(
-          "가입 이메일로 확인 링크를 보냈습니다. 이 브라우저에서 링크를 열고 10분 안에 새 PIN을 설정해주세요.",
+          `${result.recipient ? `${result.recipient}로 ` : "가입 이메일로 "}확인 메일 발송을 요청했습니다. 메일이 도착하면 이 브라우저에서 링크를 열고 10분 안에 새 PIN을 설정해주세요.`,
         );
       else setError(result.error);
     } catch {
@@ -68,6 +68,7 @@ export function PinRecovery({ allowed }: { allowed: boolean }) {
         <p className="mt-4 text-xs leading-6 text-slate-400">
           확인 메일 제목에 ‘비밀번호 재설정’이 표시될 수 있습니다. 여기서는
           PIN만 바꾸며 로그인 비밀번호는 변경하지 않습니다.
+          {message && " 메일이 보이지 않으면 위 수신 주소와 스팸함을 확인해주세요."}
         </p>
       )}
     </section>

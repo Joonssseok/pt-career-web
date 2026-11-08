@@ -4,10 +4,33 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import {
+  startPinEnrollment,
+  clearPinEnrollment,
+} from "@/lib/auth/pin-enrollment";
+import {
   accountPinError,
   isAccountPin,
+  maskAccountEmail,
   parseAccountPinState,
 } from "@/lib/auth/account-pin";
+
+export async function beginPinEnrollment() {
+  try {
+    const ok = await startPinEnrollment(await createClient());
+    if (ok) revalidatePath("/", "layout");
+    return {
+      ok,
+      error: ok
+        ? ""
+        : "로그인 상태를 확인하지 못했습니다. 다시 로그인해주세요.",
+    };
+  } catch {
+    return {
+      ok: false,
+      error: "로그인 확인을 마무리하지 못했습니다. 다시 시도해주세요.",
+    };
+  }
+}
 
 export async function getAccountPinState() {
   let signedIn = false;
@@ -43,6 +66,7 @@ export async function saveAccountPin(
     });
     if (error || data !== "ok")
       return { ok: false, error: accountPinError(error ? null : data) };
+    await clearPinEnrollment();
     revalidatePath("/", "layout");
     return { ok: true, error: "" };
   } catch {
@@ -86,7 +110,7 @@ export async function requestPinRecovery() {
           ok: false,
           error: "메일을 보내지 못했습니다. 잠시 후 다시 요청해주세요.",
         }
-      : { ok: true, error: "" };
+      : { ok: true, error: "", recipient: maskAccountEmail(user.email) };
   } catch {
     return {
       ok: false,

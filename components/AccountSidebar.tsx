@@ -6,7 +6,9 @@ import { ProfileVersionLinks } from "@/components/ProfileVersionLinks";
 import { AccountMenu, AccountMenuSection } from "@/components/AccountMenu";
 import { AccountMobileDrawer } from "@/components/AccountMobileDrawer";
 
-export async function AccountSidebar() {
+export async function AccountSidebar({
+  compact = false,
+}: { compact?: boolean } = {}) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -37,12 +39,20 @@ export async function AccountSidebar() {
       <Link href="/my" className="block px-3 text-lg font-bold text-slate-950">
         마이페이지
       </Link>
-      <Link
-        href="/my/personal"
-        className="flex min-h-12 items-center rounded-xl px-3 text-sm font-bold text-slate-950 hover:bg-blue-50 hover:text-primary"
-      >
-        내정보 수정
-      </Link>
+      <AccountMenuSection id="account" title="계정 관리">
+        <Link href="/my/personal" className={linkClass}>
+          내정보 수정
+        </Link>
+        <Link href="/my/account" className={linkClass}>
+          로그인 정보·연락처
+        </Link>
+        <Link href="/my/terms" className={linkClass}>
+          약관내역
+        </Link>
+        <Link href="/my/delete-account" className={linkClass}>
+          회원탈퇴
+        </Link>
+      </AccountMenuSection>
       <AccountMenuSection id="damoa" title="내활동 다모아">
         <a href="/my/damoa#records" className={linkClass}>
           활동 기록
@@ -66,25 +76,21 @@ export async function AccountSidebar() {
         href="/my#share"
         className="block px-3 py-2 text-sm font-bold text-slate-950 hover:text-primary"
       >
-        공유 설정
+        공유 관리
       </Link>
-      <AccountMenuSection id="account" title="계정 설정">
-        <Link href="/my/account" className={linkClass}>
-          로그인 정보·연락처
-        </Link>
-        <Link href="/my/terms" className={linkClass}>
-          약관 동의
-        </Link>
-        <Link href="/my/delete-account" className={linkClass}>
-          회원 탈퇴
-        </Link>
-      </AccountMenuSection>
-      <Link href="/my/feedback" className="flex min-h-12 items-center rounded-xl px-3 text-sm font-bold text-slate-950 hover:bg-blue-50 hover:text-primary">제안·신고</Link>
+      <Link
+        href="/my/feedback"
+        className="flex min-h-12 items-center rounded-xl px-3 text-sm font-bold text-slate-950 hover:bg-blue-50 hover:text-primary"
+      >
+        제안·신고
+      </Link>
     </AccountMenu>
   );
   return (
     <>
-      <aside className="hidden w-64 shrink-0 border-r border-slate-100 bg-white md:block">
+      <aside
+        className={`hidden shrink-0 border-r border-slate-100 bg-white md:block ${compact ? "w-52" : "w-64"}`}
+      >
         <div className="sticky top-24 max-h-[calc(100vh-6rem)] overflow-y-auto px-3 py-8">
           {menu}
         </div>

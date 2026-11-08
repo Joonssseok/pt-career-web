@@ -35,7 +35,7 @@ export default async function MyPage() {
       <div className="flex-1 min-w-0 max-w-2xl mx-auto px-4 py-8 w-full">
         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 space-y-6">
           <div>
-            <h1 className="text-page-title font-bold text-gray-900">계정 설정</h1>
+            <h1 className="text-page-title font-bold text-gray-900">로그인 정보·연락처</h1>
             <p className="text-xs text-gray-400 mt-1">
               가입일 {new Date(user.created_at).toLocaleDateString('ko-KR')}
             </p>

@@ -26,5 +26,5 @@ export function ProfileVisibilityToggle({ initialVisible }: { initialVisible: bo
     setPending(false);
   };
 
-  return <VisibilityToggle visible={visible} onToggle={handleToggle} pending={pending} />;
+  return <VisibilityToggle visible={visible} onToggle={handleToggle} pending={pending} showLabel={false} />;
 }

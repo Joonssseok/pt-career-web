@@ -8,11 +8,13 @@ export function VisibilityToggle({
   onToggle,
   disabled = false,
   pending = false,
+  showLabel = true,
 }: {
   visible: boolean;
   onToggle: () => void;
   disabled?: boolean;
   pending?: boolean;
+  showLabel?: boolean;
 }) {
   // 마스터 토글이 꺼져 있으면(disabled) 저장된 실제 값(visible)과 무관하게
   // 항상 "비공개"로 표시한다 — 실제로 공개 프로필에서 안 보이는 상태와
@@ -23,11 +25,13 @@ export function VisibilityToggle({
 
   return (
     <span className="inline-flex items-center gap-2 flex-shrink-0">
-      <span
-        className={`text-xs font-medium whitespace-nowrap ${displayVisible ? 'text-green-700' : 'text-gray-500'}`}
-      >
-        {label}
-      </span>
+      {showLabel && (
+        <span
+          className={`text-xs font-medium whitespace-nowrap ${displayVisible ? 'text-green-700' : 'text-gray-500'}`}
+        >
+          {label}
+        </span>
+      )}
       <button
         type="button"
         role="switch"

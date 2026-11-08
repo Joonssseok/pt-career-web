@@ -1,10 +1,12 @@
 import { LIVE_PROFILE_PUBLISH_ENABLED } from "@/lib/profile-versions/types";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getProfilePhotoUrl } from "@/lib/storage/profile-photo-url";
+import { CATEGORIES } from "@/lib/damoa/categories";
 import { AccountSidebar } from "@/components/AccountSidebar";
 import { ProfileVisibilityToggle } from "@/components/ProfileVisibilityToggle";
 import { ProfileSharingTools } from "@/components/ProfileSharingTools";
+import { MyDashboard, type MyDashboardData } from "./MyDashboard";
 import { DeletionBanner } from "./DeletionBanner";
 import { SuspensionBanner } from "./SuspensionBanner";
 
@@ -14,15 +16,60 @@ export default async function MyPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/my");
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select(
-      "id, display_name, headline, verification_status, owner_visible, is_public, deletion_requested_at, suspended_at, suspension_reason",
-    )
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (error)
+
+  const [
+    profileResult,
+    versionsResult,
+    activitiesResult,
+    filesResult,
+    pendingResult,
+    reviewsResult,
+  ] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select(
+        "id,display_name,headline,profile_image_path,verification_status,owner_visible,is_public,deletion_requested_at,suspended_at,suspension_reason",
+      )
+      .eq("user_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("profile_versions")
+      .select("id,title,is_representative,updated_at", { count: "exact" })
+      .eq("owner_id", user.id)
+      .order("is_representative", { ascending: false })
+      .order("updated_at", { ascending: false })
+      .limit(3),
+    supabase
+      .from("damoa_activities")
+      .select(
+        "id,title:content->>title,category:content->>category,updated_at",
+        { count: "exact" },
+      )
+      .eq("owner", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(3),
+    supabase
+      .from("damoa_files")
+      .select("id", { count: "exact", head: true })
+      .eq("owner", user.id)
+      .eq("ready", true)
+      .eq("deleting", false),
+    supabase
+      .from("profile_item_reviews")
+      .select("id", { count: "exact", head: true })
+      .eq("owner_id", user.id)
+      .eq("status", "pending"),
+    supabase
+      .from("profile_item_reviews")
+      .select("id,title,status,version_id")
+      .eq("owner_id", user.id)
+      .in("status", ["pending", "verified", "rejected"])
+      .order("updated_at", { ascending: false })
+      .limit(3),
+  ]);
+  if (profileResult.error)
     throw new Error("프로필을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+  const profile = profileResult.data;
   const canShare =
     !!profile &&
     profile.verification_status === "approved" &&
@@ -30,118 +77,109 @@ export default async function MyPage() {
     profile.is_public &&
     !profile.suspended_at &&
     !profile.deletion_requested_at;
-  const { data: representativeRows, error: representativeError } =
+
+  const [
+    { data: representativeRows, error: representativeError },
+    { data: publishedVersion, error: publishedError },
+  ] = await Promise.all([
     profile && LIVE_PROFILE_PUBLISH_ENABLED
-      ? await supabase.rpc("get_representative_profiles", {
+      ? supabase.rpc("get_representative_profiles", {
           p_profile_ids: [profile.id],
         })
-      : { data: null, error: null };
+      : Promise.resolve({ data: null, error: null }),
+    profile
+      ? supabase
+          .from("profile_versions")
+          .select("published_at")
+          .eq("owner_id", user.id)
+          .eq("profile_id", profile.id)
+          .not("published_at", "is", null)
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
   const representative = representativeRows?.[0];
-  const { data: publishedVersion, error: publishedError } = profile
-    ? await supabase.from("profile_versions").select("published_at")
-        .eq("profile_id", profile.id).not("published_at", "is", null)
-        .limit(1).maybeSingle()
-    : { data: null, error: null };
+  const name = profile?.display_name || "회원";
+  const headline = representative?.content.headline ?? profile?.headline ?? "";
+  const published = !!publishedVersion?.published_at;
+  const availabilityError = !!publishedError || !!representativeError;
+  const data: MyDashboardData = {
+    name,
+    headline,
+    photoUrl: getProfilePhotoUrl(profile?.profile_image_path ?? null),
+    profileId: profile?.id ?? null,
+    canShare: !!canShare && !availabilityError,
+    published,
+    availabilityError,
+    versions: (versionsResult.error ? [] : (versionsResult.data ?? [])).map(
+      (version) => ({
+        id: version.id,
+        title: version.title,
+        representative: version.is_representative,
+        updatedAt: version.updated_at,
+      }),
+    ),
+    versionCount: versionsResult.error ? null : versionsResult.count,
+    activities: (activitiesResult.error
+      ? []
+      : (activitiesResult.data ?? [])
+    ).map((activity) => ({
+      id: activity.id,
+      title: activity.title || "활동 기록",
+      updatedAt: activity.updated_at,
+      category:
+        CATEGORIES.find((category) => category.id === activity.category)?.name ||
+        "기타 활동",
+    })),
+    activityCount: activitiesResult.error ? null : activitiesResult.count,
+    fileCount: filesResult.error ? null : filesResult.count,
+    pendingCount: pendingResult.error ? null : pendingResult.count,
+    reviews: (reviewsResult.error ? [] : (reviewsResult.data ?? [])).map(
+      (review) => ({
+        id: review.id,
+        title: review.title,
+        status: review.status,
+        versionId: review.version_id,
+      }),
+    ),
+    activityError: !!activitiesResult.error,
+    reviewError: !!reviewsResult.error,
+  };
   return (
     <div className="flex min-h-screen flex-col bg-white md:flex-row">
-      <AccountSidebar />
-      <main className="min-w-0 flex-1 px-4 py-8 sm:px-8 sm:py-12">
-        <div className="mx-auto max-w-3xl space-y-6">
-          <header className="mb-8">
-            <p className="text-sm font-semibold text-primary">MY PT CAREER</p>
-            <h1 className="mt-2 text-page-title font-bold tracking-tight text-slate-950">
-              마이페이지
-            </h1>
-            <p className="mt-3 text-sm leading-relaxed text-slate-500">
-              내 전문성을 정리하고, 프로필과 명함으로 연결하세요.
-            </p>
-          </header>
-          {profile?.suspended_at && (
-            <SuspensionBanner
-              suspendedAt={profile.suspended_at}
-              suspensionReason={profile.suspension_reason}
-            />
-          )}
-          {profile?.deletion_requested_at && (
-            <DeletionBanner
-              deletionRequestedAt={profile.deletion_requested_at}
-            />
-          )}
-          <section
-            id="profile"
-            className="scroll-mt-28 rounded-2xl border border-blue-100 bg-linear-to-br from-blue-50/70 to-white p-6 sm:p-8"
-          >
-            <h2 className="text-lg font-bold text-slate-950">프로필 관리</h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-500">
-              {profile
-                ? `${profile.display_name || "내 프로필"}의 소개와 전문 이력을 관리하세요.`
-                : "첫 프로필을 만들고 경력과 자격을 소개하세요."}
-            </p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                href="/my/profiles"
-                className="inline-flex min-h-12 items-center rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                {profile ? "프로필 관리·새로 만들기" : "프로필 생성"}
-              </Link>
-              {canShare && (
-                <Link
-                  href={`/experts/${profile.id}`}
-                  className="inline-flex min-h-12 items-center rounded-xl border border-blue-200 bg-white px-5 text-sm font-semibold text-primary"
-                >
-                  프로필 미리보기
-                </Link>
-              )}
-              {profile && (
-                <a
-                  href="/api/resume"
-                  className="inline-flex min-h-12 items-center px-3 text-sm text-slate-600"
-                >
-                  이력서 다운로드
-                </a>
-              )}
-            </div>
-            {profile && (
-              <div className="mt-5 flex items-center gap-4 text-sm text-slate-600">
-                <span>프로필 전체 공개</span>
-                <ProfileVisibilityToggle
-                  initialVisible={profile.owner_visible}
-                />
-              </div>
-            )}
-            {!canShare && profile && (
-              <p className="mt-3 text-xs leading-relaxed text-slate-500">
-                공개 승인 및 공개 설정 후 프로필 미리보기와 공유를 이용할 수
-                있습니다.
-              </p>
-            )}
-          </section>
-          <ProfileSharingTools
-            profileId={canShare ? profile!.id : null}
-            published={!!publishedVersion?.published_at}
-            availabilityError={!!publishedError || !!representativeError}
-            displayName={representative?.expert.display_name ?? profile?.display_name ?? ""}
-            headline={
-              representative?.content.headline ?? profile?.headline ?? ""
-            }
+      <AccountSidebar compact />
+      <main className="min-w-0 flex-1 px-0 py-6 md:px-5 lg:py-8">
+        {profile?.suspended_at && (
+          <SuspensionBanner
+            suspendedAt={profile.suspended_at}
+            suspensionReason={profile.suspension_reason}
           />
-          <section id="feedback" className="scroll-mt-28 rounded-2xl border border-slate-200 p-6 sm:p-8"><h2 className="text-lg font-bold text-slate-950">제안·신고</h2><p className="mt-2 text-sm leading-relaxed text-slate-500">서비스에 의견을 보내고 접수 내역을 확인하세요.</p><Link href="/my/feedback" className="mt-4 inline-flex min-h-12 items-center text-sm font-semibold text-primary">제안·신고로 이동 →</Link></section>
-          <section
-            id="account"
-            className="scroll-mt-28 rounded-2xl border border-slate-200 p-6 sm:p-8"
-          >
-            <h2 className="text-lg font-bold text-slate-950">계정 설정</h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-500">
-              로그인 정보와 계정 연락처, 약관 동의를 관리하세요.
-            </p>
-            <Link
-              href="/my/account"
-              className="mt-4 inline-flex min-h-12 items-center text-sm font-semibold text-primary"
-            >
-              계정 설정으로 이동 →
-            </Link>
-          </section>
-        </div>
+        )}
+        {profile?.deletion_requested_at && (
+          <DeletionBanner deletionRequestedAt={profile.deletion_requested_at} />
+        )}
+        <MyDashboard
+          data={data}
+          visibility={
+            profile ? (
+              <ProfileVisibilityToggle initialVisible={profile.owner_visible} />
+            ) : null
+          }
+          sharing={
+            <ProfileSharingTools
+              compact
+              profileId={canShare ? profile!.id : null}
+              published={published}
+              availabilityError={availabilityError}
+              displayName={
+                representative?.expert.display_name ??
+                profile?.display_name ??
+                ""
+              }
+              headline={headline}
+            />
+          }
+        />
       </main>
     </div>
   );

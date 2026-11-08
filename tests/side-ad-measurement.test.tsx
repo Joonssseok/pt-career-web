@@ -31,13 +31,11 @@ beforeEach(() => {
   jest.useFakeTimers();
   jest.clearAllMocks();
   path = "/home";
-  global.matchMedia = jest
-    .fn()
-    .mockReturnValue({
-      matches: true,
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-    });
+  global.matchMedia = jest.fn().mockReturnValue({
+    matches: true,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  });
   global.fetch = jest
     .fn()
     .mockResolvedValue({ ok: true, json: async () => [ad] });
@@ -71,11 +69,46 @@ test("empty campaigns keep white slots without links or tracking", async () => {
   expect(screen.queryByRole("link")).not.toBeInTheDocument();
   expect(trackEvent).not.toHaveBeenCalled();
 });
-test("advertisements are absent from private pages", () => {
-  path = "/my";
-  render(<SideAdSlots />);
-  expect(fetch).not.toHaveBeenCalled();
+test.each([
+  "/",
+  "/home",
+  "/experts",
+  "/experts/example",
+  "/my",
+  "/my/profiles",
+  "/login",
+  "/admin",
+  "/feedback",
+  "/privacy",
+])(
+  "active advertisements appear on %s without sending the page address to the image host",
+  async (route) => {
+    path = route;
+    await act(async () => {
+      render(<SideAdSlots />);
+    });
+    expect(
+      screen.getByRole("link", { name: "광고: 광고 예시" }),
+    ).toHaveAttribute("rel", "sponsored noopener noreferrer");
+    expect(screen.getByRole("img")).toHaveAttribute(
+      "referrerpolicy",
+      "no-referrer",
+    );
+  },
+);
+
+test("narrow screens do not load banner images or record exposure", async () => {
+  (matchMedia as jest.Mock).mockReturnValue({
+    matches: false,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  });
+  await act(async () => {
+    render(<SideAdSlots />);
+  });
+  expect(screen.queryByRole("img")).not.toBeInTheDocument();
   expect(screen.queryByRole("link")).not.toBeInTheDocument();
+  expect(trackEvent).not.toHaveBeenCalled();
 });
 test("counts only loaded banners visible at least 50% for one continuous second", async () => {
   await show();

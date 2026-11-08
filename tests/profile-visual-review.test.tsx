@@ -124,6 +124,9 @@ test("public view has no editing buttons, preview removes the intended sorted ro
     <ExpertProfileView expert={expert} galleryImages={[]} />,
   );
   expect(screen.queryByRole("button", { name: /항목 삭제/ })).toBeNull();
+  expect(
+    screen.queryByRole("button", { name: /증빙자료 \d+개 미리보기/ }),
+  ).toBeNull();
   normal.unmount();
   render(<Preview />);
   fireEvent.click(screen.getByRole("button", { name: "현재 기관 항목 삭제" }));
@@ -156,31 +159,28 @@ test("public view has no editing buttons, preview removes the intended sorted ro
     within(canvas).getByRole("button", { name: "현재 기관 항목 삭제" }),
   ).toBeTruthy();
 });
-test("plus opens details and selecting Damoa evidence in the dialog adds it to the right sidebar only", () => {
+test("imported activity evidence is connected automatically and can be excluded", () => {
   render(<Preview />);
-  fireEvent.click(screen.getByRole("button", { name: "운동 봉사 세부항목" }));
+  expect(screen.getByText("증빙자료 1개")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /소개 증빙자료/ })).toBeNull();
+  fireEvent.click(
+    screen.getByRole("button", { name: "운동 봉사 증빙자료 1개 미리보기" }),
+  );
+  const modal = screen.getByRole("dialog", { name: "증빙자료 확인" });
+  const checkbox = within(modal).getByRole("checkbox", { name: "확인서.pdf" });
+  expect(checkbox).toHaveProperty("checked", true);
+  fireEvent.click(checkbox);
+  fireEvent.click(within(modal).getByRole("button", { name: "반영" }));
+  expect(screen.getByText("증빙자료 0개")).toBeTruthy();
   expect(
-    (
-      screen.getByRole("button", {
-        name: "수정",
-      }) as HTMLButtonElement
-    ).disabled,
-  ).toBe(true);
-  expect(screen.queryByRole("button", { name: /순서 변경/ })).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "증빙자료 첨부" }));
-  const modal = screen.getByRole("dialog", { name: "증빙자료 첨부" });
-  fireEvent.click(within(modal).getByRole("checkbox", { name: "확인서.pdf" }));
-  fireEvent.click(within(modal).getByRole("button", { name: "첨부하기" }));
-  expect(
-    within(screen.getByLabelText("첨부파일 사이드바")).getByRole("link", {
-      name: "확인서.pdf ↗",
-    }),
-  ).toHaveProperty("href", "http://localhost/api/damoa/files/proof");
+    screen.queryByRole("button", { name: /운동 봉사 증빙자료/ }),
+  ).toBeNull();
 });
+
 test("new files stay local and invalid files are rejected", () => {
   render(<Preview />);
   fireEvent.click(screen.getByRole("button", { name: "운동 봉사 세부항목" }));
-  fireEvent.click(screen.getByRole("button", { name: "증빙자료 첨부" }));
+  fireEvent.click(screen.getByRole("button", { name: "증빙자료 확인" }));
   const input = screen.getByLabelText("증빙자료 파일 선택");
   fireEvent.change(input, {
     target: { files: [new File(["bad"], "bad.html", { type: "text/html" })] },
@@ -192,12 +192,11 @@ test("new files stay local and invalid files are rejected", () => {
     },
   });
   expect(screen.queryByRole("alert")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "첨부하기" }));
+  fireEvent.click(screen.getByRole("button", { name: "반영" }));
+  expect(screen.getByText("증빙자료 2개")).toBeTruthy();
   expect(
-    within(screen.getByLabelText("첨부파일 사이드바"))
-      .getByRole("link", { name: "새 증빙.pdf ↗" })
-      .getAttribute("href"),
-  ).toBe("blob:preview");
+    screen.getByRole("button", { name: "운동 봉사 증빙자료 2개 미리보기" }),
+  ).toBeTruthy();
 });
 
 test("details close outside and on Escape while specialty controls are absent", () => {
@@ -212,25 +211,20 @@ test("details close outside and on Escape while specialty controls are absent", 
   fireEvent.click(plus);
   const menu = screen.getByRole("group", { name: "운동 봉사 세부항목" });
   fireEvent.pointerDown(menu);
-  expect(screen.getByRole("button", { name: "증빙자료 첨부" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "증빙자료 확인" })).toBeTruthy();
   fireEvent.pointerDown(
     screen.getByRole("heading", { name: "전문가", exact: true }),
   );
-  expect(screen.queryByRole("button", { name: "증빙자료 첨부" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "증빙자료 확인" })).toBeNull();
   fireEvent.click(plus);
   fireEvent.keyDown(document, { key: "Escape" });
-  expect(screen.queryByRole("button", { name: "증빙자료 첨부" })).toBeNull();
+  expect(screen.queryByRole("button", { name: "증빙자료 확인" })).toBeNull();
 });
 
-test("review results exclude unrequested and attachment-only items", () => {
+test("unrequested items do not create empty review tabs or an always-expanded list", () => {
   render(<Preview />);
-  expect(
-    screen.getByRole("heading", { name: "첨부파일", exact: true }),
-  ).toBeTruthy();
-  const results = screen.getByRole("tabpanel", { name: "심사 결과" });
-  expect(within(results).queryByText("심사 미요청")).toBeNull();
-  expect(within(results).queryByText("현재 기관")).toBeNull();
-  expect(
-    within(results).getByText("심사 중이거나 심사가 완료된 내역이 없습니다."),
-  ).toBeTruthy();
+  expect(screen.getByText("증빙자료 1개")).toBeTruthy();
+  expect(screen.queryByRole("tab")).toBeNull();
+  expect(screen.queryByRole("region", { name: "심사 결과" })).toBeNull();
+  expect(screen.queryByText("심사 미요청")).toBeNull();
 });

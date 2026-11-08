@@ -108,7 +108,7 @@ function FilePreview({ file }: { file: ReviewFile }) {
         </button>
       )}
       <a
-        href={file.href}
+        href={file.blob ? preview?.src : file.href}
         target="_blank"
         rel="noopener noreferrer"
         className="mt-3 inline-flex min-h-10 items-center text-xs font-semibold text-primary"
@@ -139,7 +139,10 @@ export function EvidenceFilePicker({
   retry: () => void;
 }) {
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const file = files.find((item) => item.id === previewId) ?? files[0];
+  const file =
+    files.find((item) => item.id === previewId) ??
+    files.find((item) => selection.includes(item.id)) ??
+    files[0];
   return (
     <div className="mt-6 min-w-0 space-y-4">
       <div className="min-w-0">

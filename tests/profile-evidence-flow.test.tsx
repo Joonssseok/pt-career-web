@@ -9,8 +9,12 @@ import {
 } from "@testing-library/react";
 import { ProfileVersionManager } from "../app/my/profiles/ProfileVersionManager";
 import { ProfileVisualReview } from "../app/my/profiles/ProfileVisualReview";
-import { saveProfileVersion } from "../app/actions/profile-versions";
+import {
+  saveProfileVersion,
+  publishProfileVersion,
+} from "../app/actions/profile-versions";
 import type { Activity } from "../lib/damoa/categories";
+import { storeEvidenceFile } from "../lib/profile-versions/evidence";
 const loadActivities = jest.fn<Promise<Activity[]>, [string]>();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ replace: jest.fn(), refresh: jest.fn() }),
@@ -98,9 +102,7 @@ test("write uses right save controls, warns on unsaved version and common change
   expect(
     screen.queryByRole("button", { name: "프로필 저장", exact: true }),
   ).toBeNull();
-  expect(
-    screen.queryByRole("button", { name: "공개프로필 업로드" }),
-  ).toBeNull();
+  expect(screen.queryByRole("button", { name: "프로필 게시" })).toBeNull();
   const controls = screen.getByRole("complementary", { name: "작성 작업" });
   fireEvent.change(screen.getByLabelText("한 줄 소개"), {
     target: { value: "수정" },
@@ -141,20 +143,15 @@ test("clean version can enter preview without save and preview retains upload co
     screen.getByRole("button", { name: "공개 전 확인", exact: true }),
   );
   expect(saveProfileVersion).not.toHaveBeenCalled();
-  expect(screen.getByRole("button", { name: "프로필 저장" })).toBeTruthy();
-  expect(
-    screen.getByRole("button", { name: "공개프로필 업로드" }),
-  ).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "프로필 저장" })).toBeNull();
+  expect(screen.getByRole("button", { name: "프로필 게시" })).toBeTruthy();
   await waitFor(() =>
     expect(screen.queryByText("자료를 불러오는 중입니다.")).toBeNull(),
   );
 });
 
-test("real request keeps the file private by default and keeps dialog open on error", async () => {
-  const save = jest
-    .fn()
-    .mockRejectedValueOnce(new Error("요청 실패"))
-    .mockResolvedValue(undefined);
+test("attachment choices are staged locally with one apply button and no separate review request", async () => {
+  const change = jest.fn();
   render(
     <ProfileVisualReview
       expert={expert}
@@ -165,7 +162,7 @@ test("real request keeps the file private by default and keeps dialog open on er
       loading={false}
       error=""
       retry={() => {}}
-      onSaveEvidence={save}
+      onAttachmentChange={change}
       evidence={{
         rows: [
           {
@@ -187,32 +184,29 @@ test("real request keeps the file private by default and keeps dialog open on er
     />,
   );
   fireEvent.click(screen.getByRole("button", { name: "소개 세부항목" }));
-  fireEvent.click(screen.getByRole("button", { name: "증빙자료 첨부" }));
-  const dialog = screen.getByRole("dialog", { name: "증빙자료 첨부" });
-  fireEvent.click(within(dialog).getByRole("button", { name: "심사 요청" }));
-  await screen.findByText("요청 실패");
-  expect(save).toHaveBeenLastCalledWith(
-    "introduction:0",
-    [{ id: "f", name: "증명서.pdf", href: "/api/damoa/files/f" }],
-    [],
-    true,
-  );
-  expect(dialog.hasAttribute("open")).toBe(true);
+  fireEvent.click(screen.getByRole("button", { name: "증빙자료 확인" }));
+  const dialog = screen.getByRole("dialog", { name: "증빙자료 확인" });
+  expect(
+    within(dialog).queryByRole("button", { name: "심사 요청" }),
+  ).toBeNull();
+  expect(
+    within(dialog).getByRole("radio", {
+      name: "파일은 비공개 · 인증배지만 표시",
+    }),
+  ).toHaveProperty("checked", true);
+  expect(change).not.toHaveBeenCalled();
   fireEvent.click(
     within(dialog).getByRole("radio", {
       name: "관리자 승인 후 선택한 파일 공개",
     }),
   );
-  fireEvent.click(within(dialog).getByRole("button", { name: "심사 요청" }));
-  await waitFor(() =>
-    expect(save).toHaveBeenLastCalledWith(
-      "introduction:0",
-      expect.any(Array),
-      ["f"],
-      true,
-    ),
-  );
-  await waitFor(() => expect(dialog.hasAttribute("open")).toBe(false));
+  fireEvent.click(within(dialog).getByRole("button", { name: "반영" }));
+  expect(change).toHaveBeenCalledWith({
+    key: "introduction:0",
+    files: [{ id: "f", name: "증명서.pdf", href: "/api/damoa/files/f" }],
+    publicIds: ["f"],
+  });
+  expect(dialog.hasAttribute("open")).toBe(false);
 });
 
 test("the picker includes own Damoa files even from activities absent from this profile, and excludes other owners", async () => {
@@ -253,8 +247,8 @@ test("the picker includes own Damoa files even from activities absent from this 
     expect(screen.queryByText("자료를 불러오는 중입니다.")).toBeNull(),
   );
   fireEvent.click(screen.getByRole("button", { name: "소개 세부항목" }));
-  fireEvent.click(screen.getByRole("button", { name: "증빙자료 첨부" }));
-  const dialog = screen.getByRole("dialog", { name: "증빙자료 첨부" });
+  fireEvent.click(screen.getByRole("button", { name: "증빙자료 확인" }));
+  const dialog = screen.getByRole("dialog", { name: "증빙자료 확인" });
   expect(
     within(dialog).getByRole("checkbox", { name: "내 보관자료.png" }),
   ).toBeTruthy();
@@ -283,16 +277,162 @@ test("selecting an existing Damoa file saves only that file and keeps it private
       loading={false}
       error=""
       retry={() => {}}
-      onSaveEvidence={save}
+      onAttachmentChange={save}
     />,
   );
   fireEvent.click(screen.getByRole("button", { name: "소개 세부항목" }));
-  fireEvent.click(screen.getByRole("button", { name: "증빙자료 첨부" }));
-  const dialog = screen.getByRole("dialog", { name: "증빙자료 첨부" });
+  fireEvent.click(screen.getByRole("button", { name: "증빙자료 확인" }));
+  const dialog = screen.getByRole("dialog", { name: "증빙자료 확인" });
   fireEvent.click(within(dialog).getByRole("checkbox", { name: file.name }));
   expect(save).not.toHaveBeenCalled();
-  fireEvent.click(within(dialog).getByRole("button", { name: "첨부 저장" }));
+  fireEvent.click(within(dialog).getByRole("button", { name: "반영" }));
   await waitFor(() =>
-    expect(save).toHaveBeenCalledWith("introduction:0", [file], [], false),
+    expect(save).toHaveBeenCalledWith({
+      key: "introduction:0",
+      files: [file],
+      publicIds: [],
+    }),
   );
+});
+
+test("one publish action submits only files from included activities and preserves private defaults", async () => {
+  const selectedActivity = {
+    id: "a",
+    category: "교육·연수",
+    title: "교육",
+    period: "2026년",
+    organizer: "교육원",
+    description: "",
+    learning: "",
+  };
+  const source = (id: string): Activity => ({
+    id,
+    owner: "owner",
+    category: "education",
+    title: "교육",
+    period: "2026년",
+    description: "",
+    learning: "",
+    memo: "",
+    link: "",
+    details: { 주관: "교육원" },
+    updated: "now",
+    files: [
+      {
+        id: "file-" + id,
+        name: "확인서.png",
+        type: "image/png",
+        size: 100,
+        path: "owner/file-" + id,
+      },
+    ],
+  });
+  loadActivities.mockResolvedValue([source("a"), source("not-in-profile")]);
+  (storeEvidenceFile as jest.Mock).mockImplementation(
+    async (_owner, _version, file) => file.id,
+  );
+  (publishProfileVersion as jest.Mock).mockResolvedValue({ ok: true });
+  render(
+    <ProfileVersionManager
+      owner="owner"
+      versions={[
+        {
+          ...version,
+          draft_content: { ...content, activities: [selectedActivity] },
+        },
+      ]}
+      selectedId="v"
+      expert={expert}
+      base={{
+        id: "p",
+        display_name: "전문가",
+        headline: "소개",
+        introduction: "내용",
+        verification_status: "approved",
+        is_public: true,
+        suspended_at: null,
+        deletion_requested_at: null,
+      }}
+    />,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "공개 전 확인", exact: true }),
+  );
+  const publish = screen.getByRole("button", {
+    name: "프로필 게시",
+    exact: true,
+  });
+  expect(publish).toHaveProperty("disabled", true);
+  await screen.findByText("새 증빙 1건도 함께 심사 요청됩니다.");
+  await waitFor(() => expect(publish).toHaveProperty("disabled", false));
+  expect(
+    screen.queryByRole("button", { name: "심사 요청", exact: true }),
+  ).toBeNull();
+  fireEvent.click(publish);
+  const confirmation = screen.getByRole("dialog", {
+    name: "프로필 게시 전 확인해주세요",
+  });
+  expect(
+    within(confirmation).getByText(/1건이 관리자에게 심사 제출/),
+  ).toBeTruthy();
+  expect(
+    within(confirmation).getByRole("button", { name: "동의하고 게시" }),
+  ).toHaveProperty("disabled", true);
+  expect(storeEvidenceFile).not.toHaveBeenCalled();
+  expect(publishProfileVersion).not.toHaveBeenCalled();
+  fireEvent.click(within(confirmation).getByRole("checkbox"));
+  fireEvent.click(within(confirmation).getByRole("button", { name: "취소" }));
+  expect(publishProfileVersion).not.toHaveBeenCalled();
+  fireEvent.click(publish);
+  expect(within(confirmation).getByRole("checkbox")).toHaveProperty(
+    "checked",
+    false,
+  );
+  const submit = within(confirmation).getByRole("button", {
+    name: "동의하고 게시",
+  });
+  expect(submit).toHaveProperty("disabled", true);
+  fireEvent.click(submit);
+  expect(publishProfileVersion).not.toHaveBeenCalled();
+  fireEvent.click(within(confirmation).getByRole("checkbox"));
+  fireEvent.click(submit);
+  await waitFor(() =>
+    expect(publishProfileVersion).toHaveBeenCalledWith(
+      "v",
+      expect.objectContaining({ activities: [selectedActivity] }),
+      [{ key: "damoa:a", fileIds: ["file-a"], publicIds: [], expected: null }],
+    ),
+  );
+  expect(storeEvidenceFile).toHaveBeenCalledTimes(1);
+  await waitFor(() => expect(confirmation.hasAttribute("open")).toBe(false));
+});
+
+test("a failed source load blocks publication rather than silently publishing without evidence", async () => {
+  loadActivities.mockRejectedValue(new Error("unavailable"));
+  render(
+    <ProfileVersionManager
+      owner="owner"
+      versions={[version]}
+      selectedId="v"
+      expert={expert}
+      base={{
+        id: "p",
+        display_name: "전문가",
+        headline: "소개",
+        introduction: "내용",
+        verification_status: "approved",
+        is_public: true,
+        suspended_at: null,
+        deletion_requested_at: null,
+      }}
+    />,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "공개 전 확인", exact: true }),
+  );
+  await screen.findByText(/일부 자료를 불러오지 못했습니다/);
+  expect(
+    screen.getByRole("button", { name: "프로필 게시", exact: true }),
+  ).toHaveProperty("disabled", true);
+  expect(publishProfileVersion).not.toHaveBeenCalled();
 });

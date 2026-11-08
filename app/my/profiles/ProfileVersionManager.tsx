@@ -4,7 +4,11 @@ import {
   storeEvidenceFile,
   type EvidenceReview,
 } from "@/lib/profile-versions/evidence";
-import { saveProfileEvidence } from "@/app/actions/profile-evidence";
+import { profileReviewItems } from "@/lib/profile-versions/review-items";
+import {
+  reviewSubmissionPlan,
+  type ReviewAttachment,
+} from "@/lib/profile-versions/review-submission";
 import { ProfileVisualReview } from "./ProfileVisualReview";
 import { getOwnCertifications } from "@/app/actions/certification";
 import { getEvidenceFileUrl } from "@/lib/storage/evidence-file-url";
@@ -71,7 +75,15 @@ export function ProfileVersionManager({
   commonEditor,
   galleryImages = [],
   detailImagesState = { ok: true, images: [], revision: null },
+  previewData,
 }: {
+  previewData?: {
+    sources: Activity[];
+    licenses: Awaited<
+      ReturnType<typeof getOwnCertifications>
+    >["certifications"];
+    evidence: Awaited<ReturnType<typeof loadEvidenceReviews>>;
+  };
   detailImagesState?: DetailImagesState;
   commonEditor?: React.ReactNode;
   galleryImages?: ExpertProfileViewProps["galleryImages"];
@@ -145,9 +157,16 @@ export function ProfileVersionManager({
   });
   const [evidence, setEvidence] = useState<
     Awaited<ReturnType<typeof loadEvidenceReviews>>
-  >({ rows: [], files: {} });
+  >(previewData?.evidence ?? { rows: [], files: {} });
   const leaveDialog = useRef<HTMLDialogElement>(null);
-  const [step, setStep] = useState<"write" | "preview">("write");
+  const publishDialog = useRef<HTMLDialogElement>(null);
+  const [publishAgreed, setPublishAgreed] = useState(false);
+  const [step, setStep] = useState<"write" | "preview">(
+    previewData ? "preview" : "write",
+  );
+  const [attachments, setAttachments] = useState<
+    Record<string, ReviewAttachment>
+  >({});
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -162,16 +181,28 @@ export function ProfileVersionManager({
       ]),
     ),
   );
-  const [reviewSources, setReviewSources] = useState<Activity[]>([]);
+  const [reviewSources, setReviewSources] = useState<Activity[]>(
+    previewData?.sources ?? [],
+  );
   const [reviewLicenses, setReviewLicenses] = useState<
     Awaited<ReturnType<typeof getOwnCertifications>>["certifications"]
-  >([]);
+  >(previewData?.licenses ?? []);
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewReady, setReviewReady] = useState(!!previewData);
   const [reviewError, setReviewError] = useState("");
   const [reviewReload, setReviewReload] = useState(0);
   useEffect(() => {
     if (step !== "preview") return;
+    if (previewData) {
+      setReviewSources(
+        previewData.sources.filter((row) => row.owner === owner),
+      );
+      setReviewLicenses(previewData.licenses);
+      setEvidence(previewData.evidence);
+      return;
+    }
     let current = true;
+    setReviewReady(false);
     setReviewLoading(true);
     setReviewError("");
     Promise.allSettled([
@@ -194,15 +225,17 @@ export function ProfileVersionManager({
         !licenses.value.ok
       ) {
         setReviewError(
-          "일부 자료를 불러오지 못했습니다. 다시 불러온 뒤 심사 자료를 선택해주세요.",
+          "일부 자료를 불러오지 못했습니다. 다시 불러온 뒤 게시해주세요.",
         );
+      } else {
+        setReviewReady(true);
       }
       setReviewLoading(false);
     });
     return () => {
       current = false;
     };
-  }, [step, owner, id, reviewReload]);
+  }, [step, owner, id, reviewReload, previewData]);
   const damoaFiles = useMemo<ReviewFile[]>(
     () => [
       ...new Map(
@@ -214,7 +247,9 @@ export function ProfileVersionManager({
               .map((file) => ({
                 id: file.id,
                 name: file.name,
-                href: "/api/damoa/files/" + encodeURIComponent(file.id),
+                href: previewData
+                  ? "/preview/proof-sample.png"
+                  : "/api/damoa/files/" + encodeURIComponent(file.id),
                 type: file.type,
                 size: file.size,
                 activityTitle: row.title || "자료만 보관",
@@ -223,7 +258,7 @@ export function ProfileVersionManager({
           .map((file) => [file.id, file]),
       ).values(),
     ],
-    [reviewSources, owner],
+    [reviewSources, owner, previewData],
   );
   const reviewItems = useMemo<ReviewItem[]>(
     () => [
@@ -242,7 +277,9 @@ export function ProfileVersionManager({
             .map((file) => ({
               id: file.id,
               name: file.name,
-              href: "/api/damoa/files/" + encodeURIComponent(file.id),
+              href: previewData
+                ? "/preview/proof-sample.png"
+                : "/api/damoa/files/" + encodeURIComponent(file.id),
             })),
         };
       }),
@@ -278,6 +315,7 @@ export function ProfileVersionManager({
       reviewSources,
       reviewLicenses,
       owner,
+      previewData,
     ],
   );
   const previewActivities = content.activities.map((activity) => {
@@ -291,6 +329,19 @@ export function ProfileVersionManager({
   const previewExpert = expert
     ? applyVersion(expert, { ...content, excluded: [] })
     : null;
+  const reviewRecords = profileReviewItems(
+    previewExpert,
+    previewActivities,
+    reviewItems,
+    evidence,
+  );
+  const reviewPlan = reviewSubmissionPlan(
+    reviewRecords,
+    reviewChoices,
+    evidence.rows,
+    attachments,
+  );
+  const reviewCount = reviewPlan.filter((row) => row.request).length;
   const canPublish =
     base?.verification_status === "approved" &&
     base.is_public &&
@@ -306,7 +357,23 @@ export function ProfileVersionManager({
     !saved.content ||
     title !== saved.title ||
     !sameProfileContent(content, saved.content);
+  const publishBlocked =
+    pending ||
+    !id ||
+    !canPublish ||
+    changed ||
+    !detailReady ||
+    !reviewReady ||
+    reviewLoading ||
+    !!reviewError;
   async function save() {
+    if (previewData) {
+      setSaved({ title, content });
+      setMessage(
+        "미리보기의 프로필을 저장했습니다. 서버에는 반영되지 않습니다.",
+      );
+      return true;
+    }
     if (
       !PROFILE_PRESENTATION_STORAGE_ENABLED &&
       content.activities.some((a) => a.presentation)
@@ -370,7 +437,15 @@ export function ProfileVersionManager({
       setPending(false);
     }
   }
+  function confirmPublish() {
+    if (publishBlocked) return;
+    setPublishAgreed(false);
+    setError("");
+    publishDialog.current?.showModal();
+  }
   async function publish() {
+    if (!publishAgreed || !publishDialog.current?.open || publishBlocked)
+      return;
     if (!LIVE_PROFILE_PUBLISH_ENABLED) {
       setMessage(
         "대표 선택 미리보기입니다. 실제 공개 변경은 아직 연결하지 않았습니다.",
@@ -378,8 +453,8 @@ export function ProfileVersionManager({
       return;
     }
     if (!id || pending) return;
-    if (!detailReady) {
-      setError("첨부파일을 다시 불러온 뒤 공개해주세요.");
+    if (!detailReady || !reviewReady || reviewLoading || reviewError) {
+      setError("자료를 모두 불러온 뒤 게시해주세요.");
       return;
     }
     if (changed) {
@@ -389,12 +464,77 @@ export function ProfileVersionManager({
     setPending(true);
     setError("");
     try {
-      const r = await publishProfileVersion(id);
+      const submissions = [];
+      for (const row of reviewPlan.filter(
+        (row) =>
+          !row.legacyVerified &&
+          (row.files.length > 0 || row.expected !== null),
+      )) {
+        const fileIds: string[] = [];
+        for (const file of row.files)
+          fileIds.push(
+            previewData ? file.id : await storeEvidenceFile(owner, id, file),
+          );
+        submissions.push({
+          key: row.key,
+          fileIds,
+          publicIds: row.files.flatMap((file, index) =>
+            row.publicIds.includes(file.id) ? [fileIds[index]] : [],
+          ),
+          expected: row.expected,
+        });
+      }
+      if (previewData) {
+        setEvidence((previous) => ({
+          files: {
+            ...previous.files,
+            ...Object.fromEntries(
+              reviewPlan.flatMap((row) =>
+                row.files.map((file) => [file.id, file]),
+              ),
+            ),
+          },
+          rows: [
+            ...previous.rows.filter(
+              (row) =>
+                !reviewPlan.some(
+                  (next) => next.key === row.item_key && next.request,
+                ),
+            ),
+            ...reviewPlan
+              .filter((row) => row.request)
+              .map((row) => ({
+                id: "preview:" + row.key,
+                version_id: id,
+                item_key: row.key,
+                item_snapshot: previewActivities.find(
+                  (a) => "damoa:" + a.id === row.key,
+                ),
+                title: row.title,
+                file_ids: row.files.map((file) => file.id),
+                public_file_ids: row.publicIds,
+                status: "pending" as const,
+                reason: "",
+                updated_at: "preview-submitted",
+              })),
+          ],
+        }));
+        setMessage(
+          `미리보기 완료 · 프로필 게시와 증빙 ${reviewCount}건의 심사 요청 흐름을 확인했습니다. 실제 공개·접수되지 않았습니다.`,
+        );
+        publishDialog.current?.close();
+        return;
+      }
+      const r = await publishProfileVersion(id, content, submissions);
       if (!r.ok) setError(r.error);
       else {
         setMessage(
-          "이 프로필을 대표로 공개했습니다. 공유 주소는 그대로 유지됩니다.",
+          `프로필을 게시했습니다. 증빙 ${reviewCount}건을 함께 심사 요청했습니다.`,
         );
+        setAttachments({});
+        setReviewReady(false);
+        setReviewReload((count) => count + 1);
+        publishDialog.current?.close();
         router.refresh();
       }
     } catch {
@@ -404,55 +544,16 @@ export function ProfileVersionManager({
     }
   }
   function openPreview() {
+    if (!previewData) setReviewReady(false);
     if (step === "write" && changed) leaveDialog.current?.showModal();
     else setStep("preview");
-  }
-  async function saveEvidence(
-    key: string,
-    files: import("@/lib/profile-versions/review-preview").ReviewFile[],
-    publicIds: string[],
-    request: boolean,
-  ) {
-    if (!id || changed)
-      throw new Error("프로필 변경 내용을 먼저 저장해주세요.");
-    const ids: string[] = [];
-    for (const file of files)
-      ids.push(await storeEvidenceFile(owner, id, file));
-    const previous = evidence.rows.find((row) => row.item_key === key);
-    const result = await saveProfileEvidence(
-      id,
-      key,
-      ids,
-      files.flatMap((file, index) =>
-        publicIds.includes(file.id) ? [ids[index]] : [],
-      ),
-      request,
-      previous?.updated_at ?? null,
-    );
-    if (!result.ok) throw new Error(result.error);
-    const row = result.data as EvidenceReview;
-    const storedFiles = Object.fromEntries(
-      files.map((file, index) => [
-        ids[index],
-        {
-          id: ids[index],
-          name: file.name,
-          href: "/api/damoa/files/" + ids[index],
-        },
-      ]),
-    );
-    setEvidence((previous) => ({
-      rows: [...previous.rows.filter((r) => r.item_key !== key), row],
-      files: { ...previous.files, ...storedFiles },
-    }));
-    setMessage(
-      request ? "관리자에게 심사를 요청했습니다." : "증빙자료를 저장했습니다.",
-    );
   }
   async function bringActivities() {
     setError("");
     try {
-      setImports(await loadActivities(owner));
+      setImports(
+        previewData ? previewData.sources : await loadActivities(owner),
+      );
     } catch {
       setError("서버의 다모아 기록을 불러오지 못했습니다.");
     }
@@ -882,18 +983,72 @@ export function ProfileVersionManager({
                       </p>
                     )}
                     <p className="mt-5 border-t border-slate-100 pt-4 text-xs leading-6 text-slate-500">
-                      개인 메모는 가져오지 않아요. 증빙자료와 심사 요청은 공개
-                      전 확인에서 선택할 수 있습니다.
+                      활동의 자료도 자동으로 연결돼요. 공개 전 확인에서 살펴보고
+                      게시할 때 함께 심사 요청할 수 있습니다.
                     </p>
                   </section>
                 </div>
               ) : (
                 <ProfileVisualReview
                   damoaFiles={damoaFiles}
+                  publishAction={
+                    <div className="space-y-3">
+                      {changed && (
+                        <button
+                          type="button"
+                          onClick={save}
+                          disabled={pending || !title.trim()}
+                          className="min-h-10 w-full rounded-xl border border-blue-200 text-sm font-semibold text-primary disabled:opacity-40"
+                        >
+                          프로필 저장
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={confirmPublish}
+                        disabled={publishBlocked}
+                        className="min-h-12 w-full rounded-xl bg-primary px-4 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
+                      >
+                        {pending ? "게시하고 있습니다…" : "프로필 게시"}
+                      </button>
+                      <p className="text-xs leading-5 text-slate-500">
+                        {reviewLoading
+                          ? "자료를 확인하고 있어요."
+                          : reviewCount
+                            ? `새 증빙 ${reviewCount}건도 함께 심사 요청됩니다.`
+                            : "새로 심사 요청할 자료가 없습니다."}
+                      </p>
+                      <p className="text-micro leading-5 text-slate-400">
+                        자료 선택은 게시할 때 적용됩니다. 서류는 기본
+                        비공개입니다.
+                      </p>
+                      {error && (
+                        <p
+                          role="alert"
+                          className="text-xs leading-5 text-red-600"
+                        >
+                          {error}
+                        </p>
+                      )}
+                      {message && (
+                        <p
+                          role="status"
+                          className="text-xs leading-5 text-primary"
+                        >
+                          {message}
+                        </p>
+                      )}
+                    </div>
+                  }
                   detailImages={detailImages}
                   evidence={evidence}
-                  onSaveEvidence={saveEvidence}
-                  evidenceDisabled={!id || changed}
+                  attachments={attachments}
+                  onAttachmentChange={(attachment) =>
+                    setAttachments((previous) => ({
+                      ...previous,
+                      [attachment.key]: attachment,
+                    }))
+                  }
                   order={content.order}
                   onOrderChange={(order) =>
                     setContent((previous) => ({ ...previous, order }))
@@ -929,14 +1084,18 @@ export function ProfileVersionManager({
                       ...previous,
                       [key]: choice,
                     }));
-                    setContent((previous) => ({
-                      ...previous,
-                      excluded: choice.visible
-                        ? (previous.excluded ?? []).filter(
-                            (item) => item !== key,
-                          )
-                        : [...new Set([...(previous.excluded ?? []), key])],
-                    }));
+                    setContent((previous) => {
+                      const hidden = previous.excluded?.includes(key) ?? false;
+                      if (hidden === !choice.visible) return previous;
+                      return {
+                        ...previous,
+                        excluded: choice.visible
+                          ? (previous.excluded ?? []).filter(
+                              (item) => item !== key,
+                            )
+                          : [...new Set([...(previous.excluded ?? []), key])],
+                      };
+                    });
                   }}
                   galleryImages={
                     content.sections.includes("gallery") ? galleryImages : []
@@ -946,12 +1105,12 @@ export function ProfileVersionManager({
                   retry={() => setReviewReload((count) => count + 1)}
                 />
               )}
-              {error && (
+              {step === "write" && error && (
                 <p role="alert" className="mt-4 text-sm text-red-600">
                   {error}
                 </p>
               )}
-              {message && (
+              {step === "write" && message && (
                 <p role="status" className="mt-4 text-sm text-primary">
                   {message}
                 </p>
@@ -960,30 +1119,6 @@ export function ProfileVersionManager({
                 <p role="status" className="mt-4 text-sm text-primary">
                   {uploadMessage}
                 </p>
-              )}
-              {step === "preview" && (
-                <div className="my-6 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    disabled={pending || !title.trim()}
-                    onClick={save}
-                    className="min-h-12 rounded-xl border border-blue-200 px-5 text-sm font-semibold text-primary disabled:opacity-40"
-                  >
-                    {pending ? "처리 중…" : "프로필 저장"}
-                  </button>
-                  {id && (
-                    <button
-                      type="button"
-                      disabled={
-                        pending || !canPublish || changed || !detailReady
-                      }
-                      onClick={publish}
-                      className="min-h-12 rounded-xl border border-blue-200 px-5 text-sm font-semibold text-primary disabled:opacity-40"
-                    >
-                      공개프로필 업로드
-                    </button>
-                  )}
-                </div>
               )}
               {!canPublish && (
                 <p className="text-xs leading-6 text-slate-400">
@@ -1095,6 +1230,78 @@ export function ProfileVersionManager({
                 className="min-h-11 rounded-xl bg-blue-50 px-4 text-sm text-primary"
               >
                 이동
+              </button>
+            </div>
+          </dialog>
+          <dialog
+            ref={publishDialog}
+            aria-labelledby="profile-publish-title"
+            aria-describedby="profile-publish-description"
+            onClose={() => setPublishAgreed(false)}
+            onCancel={(event) => {
+              if (pending) event.preventDefault();
+            }}
+            className="m-auto max-h-[85svh] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl backdrop:bg-slate-900/25"
+          >
+            <h2
+              id="profile-publish-title"
+              className="text-lg font-bold text-slate-900"
+            >
+              프로필 게시 전 확인해주세요
+            </h2>
+            <p
+              id="profile-publish-description"
+              className="mt-4 text-sm leading-6 text-slate-600"
+            >
+              {reviewCount
+                ? `프로필이 공개되고, 연결된 증빙자료 중 새로 확인이 필요한 ${reviewCount}건이 관리자에게 심사 제출됩니다.`
+                : "새로 심사 제출할 증빙자료가 없습니다. 프로필만 게시됩니다."}
+            </p>
+            <div className="mt-4 space-y-3 rounded-xl bg-slate-50 p-4 text-xs leading-6 text-slate-500">
+              <p>
+                관리자는 자료에 개인정보가 포함되어 있는지와 해당 항목에 맞는
+                자료인지 확인합니다.
+              </p>
+              <p>
+                파일은 기본 비공개이며, 공개를 선택한 파일도 관리자 승인 후에만
+                공개됩니다.
+              </p>
+            </div>
+            <label className="mt-5 flex cursor-pointer items-start gap-3 text-sm leading-6 text-slate-700">
+              <input
+                type="checkbox"
+                checked={publishAgreed}
+                disabled={pending}
+                onChange={(event) => setPublishAgreed(event.target.checked)}
+                className="mt-1 size-4 shrink-0 accent-blue-600"
+              />
+              <span>
+                위 안내를 확인했으며, 프로필 게시 및 필요한 증빙자료 심사 제출에
+                동의합니다.
+              </span>
+            </label>
+            {error && (
+              <p role="alert" className="mt-4 text-sm leading-6 text-red-600">
+                {error}
+              </p>
+            )}
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                type="button"
+                autoFocus
+                disabled={pending}
+                onClick={() => publishDialog.current?.close()}
+                className="min-h-11 rounded-xl px-4 text-sm text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={!publishAgreed || publishBlocked}
+                onClick={publish}
+                className="min-h-11 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
+              >
+                {pending ? "게시하고 있습니다…" : "동의하고 게시"}
               </button>
             </div>
           </dialog>

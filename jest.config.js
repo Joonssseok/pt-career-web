@@ -14,6 +14,7 @@ export default {
     }],
   },
   moduleNameMapper: {
+    '\\.module\\.css$': '<rootDir>/tests/style-module-mock.cjs',
     '^@/lib/(.*)$': '<rootDir>/lib/$1',
     '^@/components/(.*)$': '<rootDir>/components/$1',
     '^@/types/(.*)$': '<rootDir>/types/$1',

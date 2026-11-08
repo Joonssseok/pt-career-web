@@ -22,6 +22,7 @@ export type ProfileActivity = {
   presentation?: ItemPresentation;
 };
 export type VersionContent = {
+  activityRegion?: string;
   headline: string;
   introduction: string;
   sections: string[];
@@ -125,6 +126,9 @@ export function applyVersion(
           workplace_website_url: null,
           workplace_external_contact_url: null,
         }
+      : {}),
+    ...(content.activityRegion !== undefined
+      ? { workplace_region: content.activityRegion || null }
       : {}),
   };
 }

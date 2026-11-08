@@ -107,6 +107,9 @@ test("write uses right save controls, warns on unsaved version and common change
   fireEvent.change(screen.getByLabelText("한 줄 소개"), {
     target: { value: "수정" },
   });
+  fireEvent.change(screen.getByRole("combobox", { name: "주요 활동 지역" }), {
+    target: { value: "경기" },
+  });
   fireEvent.click(
     within(controls).getByRole("button", { name: "공개 전 확인" }),
   );
@@ -124,6 +127,11 @@ test("write uses right save controls, warns on unsaved version and common change
   );
   await waitFor(() => expect(saveProfileVersion).toHaveBeenCalledTimes(1));
   await screen.findByText("프로필을 저장했습니다.");
+  expect(saveProfileVersion).toHaveBeenCalledWith(
+    "v",
+    "내 프로필",
+    expect.objectContaining({ activityRegion: "경기" }),
+  );
   fireEvent.change(screen.getByLabelText("공통 이름"), {
     target: { value: "다른 이름" },
   });

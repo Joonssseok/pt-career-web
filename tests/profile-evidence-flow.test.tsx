@@ -12,6 +12,7 @@ import { ProfileVisualReview } from "../app/my/profiles/ProfileVisualReview";
 import {
   saveProfileVersion,
   publishProfileVersion,
+  deleteProfileVersion,
 } from "../app/actions/profile-versions";
 import type { Activity } from "../lib/damoa/categories";
 import { storeEvidenceFile } from "../lib/profile-versions/evidence";
@@ -22,6 +23,7 @@ jest.mock("next/navigation", () => ({
 jest.mock("../app/actions/profile-versions", () => ({
   saveProfileVersion: jest.fn(),
   publishProfileVersion: jest.fn(),
+  deleteProfileVersion: jest.fn(),
 }));
 jest.mock("../app/actions/certification", () => ({
   getOwnCertifications: async () => ({ ok: true, certifications: [] }),
@@ -443,4 +445,139 @@ test("a failed source load blocks publication rather than silently publishing wi
     screen.getByRole("button", { name: "프로필 게시", exact: true }),
   ).toHaveProperty("disabled", true);
   expect(publishProfileVersion).not.toHaveBeenCalled();
+});
+
+test("profile deletion requires confirmation, keeps the editor on cancel or failure", async () => {
+  manager();
+  fireEvent.click(
+    screen.getByRole("button", { name: "프로필 삭제", exact: true }),
+  );
+  const dialog = screen.getByRole("dialog", {
+    name: "이 프로필을 삭제하시겠습니까?",
+  });
+  expect(deleteProfileVersion).not.toHaveBeenCalled();
+  fireEvent.click(
+    within(dialog).getByRole("button", { name: "취소", exact: true }),
+  );
+  expect(dialog.hasAttribute("open")).toBe(false);
+  expect(screen.getByLabelText("한 줄 소개")).toHaveProperty("value", "소개");
+  fireEvent.click(
+    screen.getByRole("button", { name: "프로필 삭제", exact: true }),
+  );
+  (deleteProfileVersion as jest.Mock).mockResolvedValue({
+    ok: false,
+    error: "삭제 권한을 확인해주세요.",
+  });
+  fireEvent.click(
+    within(dialog).getByRole("button", { name: "삭제하기", exact: true }),
+  );
+  await within(dialog).findByText("삭제 권한을 확인해주세요.");
+  expect(deleteProfileVersion).toHaveBeenCalledWith("v");
+  expect(dialog.hasAttribute("open")).toBe(true);
+});
+
+test("representative deletion is blocked before any server call", () => {
+  render(
+    <ProfileVersionManager
+      owner="owner"
+      versions={[{ ...version, is_representative: true }]}
+      selectedId="v"
+      base={null}
+      expert={null}
+    />,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "프로필 삭제", exact: true }),
+  );
+  const dialog = screen.getByRole("dialog", {
+    name: "대표 프로필은 먼저 변경해주세요",
+  });
+  expect(
+    within(dialog).queryByRole("button", { name: "삭제하기", exact: true }),
+  ).toBeNull();
+  expect(deleteProfileVersion).not.toHaveBeenCalled();
+});
+
+test("deletion success returns to the profile list", async () => {
+  manager();
+  (deleteProfileVersion as jest.Mock).mockResolvedValue({ ok: true });
+  fireEvent.click(
+    screen.getByRole("button", { name: "프로필 삭제", exact: true }),
+  );
+  const dialog = screen.getByRole("dialog", {
+    name: "이 프로필을 삭제하시겠습니까?",
+  });
+  fireEvent.click(
+    within(dialog).getByRole("button", { name: "삭제하기", exact: true }),
+  );
+  await screen.findByRole("heading", { name: "프로필 관리", exact: true });
+  expect(
+    screen.queryByRole("dialog", { name: "이 프로필을 삭제하시겠습니까?" }),
+  ).toBeNull();
+});
+
+test("interactive preview hides editing controls and never shares, saves or publishes", async () => {
+  const copy = jest.fn();
+  const share = jest.fn();
+  Object.defineProperty(navigator, "clipboard", {
+    value: { writeText: copy },
+    configurable: true,
+  });
+  Object.defineProperty(navigator, "share", {
+    value: share,
+    configurable: true,
+  });
+  render(
+    <ProfileVersionManager
+      owner="owner"
+      versions={[version]}
+      selectedId="v"
+      base={null}
+      expert={{ ...expert, extra_links: [{ label: "예약 상담", url: "https://example.com/book" }] }}
+    />,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "2. 공개 전 확인", exact: true }),
+  );
+  const open = await screen.findByRole("button", {
+    name: "미리보기",
+    exact: true,
+  });
+  await waitFor(() => expect(open).toHaveProperty("disabled", false));
+  fireEvent.click(open);
+  const dialog = screen.getByRole("dialog", {
+    name: "프로필 미리보기",
+    exact: true,
+  });
+  expect(
+    within(dialog).getByRole("heading", { name: "전문가", exact: true }),
+  ).toBeTruthy();
+  expect(
+    within(dialog).queryByRole("button", {
+      name: /항목 삭제|세부항목|프로필 게시/,
+    }),
+  ).toBeNull();
+  expect(within(dialog).queryByText("내 프로필")).toBeNull();
+  expect(within(dialog).getByRole("link", { name: /예약 상담/ }).getAttribute("href")).toBe("https://example.com/book");
+  fireEvent.click(
+    within(dialog).getByRole("button", {
+      name: "프로필 공유하기",
+      exact: true,
+    }),
+  );
+  expect(within(dialog).getByRole("status").textContent).toContain(
+    "게시 전 미리보기에서는 공유되지 않습니다",
+  );
+  expect(copy).not.toHaveBeenCalled();
+  expect(share).not.toHaveBeenCalled();
+  expect(saveProfileVersion).not.toHaveBeenCalled();
+  expect(publishProfileVersion).not.toHaveBeenCalled();
+  expect(deleteProfileVersion).not.toHaveBeenCalled();
+  fireEvent.click(
+    within(dialog).getByRole("button", {
+      name: "프로필 미리보기 닫기",
+      exact: true,
+    }),
+  );
+  await waitFor(() => expect(dialog.hasAttribute("open")).toBe(false));
 });

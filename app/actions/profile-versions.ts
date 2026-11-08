@@ -79,3 +79,28 @@ export async function publishProfileVersion(
   revalidatePath("/admin");
   return { ok: true as const };
 }
+
+export async function deleteProfileVersion(id: string) {
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+  )
+    return { ok: false as const, error: "삭제할 프로필을 확인해주세요." };
+  const client = await createClient();
+  const {
+    data: { user },
+  } = await client.auth.getUser();
+  if (!user) return { ok: false as const, error: "로그인이 필요합니다." };
+  const { error } = await client.rpc("delete_own_profile_version", {
+    p_id: id,
+  });
+  if (error)
+    return {
+      ok: false as const,
+      error:
+        error.code === "23514"
+          ? "현재 대표 프로필은 삭제할 수 없습니다. 다른 프로필을 대표로 변경한 뒤 삭제해주세요."
+          : "프로필을 삭제하지 못했습니다. 목록을 새로고침한 뒤 다시 시도해주세요.",
+    };
+  revalidatePath("/my", "layout");
+  return { ok: true as const };
+}

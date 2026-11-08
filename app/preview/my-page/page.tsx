@@ -140,18 +140,6 @@ export default function MyPagePreview() {
         <main className="min-w-0 flex-1 px-0 py-6 md:px-5 lg:py-8">
           <MyDashboard
             data={data}
-            visibility={
-              <button
-                type="button"
-                role="switch"
-                aria-checked="true"
-                aria-label="프로필 전체 공개"
-                disabled
-                className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full bg-green-500"
-              >
-                <span className="inline-block h-4 w-4 translate-x-6 rounded-full bg-white shadow" />
-              </button>
-            }
             sharing={
               <ProfileSharingTools
                 compact

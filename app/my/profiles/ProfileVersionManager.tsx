@@ -28,6 +28,7 @@ import { useRouter } from "next/navigation";
 import {
   saveProfileVersion,
   publishProfileVersion,
+  deleteProfileVersion,
 } from "@/app/actions/profile-versions";
 import {
   activityForProfile,
@@ -163,6 +164,9 @@ export function ProfileVersionManager({
   >(previewData?.evidence ?? { rows: [], files: {} });
   const leaveDialog = useRef<HTMLDialogElement>(null);
   const publishDialog = useRef<HTMLDialogElement>(null);
+  const deleteDialog = useRef<HTMLDialogElement>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [publishAgreed, setPublishAgreed] = useState(false);
   const [step, setStep] = useState<"write" | "preview">(
     previewData ? "preview" : "write",
@@ -551,6 +555,32 @@ export function ProfileVersionManager({
     if (step === "write" && changed) leaveDialog.current?.showModal();
     else setStep("preview");
   }
+  async function removeProfile() {
+    if (!id || selected?.is_representative || pending) return;
+    if (previewData) {
+      setDeleteError("예시 화면에서는 실제 프로필을 삭제하지 않습니다.");
+      return;
+    }
+    setPending(true);
+    setDeleteError("");
+    try {
+      const result = await deleteProfileVersion(id);
+      if (!result.ok) {
+        setDeleteError(result.error);
+        return;
+      }
+      deleteDialog.current?.close();
+      setId(null);
+      setEditing(false);
+      setMessage("프로필을 삭제했습니다.");
+      router.replace("/my/profiles");
+      router.refresh();
+    } catch {
+      setDeleteError("프로필을 삭제하지 못했습니다. 다시 시도해주세요.");
+    } finally {
+      setPending(false);
+    }
+  }
   async function bringActivities() {
     setError("");
     try {
@@ -681,6 +711,18 @@ export function ProfileVersionManager({
                   >
                     2. 공개 전 확인
                   </button>
+                  {step === "preview" && (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewOpen(true)}
+                      disabled={
+                        !previewExpert || reviewLoading || !!reviewError
+                      }
+                      className="min-h-11 rounded-lg border border-blue-200 px-3 text-sm font-medium text-primary hover:bg-blue-50 disabled:opacity-40"
+                    >
+                      미리보기
+                    </button>
+                  )}
                 </div>
               </div>
               {step === "write" && (
@@ -1016,6 +1058,8 @@ export function ProfileVersionManager({
                 </div>
               ) : (
                 <ProfileVisualReview
+                  previewOpen={previewOpen}
+                  onPreviewClose={() => setPreviewOpen(false)}
                   verifiedCareerCount={
                     selected?.is_representative ? publishedVerifiedCount : 0
                   }
@@ -1228,9 +1272,82 @@ export function ProfileVersionManager({
                 <p className="mt-3 hidden text-xs leading-5 text-slate-400 xl:block">
                   저장한 뒤 공개 전 확인에서 최종 화면을 살펴보세요.
                 </p>
+                {id && (
+                  <div className="mt-4 border-t border-slate-100 pt-3">
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => {
+                        setDeleteError("");
+                        deleteDialog.current?.showModal();
+                      }}
+                      className="min-h-11 w-full rounded-lg px-3 text-sm text-slate-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                    >
+                      프로필 삭제
+                    </button>
+                  </div>
+                )}
               </aside>
             )}
           </div>
+          <dialog
+            ref={deleteDialog}
+            aria-labelledby="delete-profile-title"
+            aria-describedby="delete-profile-description"
+            onCancel={(event) => {
+              if (pending) event.preventDefault();
+            }}
+            className="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl backdrop:bg-slate-900/25"
+          >
+            <h2
+              id="delete-profile-title"
+              className="text-lg font-semibold text-slate-900"
+            >
+              {selected?.is_representative
+                ? "대표 프로필은 먼저 변경해주세요"
+                : "이 프로필을 삭제하시겠습니까?"}
+            </h2>
+            <p
+              id="delete-profile-description"
+              className="mt-3 text-sm leading-6 text-slate-500"
+            >
+              {selected?.is_representative ? (
+                "현재 대표 프로필은 삭제할 수 없습니다. 다른 프로필을 게시해 대표로 변경한 뒤 삭제해주세요."
+              ) : (
+                <>
+                  ‘{saved.title || title}’의 작성 내용과 이 프로필의 심사 내역이
+                  삭제되며 복구할 수 없습니다. 다모아 원본·공통 정보·원본
+                  파일·다른 프로필은 유지됩니다.
+                </>
+              )}
+            </p>
+            {deleteError && (
+              <p role="alert" className="mt-3 text-sm text-red-600">
+                {deleteError}
+              </p>
+            )}
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                autoFocus
+                type="button"
+                disabled={pending}
+                onClick={() => deleteDialog.current?.close()}
+                className="min-h-11 rounded-xl border border-slate-200 px-4 text-sm text-slate-600 disabled:opacity-40"
+              >
+                {selected?.is_representative ? "확인" : "취소"}
+              </button>
+              {!selected?.is_representative && (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={removeProfile}
+                  className="min-h-11 rounded-xl bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-40"
+                >
+                  {pending ? "삭제 중…" : "삭제하기"}
+                </button>
+              )}
+            </div>
+          </dialog>
           <dialog
             ref={leaveDialog}
             aria-labelledby="unsaved-profile-title"

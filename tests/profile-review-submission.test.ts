@@ -49,6 +49,26 @@ test("imported evidence connects without upload or an explicit per-item selectio
   expect(source.files).toEqual([file]);
 });
 
+test("preview verification requires an unchanged approval, including file selection", () => {
+  const old = stored("verified");
+  expect(reviewSubmissionPlan(records(old), {}, [old], {})[0].verified).toBe(
+    true,
+  );
+  expect(
+    reviewSubmissionPlan(records(old), {}, [old], {
+      [old.item_key]: { key: old.item_key, files: [], publicIds: [] },
+    })[0].verified,
+  ).toBe(false);
+  expect(
+    reviewSubmissionPlan(
+      records(stored("pending")),
+      {},
+      [stored("pending")],
+      {},
+    )[0].verified,
+  ).toBe(false);
+});
+
 test.each(["verified", "pending", "rejected"] as const)(
   "unchanged %s evidence is not requested again",
   (status) => {

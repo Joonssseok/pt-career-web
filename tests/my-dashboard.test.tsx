@@ -32,15 +32,20 @@ const data: MyDashboardData = {
   reviewError: false,
 };
 
-test("관리용 제목은 편집으로, 공개 프로필은 회원에게 고정된 주소로 연결", () => {
-  render(<MyDashboard data={data} sharing={<div>공유 도구</div>} />);
+test("관리용 제목은 편집으로 연결하고 사진 박스는 사진·이름·정보 수정만 표시", () => {
+  render(<MyDashboard data={{ ...data, photoUrl: "/profile-test.jpg" }} sharing={<div>공유 도구</div>} />);
   expect(screen.getByRole("link", { name: /관리용 제목/ })).toHaveAttribute(
     "href",
     "/my/profiles?profile=private-version",
   );
-  expect(
-    screen.getByRole("link", { name: /공개 프로필 보기/ }),
-  ).toHaveAttribute("href", "/experts/person");
+  const identity = screen.getByRole("region", { name: /테스트 회원/ });
+  expect(within(identity).getByRole("img", { name: "테스트 회원 프로필 사진" })).toBeInTheDocument();
+  expect(within(identity).getByRole("link", { name: "내정보 수정" })).toHaveAttribute("href", "/my/personal");
+  expect(within(identity).queryByText("현재 프로필")).not.toBeInTheDocument();
+  expect(within(identity).queryByText("관리용 제목")).not.toBeInTheDocument();
+  expect(within(identity).queryByText("소개")).not.toBeInTheDocument();
+  expect(within(identity).queryByRole("switch")).not.toBeInTheDocument();
+  expect(within(identity).queryByRole("link", { name: /공개 프로필 보기/ })).not.toBeInTheDocument();
   expect(screen.queryByRole("link", { name: /이력서 다운로드/ })).not.toBeInTheDocument();
 });
 
@@ -81,9 +86,8 @@ test("미게시·비공개 상태에 공개 프로필 링크를 제공하지 않
   expect(
     screen.queryByRole("link", { name: /공개 프로필 보기/ }),
   ).not.toBeInTheDocument();
-  expect(
-    screen.getByRole("link", { name: /프로필 관리로 이동/ }),
-  ).toHaveAttribute("href", "/my/profiles");
+  expect(screen.getByRole("link", { name: /관리용 제목/ })).toHaveAttribute("href", "/my/profiles?profile=private-version");
+  expect(within(screen.getByRole("region", { name: "프로필 관리" })).getByText("비공개")).toBeInTheDocument();
 });
 
 test("예시 화면의 공유 조작은 클립보드·전송·통계에 영향을 주지 않음", () => {

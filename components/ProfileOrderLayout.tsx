@@ -196,7 +196,11 @@ export function ProfileOrderLayout({
     );
     const saved = Array.isArray(order[group]) ? order[group] : [];
     const rank = (key: string) => {
-      const i = saved.indexOf(key);
+      const i = saved.findIndex((savedKey) =>
+        savedKey === key ||
+        (group === "sections" && combineSimilarSections &&
+          (sectionFamilies[savedKey] ?? savedKey) === (sectionFamilies[key] ?? key)),
+      );
       return i < 0
         ? saved.length +
             marked.findIndex((n) => n.props["data-order-key"] === key)

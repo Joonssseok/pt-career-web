@@ -5,6 +5,7 @@ import {
   type ExpertProfileViewProps,
 } from "@/components/experts/ExpertProfileView";
 import { profileActivityCards } from "@/components/ProfileActivitySections";
+import { EvidenceFilePicker } from "./EvidenceFilePicker";
 import { editableProfileItem } from "@/lib/profile-versions/item-edit";
 import {
   ProfileItemEditDialog,
@@ -45,7 +46,9 @@ export function ProfileVisualReview({
   evidence,
   onSaveEvidence,
   evidenceDisabled = false,
+  damoaFiles = [],
 }: {
+  damoaFiles?: ReviewFile[];
   evidence?: Awaited<
     ReturnType<
       typeof import("@/lib/profile-versions/evidence").loadEvidenceReviews
@@ -241,6 +244,12 @@ export function ProfileVisualReview({
   const filesFor = (row: VisualItem) => [
     ...row.files,
     ...(localFiles[row.key] ?? []),
+    ...damoaFiles.filter(
+      (file) =>
+        choices[row.key]?.files[file.id]?.selected &&
+        !row.files.some((item) => item.id === file.id) &&
+        !localFiles[row.key]?.some((item) => item.id === file.id),
+    ),
   ];
   const attachedFor = (row: VisualItem) =>
     filesFor(row).filter(
@@ -254,7 +263,13 @@ export function ProfileVisualReview({
           row.files.some((original) => original.id === file.id) &&
           choices[row.key]?.files[file.id] === undefined),
     );
-  const available = target ? filesFor(target) : [];
+  const available = target
+    ? [
+        ...new Map(
+          [...filesFor(target), ...damoaFiles].map((file) => [file.id, file]),
+        ).values(),
+      ]
+    : [];
   const attachedCount = active.reduce(
     (count, row) => count + attachedFor(row).length,
     0,
@@ -782,57 +797,21 @@ export function ProfileVisualReview({
             ×
           </button>
         </div>
-        <label className="mt-6 block cursor-pointer rounded-xl border-2 border-dashed border-blue-200 bg-blue-50/30 p-6 text-center">
-          <span className="block text-sm font-semibold text-primary">
-            파일 선택
-          </span>
-          <span className="mt-2 block text-xs text-slate-400">
-            JPG·PNG·WebP·PDF / 파일당 10MB 이하
-          </span>
-          <input
-            aria-label="증빙자료 파일 선택"
-            disabled={saving}
-            type="file"
-            multiple
-            accept="image/jpeg,image/png,image/webp,application/pdf"
-            onChange={(event) => {
-              addFiles(event.target.files);
-              event.target.value = "";
-            }}
-            className="sr-only"
-          />
-        </label>
+        <EvidenceFilePicker
+          key={target?.key || "closed"}
+          files={available}
+          selection={selection}
+          onSelectionChange={setSelection}
+          onAddFiles={addFiles}
+          disabled={saving}
+          loading={loading}
+          error={error}
+          retry={retry}
+        />
         {fileError && (
           <p role="alert" className="mt-3 text-xs text-red-600">
             {fileError}
           </p>
-        )}
-        {available.length > 0 && (
-          <fieldset className="mt-5">
-            <legend className="text-xs font-semibold text-slate-700">
-              사용할 자료 선택
-            </legend>
-            {available.map((file) => (
-              <label
-                key={file.id}
-                className="mt-2 flex min-h-11 items-center gap-3 rounded-lg border border-slate-100 p-3 text-sm text-slate-600"
-              >
-                <input
-                  type="checkbox"
-                  checked={selection.includes(file.id)}
-                  onChange={(event) =>
-                    setSelection((previous) =>
-                      event.target.checked
-                        ? [...previous, file.id]
-                        : previous.filter((id) => id !== file.id),
-                    )
-                  }
-                  className="accent-blue-600"
-                />
-                <span className="break-all">{file.name}</span>
-              </label>
-            ))}
-          </fieldset>
         )}
         {onSaveEvidence && (
           <fieldset className="mt-5 space-y-3">

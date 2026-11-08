@@ -24,6 +24,14 @@ test("successful OAuth/signup callback starts PIN setup and keeps safe destinati
     "https://test.example/my/profiles",
   );
 });
+test.each(["", "&next=https%3A%2F%2Foutside.invalid"])(
+  "callback defaults to home without accepting external destinations: %s",
+  async (next) => {
+    const result = await GET(new NextRequest(`https://test.example/auth/callback?code=fake-code${next}`));
+    expect(result.headers.get("location")).toBe("https://test.example/home");
+    expect(startPinEnrollment).toHaveBeenCalledTimes(1);
+  },
+);
 test.each(["/my/pin-reset", "/reset-password"])(
   "email recovery to %s is never blocked by PIN enrollment",
   async (next) => {

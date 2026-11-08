@@ -10,6 +10,8 @@ import {
 import { ProfileVersionManager } from "../app/my/profiles/ProfileVersionManager";
 import { ProfileVisualReview } from "../app/my/profiles/ProfileVisualReview";
 import { saveProfileVersion } from "../app/actions/profile-versions";
+import type { Activity } from "../lib/damoa/categories";
+const loadActivities = jest.fn<Promise<Activity[]>, [string]>();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ replace: jest.fn(), refresh: jest.fn() }),
 }));
@@ -21,7 +23,7 @@ jest.mock("../app/actions/certification", () => ({
   getOwnCertifications: async () => ({ ok: true, certifications: [] }),
 }));
 jest.mock("../lib/damoa/server-store", () => ({
-  loadActivities: async () => [],
+  loadActivities: (owner: string) => loadActivities(owner),
 }));
 jest.mock("../lib/profile-versions/evidence", () => ({
   loadEvidenceReviews: async () => ({ rows: [], files: {} }),
@@ -45,6 +47,23 @@ const version = {
   updated_at: "",
   published_at: null,
 };
+const expert = {
+  id: "p",
+  display_name: "전문가",
+  headline: "소개",
+  introduction: "내용",
+  professions: [],
+  specialties: [],
+  academic_records: [],
+  educations: [],
+  experiences: [],
+  licenses: [],
+  extra_links: [],
+  total_experience_years: 0,
+  profile_image_path: null,
+  cover_image_path: null,
+} as unknown as import("../components/experts/ExpertProfileView").ExpertProfileViewProps["expert"];
+beforeEach(() => loadActivities.mockResolvedValue([]));
 beforeAll(() => {
   HTMLDialogElement.prototype.showModal = function () {
     this.setAttribute("open", "");
@@ -136,22 +155,6 @@ test("real request keeps the file private by default and keeps dialog open on er
     .fn()
     .mockRejectedValueOnce(new Error("요청 실패"))
     .mockResolvedValue(undefined);
-  const expert = {
-    id: "p",
-    display_name: "전문가",
-    headline: "소개",
-    introduction: "내용",
-    professions: [],
-    specialties: [],
-    academic_records: [],
-    educations: [],
-    experiences: [],
-    licenses: [],
-    extra_links: [],
-    total_experience_years: 0,
-    profile_image_path: null,
-    cover_image_path: null,
-  } as unknown as import("../components/experts/ExpertProfileView").ExpertProfileViewProps["expert"];
   render(
     <ProfileVisualReview
       expert={expert}
@@ -210,4 +213,86 @@ test("real request keeps the file private by default and keeps dialog open on er
     ),
   );
   await waitFor(() => expect(dialog.hasAttribute("open")).toBe(false));
+});
+
+test("the picker includes own Damoa files even from activities absent from this profile, and excludes other owners", async () => {
+  const activity = (owner: string, name: string, path?: string): Activity => ({
+    id: name,
+    owner,
+    title: name + " 활동",
+    category: "education",
+    period: "",
+    description: "",
+    learning: "",
+    link: "",
+    memo: "",
+    details: {},
+    updated: "now",
+    files: [
+      { id: name, name: name + ".png", type: "image/png", size: 100, path },
+    ],
+  });
+  loadActivities.mockResolvedValue([
+    activity("owner", "내 보관자료", "owner/image.png"),
+    activity("other-owner", "다른 계정 자료", "other-owner/image.png"),
+    activity("owner", "미저장 자료"),
+  ]);
+  render(
+    <ProfileVersionManager
+      owner="owner"
+      versions={[version]}
+      selectedId="v"
+      base={null}
+      expert={expert}
+    />,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "공개 전 확인", exact: true }),
+  );
+  await waitFor(() =>
+    expect(screen.queryByText("자료를 불러오는 중입니다.")).toBeNull(),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "소개 세부항목" }));
+  fireEvent.click(screen.getByRole("button", { name: "증빙자료 첨부" }));
+  const dialog = screen.getByRole("dialog", { name: "증빙자료 첨부" });
+  expect(
+    within(dialog).getByRole("checkbox", { name: "내 보관자료.png" }),
+  ).toBeTruthy();
+  expect(within(dialog).getByText(/내 보관자료 활동/)).toBeTruthy();
+  expect(within(dialog).queryByText("다른 계정 자료.png")).toBeNull();
+  expect(within(dialog).queryByText("미저장 자료.png")).toBeNull();
+});
+
+test("selecting an existing Damoa file saves only that file and keeps it private by default", async () => {
+  const save = jest.fn().mockResolvedValue(undefined);
+  const file = {
+    id: "stored",
+    name: "보관된 증명서.pdf",
+    href: "/api/damoa/files/stored",
+    type: "application/pdf",
+    activityTitle: "다른 활동",
+  };
+  render(
+    <ProfileVisualReview
+      expert={expert}
+      activities={[]}
+      items={[]}
+      damoaFiles={[file]}
+      choices={{}}
+      onChange={() => {}}
+      loading={false}
+      error=""
+      retry={() => {}}
+      onSaveEvidence={save}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "소개 세부항목" }));
+  fireEvent.click(screen.getByRole("button", { name: "증빙자료 첨부" }));
+  const dialog = screen.getByRole("dialog", { name: "증빙자료 첨부" });
+  fireEvent.click(within(dialog).getByRole("checkbox", { name: file.name }));
+  expect(save).not.toHaveBeenCalled();
+  fireEvent.click(within(dialog).getByRole("button", { name: "첨부 저장" }));
+  await waitFor(() =>
+    expect(save).toHaveBeenCalledWith("introduction:0", [file], [], false),
+  );
 });

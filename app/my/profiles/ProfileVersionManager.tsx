@@ -11,6 +11,7 @@ import { getEvidenceFileUrl } from "@/lib/storage/evidence-file-url";
 import {
   type ReviewItem,
   type ReviewChoice,
+  type ReviewFile,
 } from "@/lib/profile-versions/review-preview";
 import { ProfileTitleCard } from "@/components/ProfileTitleCard";
 import {
@@ -202,6 +203,28 @@ export function ProfileVersionManager({
       current = false;
     };
   }, [step, owner, id, reviewReload]);
+  const damoaFiles = useMemo<ReviewFile[]>(
+    () => [
+      ...new Map(
+        reviewSources
+          .filter((row) => row.owner === owner)
+          .flatMap((row) =>
+            row.files
+              .filter((file) => !!file.path)
+              .map((file) => ({
+                id: file.id,
+                name: file.name,
+                href: "/api/damoa/files/" + encodeURIComponent(file.id),
+                type: file.type,
+                size: file.size,
+                activityTitle: row.title || "자료만 보관",
+              })),
+          )
+          .map((file) => [file.id, file]),
+      ).values(),
+    ],
+    [reviewSources, owner],
+  );
   const reviewItems = useMemo<ReviewItem[]>(
     () => [
       ...content.activities.map((activity) => {
@@ -866,6 +889,7 @@ export function ProfileVersionManager({
                 </div>
               ) : (
                 <ProfileVisualReview
+                  damoaFiles={damoaFiles}
                   detailImages={detailImages}
                   evidence={evidence}
                   onSaveEvidence={saveEvidence}

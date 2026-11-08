@@ -185,3 +185,18 @@ test("saved JSON order is restored without editor controls on a fresh render", (
   ]);
   expect(screen.queryByRole("button")).toBeNull();
 });
+
+test.each([
+  ["activity:학력", "academic_records"],
+  ["academic_records", "activity:학력"],
+])("saved education position survives a change between common and imported sections: %s -> %s", (savedKey, renderedKey) => {
+  render(
+    <ProfileOrderLayout combineSimilarSections order={{ sections: ["introduction", savedKey, "experiences"] }}>
+      <section data-order-key="introduction"><h2>소개</h2></section>
+      <section data-order-key="experiences"><h2>경력</h2></section>
+      <section data-order-key={renderedKey}><h2>학력</h2></section>
+    </ProfileOrderLayout>,
+  );
+  expect(screen.getAllByRole("heading").map(n => n.textContent)).toEqual(["소개", "학력", "경력"]);
+  expect(screen.queryByRole("button")).toBeNull();
+});

@@ -45,7 +45,7 @@ export function validateRedirectUrl(url: string | null): boolean {
  */
 export function getSafeRedirectUrl(
   nextUrl: string | null,
-  fallback: string = '/my'
+  fallback: string = '/home'
 ): string {
   if (validateRedirectUrl(nextUrl)) {
     return nextUrl as string

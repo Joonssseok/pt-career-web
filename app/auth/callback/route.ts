@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { validateRedirectUrl } from '@/lib/auth/safe-redirect'
+import { getSafeRedirectUrl } from '@/lib/auth/safe-redirect'
 import { startPinEnrollment } from '@/lib/auth/pin-enrollment'
 
 const ERROR_CODE_MAP: Record<string, string> = {
@@ -49,10 +49,7 @@ export async function GET(request: NextRequest) {
     console.log('[AUTH_CALLBACK] Exchange success: true')
 
     // Determine redirect URL
-    let redirectUrl = '/my'
-    if (nextUrl && validateRedirectUrl(nextUrl)) {
-      redirectUrl = nextUrl
-    }
+    const redirectUrl = getSafeRedirectUrl(nextUrl)
 
     if (redirectUrl !== '/my/pin-reset' && redirectUrl !== '/reset-password') {
       const started = await startPinEnrollment(supabase)

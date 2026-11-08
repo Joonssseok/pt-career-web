@@ -1,3 +1,6 @@
+"use client";
+
+// Keep section keys and titles intact across the public page's server/client boundary.
 import type { ReactNode } from "react";
 
 export function ProfileSectionCard({

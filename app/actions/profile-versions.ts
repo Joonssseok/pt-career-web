@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { ReviewSubmission } from "@/lib/profile-versions/review-submission";
 import {
   LIVE_PROFILE_PUBLISH_ENABLED,
   type VersionContent,
@@ -44,7 +45,11 @@ export async function saveProfileVersion(
     detailRevision: detailImages ? (data.revision as string) : undefined,
   };
 }
-export async function publishProfileVersion(id: string) {
+export async function publishProfileVersion(
+  id: string,
+  content: VersionContent,
+  reviews: ReviewSubmission[],
+) {
   if (!LIVE_PROFILE_PUBLISH_ENABLED)
     return {
       ok: false as const,
@@ -56,11 +61,21 @@ export async function publishProfileVersion(id: string) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { ok: false as const, error: "로그인이 필요합니다." };
-  const { error } = await supabase.rpc("publish_profile_version", { p_id: id });
-  if (error) return { ok: false as const, error: error.message };
+  const { error } = await supabase.rpc("publish_profile_with_reviews", {
+    p_id: id,
+    p_content: content,
+    p_reviews: reviews,
+  });
+  if (error)
+    return {
+      ok: false as const,
+      error:
+        "게시와 심사 접수를 완료하지 못했습니다. 자료와 저장 상태를 다시 확인해주세요.",
+    };
   revalidatePath("/my", "layout");
   revalidatePath("/expert/edit", "layout");
   revalidatePath("/experts", "layout");
   revalidatePath("/home");
+  revalidatePath("/admin");
   return { ok: true as const };
 }

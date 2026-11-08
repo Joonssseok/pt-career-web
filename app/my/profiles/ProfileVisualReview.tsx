@@ -5,30 +5,28 @@ import {
   type ExpertProfileViewProps,
 } from "@/components/experts/ExpertProfileView";
 import { profileActivityCards } from "@/components/ProfileActivitySections";
+import {
+  connectedReviewFiles,
+  type ReviewAttachment,
+} from "@/lib/profile-versions/review-submission";
+import {
+  profileReviewItems,
+  type Section,
+  type VisualItem,
+} from "@/lib/profile-versions/review-items";
 import { EvidenceFilePicker } from "./EvidenceFilePicker";
 import { editableProfileItem } from "@/lib/profile-versions/item-edit";
 import {
   ProfileItemEditDialog,
   type ItemEditField,
 } from "./ProfileItemEditDialog";
-import {
-  profileItemKey,
-  type ProfileActivity,
-} from "@/lib/profile-versions/types";
+import { type ProfileActivity } from "@/lib/profile-versions/types";
 import {
   emptyReviewChoice,
   type ReviewChoice,
   type ReviewFile,
   type ReviewItem,
 } from "@/lib/profile-versions/review-preview";
-type Section = Parameters<
-  NonNullable<ExpertProfileViewProps["renderItemActions"]>
->[0];
-type VisualItem = ReviewItem & {
-  section?: Section;
-  index?: number;
-  sourceKey?: string;
-};
 export function ProfileVisualReview({
   expert,
   activities,
@@ -44,8 +42,9 @@ export function ProfileVisualReview({
   order = {},
   onOrderChange,
   evidence,
-  onSaveEvidence,
-  evidenceDisabled = false,
+  onAttachmentChange,
+  attachments = {},
+  publishAction,
   damoaFiles = [],
 }: {
   damoaFiles?: ReviewFile[];
@@ -54,13 +53,9 @@ export function ProfileVisualReview({
       typeof import("@/lib/profile-versions/evidence").loadEvidenceReviews
     >
   >;
-  onSaveEvidence?: (
-    key: string,
-    files: ReviewFile[],
-    publicIds: string[],
-    request: boolean,
-  ) => Promise<void>;
-  evidenceDisabled?: boolean;
+  onAttachmentChange?: (attachment: ReviewAttachment) => void;
+  attachments?: Record<string, ReviewAttachment>;
+  publishAction?: React.ReactNode;
   order?: import("@/components/ProfileOrderLayout").ProfileOrder;
   onOrderChange?: (
     order: import("@/components/ProfileOrderLayout").ProfileOrder,
@@ -88,11 +83,9 @@ export function ProfileVisualReview({
   const [localFiles, setLocalFiles] = useState<Record<string, ReviewFile[]>>(
     {},
   );
-  const [saving, setSaving] = useState(false);
   const [publicSelection, setPublicSelection] = useState<string[]>([]);
   const [selection, setSelection] = useState<string[]>([]);
   const [fileError, setFileError] = useState("");
-  const [tab, setTab] = useState<"results" | "files">("results");
   const dialog = useRef<HTMLDialogElement>(null);
   const menu = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -118,115 +111,7 @@ export function ProfileVisualReview({
     },
     [],
   );
-  const records: VisualItem[] = [];
-  function add(
-    section: Section,
-    index: number,
-    title: string,
-    category: string,
-  ) {
-    const license =
-      section === "licenses" ? expert?.licenses[index] : undefined;
-    const source = license
-      ? items.find(
-          (item) =>
-            item.source === "license" &&
-            (item.key === "license:" + license.id ||
-              (item.title === license.license_name &&
-                item.period === (license.acquired_date?.slice(0, 7) ?? ""))),
-        )
-      : undefined;
-    records.push({
-      key: profileItemKey(
-        section,
-        section !== "introduction" && section !== "workplace"
-          ? expert?.[section][index]
-          : undefined,
-      ),
-      sourceKey: source?.key,
-      title,
-      category,
-      source: source?.source ?? "damoa",
-      files: source?.files ?? [],
-      verified: source ? source.verified === true : section === "licenses",
-      reviewStatus: source
-        ? source.reviewStatus
-        : section === "licenses"
-          ? "verified"
-          : undefined,
-      section,
-      index,
-    });
-  }
-  expert?.specialties.forEach((row, index) =>
-    add("specialties", index, row.name, "전문 분야"),
-  );
-  if (expert?.introduction) add("introduction", 0, "소개", "소개");
-  expert?.experiences.forEach((row, index) =>
-    add("experiences", index, row.organization_name, "경력"),
-  );
-  expert?.academic_records.forEach((row, index) =>
-    add("academic_records", index, row.school_name, "학력"),
-  );
-  expert?.educations.forEach((row, index) =>
-    add("educations", index, row.education_name, "교육 이수"),
-  );
-  expert?.licenses.forEach((row, index) =>
-    add("licenses", index, row.license_name, "자격·면허"),
-  );
-  if (
-    expert &&
-    [
-      expert.workplace_address,
-      expert.workplace_phone,
-      expert.workplace_external_contact_url,
-      expert.workplace_website_url,
-    ].some(Boolean)
-  )
-    add(
-      "workplace",
-      0,
-      expert.workplace_center_name || "근무 기관",
-      "근무 기관",
-    );
-  activities.forEach((activity) =>
-    records.push(
-      items.find((item) => item.key === "damoa:" + activity.id) ?? {
-        key: "damoa:" + activity.id,
-        title: activity.title,
-        category: activity.category,
-        source: "damoa",
-        files: [],
-      },
-    ),
-  );
-  for (const row of records) {
-    const stored = evidence?.rows.find((r) => r.item_key === row.key);
-    if (stored) {
-      row.files = [
-        ...new Map(
-          [
-            ...row.files,
-            ...stored.file_ids.flatMap((id) =>
-              evidence?.files[id] ? [evidence.files[id]] : [],
-            ),
-          ].map((file) => [file.id, file]),
-        ).values(),
-      ];
-      const activity = activities.find((a) => row.key === "damoa:" + a.id);
-      const sameSnapshot =
-        !activity ||
-        (!!stored.item_snapshot &&
-          JSON.stringify(activity, Object.keys(activity).sort()) ===
-            JSON.stringify(
-              stored.item_snapshot,
-              Object.keys(stored.item_snapshot).sort(),
-            ));
-      row.reviewStatus =
-        !sameSnapshot || stored.status === "draft" ? undefined : stored.status;
-      row.verified = sameSnapshot && stored.status === "verified";
-    }
-  }
+  const records = profileReviewItems(expert, activities, items, evidence);
   const visible = (row: VisualItem) => choices[row.key]?.visible !== false;
   const active = records.filter(visible);
   const deleted = records.filter((row) => !visible(row));
@@ -242,26 +127,24 @@ export function ProfileVisualReview({
     ),
   ];
   const filesFor = (row: VisualItem) => [
-    ...row.files,
-    ...(localFiles[row.key] ?? []),
-    ...damoaFiles.filter(
-      (file) =>
-        choices[row.key]?.files[file.id]?.selected &&
-        !row.files.some((item) => item.id === file.id) &&
-        !localFiles[row.key]?.some((item) => item.id === file.id),
-    ),
+    ...new Map(
+      [
+        ...row.files,
+        ...(localFiles[row.key] ?? []),
+        ...(attachments[row.key]?.files ?? []),
+        ...damoaFiles.filter(
+          (file) => choices[row.key]?.files[file.id]?.selected,
+        ),
+      ].map((file) => [file.id, file]),
+    ).values(),
   ];
   const attachedFor = (row: VisualItem) =>
-    filesFor(row).filter(
-      (file) =>
-        evidence?.rows.some(
-          (r) => r.item_key === row.key && r.file_ids.includes(file.id),
-        ) ||
-        choices[row.key]?.files[file.id]?.selected ||
-        (!evidence?.rows.some((r) => r.item_key === row.key) &&
-          row.verified &&
-          row.files.some((original) => original.id === file.id) &&
-          choices[row.key]?.files[file.id] === undefined),
+    attachments[row.key]?.files ??
+    connectedReviewFiles(
+      row,
+      evidence?.rows.find((r) => r.item_key === row.key),
+      choices[row.key],
+      filesFor(row),
     );
   const available = target
     ? [
@@ -280,7 +163,9 @@ export function ProfileVisualReview({
     setFileError("");
     setSelection(attachedFor(row).map((file) => file.id));
     setPublicSelection(
-      evidence?.rows.find((r) => r.item_key === row.key)?.public_file_ids ?? [],
+      attachments[row.key]?.publicIds ??
+        evidence?.rows.find((r) => r.item_key === row.key)?.public_file_ids ??
+        [],
     );
     dialog.current?.showModal();
   }
@@ -339,12 +224,37 @@ export function ProfileVisualReview({
   }
   function actions(row?: VisualItem) {
     if (!row) return null;
+    const fileCount = attachedFor(row).length;
     return (
       <span
         className="relative z-10 float-right ml-3 inline-flex shrink-0 gap-1"
         ref={expanded === row.key ? menu : undefined}
         data-profile-editor-controls
       >
+        {fileCount > 0 && (
+          <button
+            type="button"
+            aria-label={`${row.title} 증빙자료 ${fileCount}개 미리보기`}
+            aria-haspopup="dialog"
+            title={`자료 ${fileCount}개 미리보기`}
+            onClick={() => openAttachment(row)}
+            className="mr-1 inline-flex min-h-5 items-center gap-1 rounded px-1 text-xs font-normal leading-none text-slate-400 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-3.5"
+            >
+              <path d="m21 11-8.5 8.5a6 6 0 0 1-8.5-8.5l9-9a4 4 0 0 1 5.7 5.7l-9 9a2 2 0 0 1-2.8-2.8L15 6" />
+            </svg>
+            <span>{fileCount}</span>
+          </button>
+        )}
         <button
           type="button"
           aria-label={`${row.title} 세부항목`}
@@ -377,7 +287,7 @@ export function ProfileVisualReview({
               onClick={() => openAttachment(row)}
               className="block min-h-11 w-full rounded-lg px-3 text-left font-semibold text-primary hover:bg-blue-50"
             >
-              증빙자료 첨부
+              증빙자료 확인
             </button>
             <button
               type="button"
@@ -480,45 +390,28 @@ export function ProfileVisualReview({
     }));
     setSelection((previous) => [...previous, ...added.map((file) => file.id)]);
   }
-  async function persist(request: boolean) {
-    if (!target || !onSaveEvidence) return;
-    if (selection.length > 20) {
-      setFileError("한 항목에 증빙자료는 20개까지 첨부할 수 있습니다.");
-      return;
-    }
-    setSaving(true);
-    setFileError("");
-    try {
-      await onSaveEvidence(
-        target.key,
-        available.filter((f) => selection.includes(f.id)),
-        publicSelection.filter((id) => selection.includes(id)),
-        request,
-      );
-      setLocalFiles((previous) => ({ ...previous, [target.key]: [] }));
-      setTab(request ? "results" : "files");
-      dialog.current?.close();
-    } catch (error) {
-      setFileError(
-        error instanceof Error
-          ? error.message
-          : "첨부자료를 저장하지 못했습니다.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
   function attach() {
     if (!target) return;
-    const current = choices[target.key] ?? emptyReviewChoice();
-    const files = Object.fromEntries(
-      available.map((file) => [
-        file.id,
-        { selected: selection.includes(file.id), public: false },
-      ]),
-    );
-    onChange(target.key, { ...current, files, requested: false });
-    setTab("files");
+    if (selection.length > 20) {
+      setFileError("한 항목에 증빙자료는 20개까지 연결할 수 있습니다.");
+      return;
+    }
+    const files = available.filter((file) => selection.includes(file.id));
+    const publicIds = publicSelection.filter((id) => selection.includes(id));
+    onAttachmentChange?.({ key: target.key, files, publicIds });
+    onChange(target.key, {
+      ...(choices[target.key] ?? emptyReviewChoice()),
+      files: Object.fromEntries(
+        available.map((file) => [
+          file.id,
+          {
+            selected: selection.includes(file.id),
+            public: publicIds.includes(file.id),
+          },
+        ]),
+      ),
+      requested: false,
+    });
     dialog.current?.close();
   }
   return (
@@ -550,134 +443,104 @@ export function ProfileVisualReview({
       </div>
       <aside
         aria-label="첨부파일 사이드바"
-        className="min-w-0 xl:sticky xl:top-28 xl:max-h-[calc(100svh-8rem)] xl:self-start xl:overflow-y-auto"
+        className="order-first min-w-0 xl:order-last xl:sticky xl:top-28 xl:self-start"
       >
-        <div className="rounded-2xl border border-slate-200 bg-white p-4">
-          <h2 className="font-bold text-slate-900">첨부파일</h2>
-          <p className="mt-2 text-xs leading-5 text-slate-400">
-            {onSaveEvidence
-              ? "증빙은 비공개로 보관되며 관리자 승인 후 선택한 파일만 공개됩니다."
-              : "첨부·심사 요청은 미리보기이며 실제로 전송되지 않습니다."}
+        <div className="rounded-2xl border border-blue-100 bg-white p-5">
+          <p className="text-xs font-semibold text-primary">
+            자료는 함께 연결돼요
           </p>
-          <div
-            className="mt-4 flex border-b border-slate-100"
-            role="tablist"
-            aria-label="심사·자료 보기"
-          >
-            {(["results", "files"] as const).map((value) => (
-              <button
-                key={value}
-                type="button"
-                role="tab"
-                aria-selected={tab === value}
-                onClick={() => setTab(value)}
-                className={`min-h-11 flex-1 border-b-2 text-xs font-semibold ${tab === value ? "border-primary text-primary" : "border-transparent text-slate-400"}`}
-              >
-                {value === "results"
-                  ? "심사 결과"
-                  : `첨부파일 ${attachedCount}`}
-              </button>
-            ))}
-          </div>
+          <p className="mt-2 text-lg font-semibold text-slate-900">
+            증빙자료 {attachedCount}개
+          </p>
+          <p className="mt-2 text-xs leading-6 text-slate-500">
+            게시할 때 필요한 자료만 한꺼번에 심사 요청됩니다.
+          </p>
           {loading && (
-            <p role="status" className="mt-4 text-xs text-slate-400">
+            <p role="status" className="mt-3 text-xs text-slate-500">
               자료를 불러오는 중입니다.
             </p>
           )}
           {error && (
-            <p role="alert" className="mt-4 text-xs text-red-600">
-              {error}
-              <button
-                type="button"
-                onClick={retry}
-                className="min-h-10 underline"
-              >
+            <p role="alert" className="mt-3 text-xs text-red-600">
+              {error}{" "}
+              <button type="button" onClick={retry} className="underline">
                 다시 불러오기
               </button>
             </p>
           )}
-          <div
-            className="mt-3 divide-y divide-slate-100"
-            role="tabpanel"
-            aria-label={tab === "results" ? "심사 결과" : "첨부파일"}
-          >
-            {(tab === "results"
-              ? reviewRows
-              : active.filter((row) => attachedFor(row).length > 0)
-            ).map((row) => (
-              <div key={row.key} className="py-3">
-                <p className="text-micro text-slate-400">{row.category}</p>
-                <p className="mt-1 break-words text-xs font-semibold leading-5 text-slate-700">
-                  {row.title}
-                </p>
-                {tab === "results" ? (
-                  <span
-                    className={
-                      row.verified
-                        ? "mt-2 inline-flex items-center gap-1.5 text-micro text-black"
-                        : "mt-2 inline-block rounded-full bg-slate-50 px-2 py-1 text-micro text-slate-400"
-                    }
+          {publishAction && <div className="mt-5">{publishAction}</div>}
+          <details className="mt-4 border-t border-slate-100 pt-4">
+            <summary className="min-h-9 cursor-pointer text-sm font-medium text-slate-700">
+              연결 자료 확인
+            </summary>
+            <div
+              className="mt-2 max-h-[55svh] divide-y divide-slate-100 overflow-y-auto"
+              aria-label="연결된 증빙자료"
+            >
+              {active
+                .filter((row) => row.section !== "specialties")
+                .map((row) => (
+                  <button
+                    type="button"
+                    key={row.key}
+                    onClick={() => openAttachment(row)}
+                    className="block w-full py-3 text-left hover:text-primary"
                   >
-                    {row.verified && (
-                      <svg
-                        aria-hidden="true"
-                        className="shrink-0 text-primary"
-                        width="16"
-                        height="16"
-                        viewBox="0 0 16 16"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="m3 8 3.2 3.2L13 4.5" />
-                      </svg>
+                    <span className="block text-xs font-medium text-slate-700">
+                      {row.title}
+                    </span>
+                    <span className="mt-1 block text-xs text-slate-400">
+                      {attachedFor(row).length
+                        ? `자료 ${attachedFor(row).length}개 연결됨`
+                        : "연결된 자료 없음"}
+                      {row.reviewStatus === "pending"
+                        ? " · 심사 중"
+                        : row.reviewStatus === "verified"
+                          ? " · 인증완료"
+                          : row.reviewStatus === "rejected"
+                            ? " · 보완 필요"
+                            : ""}
+                    </span>
+                  </button>
+                ))}
+            </div>
+          </details>
+          {reviewRows.length > 0 && (
+            <details className="mt-3 border-t border-slate-100 pt-4">
+              <summary className="min-h-9 cursor-pointer text-sm font-medium text-slate-700">
+                심사 내역 {reviewRows.length}건
+              </summary>
+              <div
+                role="region"
+                aria-label="심사 결과"
+                className="mt-2 divide-y divide-slate-100"
+              >
+                {reviewRows.map((row) => (
+                  <div key={row.key} className="py-3 text-xs">
+                    <p className="font-medium text-slate-700">{row.title}</p>
+                    <p className="mt-1 text-slate-500">
+                      {row.reviewStatus === "pending"
+                        ? "심사 중"
+                        : row.reviewStatus === "rejected"
+                          ? "보완 필요"
+                          : "✓ 인증완료"}
+                    </p>
+                    {evidence?.rows.find((r) => r.item_key === row.key)
+                      ?.reason && (
+                      <p className="mt-1 text-red-500">
+                        {
+                          evidence.rows.find((r) => r.item_key === row.key)
+                            ?.reason
+                        }
+                      </p>
                     )}
-                    {row.reviewStatus === "pending"
-                      ? "심사 중"
-                      : row.reviewStatus === "rejected"
-                        ? "반려"
-                        : "인증완료"}
-                  </span>
-                ) : attachedFor(row).length ? (
-                  attachedFor(row).map((file) => (
-                    <a
-                      key={file.id}
-                      href={file.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 block min-h-8 break-all text-xs leading-5 text-primary"
-                    >
-                      {file.name} ↗
-                    </a>
-                  ))
-                ) : (
-                  <p className="mt-2 text-micro text-slate-400">
-                    첨부파일 없음
-                  </p>
-                )}
+                  </div>
+                ))}
               </div>
-            ))}
-            {(tab === "results"
-              ? reviewRows.length === 0
-              : attachedCount === 0) && (
-              <p className="py-4 text-xs text-slate-400">
-                {tab === "results"
-                  ? "심사 중이거나 심사가 완료된 내역이 없습니다."
-                  : "첨부파일이 없습니다."}
-              </p>
-            )}
-          </div>
-          {evidence?.rows
-            .filter((r) => r.reason)
-            .map((row) => (
-              <p key={row.id} className="mt-3 text-xs leading-5 text-slate-500">
-                {row.title}: {row.reason}
-              </p>
-            ))}
+            </details>
+          )}
           {deleted.length > 0 && (
-            <details className="mt-4 border-t border-slate-100 pt-4">
+            <details className="mt-3 border-t border-slate-100 pt-4">
               <summary className="cursor-pointer text-xs text-slate-500">
                 프로필에서 뺀 항목 {deleted.length}개
               </summary>
@@ -771,9 +634,6 @@ export function ProfileVisualReview({
       <dialog
         ref={dialog}
         aria-labelledby="evidence-dialog-title"
-        onCancel={(event) => {
-          if (saving) event.preventDefault();
-        }}
         onClose={() => setTarget(null)}
         className="m-auto max-h-[85svh] w-[calc(100%-2rem)] max-w-lg overflow-y-auto rounded-2xl border border-slate-100 bg-white p-6 shadow-xl backdrop:bg-slate-900/30"
       >
@@ -783,15 +643,14 @@ export function ProfileVisualReview({
               id="evidence-dialog-title"
               className="text-lg font-bold text-slate-900"
             >
-              증빙자료 첨부
+              증빙자료 확인
             </h2>
             <p className="mt-2 text-sm text-slate-500">{target?.title}</p>
           </div>
           <button
             type="button"
-            disabled={saving}
             onClick={() => dialog.current?.close()}
-            aria-label="증빙자료 첨부 닫기"
+            aria-label="증빙자료 확인 닫기"
             className="inline-flex size-10 shrink-0 items-center justify-center rounded-full text-xl text-slate-400 hover:bg-slate-50"
           >
             ×
@@ -803,7 +662,7 @@ export function ProfileVisualReview({
           selection={selection}
           onSelectionChange={setSelection}
           onAddFiles={addFiles}
-          disabled={saving}
+          disabled={false}
           loading={loading}
           error={error}
           retry={retry}
@@ -813,7 +672,7 @@ export function ProfileVisualReview({
             {fileError}
           </p>
         )}
-        {onSaveEvidence && (
+        {
           <fieldset className="mt-5 space-y-3">
             <legend className="text-sm font-semibold">
               증빙파일 공개 방식
@@ -863,21 +722,14 @@ export function ProfileVisualReview({
                   </label>
                 ))}
           </fieldset>
-        )}
+        }
         <p className="mt-5 text-xs leading-6 text-slate-400">
-          {onSaveEvidence
-            ? "첨부자료를 바꾸면 기존 인증은 해제되며 다시 심사를 요청해야 합니다. 주민등록번호 등 개인정보를 가린 자료를 첨부해주세요."
-            : "파일은 이번 미리보기에서만 첨부됩니다. 서버 업로드·심사 요청·공개는 하지 않습니다."}
+          연결한 자료는 게시할 때 함께 심사 요청됩니다. 개인정보를 가린 자료를
+          사용해주세요.
         </p>
-        {evidenceDisabled && onSaveEvidence && (
-          <p role="status" className="mt-3 text-xs text-slate-500">
-            프로필 변경 내용을 먼저 저장해주세요.
-          </p>
-        )}
         <div className="mt-5 flex justify-end gap-2">
           <button
             type="button"
-            disabled={saving}
             onClick={() => dialog.current?.close()}
             className="min-h-11 rounded-xl px-4 text-sm text-slate-500"
           >
@@ -885,33 +737,12 @@ export function ProfileVisualReview({
           </button>
           <button
             type="button"
-            disabled={
-              saving ||
-              loading ||
-              !!error ||
-              (onSaveEvidence ? evidenceDisabled : !selection.length)
-            }
-            onClick={() => (onSaveEvidence ? persist(false) : attach())}
+            disabled={loading || !!error}
+            onClick={attach}
             className="min-h-11 rounded-xl bg-primary px-5 text-sm font-semibold text-white disabled:opacity-40"
           >
-            {saving ? "처리 중…" : onSaveEvidence ? "첨부 저장" : "첨부하기"}
+            반영
           </button>
-          {onSaveEvidence && (
-            <button
-              type="button"
-              disabled={
-                saving ||
-                loading ||
-                !!error ||
-                evidenceDisabled ||
-                !selection.length
-              }
-              onClick={() => persist(true)}
-              className="min-h-11 rounded-xl bg-primary px-5 text-sm font-semibold text-white disabled:opacity-40"
-            >
-              심사 요청
-            </button>
-          )}
         </div>
       </dialog>
     </div>

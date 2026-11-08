@@ -72,8 +72,7 @@ function VisibleAd({ ad }: { ad: PublicAd }) {
   );
 }
 export function SideAdSlots() {
-  const pathname = usePathname(),
-    enabled = pathname === "/home" || pathname === "/experts";
+  const pathname = usePathname();
   const rail = useRef<HTMLDivElement>(null);
   const [wide, setWide] = useState(false);
   useEffect(() => {
@@ -86,7 +85,6 @@ export function SideAdSlots() {
   const [footerHeight, setFooterHeight] = useState(240),
     [ads, setAds] = useState<PublicAd[]>([]);
   useEffect(() => {
-    if (!enabled) return;
     const footer = rail.current?.parentElement?.querySelector("footer");
     if (!footer) return;
     const measure = () =>
@@ -95,9 +93,8 @@ export function SideAdSlots() {
     observer.observe(footer);
     measure();
     return () => observer.disconnect();
-  }, [enabled, pathname]);
+  }, [pathname]);
   useEffect(() => {
-    if (!enabled) return;
     const controller = new AbortController();
     setAds([]);
     void fetch("/api/ads", { signal: controller.signal, cache: "no-store" })
@@ -119,8 +116,7 @@ export function SideAdSlots() {
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [enabled, pathname]);
-  if (!enabled) return null;
+  }, [pathname]);
   return (
     <div
       ref={rail}

@@ -15,7 +15,9 @@ export function AccountMenu({ children }: { children: React.ReactNode }) {
     ? "damoa"
     : pathname.startsWith("/expert/edit") || pathname.startsWith("/my/profiles")
       ? "profile"
-      : pathname.startsWith("/my/account") ||
+      : pathname.startsWith("/my/personal") ||
+          pathname.startsWith("/my/pin-reset") ||
+          pathname.startsWith("/my/account") ||
           pathname.startsWith("/my/terms") ||
           pathname.startsWith("/my/delete-account")
         ? "account"

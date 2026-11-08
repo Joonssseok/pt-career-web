@@ -41,6 +41,26 @@ test("선택한 이력만 다시 표시", () => {
   expect(next.experiences).toEqual(base.experiences);
   expect(next.licenses).toEqual(base.licenses);
 });
+
+test("activity region overrides only this profile's display and keeps workplace privacy", () => {
+  const source = {
+    ...base,
+    workplace_region: "경기",
+    workplace_address: "비공개 주소",
+  };
+  const next = applyVersion(source, {
+    ...content,
+    activityRegion: "서울",
+    excluded: ["workplace:0"],
+  });
+  expect(next.workplace_region).toBe("서울");
+  expect(next.workplace_address).toBeNull();
+  expect(source.workplace_region).toBe("경기");
+  expect(
+    applyVersion(source, { ...content, activityRegion: "" }).workplace_region,
+  ).toBeNull();
+  expect(applyVersion(source, content).workplace_region).toBe("경기");
+});
 test("다모아를 가져올 때 개인 메모·첨부 원본·내부 소유자를 전달하지 않음", () => {
   const row = {
     id: "record",

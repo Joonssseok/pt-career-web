@@ -46,7 +46,9 @@ export function ProfileVisualReview({
   attachments = {},
   publishAction,
   damoaFiles = [],
+  activityRegion,
 }: {
+  activityRegion?: string;
   damoaFiles?: ReviewFile[];
   evidence?: Awaited<
     ReturnType<
@@ -351,7 +353,7 @@ export function ProfileVisualReview({
         ...(records.some((row) => row.section === "workplace" && !visible(row))
           ? {
               workplace_center_name: null,
-              workplace_region: null,
+              workplace_region: activityRegion || null,
               workplace_address: null,
               workplace_address_detail: null,
               workplace_phone: null,

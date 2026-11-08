@@ -15,7 +15,10 @@ import { profileActivityCards } from "@/components/ProfileActivitySections";
 import { ExpertProfileView } from "@/components/experts/ExpertProfileView";
 import { detailImageSrc } from "@/lib/profile-versions/detail-images";
 import { ProfileUnavailable } from "@/components/ProfileUnavailable";
-import { getUnavailableProfileState, isProfileId } from "@/lib/profile-sharing/access";
+import {
+  getUnavailableProfileState,
+  isProfileId,
+} from "@/lib/profile-sharing/access";
 
 export const dynamic = "force-dynamic";
 
@@ -87,7 +90,8 @@ const fetchExpert = cache(async (id: string): Promise<ExpertDetail | null> => {
     .eq("id", id)
     .maybeSingle();
 
-  if (error) throw new Error("프로필을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+  if (error)
+    throw new Error("프로필을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
   if (!data) return null;
 
   const { data: licenses, error: licenseError } = await supabase.rpc(
@@ -193,6 +197,7 @@ export default async function ExpertDetailPage({
     <main className="mx-auto min-h-screen max-w-4xl bg-white pb-10 pt-4 sm:pb-14 sm:pt-5">
       <div id="profile-details" className="scroll-mt-32">
         <ExpertProfileView
+          stickySummary
           detailImages={detailImages}
           expert={expert}
           order={expert.representative?.content.order}

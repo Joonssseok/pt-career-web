@@ -44,6 +44,7 @@ import { PROFILE_PRESENTATION_STORAGE_ENABLED } from "@/lib/profile-versions/pre
 import { type ExpertProfileViewProps } from "@/components/experts/ExpertProfileView";
 import { loadActivities } from "@/lib/damoa/server-store";
 import { CATEGORIES, type Activity } from "@/lib/damoa/categories";
+import { REGIONS } from "@/lib/constants/regions";
 import { ProfileDetailImageEditor } from "@/components/ProfileDetailImageEditor";
 import {
   type EditableDetailImage,
@@ -684,59 +685,82 @@ export function ProfileVersionManager({
                 <ProfileTitleCard value={title} onChange={setTitle} />
               )}
               <div hidden={step !== "write"} className="mb-5">
-                {commonEditor && (
-                  <section
-                    id="profile-basics"
-                    aria-labelledby="profile-basics-title"
-                    className="scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"
-                  >
-                    <div className="mb-5 flex items-start gap-3">
-                      <span
-                        aria-hidden
-                        className="pt-0.5 text-sm font-medium tabular-nums text-primary"
-                      >
-                        01
-                      </span>
-                      <div>
-                        <h2
-                          id="profile-basics-title"
-                          className="text-lg font-semibold text-slate-900"
-                        >
-                          기본정보
-                        </h2>
-                        <p className="mt-1 text-xs leading-6 text-slate-500">
-                          사진과 이름, 나를 찾는 기준이 될 직군과 분야를
-                          정해주세요.
-                        </p>
-                      </div>
-                    </div>
-                    <CommonProfileSaveContext.Provider
-                      value={commonSaveRegistry}
+                <section
+                  id="profile-basics"
+                  aria-labelledby="profile-basics-title"
+                  className="scroll-mt-28 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6"
+                >
+                  <div className="mb-5 flex items-start gap-3">
+                    <span
+                      aria-hidden
+                      className="pt-0.5 text-sm font-medium tabular-nums text-primary"
                     >
-                      <div
-                        onChangeCapture={() => setCommonDirty(true)}
-                        onClickCapture={(event) => {
-                          const button = (event.target as HTMLElement).closest(
-                            "button",
-                          );
-                          if (
-                            button &&
-                            !button.disabled &&
-                            (button.hasAttribute(
-                              "data-profile-dirty-control",
-                            ) ||
-                              /삭제|제거|링크 추가/.test(
-                                button.textContent || "",
-                              ))
-                          )
-                            setCommonDirty(true);
-                        }}
+                      01
+                    </span>
+                    <div>
+                      <h2
+                        id="profile-basics-title"
+                        className="text-lg font-semibold text-slate-900"
                       >
-                        {commonEditor}
-                      </div>
-                    </CommonProfileSaveContext.Provider>
-                  </section>
-                )}
+                        기본정보
+                      </h2>
+                      <p className="mt-1 text-xs leading-6 text-slate-500">
+                        사진과 이름, 나를 찾는 기준이 될 직군과 분야를
+                        정해주세요.
+                      </p>
+                    </div>
+                  </div>
+                  <CommonProfileSaveContext.Provider value={commonSaveRegistry}>
+                    <div
+                      onChangeCapture={() => setCommonDirty(true)}
+                      onClickCapture={(event) => {
+                        const button = (event.target as HTMLElement).closest(
+                          "button",
+                        );
+                        if (
+                          button &&
+                          !button.disabled &&
+                          (button.hasAttribute("data-profile-dirty-control") ||
+                            /삭제|제거|링크 추가/.test(
+                              button.textContent || "",
+                            ))
+                        )
+                          setCommonDirty(true);
+                      }}
+                    >
+                      {commonEditor}
+                    </div>
+                  </CommonProfileSaveContext.Provider>
+                  <label className="mt-5 block border-t border-slate-100 pt-5 text-sm font-semibold text-slate-800">
+                    주요 활동 지역{" "}
+                    <span className="ml-2 text-xs font-normal text-slate-400">
+                      선택
+                    </span>
+                    <select
+                      aria-label="주요 활동 지역"
+                      value={
+                        content.activityRegion ?? expert?.workplace_region ?? ""
+                      }
+                      onChange={(event) =>
+                        setContent((previous) => ({
+                          ...previous,
+                          activityRegion: event.target.value,
+                        }))
+                      }
+                      className={field}
+                    >
+                      <option value="">선택하지 않음</option>
+                      {REGIONS.map((region) => (
+                        <option key={region} value={region}>
+                          {region}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="mt-2 block text-xs font-normal leading-6 text-slate-400">
+                      저장 후 게시한 프로필에 시·도만 표시됩니다.
+                    </span>
+                  </label>
+                </section>
               </div>
               {step === "write" ? (
                 <div className="space-y-5">
@@ -1054,6 +1078,7 @@ export function ProfileVersionManager({
                     setContent((previous) => ({ ...previous, order }))
                   }
                   expert={previewExpert}
+                  activityRegion={content.activityRegion}
                   activities={previewActivities}
                   onEdit={(key, values) => {
                     const next = editProfileItem(

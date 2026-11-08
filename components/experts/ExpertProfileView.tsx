@@ -10,6 +10,7 @@ import { getGalleryImageUrl } from "@/lib/storage/gallery-image-url";
 import { GalleryFullScroll } from "@/components/GalleryFullScroll";
 import { ProfileDetailImages } from "@/components/ProfileDetailImages";
 import type { DetailImage } from "@/lib/profile-versions/detail-images";
+import styles from "./ExpertProfileView.module.css";
 import {
   YoutubeIcon,
   InstagramIcon,
@@ -90,6 +91,7 @@ export type ExpertProfileViewProps = {
   order?: ProfileOrder;
   onOrderChange?: (order: ProfileOrder) => void;
   activitySections?: React.ReactNode;
+  stickySummary?: boolean;
   renderItemActions?: (
     section:
       | "experiences"
@@ -131,6 +133,7 @@ export function ExpertProfileView({
   order,
   onOrderChange,
   activitySections,
+  stickySummary = false,
 }: ExpertProfileViewProps) {
   const coverImageUrl = getProfilePhotoUrl(expert.cover_image_path);
   const certifiedCount = expert.licenses.length;
@@ -179,143 +182,158 @@ export function ExpertProfileView({
       )}
 
       <div>
-        <div className="relative isolate min-h-[180px] overflow-hidden rounded-3xl border border-blue-100 bg-white p-5 sm:px-8 sm:py-6">
-          <svg
-            aria-hidden
-            viewBox="0 0 900 320"
-            preserveAspectRatio="xMaxYMid slice"
-            fill="none"
-            className="pointer-events-none absolute inset-0 -z-10 h-full w-full"
+        <div
+          className={stickySummary ? styles.stickySummary : undefined}
+          data-profile-summary
+        >
+          <div
+            className={`${styles.identity} relative isolate min-h-[180px] overflow-hidden rounded-3xl border border-blue-100 bg-white p-5 sm:px-8 sm:py-6`}
           >
-            <path
-              d="M0 310C200 300 380 220 520 170S760 50 900 30"
-              stroke="var(--color-primary)"
-              strokeOpacity="0.1"
-              strokeWidth="2"
-            />
-            <path
-              d="M0 340C240 335 430 260 600 210S800 100 900 90"
-              stroke="var(--color-motion)"
-              strokeOpacity="0.35"
-              strokeWidth="1.5"
-            />
-            <circle
-              cx="600"
-              cy="210"
-              r="5"
-              fill="white"
-              stroke="var(--color-motion)"
-              strokeOpacity="0.5"
-              strokeWidth="2"
-            />
-          </svg>
-          <div className="relative flex items-start gap-4 sm:items-center sm:gap-6">
-            <div className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-blue-50 text-motion sm:size-32">
-              {expert.profile_image_path ? (
-                <Image
-                  src={getProfilePhotoUrl(expert.profile_image_path) ?? ""}
-                  alt={expert.display_name ?? "전문가"}
-                  width={128}
-                  height={128}
-                  priority
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <svg
-                  aria-hidden
-                  width="44"
-                  height="44"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.3"
+            <svg
+              aria-hidden
+              viewBox="0 0 900 320"
+              preserveAspectRatio="xMaxYMid slice"
+              fill="none"
+              className="pointer-events-none absolute inset-0 -z-10 h-full w-full"
+            >
+              <path
+                d="M0 310C200 300 380 220 520 170S760 50 900 30"
+                stroke="var(--color-primary)"
+                strokeOpacity="0.1"
+                strokeWidth="2"
+              />
+              <path
+                d="M0 340C240 335 430 260 600 210S800 100 900 90"
+                stroke="var(--color-motion)"
+                strokeOpacity="0.35"
+                strokeWidth="1.5"
+              />
+              <circle
+                cx="600"
+                cy="210"
+                r="5"
+                fill="white"
+                stroke="var(--color-motion)"
+                strokeOpacity="0.5"
+                strokeWidth="2"
+              />
+            </svg>
+            <div className="relative flex items-start gap-4 sm:items-center sm:gap-6">
+              <div
+                className={`${styles.photo} flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-blue-50 text-motion sm:size-32`}
+              >
+                {expert.profile_image_path ? (
+                  <Image
+                    src={getProfilePhotoUrl(expert.profile_image_path) ?? ""}
+                    alt={expert.display_name ?? "전문가"}
+                    width={128}
+                    height={128}
+                    priority
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <svg
+                    aria-hidden
+                    width="44"
+                    height="44"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.3"
+                  >
+                    <circle cx="12" cy="8" r="3.5" />
+                    <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
+                  </svg>
+                )}
+              </div>
+              <div className="min-w-0">
+                <h1
+                  className={`${styles.name} text-hero font-extrabold tracking-tight text-slate-900 sm:text-4xl`}
                 >
-                  <circle cx="12" cy="8" r="3.5" />
-                  <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
-                </svg>
-              )}
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-hero font-extrabold tracking-tight text-slate-900 sm:text-4xl">
-                {expert.display_name ?? "이름 미공개"}
-              </h1>
-              {expert.professions.length > 0 && (
-                <p className="mt-1 text-sm font-medium text-slate-500">
-                  {expert.professions.map((p) => p.name).join(" · ")}
-                </p>
-              )}
-              {expert.headline && (
-                <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
-                  {expert.headline}
-                </p>
-              )}
+                  {expert.display_name ?? "이름 미공개"}
+                </h1>
+                {expert.professions.length > 0 && (
+                  <p className="mt-1 text-sm font-medium text-slate-500">
+                    {expert.professions.map((p) => p.name).join(" · ")}
+                  </p>
+                )}
+                {expert.headline && (
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
+                    {expert.headline}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
-          {socialLinks.length > 0 && (
-            <div className="relative mt-4 flex flex-wrap items-center gap-3">
-              {socialLinks.map(({ label, Icon, url }) => (
-                <a
-                  key={label}
-                  data-profile-contact
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="inline-flex min-h-tap min-w-tap items-center justify-center rounded-xl border border-slate-100 bg-white transition-colors hover:border-blue-200 focus-visible:outline-2 focus-visible:outline-blue-600"
-                >
-                  <Icon />
-                </a>
-              ))}
-            </div>
-          )}
-
-          {expert.extra_links.length > 0 && (
-            <div className="relative mt-3 flex flex-wrap gap-2">
-              {expert.extra_links.map((link, i) => (
-                <a
-                  key={`${link.label}-${i}`}
-                  data-profile-contact
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-tap items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition-colors hover:border-blue-200 hover:text-primary focus-visible:outline-2 focus-visible:outline-blue-600"
-                >
-                  <LinkIcon />
-                  {link.label}
-                </a>
-              ))}
-            </div>
+          {(expert.total_experience_years != null ||
+            certifiedCount > 0 ||
+            expert.workplace_region) && (
+            <dl
+              aria-label="프로필 요약"
+              className={`${styles.summaryCounts} mt-3 grid min-h-20 grid-cols-3 overflow-hidden rounded-2xl border border-blue-100 bg-blue-50/40`}
+            >
+              <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 py-4">
+                <dt className="text-xs font-medium text-slate-500">경력</dt>
+                <dd className="text-base font-bold tracking-tight text-primary sm:text-lg">
+                  {expert.total_experience_years != null
+                    ? `${expert.total_experience_years}년`
+                    : "-"}
+                </dd>
+              </div>
+              <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 border-l border-blue-100 px-2 py-4">
+                <dt className="text-xs font-medium text-slate-500">
+                  자격/면허
+                </dt>
+                <dd className="text-base font-bold tracking-tight text-primary sm:text-lg">
+                  {certifiedCount}개
+                </dd>
+              </div>
+              <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 border-l border-blue-100 px-2 py-4">
+                <dt className="text-xs font-medium text-slate-500">지역</dt>
+                <dd className="min-w-0 break-words text-base font-bold tracking-tight text-primary sm:text-lg">
+                  {expert.workplace_region ?? "미등록"}
+                </dd>
+              </div>
+            </dl>
           )}
         </div>
 
-        {(expert.total_experience_years != null ||
-          certifiedCount > 0 ||
-          expert.workplace_region) && (
-          <dl className="mt-3 grid min-h-20 grid-cols-3 overflow-hidden rounded-2xl border border-blue-100 bg-blue-50/40">
-            <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 py-4">
-              <dt className="text-xs font-medium text-slate-500">경력</dt>
-              <dd className="text-base font-bold tracking-tight text-primary sm:text-lg">
-                {expert.total_experience_years != null
-                  ? `${expert.total_experience_years}년`
-                  : "-"}
-              </dd>
-            </div>
-            <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 border-l border-blue-100 px-2 py-4">
-              <dt className="text-xs font-medium text-slate-500">자격/면허</dt>
-              <dd className="text-base font-bold tracking-tight text-primary sm:text-lg">
-                {certifiedCount}개
-              </dd>
-            </div>
-            <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 border-l border-blue-100 px-2 py-4">
-              <dt className="text-xs font-medium text-slate-500">지역</dt>
-              <dd className="min-w-0 break-words text-base font-bold tracking-tight text-primary sm:text-lg">
-                {expert.workplace_region ?? "미등록"}
-              </dd>
-            </div>
-          </dl>
+        {socialLinks.length > 0 && (
+          <div className="relative mt-4 flex flex-wrap items-center gap-3">
+            {socialLinks.map(({ label, Icon, url }) => (
+              <a
+                key={label}
+                data-profile-contact
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
+                className="inline-flex min-h-tap min-w-tap items-center justify-center rounded-xl border border-slate-100 bg-white transition-colors hover:border-blue-200 focus-visible:outline-2 focus-visible:outline-blue-600"
+              >
+                <Icon />
+              </a>
+            ))}
+          </div>
         )}
 
+        {expert.extra_links.length > 0 && (
+          <div className="relative mt-3 flex flex-wrap gap-2">
+            {expert.extra_links.map((link, i) => (
+              <a
+                key={`${link.label}-${i}`}
+                data-profile-contact
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-tap items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition-colors hover:border-blue-200 hover:text-primary focus-visible:outline-2 focus-visible:outline-blue-600"
+              >
+                <LinkIcon />
+                {link.label}
+              </a>
+            ))}
+          </div>
+        )}
         {(expert.workplace_external_contact_url || expert.workplace_phone) && (
           <div className="mt-3 flex gap-3">
             {expert.workplace_external_contact_url && (
@@ -631,10 +649,7 @@ function GalleryCard({ images }: { images: GalleryImage[] }) {
       data-order-key="gallery"
       title="활동 갤러리"
       action={
-        <a
-          href="#gallery-full"
-          className="text-xs font-semibold text-blue-600"
-        >
+        <a href="#gallery-full" className="text-xs font-semibold text-blue-600">
           전체 보기
         </a>
       }

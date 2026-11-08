@@ -59,7 +59,7 @@ function combineSections(nodes: ReactNode[]) {
     result[index] = cloneElement(
       preferred,
       {},
-      <div className="space-y-3">
+      <div className="space-y-2">
         <div data-order-scope={previous.props["data-order-key"]}>
           {previous.props.children}
         </div>
@@ -74,11 +74,13 @@ export function ProfileOrderLayout({
   order = {},
   onChange,
   combineSimilarSections = false,
+  className,
 }: {
   children: ReactNode;
   order?: ProfileOrder;
   onChange?: (order: ProfileOrder) => void;
   combineSimilarSections?: boolean;
+  className?: string;
 }) {
   const [drag, setDrag] = useState<{
     token: string;
@@ -196,10 +198,13 @@ export function ProfileOrderLayout({
     );
     const saved = Array.isArray(order[group]) ? order[group] : [];
     const rank = (key: string) => {
-      const i = saved.findIndex((savedKey) =>
-        savedKey === key ||
-        (group === "sections" && combineSimilarSections &&
-          (sectionFamilies[savedKey] ?? savedKey) === (sectionFamilies[key] ?? key)),
+      const i = saved.findIndex(
+        (savedKey) =>
+          savedKey === key ||
+          (group === "sections" &&
+            combineSimilarSections &&
+            (sectionFamilies[savedKey] ?? savedKey) ===
+              (sectionFamilies[key] ?? key)),
       );
       return i < 0
         ? saved.length +
@@ -283,7 +288,7 @@ export function ProfileOrderLayout({
     });
   }
   return (
-    <div className="mt-5 space-y-3 sm:mt-6 sm:space-y-4">
+    <div className={className ?? "mt-5 space-y-3 sm:mt-6 sm:space-y-4"}>
       {walk(children, "sections")}
     </div>
   );

@@ -1,3 +1,11 @@
+.document {
+  margin-top: 1rem;
+}
+
+.document [data-order-group="sections"] > [data-order-handle] {
+  top: 0.5rem;
+}
+
 .stickySummary {
   position: sticky;
   top: 6rem;

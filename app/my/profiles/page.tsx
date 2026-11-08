@@ -6,6 +6,7 @@ import type { ExpertProfileViewProps } from "@/components/experts/ExpertProfileV
 import type { ProfileVersion } from "@/lib/profile-versions/types";
 import { ProfileVersionManager } from "./ProfileVersionManager";
 import { getOwnProfileDetailImages } from "@/app/actions/profile-detail-images";
+import { publicReviewCount } from "@/lib/profile-evidence/public-review-count";
 export default async function ProfileVersionsPage({
   searchParams,
 }: {
@@ -66,6 +67,9 @@ export default async function ProfileVersionsPage({
           startNew={query.new === "1"}
           base={base}
           expert={expert}
+          publishedVerifiedCount={
+            base ? await publicReviewCount(supabase, base.id) : 0
+          }
           galleryImages={(gallery ?? []).map((row) => ({
             id: row.id,
             imagePath: row.image_path,

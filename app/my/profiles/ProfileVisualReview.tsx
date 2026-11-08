@@ -47,7 +47,9 @@ export function ProfileVisualReview({
   publishAction,
   damoaFiles = [],
   activityRegion,
+  verifiedCareerCount = null,
 }: {
+  verifiedCareerCount?: number | null;
   activityRegion?: string;
   damoaFiles?: ReviewFile[];
   evidence?: Awaited<
@@ -421,6 +423,7 @@ export function ProfileVisualReview({
       <div className="min-w-0" aria-label="공개 프로필 편집 미리보기">
         {shownExpert ? (
           <ExpertProfileView
+            verifiedCareerCount={verifiedCareerCount}
             order={order}
             onOrderChange={onOrderChange}
             activitySections={profileActivityCards({

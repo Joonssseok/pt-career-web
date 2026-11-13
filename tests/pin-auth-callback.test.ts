@@ -27,7 +27,11 @@ test("successful OAuth/signup callback starts PIN setup and keeps safe destinati
 test.each(["", "&next=https%3A%2F%2Foutside.invalid"])(
   "callback defaults to home without accepting external destinations: %s",
   async (next) => {
-    const result = await GET(new NextRequest(`https://test.example/auth/callback?code=fake-code${next}`));
+    const result = await GET(
+      new NextRequest(
+        `https://test.example/auth/callback?code=fake-code${next}`,
+      ),
+    );
     expect(result.headers.get("location")).toBe("https://test.example/home");
     expect(startPinEnrollment).toHaveBeenCalledTimes(1);
   },
@@ -60,3 +64,27 @@ test("callback failure logs category only", async () => {
   expect(JSON.stringify(log.mock.calls)).not.toContain("private-auth-code");
   log.mockRestore();
 });
+
+test.each([
+  ["error=access_denied", "oauth_cancelled"],
+  [
+    "error=access_denied&error_code=provider_email_needs_verification",
+    "email_confirmation_required",
+  ],
+  ["error=private-fixture-token", "confirmation_failed"],
+  ["error=constructor", "confirmation_failed"],
+])(
+  "OAuth failure maps controlled codes without exchanging a session: %s",
+  async (query, expected) => {
+    const result = await GET(
+      new NextRequest(
+        `https://test.example/auth/callback?${query}&error_description=private-fixture-token`,
+      ),
+    );
+    expect(result.headers.get("location")).toBe(
+      `https://test.example/login?error=${expected}`,
+    );
+    expect(exchangeCodeForSession).not.toHaveBeenCalled();
+    expect(startPinEnrollment).not.toHaveBeenCalled();
+  },
+);

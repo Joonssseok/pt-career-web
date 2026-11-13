@@ -23,8 +23,14 @@ export default async function LoginPage({
   }
 
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">로딩 중...</div>}>
-      <LoginForm />
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          로딩 중...
+        </div>
+      }
+    >
+      <LoginForm naverEnabled={process.env.NAVER_LOGIN_ENABLED === 'true'} />
     </Suspense>
   )
 }

@@ -21,7 +21,9 @@ jest.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(loginSearch),
 }));
 jest.mock("../lib/supabase/client", () => ({
-  createClient: () => ({ auth: { signInWithPassword, signInWithOAuth, signUp } }),
+  createClient: () => ({
+    auth: { signInWithPassword, signInWithOAuth, signUp },
+  }),
 }));
 jest.mock("../app/actions/account-pin", () => ({
   beginPinEnrollment: () => beginPinEnrollment(),
@@ -36,6 +38,7 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 function fillLogin() {
+  fireEvent.click(screen.getByRole("button", { name: "아이디로 로그인" }));
   fireEvent.change(screen.getByPlaceholderText("your@email.com"), {
     target: { value: "fixture@example.invalid" },
   });
@@ -65,7 +68,10 @@ test.each(["", "next=https%3A%2F%2Foutside.invalid"])(
     expect(beginPinEnrollment).toHaveBeenCalledTimes(1);
   },
 );
-test.each([["", "/home"], ["next=/my/profiles", "/my/profiles"]])(
+test.each([
+  ["", "/home"],
+  ["next=/my/profiles", "/my/profiles"],
+])(
   "Google login uses the same safe destination as email: %s",
   async (search, destination) => {
     loginSearch = search;

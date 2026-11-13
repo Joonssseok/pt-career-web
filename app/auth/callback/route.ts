@@ -7,27 +7,41 @@ const ERROR_CODE_MAP: Record<string, string> = {
   invalid_code: 'missing_code',
   invalid_grant: 'invalid_or_expired_link',
   validation_failed: 'confirmation_failed',
+  access_denied: 'oauth_cancelled',
+  provider_email_needs_verification: 'email_confirmation_required',
+  identity_already_exists: 'identity_already_exists',
+  user_banned: 'confirmation_failed',
+  signup_disabled: 'confirmation_failed',
+}
+
+function mappedError(code: string | null) {
+  return code && Object.prototype.hasOwnProperty.call(ERROR_CODE_MAP, code)
+    ? ERROR_CODE_MAP[code]
+    : null
 }
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const error = searchParams.get('error')
+  const providerErrorCode = searchParams.get('error_code')
   const nextUrl = searchParams.get('next')
 
   // Handle error from Supabase
-  if (error) {
+  if (error || providerErrorCode) {
     const errorCode =
-      ERROR_CODE_MAP[error] || 'confirmation_failed'
+      mappedError(providerErrorCode) ||
+      mappedError(error) ||
+      'confirmation_failed'
     return NextResponse.redirect(
-      new URL(`/login?error=${errorCode}`, request.url)
+      new URL(`/login?error=${errorCode}`, request.url),
     )
   }
 
   // Missing code
   if (!code) {
     return NextResponse.redirect(
-      new URL('/login?error=missing_code', request.url)
+      new URL('/login?error=missing_code', request.url),
     )
   }
 
@@ -42,7 +56,7 @@ export async function GET(request: NextRequest) {
       console.error('[AUTH_CALLBACK] Exchange success: false')
       console.error('[AUTH_CALLBACK] Error category: PKCE_VERIFIER_MISSING')
       return NextResponse.redirect(
-        new URL('/login?error=invalid_or_expired_link', request.url)
+        new URL('/login?error=invalid_or_expired_link', request.url),
       )
     }
 
@@ -54,7 +68,9 @@ export async function GET(request: NextRequest) {
     if (redirectUrl !== '/my/pin-reset' && redirectUrl !== '/reset-password') {
       const started = await startPinEnrollment(supabase)
       if (!started) {
-        return NextResponse.redirect(new URL('/login?error=server_error', request.url))
+        return NextResponse.redirect(
+          new URL('/login?error=server_error', request.url),
+        )
       }
     }
 
@@ -62,7 +78,7 @@ export async function GET(request: NextRequest) {
   } catch (err) {
     console.error('[AUTH_CALLBACK] Error category: CALLBACK_FAILED')
     return NextResponse.redirect(
-      new URL('/login?error=server_error', request.url)
+      new URL('/login?error=server_error', request.url),
     )
   }
 }

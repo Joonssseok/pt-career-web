@@ -11,5 +11,7 @@ export default async function SignUpPage() {
     redirect(destination)
   }
 
-  return <SignUpForm />
+  return (
+    <SignUpForm naverEnabled={process.env.NAVER_LOGIN_ENABLED === 'true'} />
+  )
 }

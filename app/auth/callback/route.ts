@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getSafeRedirectUrl } from '@/lib/auth/safe-redirect'
 import { startPinEnrollment } from '@/lib/auth/pin-enrollment'
+import { NAVER_PROVIDER } from '@/lib/auth/social-login'
 
 const ERROR_CODE_MAP: Record<string, string> = {
   invalid_code: 'missing_code',
@@ -26,6 +27,16 @@ export async function GET(request: NextRequest) {
   const error = searchParams.get('error')
   const providerErrorCode = searchParams.get('error_code')
   const nextUrl = searchParams.get('next')
+  const linkingNaver = searchParams.get('link') === 'naver'
+  const failure = (errorCode: string) =>
+    NextResponse.redirect(
+      new URL(
+        linkingNaver
+          ? `/my/account?naver_link_error=${errorCode}`
+          : `/login?error=${errorCode}`,
+        request.url,
+      ),
+    )
 
   // Handle error from Supabase
   if (error || providerErrorCode) {
@@ -33,20 +44,20 @@ export async function GET(request: NextRequest) {
       mappedError(providerErrorCode) ||
       mappedError(error) ||
       'confirmation_failed'
-    return NextResponse.redirect(
-      new URL(`/login?error=${errorCode}`, request.url),
-    )
+    return failure(errorCode)
   }
 
   // Missing code
   if (!code) {
-    return NextResponse.redirect(
-      new URL('/login?error=missing_code', request.url),
-    )
+    return failure('missing_code')
   }
 
   try {
     const supabase = await createClient()
+    const linkingUser = linkingNaver ? await supabase.auth.getUser() : null
+    if (linkingNaver && (linkingUser?.error || !linkingUser?.data.user)) {
+      return failure('confirmation_failed')
+    }
     console.log('[AUTH_CALLBACK] Code present:', !!code)
 
     const { error: exchangeError } =
@@ -55,12 +66,31 @@ export async function GET(request: NextRequest) {
     if (exchangeError) {
       console.error('[AUTH_CALLBACK] Exchange success: false')
       console.error('[AUTH_CALLBACK] Error category: PKCE_VERIFIER_MISSING')
-      return NextResponse.redirect(
-        new URL('/login?error=invalid_or_expired_link', request.url),
-      )
+      return failure('invalid_or_expired_link')
     }
 
     console.log('[AUTH_CALLBACK] Exchange success: true')
+
+    if (linkingNaver) {
+      const result = await supabase.auth.getUser()
+      // Linking must keep the authenticated account, never silently switch users.
+      if (
+        result.error ||
+        !result.data.user ||
+        result.data.user.id !== linkingUser?.data.user?.id
+      ) {
+        await supabase.auth.signOut()
+        return failure('confirmation_failed')
+      }
+      if (
+        !result.data.user.identities?.some(
+          (identity) => identity.provider === NAVER_PROVIDER,
+        )
+      ) {
+        return failure('confirmation_failed')
+      }
+      return NextResponse.redirect(new URL('/my/account', request.url))
+    }
 
     // Determine redirect URL
     const redirectUrl = getSafeRedirectUrl(nextUrl)
@@ -77,8 +107,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(redirectUrl, request.url))
   } catch (err) {
     console.error('[AUTH_CALLBACK] Error category: CALLBACK_FAILED')
-    return NextResponse.redirect(
-      new URL('/login?error=server_error', request.url),
-    )
+    return failure('server_error')
   }
 }

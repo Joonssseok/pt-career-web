@@ -14,7 +14,7 @@ export function getAuthErrorMessage(code: string | null) {
     case 'oauth_cancelled':
       return '로그인을 취소했어요. 원하시는 방법으로 다시 로그인해주세요.'
     case 'email_confirmation_required':
-      return '가입 이메일로 확인 메일을 보냈어요. 메일의 확인 링크를 눌러주세요.'
+      return '네이버 이메일 확인이 필요해요. 같은 이메일로 가입한 계정이 있다면 기존 로그인 방법을 이용해주세요.'
     case 'identity_already_exists':
       return '다른 계정에 연결된 네이버 계정이에요. 기존 로그인 방법을 이용해주세요.'
     case 'naver_unavailable':

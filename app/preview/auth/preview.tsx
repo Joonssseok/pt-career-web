@@ -94,7 +94,9 @@ export function AuthPreviewGuard({ children }: { children: ReactNode }) {
         if (
           event.target instanceof Element &&
           event.target.closest('button, a') &&
-          !event.target.closest('button[data-auth-method="email"]')
+          !event.target.closest(
+            'button[data-auth-method="email"],button[data-auth-select="true"]',
+          )
         )
           prevent(event)
       }}

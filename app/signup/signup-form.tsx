@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { agreeToTerms } from '@/app/actions/terms'
 import { beginPinEnrollment } from '@/app/actions/account-pin'
 import Link from 'next/link'
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons'
+import { getAuthCallbackUrl, NAVER_PROVIDER } from '@/lib/auth/social-login'
 
 export default function SignUpForm({
   naverEnabled = false,
@@ -21,8 +22,50 @@ export default function SignUpForm({
   const [oauthLoading, setOauthLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [agreedTerms, setAgreedTerms] = useState(false)
+  const [method, setMethod] = useState<'google' | 'naver' | 'email' | null>(
+    null,
+  )
+  const inFlight = useRef(false)
   const router = useRouter()
   const supabase = createClient()
+
+  useEffect(() => {
+    function restore(event: PageTransitionEvent) {
+      if (!event.persisted) return
+      inFlight.current = false
+      setOauthLoading(false)
+    }
+    window.addEventListener('pageshow', restore)
+    return () => window.removeEventListener('pageshow', restore)
+  }, [])
+
+  async function continueSocialSignup() {
+    if (
+      !agreedTerms ||
+      !method ||
+      method === 'email' ||
+      loading ||
+      inFlight.current
+    )
+      return
+    inFlight.current = true
+    setOauthLoading(true)
+    setError('')
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: method === 'naver' ? NAVER_PROVIDER : 'google',
+        options: {
+          redirectTo: getAuthCallbackUrl(window.location.origin, '/my'),
+        },
+      })
+      if (!error) return
+    } catch {
+      // Never display provider responses or authentication tokens.
+    }
+    setError('회원가입을 시작하지 못했어요. 잠시 후 다시 시도해주세요.')
+    inFlight.current = false
+    setOauthLoading(false)
+  }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,7 +105,9 @@ export default function SignUpForm({
         })
 
       if (signUpError) {
-        setError(signUpError.message)
+        setError(
+          '회원가입을 완료하지 못했어요. 입력한 정보를 확인하고 다시 시도해주세요.',
+        )
       } else {
         // Local/dev Supabase with autoconfirm returns a session immediately;
         // record consent now. With email confirmation required (production),
@@ -92,36 +137,12 @@ export default function SignUpForm({
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-8">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-lg shadow p-5 sm:p-8">
-          <h1 className="text-page-title font-bold mb-6 text-center">
+    <div className="min-h-screen flex items-center justify-center bg-white px-6 py-8">
+      <div className="mx-auto w-full max-w-sm">
+        <div>
+          <h1 className="text-page-title font-bold mb-16 text-center">
             회원가입
           </h1>
-
-          {/* 가입 전 기대치 안내 -- 실제 공개 플로우(업로드 즉시 공개, 증빙
-              파일만 관리자 검토)와 문구가 어긋나지 않게 유지할 것 */}
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
-            <p className="text-sm font-medium text-blue-900 mb-2">
-              전문가 등록, 이렇게 진행돼요
-            </p>
-            <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-              <li>로그인 확인 후 6자리 PIN 설정</li>
-              <li>가입 후 프로필 작성 — 약 5분</li>
-              <li>프로필 사진과, 경력 또는 자격·면허 1개가 필요해요</li>
-              <li>
-                업로드하면 바로 공개돼요 (자격증 증빙 파일만 관리자 확인 후 배지
-                표시)
-              </li>
-            </ol>
-            <p className="text-xs text-blue-700 mt-3">
-              전문가를 찾고 계신가요? 가입 없이{' '}
-              <Link href="/experts" className="underline hover:text-blue-900">
-                둘러볼 수 있어요
-              </Link>
-              .
-            </p>
-          </div>
 
           {error && (
             <div
@@ -138,108 +159,148 @@ export default function SignUpForm({
             </div>
           )}
 
-          {/* Terms Agreement */}
-          <div className="mb-4">
-            <label className="flex items-start gap-3 cursor-pointer min-h-tap">
-              <input
-                type="checkbox"
-                checked={agreedTerms}
-                disabled={loading || oauthLoading}
-                onChange={(e) => setAgreedTerms(e.target.checked)}
-                className="mt-1"
-              />
-              <span className="text-sm text-gray-700">
-                필수 약관에 동의합니다
-              </span>
-            </label>
-            <div className="text-xs text-gray-500 mt-1 ml-7 space-x-2">
-              <Link
-                href="/terms"
-                target="_blank"
-                className="underline hover:text-gray-700"
-              >
-                이용약관 보기
-              </Link>
-              <span>·</span>
-              <Link
-                href="/privacy"
-                target="_blank"
-                className="underline hover:text-gray-700"
-              >
-                개인정보처리방침 보기
-              </Link>
-            </div>
-          </div>
-
           <SocialLoginButtons
             next="/my"
             naverEnabled={naverEnabled}
-            disabled={loading || !agreedTerms}
+            disabled={loading || oauthLoading}
             onBusyChange={setOauthLoading}
             onError={setError}
+            purpose="signup"
+            onProviderSelect={(provider) => {
+              setMethod(provider)
+              setError('')
+            }}
+            onEmailSelect={() => {
+              setMethod((current) => (current === 'email' ? null : 'email'))
+              setError('')
+            }}
+            emailSelected={method === 'email'}
           />
 
-          <div className="my-6 flex items-center gap-4">
-            <div className="flex-1 border-t border-gray-300" />
-            <span className="text-sm text-gray-500">또는</span>
-            <div className="flex-1 border-t border-gray-300" />
-          </div>
+          {method && (
+            <div className="mt-6 border-t border-slate-100 pt-5">
+              {/* Terms Agreement */}
+              <div className="mb-4">
+                <label className="flex items-start gap-3 cursor-pointer min-h-tap">
+                  <input
+                    type="checkbox"
+                    checked={agreedTerms}
+                    disabled={loading || oauthLoading}
+                    onChange={(e) => setAgreedTerms(e.target.checked)}
+                    className="mt-1"
+                  />
+                  <span className="text-sm text-gray-700">
+                    필수 약관에 동의합니다
+                  </span>
+                </label>
+                <div className="text-xs text-gray-500 mt-1 ml-7 space-x-2">
+                  <Link
+                    href="/terms"
+                    target="_blank"
+                    className="underline hover:text-gray-700"
+                  >
+                    이용약관 보기
+                  </Link>
+                  <span>·</span>
+                  <Link
+                    href="/privacy"
+                    target="_blank"
+                    className="underline hover:text-gray-700"
+                  >
+                    개인정보처리방침 보기
+                  </Link>
+                </div>
+              </div>
 
-          {/* 이메일/비밀번호 - 보조 영역 */}
-          <form onSubmit={handleSignUp} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                이메일
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com"
-                disabled={loading || oauthLoading}
-                className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-              />
+              {method === 'email' ? (
+                <form
+                  id="email-signup-form"
+                  aria-label="이메일 회원가입"
+                  onSubmit={handleSignUp}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label
+                      htmlFor="signup-email"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      이메일
+                    </label>
+                    <input
+                      type="email"
+                      id="signup-email"
+                      autoFocus
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      disabled={loading || oauthLoading}
+                      className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="signup-password"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      비밀번호
+                    </label>
+                    <input
+                      type="password"
+                      id="signup-password"
+                      autoComplete="new-password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="8자 이상"
+                      disabled={loading || oauthLoading}
+                      className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="signup-confirm-password"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                      비밀번호 확인
+                    </label>
+                    <input
+                      type="password"
+                      id="signup-confirm-password"
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="비밀번호 재입력"
+                      disabled={loading || oauthLoading}
+                      className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={loading || oauthLoading || !agreedTerms}
+                    className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+                  >
+                    {loading ? '가입 중...' : '이메일로 가입'}
+                  </button>
+                </form>
+              ) : (
+                <button
+                  type="button"
+                  onClick={continueSocialSignup}
+                  disabled={!agreedTerms || oauthLoading || loading}
+                  className="min-h-12 w-full rounded-xl bg-blue-600 px-4 py-3 text-sm font-medium text-white disabled:opacity-50"
+                >
+                  {oauthLoading
+                    ? '연결 중…'
+                    : `${method === 'google' ? 'Google' : '네이버'} 가입 계속하기`}
+                </button>
+              )}
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                비밀번호
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="8자 이상"
-                disabled={loading || oauthLoading}
-                className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                비밀번호 확인
-              </label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="비밀번호 재입력"
-                disabled={loading || oauthLoading}
-                className="bg-white text-gray-900 placeholder:text-gray-400 w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || oauthLoading || !agreedTerms}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
-            >
-              {loading ? '가입 중...' : '이메일로 가입'}
-            </button>
-          </form>
+          )}
 
           <div className="mt-6 text-center text-sm text-gray-600">
-            이미 계정이 있으신가요?{' '}
             <Link href="/login" className="text-blue-600 hover:underline">
               로그인
             </Link>

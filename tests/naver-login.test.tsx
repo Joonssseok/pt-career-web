@@ -178,7 +178,8 @@ test("callback cancellation and email confirmation show controlled messages", ()
   first.unmount();
   search = "error=email_confirmation_required";
   render(<LoginForm naverEnabled />);
-  expect(screen.getByRole("alert").textContent).toContain("확인 메일");
+  expect(screen.getByRole("alert").textContent).toContain("기존 로그인 방법");
+  expect(screen.getByRole("alert").textContent).not.toContain("메일을 보냈");
 });
 
 test("browser back from Naver restores a usable login form from page cache", async () => {

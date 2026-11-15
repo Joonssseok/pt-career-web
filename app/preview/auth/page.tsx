@@ -18,7 +18,11 @@ export default async function AuthPreviewPage({
   return (
     <AuthPreviewGuard>
       <Suspense fallback={<p className="p-6">화면을 준비하고 있어요.</p>}>
-        {mode === 'signup' ? <SignUpForm /> : <LoginForm />}
+        {mode === 'signup' ? (
+          <SignUpForm naverEnabled />
+        ) : (
+          <LoginForm naverEnabled />
+        )}
       </Suspense>
     </AuthPreviewGuard>
   )

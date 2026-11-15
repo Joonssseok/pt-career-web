@@ -16,8 +16,8 @@ export function AuthPreview() {
             로그인 화면 미리보기
           </h1>
           <p className="mt-1 text-xs text-slate-500">
-            실제 화면을 사용합니다. 입력 내용은 전송되지 않으며 네이버는 연결
-            준비 중입니다.
+            실제 화면을 사용합니다. 미리보기에서는 로그인과 입력 내용 전송이
+            차단됩니다.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">

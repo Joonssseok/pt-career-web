@@ -38,7 +38,7 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 function fillLogin() {
-  fireEvent.click(screen.getByRole("button", { name: "아이디로 로그인" }));
+  fireEvent.click(screen.getByRole("button", { name: "아이디로 로그인하기" }));
   fireEvent.change(screen.getByPlaceholderText("your@email.com"), {
     target: { value: "fixture@example.invalid" },
   });
@@ -77,7 +77,7 @@ test.each([
     loginSearch = search;
     signInWithOAuth.mockResolvedValue({ error: null });
     render(<LoginForm />);
-    fireEvent.click(screen.getByRole("button", { name: "Google로 계속하기" }));
+    fireEvent.click(screen.getByRole("button", { name: /Google로 (계속하기|로그인하기)/ }));
     await waitFor(() => expect(signInWithOAuth).toHaveBeenCalledTimes(1));
     const target = new URL(signInWithOAuth.mock.calls[0][0].options.redirectTo);
     expect(target.pathname).toBe("/auth/callback");

@@ -63,7 +63,7 @@ export default function LoginForm({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white px-6 py-8">
-      <div className="mx-auto w-full max-w-lg">
+      <div className="mx-auto w-full max-w-sm">
         <div>
           <h1 className="text-page-title font-bold mb-16 text-center">
             로그인

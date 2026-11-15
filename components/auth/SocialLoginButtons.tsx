@@ -67,16 +67,11 @@ export function SocialLoginButtons({
   }
 
   const busy = disabled || pending !== null
-  const common = `flex items-center justify-center gap-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed ${onEmailSelect ? 'h-14 w-14 rounded-xl' : 'min-h-12 w-full rounded-lg px-4 py-3'}`
+  const common = `relative flex items-center justify-center gap-2 text-sm font-medium transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed ${onEmailSelect ? 'h-14 w-full rounded-xl px-14' : 'min-h-12 w-full rounded-lg px-4 py-3'}`
+  const iconClass = `h-5 w-5 shrink-0 ${onEmailSelect ? 'absolute left-5' : ''}`
 
   return (
-    <div
-      className={
-        onEmailSelect ? 'flex justify-center gap-8 sm:gap-12' : 'space-y-3'
-      }
-      role="group"
-      aria-label="로그인 방법 선택"
-    >
+    <div className={'space-y-3'} role="group" aria-label="로그인 방법 선택">
       <button
         type="button"
         onClick={() => signIn('google')}
@@ -85,11 +80,7 @@ export function SocialLoginButtons({
         title="Google 로그인"
         className={`${common} border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:outline-blue-600 disabled:bg-gray-100`}
       >
-        <svg
-          aria-hidden="true"
-          className="h-5 w-5 shrink-0"
-          viewBox="0 0 24 24"
-        >
+        <svg aria-hidden="true" className={iconClass} viewBox="0 0 24 24">
           <path
             fill="#4285F4"
             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -107,8 +98,12 @@ export function SocialLoginButtons({
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
           />
         </svg>
-        <span className={onEmailSelect ? 'sr-only' : undefined}>
-          {pending === 'google' ? 'Google 로그인 중...' : 'Google로 계속하기'}
+        <span>
+          {pending === 'google'
+            ? 'Google 로그인 중...'
+            : onEmailSelect
+              ? 'Google로 로그인하기'
+              : 'Google로 계속하기'}
         </span>
       </button>
       <button
@@ -121,14 +116,18 @@ export function SocialLoginButtons({
       >
         <svg
           aria-hidden="true"
-          className="h-5 w-5 shrink-0"
+          className={iconClass}
           viewBox="0 0 20 20"
           fill="currentColor"
         >
           <path d="M13.56 10.7 6.14 0H0v20h6.44V9.3L13.86 20H20V0h-6.44z" />
         </svg>
-        <span className={onEmailSelect ? 'sr-only' : undefined}>
-          {pending === 'naver' ? '네이버 로그인 중...' : '네이버로 계속하기'}
+        <span>
+          {pending === 'naver'
+            ? '네이버 로그인 중...'
+            : onEmailSelect
+              ? '네이버로 로그인하기'
+              : '네이버로 계속하기'}
         </span>
       </button>
       {onEmailSelect && (
@@ -137,7 +136,6 @@ export function SocialLoginButtons({
           data-auth-method="email"
           onClick={onEmailSelect}
           disabled={busy}
-          aria-label="아이디로 로그인"
           aria-expanded={emailSelected}
           aria-controls="email-login-form"
           title="아이디 로그인"
@@ -145,7 +143,7 @@ export function SocialLoginButtons({
         >
           <svg
             aria-hidden="true"
-            className="h-6 w-6"
+            className={iconClass}
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -157,6 +155,7 @@ export function SocialLoginButtons({
             <circle cx="12" cy="9" r="3" />
             <path d="M6.5 18a5.5 5.5 0 0 1 11 0" />
           </svg>
+          <span>아이디로 로그인하기</span>
         </button>
       )}
     </div>

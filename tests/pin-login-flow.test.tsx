@@ -109,6 +109,7 @@ test("immediately authenticated signup also starts enrollment", async () => {
     error: null,
   });
   render(<SignUpForm />);
+  fireEvent.click(screen.getByRole('button', { name: '이메일로 가입하기' }));
   fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.change(screen.getByPlaceholderText("your@email.com"), {
     target: { value: "fixture@example.invalid" },

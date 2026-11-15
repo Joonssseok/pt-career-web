@@ -117,14 +117,34 @@ test("unconfigured Naver cannot start a broken flow while Google remains availab
 
 test("Naver signup requires terms and returns through the existing signup/PIN callback", async () => {
   render(<SignUpForm naverEnabled />);
-  fireEvent.click(screen.getByRole("button", { name: /네이버로 (계속하기|로그인하기)/ }));
+  fireEvent.click(screen.getByRole("button", { name: '네이버로 가입하기' }));
+  expect(signInWithOAuth).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: '네이버 가입 계속하기' }));
   expect(signInWithOAuth).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("checkbox"));
-  fireEvent.click(screen.getByRole("button", { name: /네이버로 (계속하기|로그인하기)/ }));
+  fireEvent.click(screen.getByRole("button", { name: '네이버 가입 계속하기' }));
   await waitFor(() => expect(signInWithOAuth).toHaveBeenCalledTimes(1));
   const callback = new URL(signInWithOAuth.mock.calls[0][0].options.redirectTo);
   expect(callback.pathname).toBe("/auth/callback");
   expect(callback.searchParams.get("next")).toBe("/my");
+});
+
+test('signup initially shows only three choices and expands only the selected method', () => {
+  render(<AuthPreviewGuard><SignUpForm naverEnabled /></AuthPreviewGuard>);
+  expect(screen.getAllByRole('button')).toHaveLength(3);
+  expect(screen.queryByRole('checkbox')).toBeNull();
+  expect(screen.queryByPlaceholderText('your@email.com')).toBeNull();
+  expect(screen.queryByText('전문가 등록, 이렇게 진행돼요')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Google로 가입하기' }));
+  expect(screen.getByRole('checkbox')).toBeTruthy();
+  expect(screen.queryByRole('form')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: 'Google 가입 계속하기' }));
+  expect(signInWithOAuth).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole('button', { name: '이메일로 가입하기' }));
+  expect(screen.getByRole('form', { name: '이메일 회원가입' })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: 'Google 가입 계속하기' })).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: '이메일로 가입하기' }));
+  expect(screen.queryByRole('form')).toBeNull();
 });
 
 test("starting Naver prevents concurrent Google, email or duplicate Naver requests", async () => {

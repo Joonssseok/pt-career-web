@@ -12,6 +12,8 @@ type Props = {
   onError: (message: string) => void
   onEmailSelect?: () => void
   emailSelected?: boolean
+  purpose?: 'login' | 'signup'
+  onProviderSelect?: (provider: 'google' | 'naver') => void
 }
 
 export function SocialLoginButtons({
@@ -22,6 +24,8 @@ export function SocialLoginButtons({
   onError,
   onEmailSelect,
   emailSelected = false,
+  purpose = 'login',
+  onProviderSelect,
 }: Props) {
   const [pending, setPending] = useState<'google' | 'naver' | null>(null)
   const inFlight = useRef(false)
@@ -41,6 +45,10 @@ export function SocialLoginButtons({
   async function signIn(provider: 'google' | 'naver') {
     if (disabled || inFlight.current || (provider === 'naver' && !naverEnabled))
       return
+    if (onProviderSelect) {
+      onProviderSelect(provider)
+      return
+    }
     inFlight.current = true
     setPending(provider)
     onBusyChange(true)
@@ -71,10 +79,17 @@ export function SocialLoginButtons({
   const iconClass = `h-5 w-5 shrink-0 ${onEmailSelect ? 'absolute left-5' : ''}`
 
   return (
-    <div className={'space-y-3'} role="group" aria-label="로그인 방법 선택">
+    <div
+      className="space-y-3"
+      role="group"
+      aria-label={
+        purpose === 'signup' ? '회원가입 방법 선택' : '로그인 방법 선택'
+      }
+    >
       <button
         type="button"
         onClick={() => signIn('google')}
+        data-auth-select={onProviderSelect ? 'true' : undefined}
         disabled={busy}
         aria-busy={pending === 'google'}
         title="Google 로그인"
@@ -101,14 +116,17 @@ export function SocialLoginButtons({
         <span>
           {pending === 'google'
             ? 'Google 로그인 중...'
-            : onEmailSelect
-              ? 'Google로 로그인하기'
-              : 'Google로 계속하기'}
+            : purpose === 'signup'
+              ? 'Google로 가입하기'
+              : onEmailSelect
+                ? 'Google로 로그인하기'
+                : 'Google로 계속하기'}
         </span>
       </button>
       <button
         type="button"
         onClick={() => signIn('naver')}
+        data-auth-select={onProviderSelect ? 'true' : undefined}
         disabled={busy || !naverEnabled}
         aria-busy={pending === 'naver'}
         title={naverEnabled ? '네이버 로그인' : '네이버 로그인 (준비 중)'}
@@ -125,9 +143,11 @@ export function SocialLoginButtons({
         <span>
           {pending === 'naver'
             ? '네이버 로그인 중...'
-            : onEmailSelect
-              ? '네이버로 로그인하기'
-              : '네이버로 계속하기'}
+            : purpose === 'signup'
+              ? '네이버로 가입하기'
+              : onEmailSelect
+                ? '네이버로 로그인하기'
+                : '네이버로 계속하기'}
         </span>
       </button>
       {onEmailSelect && (
@@ -137,8 +157,10 @@ export function SocialLoginButtons({
           onClick={onEmailSelect}
           disabled={busy}
           aria-expanded={emailSelected}
-          aria-controls="email-login-form"
-          title="아이디 로그인"
+          aria-controls={
+            purpose === 'signup' ? 'email-signup-form' : 'email-login-form'
+          }
+          title={purpose === 'signup' ? '이메일 회원가입' : '아이디 로그인'}
           className={`${common} border ${emailSelected ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'} focus-visible:outline-blue-600 disabled:bg-gray-100`}
         >
           <svg
@@ -151,11 +173,22 @@ export function SocialLoginButtons({
             strokeLinecap="round"
             strokeLinejoin="round"
           >
-            <rect x="3" y="3" width="18" height="18" rx="4" />
-            <circle cx="12" cy="9" r="3" />
-            <path d="M6.5 18a5.5 5.5 0 0 1 11 0" />
+            {purpose === 'signup' ? (
+              <>
+                <rect x="3" y="5" width="18" height="14" rx="3" />
+                <path d="m4 7 8 6 8-6" />
+              </>
+            ) : (
+              <>
+                <rect x="3" y="3" width="18" height="18" rx="4" />
+                <circle cx="12" cy="9" r="3" />
+                <path d="M6.5 18a5.5 5.5 0 0 1 11 0" />
+              </>
+            )}
           </svg>
-          <span>아이디로 로그인하기</span>
+          <span>
+            {purpose === 'signup' ? '이메일로 가입하기' : '아이디로 로그인하기'}
+          </span>
         </button>
       )}
     </div>

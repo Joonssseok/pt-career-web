@@ -5,6 +5,10 @@ import { MyDashboard, type MyDashboardData } from "@/app/my/MyDashboard";
 import { ProfileSharingTools } from "@/components/ProfileSharingTools";
 import { trackEvent } from "@/lib/analytics";
 jest.mock("@/lib/analytics", () => ({ trackEvent: jest.fn() }));
+jest.mock("@/lib/profile-sharing/qr", () => ({
+  ...jest.requireActual("@/lib/profile-sharing/qr"),
+  profileQrImage: jest.fn().mockResolvedValue("data:image/png;base64,aGVsbG8="),
+}));
 
 const data: MyDashboardData = {
   name: "테스트 회원",
@@ -33,20 +37,33 @@ const data: MyDashboardData = {
 };
 
 test("관리용 제목은 편집으로 연결하고 사진 박스는 사진·이름·정보 수정만 표시", () => {
-  render(<MyDashboard data={{ ...data, photoUrl: "/profile-test.jpg" }} sharing={<div>공유 도구</div>} />);
+  render(
+    <MyDashboard
+      data={{ ...data, photoUrl: "/profile-test.jpg" }}
+      sharing={<div>공유 도구</div>}
+    />,
+  );
   expect(screen.getByRole("link", { name: /관리용 제목/ })).toHaveAttribute(
     "href",
     "/my/profiles?profile=private-version",
   );
   const identity = screen.getByRole("region", { name: /테스트 회원/ });
-  expect(within(identity).getByRole("img", { name: "테스트 회원 프로필 사진" })).toBeInTheDocument();
-  expect(within(identity).getByRole("link", { name: "내정보 수정" })).toHaveAttribute("href", "/my/personal");
+  expect(
+    within(identity).getByRole("img", { name: "테스트 회원 프로필 사진" }),
+  ).toBeInTheDocument();
+  expect(
+    within(identity).getByRole("link", { name: "내정보 수정" }),
+  ).toHaveAttribute("href", "/my/personal");
   expect(within(identity).queryByText("현재 프로필")).not.toBeInTheDocument();
   expect(within(identity).queryByText("관리용 제목")).not.toBeInTheDocument();
   expect(within(identity).queryByText("소개")).not.toBeInTheDocument();
   expect(within(identity).queryByRole("switch")).not.toBeInTheDocument();
-  expect(within(identity).queryByRole("link", { name: /공개 프로필 보기/ })).not.toBeInTheDocument();
-  expect(screen.queryByRole("link", { name: /이력서 다운로드/ })).not.toBeInTheDocument();
+  expect(
+    within(identity).queryByRole("link", { name: /공개 프로필 보기/ }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("link", { name: /이력서 다운로드/ }),
+  ).not.toBeInTheDocument();
 });
 
 test("조회 실패는 기록 0건이나 비어 있는 심사 내역으로 오인하지 않음", () => {
@@ -86,8 +103,15 @@ test("미게시·비공개 상태에 공개 프로필 링크를 제공하지 않
   expect(
     screen.queryByRole("link", { name: /공개 프로필 보기/ }),
   ).not.toBeInTheDocument();
-  expect(screen.getByRole("link", { name: /관리용 제목/ })).toHaveAttribute("href", "/my/profiles?profile=private-version");
-  expect(within(screen.getByRole("region", { name: "프로필 관리" })).getByText("비공개")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /관리용 제목/ })).toHaveAttribute(
+    "href",
+    "/my/profiles?profile=private-version",
+  );
+  expect(
+    within(screen.getByRole("region", { name: "프로필 관리" })).getByText(
+      "비공개",
+    ),
+  ).toBeInTheDocument();
 });
 
 test("예시 화면의 공유 조작은 클립보드·전송·통계에 영향을 주지 않음", () => {
@@ -114,5 +138,7 @@ test("예시 화면의 공유 조작은 클립보드·전송·통계에 영향�
   expect(screen.getByRole("status")).toHaveTextContent(
     "예시 화면에서는 링크를 복사하지 않습니다.",
   );
-  expect(screen.getByRole("button", { name: /QR코드 복사/ })).toBeDisabled();
+  expect(
+    screen.getByRole("button", { name: "QR코드", exact: true }),
+  ).toBeEnabled();
 });

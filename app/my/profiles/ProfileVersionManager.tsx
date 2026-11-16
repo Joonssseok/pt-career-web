@@ -1,4 +1,5 @@
 "use client";
+import { CurrentWorkplaceSelector } from "@/components/profile-sections/CurrentWorkplaceSelector";
 import {
   loadEvidenceReviews,
   storeEvidenceFile,
@@ -804,6 +805,7 @@ export function ProfileVersionManager({
                       저장 후 게시한 프로필에 시·도만 표시됩니다.
                     </span>
                   </label>
+                  <CurrentWorkplaceSelector previewActivities={previewData?.sources} owner={owner} value={content.currentWorkplace} onChange={(currentWorkplace) => setContent(previous => ({...previous, currentWorkplace, excluded: (previous.excluded ?? []).filter(key => key !== "workplace:0")}))} />
                 </section>
               </div>
               {step === "write" ? (

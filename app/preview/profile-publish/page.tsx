@@ -60,6 +60,7 @@ export default function ProfilePublishPreview() {
   const activities = sources.map((row, i) =>
     activityForProfile(row, samples[i][1]),
   );
+  sources.push({ owner: "preview-owner", id: "00000000-0000-4000-8000-000000000001", category: "career", title: "예시 기관 근무", period: "2026년 ~ 현재", description: "", learning: "", link: "", memo: "", files: [], updated: "2026-11-16", details: { "기관·회사명": "예시 근무기관", "근무지 주소": "서울특별시 중구 세종대로 110", "기관 홈페이지": "https://example.com" } });
   const content = {
     headline: "배움과 경험을 모아, 건강한 움직임을 함께 만들어요.",
     introduction: "운동 지도자를 준비하며 쌓아온 학습과 활동을 소개합니다.",

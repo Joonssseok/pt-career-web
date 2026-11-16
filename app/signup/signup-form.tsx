@@ -7,6 +7,7 @@ import { agreeToTerms } from '@/app/actions/terms'
 import { beginPinEnrollment } from '@/app/actions/account-pin'
 import Link from 'next/link'
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons'
+import { RequiredTermsConsent } from '@/components/auth/RequiredTermsConsent'
 import { getAuthCallbackUrl, NAVER_PROVIDER } from '@/lib/auth/social-login'
 
 export default function SignUpForm({
@@ -179,38 +180,11 @@ export default function SignUpForm({
 
           {method && (
             <div className="mt-6 border-t border-slate-100 pt-5">
-              {/* Terms Agreement */}
-              <div className="mb-4">
-                <label className="flex items-start gap-3 cursor-pointer min-h-tap">
-                  <input
-                    type="checkbox"
-                    checked={agreedTerms}
-                    disabled={loading || oauthLoading}
-                    onChange={(e) => setAgreedTerms(e.target.checked)}
-                    className="mt-1"
-                  />
-                  <span className="text-sm text-gray-700">
-                    필수 약관에 동의합니다
-                  </span>
-                </label>
-                <div className="text-xs text-gray-500 mt-1 ml-7 space-x-2">
-                  <Link
-                    href="/terms"
-                    target="_blank"
-                    className="underline hover:text-gray-700"
-                  >
-                    이용약관 보기
-                  </Link>
-                  <span>·</span>
-                  <Link
-                    href="/privacy"
-                    target="_blank"
-                    className="underline hover:text-gray-700"
-                  >
-                    개인정보처리방침 보기
-                  </Link>
-                </div>
-              </div>
+              <RequiredTermsConsent
+                agreed={agreedTerms}
+                disabled={loading || oauthLoading}
+                onChange={setAgreedTerms}
+              />
 
               {method === 'email' ? (
                 <form

@@ -30,6 +30,10 @@ beforeEach(() => {
   search = "";
   signInWithOAuth.mockResolvedValue({ error: null });
 });
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', '') };
+  HTMLDialogElement.prototype.close = function () { this.removeAttribute('open') };
+});
 afterEach(cleanup);
 
 test("login starts with three labeled methods and no email/password form or deleted description", () => {
@@ -121,7 +125,11 @@ test("Naver signup requires terms and returns through the existing signup/PIN ca
   expect(signInWithOAuth).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: '네이버 가입 계속하기' }));
   expect(signInWithOAuth).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "필수약관 동의하기" }));
   fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: "확인", exact: true }));
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: "확인", exact: true }));
   fireEvent.click(screen.getByRole("button", { name: '네이버 가입 계속하기' }));
   await waitFor(() => expect(signInWithOAuth).toHaveBeenCalledTimes(1));
   const callback = new URL(signInWithOAuth.mock.calls[0][0].options.redirectTo);
@@ -136,7 +144,8 @@ test('signup initially shows only three choices and expands only the selected me
   expect(screen.queryByPlaceholderText('your@email.com')).toBeNull();
   expect(screen.queryByText('전문가 등록, 이렇게 진행돼요')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Google로 가입하기' }));
-  expect(screen.getByRole('checkbox')).toBeTruthy();
+  expect(screen.getByRole('button', { name: '필수약관 동의하기' })).toBeTruthy();
+  expect(screen.queryByRole('checkbox')).toBeNull();
   expect(screen.queryByRole('form')).toBeNull();
   fireEvent.click(screen.getByRole('button', { name: 'Google 가입 계속하기' }));
   expect(signInWithOAuth).not.toHaveBeenCalled();

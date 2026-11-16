@@ -18,7 +18,10 @@ export function workplaceFromActivity(activity: Activity): CurrentWorkplace {
       activity.details["주관"] ||
       activity.title
     ).trim(),
-    address: (activity.details["근무지 주소"] || "").trim(),
+    address:
+      activity.details["주소·지도 공개"] === "공개"
+        ? (activity.details["근무지 주소"] || "").trim()
+        : "",
     phone: (activity.details["기관 전화"] || "").trim(),
     websiteUrl: (activity.details["기관 홈페이지"] || "").trim(),
   };

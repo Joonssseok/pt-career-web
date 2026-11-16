@@ -228,3 +228,48 @@ test("unrequested items do not create empty review tabs or an always-expanded li
   expect(screen.queryByRole("region", { name: "심사 결과" })).toBeNull();
   expect(screen.queryByText("심사 미요청")).toBeNull();
 });
+
+test("workplace stays after activity sections regardless of saved section order, with map before name and address", () => {
+  render(
+    <ExpertProfileView
+      expert={{
+        ...expert,
+        workplace_center_name: "선택한 근무 기관",
+        workplace_address: "공개 기관 주소",
+      }}
+      galleryImages={[]}
+      activitySections={
+        <section data-order-key="activity:봉사활동">{activity.title}</section>
+      }
+      order={{
+        sections: [
+          "workplace",
+          "introduction",
+          "activity:봉사활동",
+          "experiences",
+        ],
+      }}
+    />,
+  );
+  const workplace = screen.getByText("선택한 근무 기관").closest("section")!;
+  expect(screen.queryByRole("heading", { name: "근무 기관" })).toBeNull();
+  expect(screen.queryByText("본인이 입력한 근무기관 정보")).toBeNull();
+  expect(
+    screen.getByText(activity.title).compareDocumentPosition(workplace) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  const mapArea = workplace.querySelector(".max-w-80")!;
+  const name = within(workplace as HTMLElement).getByText("선택한 근무 기관");
+  const address = within(workplace as HTMLElement).getByText("공개 기관 주소");
+  expect(
+    mapArea.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  expect(
+    name.compareDocumentPosition(address) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  expect(
+    within(workplace as HTMLElement).queryByRole("link", {
+      name: "네이버 지도에서 보기",
+    }),
+  ).toBeNull();
+});

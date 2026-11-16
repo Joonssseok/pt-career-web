@@ -216,6 +216,7 @@ export default async function ExpertDetailPage({
     <main className="mx-auto min-h-screen max-w-4xl bg-white pb-10 pt-4 sm:pb-14 sm:pt-5">
       <div id="profile-details" className="scroll-mt-32">
         <ExpertProfileView
+          workplaceMapAutoLoad
           stickySummary
           profileActions={
             <ProfileHeaderActions

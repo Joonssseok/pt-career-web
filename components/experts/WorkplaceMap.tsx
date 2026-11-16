@@ -17,7 +17,7 @@ type NaverMaps = {
       options: { query: string },
       callback: (
         status: unknown,
-        response: { v2?: { addresses?: { x: string; y: string }[] } },
+        response?: { v2?: { addresses?: { x: string; y: string }[] } },
       ) => void,
     ) => void;
   };
@@ -36,9 +36,15 @@ declare global {
  * 지도 보기를 선택하면 기관 주소를 화면에서 좌표로 바꾸며 좌표는 저장하지 않는다.
  * 키가 없거나 인증·주소 변환에 실패하면 지도 없이 "네이버 지도에서 보기" 링크만 남는다.
  */
-export function WorkplaceMap({ address }: { address: string }) {
+export function WorkplaceMap({
+  address,
+  autoLoad = false,
+}: {
+  address: string;
+  autoLoad?: boolean;
+}) {
   const CLIENT_ID = process.env.NEXT_PUBLIC_NAVER_MAP_CLIENT_ID;
-  const [requested, setRequested] = useState(false);
+  const [requested, setRequested] = useState(autoLoad);
   const [drawn, setDrawn] = useState(false);
   const mapRef = useRef<HTMLDivElement>(null);
   const [sdkReady, setSdkReady] = useState(false);
@@ -70,14 +76,21 @@ export function WorkplaceMap({ address }: { address: string }) {
       // 좌표는 화면에서만 사용하며 저장하지 않는다.
       maps.Service?.geocode({ query: address }, (status, response) => {
         if (cancelled || !mapRef.current) return;
-        const found = response.v2?.addresses?.[0];
+        const found = response?.v2?.addresses?.[0];
         if (status !== maps.Service?.Status.OK || !found) {
           setFailed(true);
           return;
         }
         const lat = Number(found.y),
           lng = Number(found.x);
-        if (!found.y.trim() || !found.x.trim() || !Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat)>90 || Math.abs(lng)>180) {
+        if (
+          !found.y.trim() ||
+          !found.x.trim() ||
+          !Number.isFinite(lat) ||
+          !Number.isFinite(lng) ||
+          Math.abs(lat) > 90 ||
+          Math.abs(lng) > 180
+        ) {
           setFailed(true);
           return;
         }
@@ -104,7 +117,15 @@ export function WorkplaceMap({ address }: { address: string }) {
   const showMap = Boolean(CLIENT_ID) && requested && !failed;
 
   return (
-    <div className="mt-3">
+    <div className="mt-3 w-full max-w-80">
+      {(!CLIENT_ID || failed) && (
+        <p
+          role="status"
+          className="rounded-xl bg-slate-50 px-3 py-4 text-xs text-slate-500"
+        >
+          지도를 불러오지 못했습니다. 잠시 후 다시 확인해주세요.
+        </p>
+      )}
       {CLIENT_ID && !requested && (
         <div className="space-y-1">
           <button
@@ -134,18 +155,10 @@ export function WorkplaceMap({ address }: { address: string }) {
             ref={mapRef}
             role="img"
             aria-label={`근무 기관 위치 지도: ${address}`}
-            className="h-48 w-full overflow-hidden rounded-xl bg-slate-100"
+            className="aspect-square w-full overflow-hidden rounded-xl bg-slate-100"
           />
         </>
       )}
-      <a
-        href={`https://map.naver.com/p/search/${encodeURIComponent(address)}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="mt-2 flex min-h-tap items-center justify-center rounded-xl bg-slate-100 px-3 py-2.5 text-center text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-200 focus-visible:outline-2 focus-visible:outline-blue-600"
-      >
-        네이버 지도에서 보기
-      </a>
     </div>
   );
 }

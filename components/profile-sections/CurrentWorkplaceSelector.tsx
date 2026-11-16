@@ -26,7 +26,11 @@ export function CurrentWorkplaceSelector({
   const [reload, setReload] = useState(0);
   useEffect(() => {
     if (previewActivities) {
-      setCareers(previewActivities.filter(row => row.owner === owner && row.category === "career"));
+      setCareers(
+        previewActivities.filter(
+          (row) => row.owner === owner && row.category === "career",
+        ),
+      );
       setLoaded(true);
       return;
     }
@@ -105,7 +109,40 @@ export function CurrentWorkplaceSelector({
       {value && (
         <div className="space-y-1 rounded-lg bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
           <p className="font-medium">{value.centerName}</p>
-          <p>{value.address || "주소 미입력"}</p>
+          <p>{value.address || "주소·지도 비공개"}</p>
+          {(value.address ||
+            careers.find((row) => row.id === value.sourceActivityId)?.details[
+              "근무지 주소"
+            ]) && (
+            <label className="flex min-h-11 items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={!!value.address}
+                onChange={(e) => {
+                  if (!e.target.checked) {
+                    onChange({ ...value, address: "" });
+                    return;
+                  }
+                  const row = careers.find(
+                    (row) => row.id === value.sourceActivityId,
+                  );
+                  if (!row) return;
+                  try {
+                    const next = workplaceFromActivity({
+                      ...row,
+                      details: { ...row.details, "주소·지도 공개": "공개" },
+                    });
+                    onChange({ ...value, address: next.address });
+                    setError("");
+                  } catch {
+                    setError("다모아의 기관 주소를 확인해주세요.");
+                  }
+                }}
+                className="h-4 w-4 accent-blue-600"
+              />
+              이 프로필에 주소와 지도 표시
+            </label>
+          )}
           {value.phone && <p>{value.phone}</p>}
           {value.websiteUrl && <p className="break-all">{value.websiteUrl}</p>}
           <button

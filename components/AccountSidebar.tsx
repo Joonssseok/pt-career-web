@@ -64,7 +64,7 @@ export async function AccountSidebar({
           AI 묶음 요약
         </ComingSoonButton>
       </AccountMenuSection>
-      <AccountMenuSection id="profile" title="프로필 관리" href="/my/profiles">
+      <AccountMenuSection id="profile" title="프로필 관리">
         <ProfileVersionLinks
           versions={(versions || []).map((v) => ({
             ...v,

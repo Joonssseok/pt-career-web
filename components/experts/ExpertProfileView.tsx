@@ -100,6 +100,7 @@ export type ExpertProfileViewProps = {
   activitySections?: React.ReactNode;
   profileActions?: React.ReactNode;
   stickySummary?: boolean;
+  workplaceMapAutoLoad?: boolean;
   itemReviews?: ReadonlyMap<string, PublicItemReview>;
   verifiedCareerCount?: number | null;
   renderItemActions?: (
@@ -145,6 +146,7 @@ export function ExpertProfileView({
   activitySections,
   profileActions,
   stickySummary = false,
+  workplaceMapAutoLoad = false,
   itemReviews,
   verifiedCareerCount,
 }: ExpertProfileViewProps) {
@@ -262,7 +264,9 @@ export function ExpertProfileView({
                   </svg>
                 )}
               </div>
-              <div className={`min-w-0 flex-1 ${profileActions ? "sm:pr-28" : ""}`}>
+              <div
+                className={`min-w-0 flex-1 ${profileActions ? "sm:pr-28" : ""}`}
+              >
                 <h1
                   className={`${styles.name} text-hero font-extrabold tracking-tight text-slate-900 sm:text-4xl`}
                 >
@@ -595,70 +599,75 @@ export function ExpertProfileView({
             <GalleryCard data-order-key="gallery" images={galleryImages} />
           )}
 
-          {(expert.workplace_center_name || expert.workplace_address ||
-            expert.workplace_phone ||
-            expert.workplace_external_contact_url ||
-            expert.workplace_website_url) && (
-            <SectionCard data-order-key="workplace" title="근무 기관">
-              {renderItemActions?.("workplace", 0)}
-              <p className="mb-2 text-xs text-slate-400">본인이 입력한 근무기관 정보</p>
-              {expert.workplace_center_name && (
-                <div className="text-base font-semibold text-slate-900">
-                  {expert.workplace_center_name}
-                  <ProfileEvidencePublic
-                    review={itemReviews?.get("workplace:0")}
-                  />
-                </div>
-              )}
-              {expert.workplace_address && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {expert.workplace_address}
-                  {expert.workplace_address_detail
-                    ? ` ${expert.workplace_address_detail}`
-                    : ""}
-                </p>
-              )}
-              {expert.workplace_address && <WorkplaceMap address={expert.workplace_address} />}
-              <div className="flex gap-2 mt-3">
-                {expert.workplace_phone && (
-                  <a
-                    data-profile-contact
-                    href={`tel:${expert.workplace_phone}`}
-                    className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
-                  >
-                    📞 전화
-                  </a>
-                )}
-                {expert.workplace_external_contact_url && (
-                  <a
-                    data-profile-contact
-                    href={expert.workplace_external_contact_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
-                  >
-                    ✉ 문의
-                  </a>
-                )}
-                {expert.workplace_website_url && (
-                  <a
-                    href={expert.workplace_website_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
-                  >
-                    🌐 웹사이트
-                  </a>
-                )}
-              </div>
-            </SectionCard>
-          )}
           {activitySections}
         </ProfileOrderLayout>
         {detailImages.length > 0 && (
           <div className="mt-3 sm:mt-4">
             <ProfileDetailImages images={detailImages} />
           </div>
+        )}
+        {(expert.workplace_center_name ||
+          expert.workplace_address ||
+          expert.workplace_phone ||
+          expert.workplace_external_contact_url ||
+          expert.workplace_website_url) && (
+          <section className="bg-white py-3 pl-3 sm:pl-4">
+            {renderItemActions?.("workplace", 0)}
+            {expert.workplace_address && (
+              <WorkplaceMap
+                address={expert.workplace_address}
+                autoLoad={workplaceMapAutoLoad}
+              />
+            )}
+            {expert.workplace_center_name && (
+              <div className="mt-2 text-base font-semibold text-slate-900">
+                {expert.workplace_center_name}
+                <ProfileEvidencePublic
+                  review={itemReviews?.get("workplace:0")}
+                />
+              </div>
+            )}
+            {expert.workplace_address && (
+              <p className="text-xs text-gray-500 mt-1">
+                {expert.workplace_address}
+                {expert.workplace_address_detail
+                  ? ` ${expert.workplace_address_detail}`
+                  : ""}
+              </p>
+            )}
+            <div className="flex gap-2 mt-3">
+              {expert.workplace_phone && (
+                <a
+                  data-profile-contact
+                  href={`tel:${expert.workplace_phone}`}
+                  className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
+                >
+                  📞 전화
+                </a>
+              )}
+              {expert.workplace_external_contact_url && (
+                <a
+                  data-profile-contact
+                  href={expert.workplace_external_contact_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
+                >
+                  ✉ 문의
+                </a>
+              )}
+              {expert.workplace_website_url && (
+                <a
+                  href={expert.workplace_website_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
+                >
+                  🌐 웹사이트
+                </a>
+              )}
+            </div>
+          </section>
         )}
       </div>
     </div>

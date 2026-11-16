@@ -12,12 +12,25 @@ const activity = {
   title: "근무 기록",
   details: {
     "기관·회사명": "공식 기관",
+    "주소·지도 공개": "공개",
     "근무지 주소": "서울특별시 중구 세종대로 110",
     "기관 전화": "02-1234-5678",
     "기관 홈페이지": "https://example.com",
     "담당 업무": "비공개 업무",
   },
 } as unknown as Activity;
+
+test("address and map are omitted by default and when explicitly private; the private original is retained", () => {
+  const hidden = {
+    ...activity,
+    details: { ...activity.details, "주소·지도 공개": "비공개" },
+  };
+  expect(workplaceFromActivity(hidden).address).toBe("");
+  const unset = { ...activity, details: { ...activity.details } };
+  delete unset.details["주소·지도 공개"];
+  expect(workplaceFromActivity(unset).address).toBe("");
+  expect(hidden.details["근무지 주소"]).toBe("서울특별시 중구 세종대로 110");
+});
 const base = {
   id: "person",
   headline: "",

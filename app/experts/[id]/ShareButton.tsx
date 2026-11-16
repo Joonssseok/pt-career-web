@@ -1,5 +1,6 @@
 "use client";
 
+import { profileShareUrl } from "@/lib/profile-sharing/qr";
 import { trackEvent } from "@/lib/analytics";
 import { ComingSoonButton } from "@/components/ComingSoonButton";
 import { useState } from "react";
@@ -45,6 +46,7 @@ export function ProfileHeaderActions(
 export function ShareButton({
   displayName,
   headline,
+  profileId,
   shareUrl,
   iconOnly = false,
   preview = false,
@@ -61,7 +63,7 @@ export function ShareButton({
       showMessage("게시 전 미리보기에서는 공유되지 않습니다");
       return;
     }
-    const url = shareUrl ?? window.location.href;
+    const url = shareUrl ?? profileShareUrl(profileId);
 
     if (navigator.share) {
       try {

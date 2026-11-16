@@ -1,4 +1,5 @@
 "use client";
+import { CareerFields } from "@/components/damoa/CareerFields";
 
 import { useEffect, useRef, useState } from "react";
 import { formatActivityPeriod } from "@/lib/activity-period";
@@ -7,6 +8,7 @@ import {
   Activity,
   Attachment,
   CATEGORIES,
+  CATEGORY_GROUPS,
   STORAGE_LIMIT,
   fileBytes,
 } from "@/lib/damoa/categories";
@@ -29,7 +31,7 @@ const primaryClass =
   "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50";
 const secondaryClass =
   "inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-600 transition hover:border-blue-200 hover:text-primary";
-const groups = [...new Set(CATEGORIES.map((c) => c.group))];
+const groups = CATEGORY_GROUPS;
 function Icon({
   kind = "plus",
   className = "h-5 w-5",
@@ -173,6 +175,8 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
     return () => window.removeEventListener("hashchange", followMenu);
   }, []);
   const [filter, setFilter] = useState("all");
+  const [groupFilter, setGroupFilter] = useState("all");
+  const [pickerGroup, setPickerGroup] = useState("all");
   const [search, setSearch] = useState("");
   const [draft, setDraft] = useState<Activity | null>(null);
   const [categorySearch, setCategorySearch] = useState("");
@@ -220,10 +224,13 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
   const category = CATEGORIES.find((c) => c.id === draft?.category);
   const visible = records.filter(
     (row) =>
+      (groupFilter === "all" ||
+        CATEGORIES.find((c) => c.id === row.category)?.group === groupFilter) &&
       (filter === "all" || row.category === filter) &&
-      `${row.title} ${row.description} ${CATEGORIES.find((c) => c.id === row.category)?.name ?? ""}`
+      `${row.title} ${row.description} ${CATEGORIES.find((c) => c.id === row.category)?.name ?? ""} ${CATEGORIES.find((c) => c.id === row.category)?.group ?? ""}`
         .toLowerCase()
-        .includes(search.toLowerCase()),
+        .replace(/[\s·ㆍ/]/g, "")
+        .includes(search.toLowerCase().replace(/[\s·ㆍ/]/g, "")),
   );
   const files = visible.flatMap((row) =>
     row.files.map((file) => ({ file, title: row.title || "보관한 자료" })),
@@ -232,6 +239,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
     setDraggingFiles(false);
     setFormError("");
     setCategorySearch("");
+    setPickerGroup("all");
     setDetailed(false);
     setDraft({
       owner,
@@ -336,9 +344,20 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
     setSaving(true);
     setFormError("");
     try {
+      if (
+        draft.category === "career" &&
+        (!(draft.details["기관·회사명"] || draft.title).trim() ||
+          !draft.details["직무·직책"]?.trim() ||
+          !draft.period.trim())
+      ) {
+        throw new Error("회사·기관명, 직무·직책, 재직기간을 입력해주세요.");
+      }
       const saved = {
         ...draft,
-        title: draft.title.trim(),
+        title: (draft.category === "career"
+          ? draft.details["기관·회사명"] || draft.title
+          : draft.title
+        ).trim(),
         period: formatActivityPeriod(draft.period),
         updated: new Date().toISOString(),
       };
@@ -550,6 +569,36 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
         </section>
       ) : (
         <>
+          <div
+            role="group"
+            aria-label="활동 대분류"
+            className="mt-5 flex flex-wrap gap-2"
+          >
+            {["all", ...groups].map((group) => (
+              <button
+                key={group}
+                type="button"
+                aria-pressed={groupFilter === group}
+                onClick={() => {
+                  setGroupFilter(group);
+                  setFilter("all");
+                }}
+                className={`min-h-11 rounded-lg px-3 py-2 text-sm font-medium ${groupFilter === group ? "bg-blue-50 text-primary" : "text-slate-500 hover:bg-slate-50"}`}
+              >
+                {group === "all" ? "전체" : group}
+                <span className="ml-1.5 text-xs tabular-nums">
+                  {
+                    records.filter(
+                      (row) =>
+                        group === "all" ||
+                        CATEGORIES.find((c) => c.id === row.category)?.group ===
+                          group,
+                    ).length
+                  }
+                </span>
+              </button>
+            ))}
+          </div>
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <label className="relative flex-1">
               <span className="sr-only">기록 검색</span>
@@ -559,7 +608,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="활동 이름이나 내용으로 찾아보세요"
+                placeholder="활동 이름·내용·세부 카테고리 검색"
                 className={`${inputClass} mt-0 pl-11`}
               />
             </label>
@@ -570,12 +619,18 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                 onChange={(e) => setFilter(e.target.value)}
                 className={`${inputClass} mt-0 sm:w-44`}
               >
-                <option value="all">전체 카테고리</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
+                <option value="all">전체 세부 카테고리</option>
+                {groups
+                  .filter((g) => groupFilter === "all" || groupFilter === g)
+                  .map((g) => (
+                    <optgroup key={g} label={g}>
+                      {CATEGORIES.filter((c) => c.group === g).map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
               </select>
             </label>
           </div>
@@ -600,41 +655,66 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
               </div>
             ) : (
               <div className="mt-6 space-y-3">
-                {visible.map((row) => (
-                  <button
-                    key={row.id}
-                    type="button"
-                    onClick={() => {
-                      setFormError("");
-                      setDetailed(false);
-                      setDraft(row);
-                    }}
-                    className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left transition hover:border-blue-300"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <span className="text-xs font-semibold text-primary">
-                          {CATEGORIES.find((c) => c.id === row.category)?.name}
+                {groups.map((group) => {
+                  const grouped = CATEGORIES.filter(
+                    (c) => c.group === group,
+                  ).flatMap((c) =>
+                    visible.filter((row) => row.category === c.id),
+                  );
+                  if (!grouped.length) return null;
+                  return (
+                    <section
+                      key={group}
+                      aria-label={`${group} 기록`}
+                      className="space-y-3"
+                    >
+                      <h2 className="flex items-center gap-2 border-b border-slate-100 pb-2 pt-3 text-sm font-semibold text-slate-600">
+                        {group}
+                        <span className="text-xs font-normal text-slate-400">
+                          {grouped.length}건
                         </span>
-                        <h2 className="mt-2 break-words text-base font-bold text-slate-900">
-                          {row.title || "보관한 자료"}
-                        </h2>
-                      </div>
-                      <span className="shrink-0 text-xs text-slate-400">
-                        수정 →
-                      </span>
-                    </div>
-                    <p className="mt-2 text-xs text-slate-400">
-                      {formatActivityPeriod(row.period) || "기간 미입력"} · 첨부 {row.files.length}개
-                      · 비공개
-                    </p>
-                    {row.description && (
-                      <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-500">
-                        {row.description}
-                      </p>
-                    )}
-                  </button>
-                ))}
+                      </h2>
+                      {grouped.map((row) => (
+                        <button
+                          key={row.id}
+                          type="button"
+                          onClick={() => {
+                            setFormError("");
+                            setDetailed(false);
+                            setDraft(row);
+                          }}
+                          className="group w-full rounded-2xl border border-slate-200 bg-white p-5 text-left transition hover:border-blue-300"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <span className="text-xs font-semibold text-primary">
+                                {
+                                  CATEGORIES.find((c) => c.id === row.category)
+                                    ?.name
+                                }
+                              </span>
+                              <h2 className="mt-2 break-words text-base font-bold text-slate-900">
+                                {row.title || "보관한 자료"}
+                              </h2>
+                            </div>
+                            <span className="shrink-0 text-xs text-slate-400">
+                              수정 →
+                            </span>
+                          </div>
+                          <p className="mt-2 text-xs text-slate-400">
+                            {formatActivityPeriod(row.period) || "기간 미입력"}{" "}
+                            · 첨부 {row.files.length}개 · 비공개
+                          </p>
+                          {row.description && (
+                            <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-500">
+                              {row.description}
+                            </p>
+                          )}
+                        </button>
+                      ))}
+                    </section>
+                  );
+                })}
               </div>
             )
           ) : (
@@ -644,18 +724,18 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                   <Icon kind="folder" className="h-7 w-7" />
                 </div>
                 <h2 className="mt-4 text-lg font-bold text-slate-800">
-                  {search || filter !== "all"
+                  {search || filter !== "all" || groupFilter !== "all"
                     ? "조건에 맞는 기록이 없어요"
                     : view === "files"
                       ? "사진 한 장부터 모아보세요"
                       : "오늘의 작은 경험부터 남겨보세요"}
                 </h2>
                 <p className="mt-2 text-sm leading-7 text-slate-400">
-                  {search || filter !== "all"
+                  {search || filter !== "all" || groupFilter !== "all"
                     ? "검색어나 카테고리를 바꿔보세요."
                     : "수업 과제, 하루의 봉사, 짧은 교육도 좋아요."}
                 </p>
-                {!search && filter === "all" && (
+                {!search && filter === "all" && groupFilter === "all" && (
                   <button
                     type="button"
                     onClick={() => start(view === "files" ? "upload" : "write")}
@@ -672,30 +752,27 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
               어떤 경험을 모아볼까요?
             </h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {groups
-                .filter((g) => g !== "새로운 경험")
-                .map((group) => (
-                  <button
-                    key={group}
-                    type="button"
-                    disabled={!ready || migrating || maintenance}
-                    onClick={() => {
-                      start("write");
-                      setCategorySearch(group);
-                    }}
-                    className="rounded-xl bg-slate-50/80 p-4 text-left transition hover:bg-blue-50"
-                  >
-                    <span className="text-sm font-semibold text-slate-700">
-                      {group}{" "}
-                      <span className="float-right text-blue-400">↗</span>
-                    </span>
-                    <span className="mt-2 block text-xs leading-6 text-slate-400">
-                      {CATEGORIES.filter((c) => c.group === group)
-                        .map((c) => c.name)
-                        .join(" · ")}
-                    </span>
-                  </button>
-                ))}
+              {groups.map((group) => (
+                <button
+                  key={group}
+                  type="button"
+                  disabled={!ready || migrating || maintenance}
+                  onClick={() => {
+                    start("write");
+                    setPickerGroup(group);
+                  }}
+                  className="rounded-xl bg-slate-50/80 p-4 text-left transition hover:bg-blue-50"
+                >
+                  <span className="text-sm font-semibold text-slate-700">
+                    {group} <span className="float-right text-blue-400">↗</span>
+                  </span>
+                  <span className="mt-2 block text-xs leading-6 text-slate-400">
+                    {CATEGORIES.filter((c) => c.group === group)
+                      .map((c) => c.name)
+                      .join(" · ")}
+                  </span>
+                </button>
+              ))}
             </div>
           </section>
         </>
@@ -740,6 +817,26 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                 <p className="text-sm leading-6 text-slate-500">
                   가까운 카테고리를 골라주세요. 나중에 변경할 수 있어요.
                 </p>
+                <div
+                  role="group"
+                  aria-label="입력 대분류"
+                  className="mt-4 flex flex-wrap gap-2"
+                >
+                  {groups.map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      aria-pressed={pickerGroup === g}
+                      onClick={() => {
+                        setPickerGroup(g);
+                        setCategorySearch("");
+                      }}
+                      className={`min-h-11 rounded-lg px-3 text-sm ${pickerGroup === g ? "bg-blue-50 text-primary" : "bg-slate-50 text-slate-600"}`}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
                 <label>
                   <span className="sr-only">카테고리 검색</span>
                   <input
@@ -750,27 +847,38 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                     className={inputClass}
                   />
                 </label>
-                <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                  {CATEGORIES.filter((c) =>
-                    `${c.name} ${c.group} ${c.id === "award" ? "대회 수상 수상 내역" : c.id === "education" ? "해외 연수 워크숍 세미나" : c.id === "volunteer" ? "재능기부" : ""}`
-                      .replace(/\s/g, "")
-                      .includes(categorySearch.replace(/\s/g, "")),
-                  ).map((c) => (
-                    <button
-                      type="button"
-                      key={c.id}
-                      onClick={() => update("category", c.id)}
-                      className="min-h-16 rounded-xl border border-slate-200 p-3 text-left hover:border-blue-300 hover:bg-blue-50"
-                    >
-                      <span className="block text-sm font-semibold text-slate-700">
-                        {c.name}
-                      </span>
-                      <span className="mt-1 block text-xs text-slate-400">
-                        {c.group}
-                      </span>
-                    </button>
-                  ))}
+                <div className="mt-4 max-h-72 overflow-y-auto overscroll-contain">
+                  {CATEGORIES.filter(
+                    (c) =>
+                      (pickerGroup !== "all" || categorySearch) &&
+                      (categorySearch || c.group === pickerGroup),
+                  )
+                    .filter((c) =>
+                      `${c.name} ${c.group} ${c.id === "award" ? "대회 수상 수상 내역" : c.id === "education" ? "해외 연수 워크숍 세미나" : c.id === "volunteer" ? "재능기부" : ""}`
+                        .replace(/[\s·ㆍ/]/g, "")
+                        .includes(categorySearch.replace(/[\s·ㆍ/]/g, "")),
+                    )
+                    .map((c) => (
+                      <button
+                        type="button"
+                        key={c.id}
+                        onClick={() => update("category", c.id)}
+                        className="flex min-h-12 w-full items-center justify-between gap-3 border-b border-slate-100 px-2 py-3 text-left hover:bg-blue-50"
+                      >
+                        <span className="block text-sm font-semibold text-slate-700">
+                          {c.name}
+                        </span>
+                        <span className="mt-1 block text-xs text-slate-400">
+                          {c.group}
+                        </span>
+                      </button>
+                    ))}
                 </div>
+                {pickerGroup === "all" && !categorySearch && (
+                  <p className="mt-3 text-xs text-slate-400">
+                    위 분류를 선택하거나 세부 카테고리를 검색해주세요.
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={() => update("category", "other")}
@@ -790,77 +898,105 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                     }
                     className={inputClass}
                   >
-                    {CATEGORIES.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
+                    {groups.map((g) => (
+                      <optgroup key={g} label={g}>
+                        {CATEGORIES.filter((c) => c.group === g).map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.name}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </label>
-                <label className="block text-sm font-medium text-slate-600">
-                  활동 이름{" "}
-                  <span className="font-normal text-slate-400">
-                    · 자료만 보관할 때는 생략 가능
-                  </span>
-                  <input
-                    autoFocus
-                    maxLength={150}
-                    value={draft.title}
-                    onChange={(e) => update("title", e.target.value)}
-                    placeholder={
-                      draft.category === "volunteer"
-                        ? "예: 복지관 어르신 운동 프로그램 보조"
-                        : "어떤 경험인지 짧게 적어주세요"
-                    }
-                    className={inputClass}
+                {draft.category === "career" ? (
+                  <CareerFields
+                    draft={draft}
+                    onChange={setDraft}
+                    inputClass={inputClass}
                   />
-                </label>
-                <label className="block text-sm font-medium text-slate-600">
-                  지역
-                  <input
-                    maxLength={1000}
-                    value={draft.details["지역"] || ""}
-                    onChange={(e) => setDraft({ ...draft, details: { ...draft.details, 지역: e.target.value } })}
-                    placeholder="예: 경기도 성남시"
-                    className={inputClass}
-                  />
-                </label>
-                <label className="block text-sm font-medium text-slate-600">
-                  주관
-                  <input
-                    maxLength={1000}
-                    value={draft.details["주관"] || ""}
-                    onChange={(e) => setDraft({ ...draft, details: { ...draft.details, 주관: e.target.value } })}
-                    placeholder="예: 성남시 자원봉사센터"
-                    className={inputClass}
-                  />
-                </label>
-                <label className="block text-sm font-medium text-slate-600">
-                  날짜·기간{" "}
-                  <span className="font-normal text-slate-400">· 선택</span>
-                  <input
-                    maxLength={100}
-                    value={draft.period}
-                    onChange={(e) => update("period", e.target.value)}
-                    onBlur={() => update("period", formatActivityPeriod(draft.period))}
-                    placeholder="예: 2026년 / 2026년 12월 / 26년 12월 ~ 27년 4월"
-                    className={inputClass}
-                  />
-                </label>
-                <label className="block text-sm font-medium text-slate-600">
-                  짧은 기록
-                  <textarea
-                    rows={3}
-                    maxLength={5000}
-                    value={draft.description}
-                    onChange={(e) => update("description", e.target.value)}
-                    placeholder="무엇을 했나요? 한 문장으로 시작해도 좋아요."
-                    className={inputClass}
-                  />
-                </label>
+                ) : (
+                  <>
+                    <label className="block text-sm font-medium text-slate-600">
+                      활동 이름{" "}
+                      <span className="font-normal text-slate-400">
+                        · 자료만 보관할 때는 생략 가능
+                      </span>
+                      <input
+                        autoFocus
+                        maxLength={150}
+                        value={draft.title}
+                        onChange={(e) => update("title", e.target.value)}
+                        placeholder={
+                          draft.category === "volunteer"
+                            ? "예: 복지관 어르신 운동 프로그램 보조"
+                            : "어떤 경험인지 짧게 적어주세요"
+                        }
+                        className={inputClass}
+                      />
+                    </label>
+                    <label className="block text-sm font-medium text-slate-600">
+                      지역
+                      <input
+                        maxLength={1000}
+                        value={draft.details["지역"] || ""}
+                        onChange={(e) =>
+                          setDraft({
+                            ...draft,
+                            details: { ...draft.details, 지역: e.target.value },
+                          })
+                        }
+                        placeholder="예: 경기도 성남시"
+                        className={inputClass}
+                      />
+                    </label>
+                    <label className="block text-sm font-medium text-slate-600">
+                      주관
+                      <input
+                        maxLength={1000}
+                        value={draft.details["주관"] || ""}
+                        onChange={(e) =>
+                          setDraft({
+                            ...draft,
+                            details: { ...draft.details, 주관: e.target.value },
+                          })
+                        }
+                        placeholder="예: 성남시 자원봉사센터"
+                        className={inputClass}
+                      />
+                    </label>
+                    <label className="block text-sm font-medium text-slate-600">
+                      날짜·기간{" "}
+                      <span className="font-normal text-slate-400">· 선택</span>
+                      <input
+                        maxLength={100}
+                        value={draft.period}
+                        onChange={(e) => update("period", e.target.value)}
+                        onBlur={() =>
+                          update("period", formatActivityPeriod(draft.period))
+                        }
+                        placeholder="예: 2026년 / 2026년 12월 / 26년 12월 ~ 27년 4월"
+                        className={inputClass}
+                      />
+                    </label>
+                    <label className="block text-sm font-medium text-slate-600">
+                      짧은 기록
+                      <textarea
+                        rows={3}
+                        maxLength={5000}
+                        value={draft.description}
+                        onChange={(e) => update("description", e.target.value)}
+                        placeholder="무엇을 했나요? 한 문장으로 시작해도 좋아요."
+                        className={inputClass}
+                      />
+                    </label>
+                  </>
+                )}
                 <div>
                   <p className="text-sm font-medium text-slate-600">
-                    사진·자료
+                    {draft.category === "career"
+                      ? "증빙자료 · 선택"
+                      : "사진·자료"}
                   </p>
                   <input
                     ref={fileInput}
@@ -883,7 +1019,11 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                       if (!saving) setDraggingFiles(true);
                     }}
                     onDragLeave={(e) => {
-                      if (!e.currentTarget.contains(e.relatedTarget as Node | null))
+                      if (
+                        !e.currentTarget.contains(
+                          e.relatedTarget as Node | null,
+                        )
+                      )
                         setDraggingFiles(false);
                     }}
                     onDrop={(e) => {
@@ -895,7 +1035,9 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                     className={`mt-2 flex min-h-24 w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed text-sm text-primary ${draggingFiles ? "border-primary bg-blue-100" : "border-blue-200 bg-blue-50/30"}`}
                   >
                     <Icon kind="upload" /> 사진·자료 선택
-                    <span className="text-xs text-slate-500">클릭하거나 사진·자료를 끌어놓으세요.</span>
+                    <span className="text-xs text-slate-500">
+                      클릭하거나 사진·자료를 끌어놓으세요.
+                    </span>
                   </button>
                   <p className="mt-2 text-xs leading-6 text-slate-400">
                     JPG·PNG·WebP·PDF · 파일당 10MB · 모든 자료는 비공개
@@ -934,29 +1076,37 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                 </button>
                 {detailed && (
                   <div className="space-y-4 rounded-xl bg-slate-50 p-4">
-                    {category.id === "career" && <p className="text-xs leading-5 text-slate-500">기관의 공식 주소·전화·홈페이지만 입력해주세요. 개인 연락처나 집 주소는 입력하지 마세요. 프로필에서 현재 근무지로 선택한 뒤 게시할 때 공개됩니다.</p>}
-                    {category.fields.map((field) => (
-                      <label
-                        key={field}
-                        className="block text-sm text-slate-600"
-                      >
-                        {field}
-                        <input
-                          maxLength={1000}
-                          value={draft.details[field] || ""}
-                          onChange={(e) =>
-                            setDraft({
-                              ...draft,
-                              details: {
-                                ...draft.details,
-                                [field]: e.target.value,
-                              },
-                            })
-                          }
-                          className={inputClass}
-                        />
-                      </label>
-                    ))}
+                    {category.id === "career" && (
+                      <p className="text-xs leading-5 text-slate-500">
+                        기관의 공식 주소·전화·홈페이지만 입력해주세요. 개인
+                        연락처나 집 주소는 입력하지 마세요. 프로필에서 현재
+                        근무지로 선택한 뒤 게시할 때 공개됩니다.
+                      </p>
+                    )}
+                    {(draft.category === "career" ? [] : category.fields).map(
+                      (field) => (
+                        <label
+                          key={field}
+                          className="block text-sm text-slate-600"
+                        >
+                          {field}
+                          <input
+                            maxLength={1000}
+                            value={draft.details[field] || ""}
+                            onChange={(e) =>
+                              setDraft({
+                                ...draft,
+                                details: {
+                                  ...draft.details,
+                                  [field]: e.target.value,
+                                },
+                              })
+                            }
+                            className={inputClass}
+                          />
+                        </label>
+                      ),
+                    )}
                     <label className="block text-sm text-slate-600">
                       배운 점·결과
                       <textarea

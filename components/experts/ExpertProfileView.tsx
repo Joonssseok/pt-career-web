@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { formatActivityPeriod } from "@/lib/activity-period";
 import { ProfileSectionCard as SectionCard } from "./ProfileSectionCard";
+import { WorkplaceMap } from "./WorkplaceMap";
 import {
   ProfileOrderLayout,
   type ProfileOrder,
@@ -615,6 +616,9 @@ export function ExpertProfileView({
                     ? ` ${expert.workplace_address_detail}`
                     : ""}
                 </p>
+              )}
+              {expert.workplace_address && (
+                <WorkplaceMap address={expert.workplace_address} />
               )}
               <div className="flex gap-2 mt-3">
                 {expert.workplace_phone && (

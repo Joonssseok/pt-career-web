@@ -36,6 +36,10 @@ beforeEach(() => {
   loginSearch = "next=/my/profiles";
   beginPinEnrollment.mockResolvedValue({ ok: true });
 });
+beforeAll(() => {
+  HTMLDialogElement.prototype.showModal = function () { this.setAttribute('open', '') };
+  HTMLDialogElement.prototype.close = function () { this.removeAttribute('open') };
+});
 afterEach(cleanup);
 function fillLogin() {
   fireEvent.click(screen.getByRole("button", { name: "아이디로 로그인하기" }));
@@ -110,7 +114,11 @@ test("immediately authenticated signup also starts enrollment", async () => {
   });
   render(<SignUpForm />);
   fireEvent.click(screen.getByRole('button', { name: '이메일로 가입하기' }));
+  fireEvent.click(screen.getByRole("button", { name: "필수약관 동의하기" }));
   fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: "확인", exact: true }));
+  fireEvent.click(screen.getByRole("checkbox"));
+  fireEvent.click(screen.getByRole("button", { name: "확인", exact: true }));
   fireEvent.change(screen.getByPlaceholderText("your@email.com"), {
     target: { value: "fixture@example.invalid" },
   });

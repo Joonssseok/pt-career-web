@@ -102,4 +102,3 @@ begin
  if content ? 'activityRegion' then result:=jsonb_set(result,'{workplace_region}',coalesce(to_jsonb(nullif(content->>'activityRegion','')),'null'::jsonb)); end if;
  return result;
 end $function$;
-

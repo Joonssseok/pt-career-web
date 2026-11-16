@@ -91,6 +91,7 @@ export function profileReviewItems(
   if (
     expert &&
     [
+      expert.workplace_center_name,
       expert.workplace_address,
       expert.workplace_phone,
       expert.workplace_external_contact_url,

@@ -1,3 +1,4 @@
+import { WorkplaceMap } from "./WorkplaceMap";
 import Image from "next/image";
 import { formatActivityPeriod } from "@/lib/activity-period";
 import { ProfileSectionCard as SectionCard } from "./ProfileSectionCard";
@@ -594,12 +595,13 @@ export function ExpertProfileView({
             <GalleryCard data-order-key="gallery" images={galleryImages} />
           )}
 
-          {(expert.workplace_address ||
+          {(expert.workplace_center_name || expert.workplace_address ||
             expert.workplace_phone ||
             expert.workplace_external_contact_url ||
             expert.workplace_website_url) && (
             <SectionCard data-order-key="workplace" title="근무 기관">
               {renderItemActions?.("workplace", 0)}
+              <p className="mb-2 text-xs text-slate-400">본인이 입력한 근무기관 정보</p>
               {expert.workplace_center_name && (
                 <div className="text-base font-semibold text-slate-900">
                   {expert.workplace_center_name}
@@ -616,6 +618,7 @@ export function ExpertProfileView({
                     : ""}
                 </p>
               )}
+              {expert.workplace_address && <WorkplaceMap address={expert.workplace_address} />}
               <div className="flex gap-2 mt-3">
                 {expert.workplace_phone && (
                   <a

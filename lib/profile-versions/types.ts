@@ -1,3 +1,4 @@
+import { workplaceExpertFields, type CurrentWorkplace } from './workplace';
 import type { ExpertProfileViewProps } from "@/components/experts/ExpertProfileView";
 import {
   publicActivity,
@@ -22,6 +23,7 @@ export type ProfileActivity = {
   presentation?: ItemPresentation;
 };
 export type VersionContent = {
+  currentWorkplace?: CurrentWorkplace | null;
   activityRegion?: string;
   headline: string;
   introduction: string;
@@ -116,6 +118,7 @@ export function applyVersion(
     licenses: show("licenses")
       ? base.licenses.filter((row) => !hidden(profileItemKey("licenses", row)))
       : [],
+    ...(content.currentWorkplace !== undefined ? workplaceExpertFields(content.currentWorkplace) : {}),
     ...(hidden("workplace:0")
       ? {
           workplace_center_name: null,

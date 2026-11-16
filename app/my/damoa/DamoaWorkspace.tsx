@@ -934,6 +934,7 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
                 </button>
                 {detailed && (
                   <div className="space-y-4 rounded-xl bg-slate-50 p-4">
+                    {category.id === "career" && <p className="text-xs leading-5 text-slate-500">기관의 공식 주소·전화·홈페이지만 입력해주세요. 개인 연락처나 집 주소는 입력하지 마세요. 프로필에서 현재 근무지로 선택한 뒤 게시할 때 공개됩니다.</p>}
                     {category.fields.map((field) => (
                       <label
                         key={field}

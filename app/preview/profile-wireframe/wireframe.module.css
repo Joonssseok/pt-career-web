@@ -1,0 +1,78 @@
+.page { max-width: 1140px; margin: 0 auto; padding: 24px 20px 64px; color: #374151; }
+.controls { margin-bottom: 24px; }
+.heading { display: flex; gap: 16px; align-items: center; margin-bottom: 18px; }
+.heading h1 { font-size: 20px; font-weight: 700; color: #111827; }
+.heading > span { font-size: 12px; color: #6b7280; }
+.options { display: flex; flex-wrap: wrap; gap: 6px; }
+.options button { border: 1px solid #d1d5db; border-radius: 5px; padding: 10px 14px; background: white; font-size: 13px; min-height: 44px; }
+.options button[aria-pressed="true"] { color: #111827; background: #e5e7eb; border-color: #6b7280; font-weight: 700; }
+.options button:focus-visible { outline: 2px solid #2563eb; outline-offset: 3px; }
+.bottom { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-top: 14px; }
+.bottom p { font-size: 13px; color: #6b7280; }
+.storageNote { margin-top: 10px; font-size: 12px; color: #6b7280; line-height: 1.6; }
+.sheet { min-width: 0; border: 1px solid #d1d5db; padding: 20px; background: white; }
+.sheet h2 { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
+.single { max-width: 980px; margin: auto; }
+.canvas { display: grid; gap: 12px; }
+.block { border: 1px solid #c8ccd2; background: #f1f2f4; display: flex; align-items: center; justify-content: center; padding: 12px; text-align: center; min-width: 0; font-size: 13px; line-height: 1.5; }
+.photo { grid-area: photo; background: #e1e4e8; }
+.identity { grid-area: identity; }
+.summary { grid-area: summary; min-height: 44px; background: #e8eaee; }
+.intro { grid-area: intro; min-height: 70px; }
+.feature { grid-area: feature; min-height: 180px; background: #e1e4e8; border-color: #9ca3af; }
+.video { grid-area: video; min-height: 160px; }
+.column { grid-area: column; min-height: 160px; }
+.photos { grid-area: photos; min-height: 160px; }
+.activity { grid-area: activity; min-height: 100px; }
+.resume { grid-area: resume; min-height: 100px; }
+.workplace { grid-area: workplace; min-height: 110px; }
+.balanced { grid-template-columns: 132px minmax(0,1fr) minmax(0,1fr); grid-template-areas: "photo identity identity" "summary summary summary" "intro intro intro" "feature feature video" "column column photos" "activity activity resume" "workplace workplace workplace"; }
+.balanced .photo, .balanced .identity { min-height: 132px; }
+.rail { grid-template-columns: minmax(0,1fr) minmax(0,1.45fr) minmax(0,1.45fr); grid-template-areas: "photo feature feature" "identity feature feature" "summary video column" "intro video column" "resume photos photos" "resume activity activity" "workplace workplace workplace"; }
+.rail .photo { min-height: 170px; }
+.rail .identity { min-height: 60px; }
+.editorial { grid-template-columns: 120px minmax(0,1fr) minmax(0,1fr); grid-template-areas: "photo identity identity" "summary summary summary" "intro intro intro" "feature feature feature" "video video column" "photos photos photos" "activity activity resume" "workplace workplace workplace"; }
+.editorial .photo, .editorial .identity { min-height: 110px; }
+.editorial .feature { min-height: 240px; }
+.editorial .photos { min-height: 120px; }
+.mosaic { grid-template-columns: minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr); grid-template-areas: "photo identity feature feature" "summary summary feature feature" "intro intro intro intro" "video video column column" "photos photos photos resume" "activity activity activity resume" "workplace workplace workplace workplace"; }
+.mosaic .photo, .mosaic .identity { min-height: 132px; }
+.comparison { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 20px; }
+.comparison .sheet { padding: 12px; }
+.comparison .canvas { gap: 7px; }
+.comparison .block { font-size: 11px; padding: 8px; }
+.comparison .balanced { grid-template-columns: 64px minmax(0,1fr) minmax(0,1fr); }
+.comparison .editorial { grid-template-columns: 64px minmax(0,1fr) minmax(0,1fr); }
+.comparison .block { min-height: 64px; }
+.comparison .feature { min-height: 140px; }
+.comparison .photo, .comparison .identity { min-height: 80px; }
+.mobile.single { max-width: 390px; }
+.mobile .sheet { max-width: 390px; width: 100%; margin: 0 auto; padding: 12px; }
+.mobile .canvas { grid-template-columns: 88px minmax(0,1fr); grid-template-areas: "photo identity" "summary summary" "intro intro" "feature feature" "video video" "column column" "photos photos" "activity activity" "resume resume" "workplace workplace"; }
+.mobile .rail { grid-template-areas: "photo identity" "summary summary" "intro intro" "feature feature" "video video" "column column" "photos photos" "activity activity" "resume resume" "workplace workplace"; }
+.mobile .editorial { grid-template-areas: "photo identity" "summary summary" "intro intro" "feature feature" "photos photos" "video video" "column column" "activity activity" "resume resume" "workplace workplace"; }
+.mobile .mosaic { grid-template-areas: "photo identity" "summary summary" "feature feature" "intro intro" "video video" "column column" "photos photos" "activity activity" "resume resume" "workplace workplace"; }
+.mobile .photo, .mobile .identity { min-height: 96px; }
+.editTools { margin-bottom: 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.editTools p { font-size: 12px; line-height: 1.7; color: #6b7280; }
+.freeBoard { position: relative; width: 100%; background: radial-gradient(#d1d5db 1px, transparent 1px); background-size: 8px 8px; }
+.freeBox { position: absolute; min-width: 0; border: 1px solid #9ca3af; background: #eceef1; }
+.centerline { position: absolute; left: 50%; top: 0; bottom: 0; border-left: 1px dashed #2563eb; pointer-events: none; z-index: 4; }
+.labelInput { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: calc(100% - 12px); min-width: 0; padding: 8px 4px; background: white; border: 1px solid #2563eb; border-radius: 3px; text-align: center; font-size: 13px; z-index: 5; }
+.deleteHandle { position: absolute; top: 0; right: 0; width: 32px; height: 32px; font-size: 20px; line-height: 1; color: #6b7280; background: #fff9; cursor: pointer; }
+.deleteHandle:hover { color: #b91c1c; background: #fff; }
+.deleteHandle:focus-visible { outline: 2px solid #2563eb; outline-offset: -3px; }
+.freeBox:focus-within { z-index: 2; border-color: #2563eb; box-shadow: 0 0 0 1px #2563eb; }
+.moveHandle { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 8px 20px; font-size: 13px; text-align: center; cursor: grab; touch-action: none; user-select: none; }
+.moveHandle:active { cursor: grabbing; }
+.resizeHandle { position: absolute; bottom: 0; right: 0; width: 32px; height: 32px; cursor: nwse-resize; touch-action: none; }
+.resizeHandle::after { content: ""; position: absolute; width: 12px; height: 12px; right: 5px; bottom: 5px; border-right: 2px solid #6b7280; border-bottom: 2px solid #6b7280; }
+.moveHandle:focus-visible, .resizeHandle:focus-visible { outline: 2px solid #2563eb; outline-offset: -3px; }
+@media (max-width: 620px) {
+  .page { padding: 16px 12px 40px; }
+  .heading, .bottom { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .comparison { grid-template-columns: minmax(0,1fr); }
+  .single .sheet { padding: 12px; }
+  .single .canvas { grid-template-columns: 88px minmax(0,1fr); grid-template-areas: "photo identity" "summary summary" "intro intro" "feature feature" "video video" "column column" "photos photos" "activity activity" "resume resume" "workplace workplace"; }
+  .single .photo, .single .identity { min-height: 96px; }
+}

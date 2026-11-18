@@ -8,11 +8,11 @@ import { getProfilePhotoUrl } from "@/lib/storage/profile-photo-url";
 import { ProfileHeaderActions } from "./ShareButton";
 import {
   LIVE_PROFILE_PUBLISH_ENABLED,
-  applyVersion,
   publicActivities,
   profileItemKey,
   type Representative,
 } from "@/lib/profile-versions/types";
+import { representativeExpert } from "@/lib/profile-versions/public";
 import { profileActivityCards } from "@/components/ProfileActivitySections";
 import { ExpertProfileView } from "@/components/experts/ExpertProfileView";
 import { detailImageSrc } from "@/lib/profile-versions/detail-images";
@@ -112,7 +112,7 @@ const fetchExpert = cache(async (id: string): Promise<ExpertDetail | null> => {
   const representative = (versions as Representative[] | null)?.[0];
   return representative
     ? ({
-        ...applyVersion(representative.expert, representative.content),
+        ...representativeExpert(representative, data),
         representative,
       } as ExpertDetail)
     : (data as ExpertDetail);

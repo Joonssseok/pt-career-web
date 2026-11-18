@@ -217,17 +217,18 @@ function manager(ok = true) {
       detailImagesState={{ ok, images: initial, revision: "revision-one" }}
     />,
   );
-  return screen.getByRole("complementary", { name: "작성 작업" });
+  fireEvent.click(screen.getByRole("tab", { name: "상세소개", exact: true }));
+  return screen.getByRole("tabpanel", { name: "상세소개", exact: true });
 }
 test("image-only changes are unsaved, save the ordered selection and revision only on Save", async () => {
   const controls = manager();
   fireEvent.click(screen.getByRole("button", { name: "long.png 첨부 해제" }));
   expect(saveProfileVersion).not.toHaveBeenCalled();
   fireEvent.click(
-    within(controls).getByRole("button", { name: "공개 전 확인" }),
+    screen.getByRole("tab", { name: "공개 전 확인", exact: true }),
   );
-  expect(screen.getByRole("dialog")).toBeTruthy();
-  fireEvent.click(screen.getByRole("button", { name: "계속 작성" }));
+  expect(saveProfileVersion).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("tab", { name: "상세소개", exact: true }));
   (uploadDetailImage as jest.Mock).mockImplementation(
     async (_owner, _group, image) => image.id,
   );
@@ -237,7 +238,7 @@ test("image-only changes are unsaved, save the ordered selection and revision on
     detailRevision: "revision-two",
   });
   fireEvent.click(
-    within(controls).getByRole("button", { name: "저장", exact: true }),
+    screen.getByRole("button", { name: "지금 저장", exact: true }),
   );
   await waitFor(() =>
     expect(saveProfileVersion).toHaveBeenCalledWith(
@@ -256,7 +257,7 @@ test("a failed upload retains the selection and never saves an incomplete image 
   });
   (uploadDetailImage as jest.Mock).mockRejectedValue(new Error("network"));
   fireEvent.click(
-    within(controls).getByRole("button", { name: "저장", exact: true }),
+    screen.getByRole("button", { name: "지금 저장", exact: true }),
   );
   await screen.findByRole("alert");
   expect(saveProfileVersion).not.toHaveBeenCalled();
@@ -279,11 +280,11 @@ test("preview URLs survive step changes, and are released only after removal or 
     target: { files: [new File(["a"], "preview.png", { type: "image/png" })] },
   });
   fireEvent.click(
-    within(controls).getByRole("button", { name: "공개 전 확인" }),
+    screen.getByRole("tab", { name: "공개 전 확인", exact: true }),
   );
-  fireEvent.click(screen.getByRole("button", { name: "이동", exact: true }));
+
   expect(URL.revokeObjectURL).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole("button", { name: "1. 작성", exact: true }));
+  fireEvent.click(screen.getByRole("tab", { name: "상세소개", exact: true }));
   expect(screen.getByText("preview.png")).toBeTruthy();
   expect(URL.revokeObjectURL).not.toHaveBeenCalled();
   fireEvent.click(

@@ -3,6 +3,7 @@
 import {
   forwardRef,
   useEffect,
+  useContext,
   useImperativeHandle,
   useRef,
   useState,
@@ -12,6 +13,7 @@ import {
   getSpecialties,
   replaceProfileSpecialties,
 } from "@/app/actions/specialties";
+import { CommonProfileSaveContext } from "@/components/CommonProfileSaveContext";
 import type { SectionSaveHandle } from "./types";
 import { SelectionDisclosure } from "./SelectionDisclosure";
 
@@ -19,6 +21,7 @@ type Specialty = { id: string; name: string; sort_order: number };
 
 const SpecialtySection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
   function SpecialtySection({ compact = false }, ref) {
+    const previewRegistry = useContext(CommonProfileSaveContext);
     const requiredDialog = useRef<HTMLDialogElement>(null);
     const selectionList = useRef<HTMLDetailsElement>(null);
     const [loaded, setLoaded] = useState(false);
@@ -63,6 +66,17 @@ const SpecialtySection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
           ),
         );
     }, []);
+
+    useEffect(() => {
+      if (!loaded || !previewRegistry.preview) return;
+      previewRegistry.preview({
+        specialties: selectedIds.flatMap((id, index) => {
+          const item = specialties.find((row) => row.id === id);
+          if (!item || visibilityMap[id] === false) return [];
+          return [{ slug: id, name: item.name, is_primary: index === 0 }];
+        }),
+      });
+    }, [loaded, selectedIds, specialties, visibilityMap, previewRegistry]);
 
     const MIN_SELECTION = 1;
     const MAX_SELECTION = 3;

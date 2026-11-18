@@ -3,6 +3,7 @@
 import {
   forwardRef,
   useEffect,
+  useContext,
   useImperativeHandle,
   useRef,
   useState,
@@ -12,6 +13,7 @@ import {
   getProfessions,
   replaceProfileProfessions,
 } from "@/app/actions/professions";
+import { CommonProfileSaveContext } from "@/components/CommonProfileSaveContext";
 import type { SectionSaveHandle } from "./types";
 import { SelectionDisclosure } from "./SelectionDisclosure";
 
@@ -29,6 +31,7 @@ const CUSTOM_LABEL_MAX = 20;
 // 첫 선택의 대표 직군 순서와 직접 입력 슬롯을 보존한다.
 const ProfessionSection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
   function ProfessionSection({ compact = false }, ref) {
+    const previewRegistry = useContext(CommonProfileSaveContext);
     const requiredDialog = useRef<HTMLDialogElement>(null);
     const selectionList = useRef<HTMLDetailsElement>(null);
     const [loaded, setLoaded] = useState(false);
@@ -82,6 +85,33 @@ const ProfessionSection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
           ),
         );
     }, []);
+
+    useEffect(() => {
+      if (!loaded || !previewRegistry.preview) return;
+      previewRegistry.preview({
+        professions: selectedIds.flatMap((id, index) => {
+          const item = professions.find((row) => row.id === id);
+          if (!item || visibilityMap[id] === false) return [];
+          return [
+            {
+              slug: item.slug,
+              name:
+                item.slug === "custom"
+                  ? customLabel.trim() || item.name
+                  : item.name,
+              is_primary: index === 0,
+            },
+          ];
+        }),
+      });
+    }, [
+      loaded,
+      selectedIds,
+      professions,
+      customLabel,
+      visibilityMap,
+      previewRegistry,
+    ]);
 
     const toggleProfession = (id: string) => {
       setSelectedIds((prev) => {

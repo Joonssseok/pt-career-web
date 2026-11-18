@@ -99,22 +99,16 @@ function manager() {
     />,
   );
 }
-test("write uses right save controls, warns on unsaved version and common changes without saving", async () => {
+test("write saves through the existing action and warns before leaving unsaved common or version changes", async () => {
   manager();
-  expect(
-    screen.queryByRole("button", { name: "프로필 저장", exact: true }),
-  ).toBeNull();
   expect(screen.queryByRole("button", { name: "프로필 게시" })).toBeNull();
-  const controls = screen.getByRole("complementary", { name: "작성 작업" });
   fireEvent.change(screen.getByLabelText("한 줄 소개"), {
     target: { value: "수정" },
   });
   fireEvent.change(screen.getByRole("combobox", { name: "주요 활동 지역" }), {
     target: { value: "경기" },
   });
-  fireEvent.click(
-    within(controls).getByRole("button", { name: "공개 전 확인" }),
-  );
+  fireEvent.click(screen.getByRole("link", { name: "← 내 프로필 목록" }));
   expect(
     screen.getByRole("dialog", {
       name: "완료하지 않은 작업이 있습니다. 이동하시겠습니까?",
@@ -122,10 +116,9 @@ test("write uses right save controls, warns on unsaved version and common change
   ).toBeTruthy();
   expect(saveProfileVersion).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "계속 작성" }));
-  expect(screen.getByLabelText("한 줄 소개")).toHaveProperty("value", "수정");
   (saveProfileVersion as jest.Mock).mockResolvedValue({ ok: true, id: "v" });
   fireEvent.click(
-    within(controls).getByRole("button", { name: "저장", exact: true }),
+    screen.getByRole("button", { name: "지금 저장", exact: true }),
   );
   await waitFor(() => expect(saveProfileVersion).toHaveBeenCalledTimes(1));
   await screen.findByText("프로필을 저장했습니다.");
@@ -137,9 +130,7 @@ test("write uses right save controls, warns on unsaved version and common change
   fireEvent.change(screen.getByLabelText("공통 이름"), {
     target: { value: "다른 이름" },
   });
-  fireEvent.click(
-    within(controls).getByRole("button", { name: "공개 전 확인" }),
-  );
+  fireEvent.click(screen.getByRole("link", { name: "← 내 프로필 목록" }));
   expect(
     screen.getByRole("dialog", {
       name: "완료하지 않은 작업이 있습니다. 이동하시겠습니까?",
@@ -147,10 +138,11 @@ test("write uses right save controls, warns on unsaved version and common change
   ).toBeTruthy();
   expect(saveProfileVersion).toHaveBeenCalledTimes(1);
 });
+
 test("clean version can enter preview without save and preview retains upload controls", async () => {
   manager();
   fireEvent.click(
-    screen.getByRole("button", { name: "공개 전 확인", exact: true }),
+    screen.getByRole("tab", { name: "공개 전 확인", exact: true }),
   );
   expect(saveProfileVersion).not.toHaveBeenCalled();
   expect(screen.queryByRole("button", { name: "프로필 저장" })).toBeNull();
@@ -251,7 +243,7 @@ test("the picker includes own Damoa files even from activities absent from this 
     />,
   );
   fireEvent.click(
-    screen.getByRole("button", { name: "공개 전 확인", exact: true }),
+    screen.getByRole("tab", { name: "공개 전 확인", exact: true }),
   );
   await waitFor(() =>
     expect(screen.queryByText("자료를 불러오는 중입니다.")).toBeNull(),
@@ -366,7 +358,7 @@ test("one publish action submits only files from included activities and preserv
     />,
   );
   fireEvent.click(
-    screen.getByRole("button", { name: "공개 전 확인", exact: true }),
+    screen.getByRole("tab", { name: "공개 전 확인", exact: true }),
   );
   const publish = screen.getByRole("button", {
     name: "프로필 게시",
@@ -438,7 +430,7 @@ test("a failed source load blocks publication rather than silently publishing wi
     />,
   );
   fireEvent.click(
-    screen.getByRole("button", { name: "공개 전 확인", exact: true }),
+    screen.getByRole("tab", { name: "공개 전 확인", exact: true }),
   );
   await screen.findByText(/일부 자료를 불러오지 못했습니다/);
   expect(
@@ -533,16 +525,19 @@ test("interactive preview hides editing controls and never shares, saves or publ
       versions={[version]}
       selectedId="v"
       base={null}
-      expert={{ ...expert, extra_links: [{ label: "예약 상담", url: "https://example.com/book" }] }}
+      expert={{
+        ...expert,
+        extra_links: [{ label: "예약 상담", url: "https://example.com/book" }],
+      }}
     />,
   );
   fireEvent.click(
-    screen.getByRole("button", { name: "2. 공개 전 확인", exact: true }),
+    screen.getByRole("tab", { name: "공개 전 확인", exact: true }),
   );
-  const open = await screen.findByRole("button", {
-    name: "미리보기",
+  const open = screen.getAllByRole("button", {
+    name: "전체 미리보기",
     exact: true,
-  });
+  })[0];
   await waitFor(() => expect(open).toHaveProperty("disabled", false));
   fireEvent.click(open);
   const dialog = screen.getByRole("dialog", {
@@ -558,7 +553,11 @@ test("interactive preview hides editing controls and never shares, saves or publ
     }),
   ).toBeNull();
   expect(within(dialog).queryByText("내 프로필")).toBeNull();
-  expect(within(dialog).getByRole("link", { name: /예약 상담/ }).getAttribute("href")).toBe("https://example.com/book");
+  expect(
+    within(dialog)
+      .getByRole("link", { name: /예약 상담/ })
+      .getAttribute("href"),
+  ).toBe("https://example.com/book");
   fireEvent.click(
     within(dialog).getByRole("button", {
       name: "프로필 공유하기",

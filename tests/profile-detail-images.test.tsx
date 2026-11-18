@@ -22,6 +22,27 @@ import {
 import { ProfileVersionManager } from "../app/my/profiles/ProfileVersionManager";
 import { saveProfileVersion } from "../app/actions/profile-versions";
 import { uploadDetailImage } from "../lib/profile-versions/upload-detail-image";
+jest.mock("@/components/profile-editor/IntroductionEditor", () => {
+  const {
+    ProfileDetailImageEditor,
+  } = require("../components/ProfileDetailImageEditor");
+  const {
+    detailDocumentFromImages,
+  } = require("../lib/profile-versions/detail-document");
+  const EditorAdapter = function DetailAdapter(props: any) {
+    return props.mediaImages ? (
+      <ProfileDetailImageEditor
+        images={props.mediaImages}
+        disabled={props.disabled}
+        onChange={(images: any) => {
+          props.onMediaImagesChange(images);
+          props.onChange(detailDocumentFromImages(images));
+        }}
+      />
+    ) : null;
+  };
+  return { IntroductionEditor: EditorAdapter };
+});
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ replace: jest.fn(), refresh: jest.fn() }),
 }));

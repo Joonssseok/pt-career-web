@@ -387,3 +387,5 @@
   color: var(--color-profile-sub);
   margin-top: 8px;
 }
+
+.formattedIntroduction { min-width: 0; }

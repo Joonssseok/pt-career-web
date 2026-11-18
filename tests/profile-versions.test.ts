@@ -158,3 +158,27 @@ test("server JSONB object key ordering does not leave saved content marked dirty
     }),
   ).toBe(false);
 });
+
+test("formatted introduction follows the same visibility choice as its plain text", () => {
+  const document = {
+    type: "doc" as const,
+    content: [
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: content.introduction }],
+      },
+    ],
+  };
+  const visible = applyVersion(base, {
+    ...content,
+    introductionDocument: document,
+  });
+  expect(visible.introduction_document).toEqual(document);
+  const hidden = applyVersion(base, {
+    ...content,
+    introductionDocument: document,
+    excluded: ["introduction:0"],
+  });
+  expect(hidden.introduction).toBeNull();
+  expect(hidden.introduction_document).toBeNull();
+});

@@ -4,14 +4,42 @@ import { createClient } from "@/lib/supabase/server";
 import type { ReviewSubmission } from "@/lib/profile-versions/review-submission";
 import {
   LIVE_PROFILE_PUBLISH_ENABLED,
+  INTRODUCTION_FORMATTING_STORAGE_ENABLED,
   type VersionContent,
 } from "@/lib/profile-versions/types";
+import { validateDetailDocument } from "@/lib/profile-versions/detail-document";
+import { validateIntroductionDocument } from "@/lib/profile-versions/introduction-format";
+function prepareFormattedIntroduction(content: VersionContent) {
+  if (content.detailDocument !== undefined) {
+    const detail = validateDetailDocument(content.detailDocument);
+    if (!detail.ok) return detail;
+    content = { ...content, detailDocument: detail.document };
+  }
+  if (content.introductionDocument === undefined)
+    return { ok: true as const, content };
+  if (!INTRODUCTION_FORMATTING_STORAGE_ENABLED)
+    return {
+      ok: false as const,
+      error: "소개 서식 저장은 연결 준비 중입니다. 기존 소개 글은 유지됩니다.",
+    };
+  const checked = validateIntroductionDocument(content.introductionDocument);
+  if (!checked.ok) return checked;
+  if (checked.text !== content.introduction)
+    return { ok: false as const, error: "소개 글과 서식을 다시 확인해주세요." };
+  return {
+    ok: true as const,
+    content: { ...content, introductionDocument: checked.document },
+  };
+}
 export async function saveProfileVersion(
   id: string | null,
   title: string,
   content: VersionContent,
   detailImages?: { ids: string[]; revision: string | null },
 ) {
+  const formatted = prepareFormattedIntroduction(content);
+  if (!formatted.ok) return formatted;
+  content = formatted.content;
   const supabase = await createClient();
   const {
     data: { user },
@@ -35,7 +63,7 @@ export async function saveProfileVersion(
       ok: false as const,
       error: detailImages
         ? "프로필과 이미지를 저장하지 못했습니다. 다른 창의 변경 여부와 저장 공간을 확인한 뒤 다시 시도해주세요."
-        : error.message,
+        : "프로필을 저장하지 못했습니다. 입력 내용과 로그인 상태를 확인한 뒤 다시 시도해주세요.",
     };
   revalidatePath("/my", "layout");
   revalidatePath("/expert/edit", "layout");
@@ -56,6 +84,9 @@ export async function publishProfileVersion(
       error:
         "현재는 대표 선택 미리보기입니다. 실제 공개 전환은 연결하지 않았습니다.",
     };
+  const formatted = prepareFormattedIntroduction(content);
+  if (!formatted.ok) return formatted;
+  content = formatted.content;
   const supabase = await createClient();
   const {
     data: { user },

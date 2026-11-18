@@ -26,7 +26,7 @@ export async function getOwnProfileDetailImages(
       return { ok: true, images: [], revision: data?.updated_at ?? null };
     const files = await client
       .from("profile_detail_uploads")
-      .select("id,name,bytes")
+      .select("id,name,bytes,mime")
       .eq("owner_id", user.id)
       .in("id", ids)
       .eq("ready", true)
@@ -42,6 +42,7 @@ export async function getOwnProfileDetailImages(
           id,
           name: f.name,
           size: Number(f.bytes),
+          mime: f.mime,
           src: detailImageSrc(id),
         };
       }),

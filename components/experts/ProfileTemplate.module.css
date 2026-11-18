@@ -43,10 +43,6 @@
   display: grid;
   gap: 24px;
 }
-.cover {
-  grid-column: 1 / -1;
-  min-width: 0;
-}
 .identity {
   min-width: 0;
   align-self: start;

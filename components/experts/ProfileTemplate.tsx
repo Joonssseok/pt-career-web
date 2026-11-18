@@ -22,7 +22,6 @@ const tabs = [
 export type ProfileTemplateTab = (typeof tabs)[number]["id"];
 export type ProfileTemplateProps = {
   identity: ReactNode;
-  cover?: ReactNode;
   home: ReactNode;
   career: ReactNode;
   detail: ReactNode;
@@ -55,7 +54,6 @@ function tabFromLocation(): ProfileTemplateTab {
 
 export function ProfileTemplate({
   identity,
-  cover,
   home,
   career,
   detail,
@@ -298,7 +296,6 @@ export function ProfileTemplate({
       }}
     >
       <div className={styles.wrap}>
-        {cover && <div className={styles.cover}>{cover}</div>}
         <aside className={styles.identity} aria-label="전문가 소개">
           {identity}
         </aside>

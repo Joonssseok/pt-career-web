@@ -105,7 +105,8 @@ describe('EditForm save wiring', () => {
     expect(queryByText('공통 정보 저장')).toBeNull();
     expect(container.querySelector('input[name="resumePhone"]')).toBeNull();
     const optionalSections = container.querySelectorAll('details');
-    expect(optionalSections).toHaveLength(2);
+    expect(optionalSections).toHaveLength(1);
+    expect(queryByText("커버 이미지")).toBeNull();
     for (const section of optionalSections) expect(section.open).toBe(false);
     await act(async () => { await parentSave!(); });
     expect(saveOwnProfile).toHaveBeenCalledWith(expect.objectContaining({ coverImagePath: 'user/cover.jpg', youtubeUrl: 'https://youtube.com/@existing' }));

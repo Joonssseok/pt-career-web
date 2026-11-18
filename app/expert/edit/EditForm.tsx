@@ -136,7 +136,6 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
   const [formState, setFormState] = useState<FormState>('default');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageUploading, setImageUploading] = useState(false);
-  const [coverUploading, setCoverUploading] = useState(false);
   // 소셜링크 아이콘별 입력창 펼침 상태 -- 독립 토글(여러 개 동시 펼침 가능)
   const [openSocial, setOpenSocial] = useState<Record<string, boolean>>({});
   // 한 줄 소개 placeholder -- 서버 렌더링 시 항상 0번 예시로 시작하고,
@@ -257,59 +256,6 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
       setFormData((prev) => ({ ...prev, profileImagePath: path }));
     } finally {
       setImageUploading(false);
-    }
-  };
-
-  // 커버 이미지 업로드 -- 프로필 사진(handleImageChange)과 동일한 패턴,
-  // 저장 경로만 ${user.id}/cover.${ext}. storage RLS가 파일명이 아니라
-  // user.id 폴더 prefix 기준이라 정책 변경 없이 동작한다(직접 확인).
-  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-
-    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-      setErrors((prev) => ({ ...prev, cover: 'jpg, png, webp 파일만 업로드할 수 있습니다' }));
-      return;
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      setErrors((prev) => ({ ...prev, cover: '5MB 이하의 파일만 업로드할 수 있습니다' }));
-      return;
-    }
-
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next.cover;
-      return next;
-    });
-    setCoverUploading(true);
-
-    try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        setErrors((prev) => ({ ...prev, cover: '로그인이 필요합니다' }));
-        return;
-      }
-
-      const ext = EXT_BY_TYPE[file.type];
-      const path = `${user.id}/${embedded ? crypto.randomUUID() : "cover"}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('profile-images')
-        .upload(path, file, { upsert: true, contentType: file.type });
-
-      if (uploadError) {
-        setErrors((prev) => ({ ...prev, cover: `업로드에 실패했습니다: ${uploadError.message}` }));
-        return;
-      }
-
-      setFormData((prev) => ({ ...prev, coverImagePath: path }));
-    } finally {
-      setCoverUploading(false);
     }
   };
 
@@ -456,7 +402,6 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
     commonSaveRegistry.preview?.({
       display_name: formData.displayName,
       profile_image_path: formData.profileImagePath || null,
-      cover_image_path: formData.coverImagePath || null,
       youtube_url: formData.youtubeUrl || null,
       instagram_url: formData.instagramUrl || null,
       blog_url: formData.blogUrl || null,
@@ -466,9 +411,9 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
   }, [embedded, profileMeta, formData, commonSaveRegistry]);
   useEffect(() => {
     if (!embedded) return;
-    commonSaveRegistry.busy?.(imageUploading || coverUploading);
+    commonSaveRegistry.busy?.(imageUploading);
     return () => commonSaveRegistry.busy?.(false);
-  }, [embedded, imageUploading, coverUploading, commonSaveRegistry]);
+  }, [embedded, imageUploading, commonSaveRegistry]);
 
   const handleSaveDraft = async () => {
     await saveAllSections();
@@ -667,48 +612,6 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
                     <h3 className="text-sm font-semibold text-gray-900 mb-3">전문분야 <span className="text-red-500">*</span><span className="ml-2 text-xs font-normal text-slate-400">1~3개 선택</span></h3>
                     <SpecialtySection ref={specialtyRef} compact={embedded} />
                   </div>
-
-                    {/* 디자인 -- 공개 프로필 상단 히어로에 표시될 커버 이미지 */}
-                    <OptionalSection className="group border-t border-slate-100 pt-4">
-                      {embedded && <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-slate-800 [&::-webkit-details-marker]:hidden"><span>커버 이미지 <span className="ml-2 text-xs font-normal text-slate-400">선택</span></span><span aria-hidden className="text-slate-400 transition-transform group-open:rotate-180">⌄</span></summary>}
-                      <div className={embedded ? "mt-3" : ""}>
-                      {!embedded && <h3 className="text-sm font-semibold text-gray-900 mb-2">디자인</h3>}
-                      {!embedded && <label className="block text-sm font-medium text-gray-900 mb-2">커버 이미지 (선택)</label>}
-                      {/* 공개 프로필과 동일한 4:1 커버 비율로 미리보기한다. */}
-                      <div className="w-full aspect-[4/1] rounded-2xl overflow-hidden bg-linear-to-br from-blue-50 via-white to-sky-100 border border-blue-100 flex items-center justify-center">
-                        {formData.coverImagePath ? (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img
-                            src={getProfilePhotoUrl(formData.coverImagePath) ?? undefined}
-                            alt="커버 이미지"
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-xs text-slate-500 text-center px-2">
-                            커버 이미지를 등록하지 않으면 공개 프로필에 표시되지 않습니다.
-                          </span>
-                        )}
-                      </div>
-                      <label className="inline-block mt-2 text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer transition-colors">
-                        {coverUploading
-                          ? '⏳ 업로드 중...'
-                          : formData.coverImagePath
-                            ? '커버 교체'
-                            : '📎 커버 이미지 업로드'}
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          onChange={handleCoverChange}
-                          disabled={coverUploading || formState === 'loading'}
-                          className="hidden"
-                        />
-                      </label>
-                      {errors.cover && <p className="text-xs text-red-500 mt-1">{errors.cover}</p>}
-                      <p className="text-caption text-gray-400 mt-1">
-                        권장 1600×400px(4:1), JPG·PNG·WebP, 5MB 이하.
-                      </p>
-                      </div>
-                    </OptionalSection>
 
                     {!embedded && <>
                     <div>

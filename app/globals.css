@@ -188,3 +188,9 @@ body {
 [data-app-content]:has([data-profile-page]) { max-width: none; padding-inline: 0; }
 
 [data-app-frame]:has([data-profile-page]) { --side-ad-background: var(--color-profile-background); }
+
+/* 작성 화면은 공통 헤더·푸터를 유지하고, 단계 작성 본문에만 프로필 테마를 적용한다. */
+[data-app-frame]:has([data-profile-editor]), [data-app-content]:has([data-profile-editor]) { background:var(--color-profile-background); }
+[data-app-frame]:has([data-profile-editor]) { --side-ad-background:var(--color-profile-background); }
+[data-app-content]:has([data-profile-editor]) { max-width:1240px; padding-inline:0; }
+[data-app-content] main:has([data-profile-editor]) { padding-top:0; }

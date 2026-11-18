@@ -54,9 +54,11 @@ export function ProfileVisualReview({
   damoaFiles = [],
   activityRegion,
   verifiedCareerCount = null,
+  hideEditor = false,
   previewOpen = false,
   onPreviewClose = () => {},
 }: {
+  hideEditor?: boolean;
   previewOpen?: boolean;
   onPreviewClose?: () => void;
   verifiedCareerCount?: number | null;
@@ -447,7 +449,13 @@ export function ProfileVisualReview({
     dialog.current?.close();
   }
   return (
-    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_250px]">
+    <div
+      className={
+        hideEditor
+          ? "contents"
+          : "grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_250px]"
+      }
+    >
       {shownExpert && (
         <ProfileReadOnlyPreview
           open={previewOpen}
@@ -463,7 +471,11 @@ export function ProfileVisualReview({
           detailImages={detailImages}
         />
       )}
-      <div className="min-w-0" aria-label="공개 프로필 편집 미리보기">
+      <div
+        hidden={hideEditor}
+        className="min-w-0"
+        aria-label="공개 프로필 편집 미리보기"
+      >
         {shownExpert ? (
           <ExpertProfileView
             ownerPreview
@@ -499,6 +511,7 @@ export function ProfileVisualReview({
         )}
       </div>
       <aside
+        hidden={hideEditor}
         aria-label="첨부파일 사이드바"
         className="order-first min-w-0 xl:order-last xl:sticky xl:top-28 xl:self-start"
       >

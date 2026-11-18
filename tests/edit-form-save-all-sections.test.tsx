@@ -111,6 +111,23 @@ describe('EditForm save wiring', () => {
     expect(saveOwnProfile).toHaveBeenCalledWith(expect.objectContaining({ coverImagePath: 'user/cover.jpg', youtubeUrl: 'https://youtube.com/@existing' }));
   });
 
+  it('embedded saving preserves newer common input while an older request completes', async () => {
+    let parentSave: CommonProfileSave | null = null;
+    let finish: (result: { ok: true }) => void = () => {};
+    (saveOwnProfile as jest.Mock).mockImplementationOnce(() => new Promise(resolve => { finish = resolve; }));
+    const { container } = render(<CommonProfileSaveContext.Provider value={{register: callback => { parentSave = callback; }}}><EditForm embedded commonOnly /></CommonProfileSaveContext.Provider>);
+    await waitFor(() => expect(container.querySelector('input[name="displayName"]')).toHaveProperty('value','테스트'));
+    const input=container.querySelector('input[name="displayName"]') as HTMLInputElement;
+    fireEvent.change(input,{target:{value:'first edit'}});
+    let pending: Promise<boolean>;
+    await act(async()=>{pending=parentSave!();});
+    fireEvent.change(input,{target:{value:'newer edit'}});
+    await act(async()=>{finish({ok:true});await pending!;});
+    expect(input.value).toBe('newer edit');
+    await act(async()=>{await parentSave!();});
+    expect(saveOwnProfile).toHaveBeenLastCalledWith(expect.objectContaining({displayName:'newer edit'}));
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     mockProfessionValid=true;

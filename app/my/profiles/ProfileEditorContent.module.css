@@ -1,0 +1,165 @@
+.root {
+  color: var(--color-profile-ink);
+  background: var(--color-profile-background);
+}
+.root [hidden] {
+  display: none !important;
+}
+.root [data-editor-step] :is(input:not([type="checkbox"]), textarea, select) {
+  background: var(--color-profile-surface);
+  border: 1px solid var(--color-profile-line);
+  border-radius: 14px;
+  min-height: 48px;
+  padding: 10px 14px;
+  font-size: 17px;
+  color: var(--color-profile-ink);
+}
+.root :is(button, summary, a) {
+  min-height: 44px;
+}
+.root :is(input, textarea, button, a, summary, select):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+.root
+  :is(
+    [id="profile-basics"],
+    [id="profile-introduction"],
+    [id="profile-images"]
+  ) {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+}
+.root
+  :is([id="profile-basics"], [id="profile-introduction"], [id="profile-images"])
+  > div
+  > span[aria-hidden] {
+  display: none;
+}
+.root
+  :is([id="profile-basics"], [id="profile-introduction"], [id="profile-images"])
+  h2,
+.pick h2,
+.checklist h2 {
+  font: 400 28px/1.5 var(--font-profile-display);
+  color: var(--color-profile-ink);
+}
+.root [id="profile-introduction-input"] {
+  min-height: 240px;
+}
+.back {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-profile-sub);
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+.help {
+  color: var(--color-profile-sub);
+  font-size: 14px;
+  margin-top: 20px;
+}
+.deleteButton,
+.manualSave {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  color: var(--color-profile-sub);
+  font-size: 14px;
+  margin-top: 20px;
+}
+.manualSave {
+  border: 1px solid var(--color-profile-line);
+  border-radius: 14px;
+  background: var(--color-profile-surface);
+}
+.pick > p,
+.checklist > p {
+  font-size: 16px;
+  color: var(--color-profile-sub);
+  margin-top: 6px;
+}
+.pick > a {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-primary);
+  font-size: 15px;
+  margin-right: 12px;
+}
+.pick > button,
+.checklist > button {
+  padding: 8px 14px;
+  border: 1px solid var(--color-profile-line);
+  border-radius: 14px;
+  background: var(--color-profile-surface);
+}
+.pickGroup {
+  margin-top: 26px;
+}
+.pickGroup h3 {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 15px;
+  color: var(--color-profile-sub);
+  margin-bottom: 4px;
+}
+.pickGroup h3 span {
+  font-weight: 400;
+  font-size: 14px;
+}
+.pickRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-profile-line);
+  cursor: pointer;
+}
+.pickRow strong {
+  display: block;
+  font-size: 17px;
+  font-weight: 600;
+}
+.pickRow small {
+  display: block;
+  font-size: 15px;
+  color: var(--color-profile-sub);
+}
+.pickRow input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--color-primary);
+}
+.checklist ul {
+  margin: 14px 0 24px;
+}
+.checklist li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  border-bottom: 1px solid var(--color-profile-line);
+}
+.checklist li > span {
+  color: var(--color-primary);
+}
+.checklist li button {
+  margin-left: auto;
+  color: var(--color-profile-sub);
+  padding: 8px;
+}
+@container profile-editor (max-width:899px) {
+  .root {
+    min-width: 0;
+  }
+}
+
+.root [data-common-editor] > div {
+  background: transparent;
+}

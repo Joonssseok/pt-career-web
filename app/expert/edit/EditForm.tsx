@@ -431,7 +431,8 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
       if (!r.ok) failed.push(r.error ? `${r.label}(${r.error})` : r.label);
     }
 
-    await loadProfile();
+    // Embedded saves keep live inputs; a reload can overwrite edits made in flight.
+    if (!embedded) await loadProfile();
 
     if (failed.length === 0) {
       setDraftSaveState('done');
@@ -449,6 +450,25 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
     commonSaveRegistry.register(saveAllSections);
     return () => commonSaveRegistry.register(null);
   });
+
+  useEffect(() => {
+    if (!embedded || !profileMeta) return;
+    commonSaveRegistry.preview?.({
+      display_name: formData.displayName,
+      profile_image_path: formData.profileImagePath || null,
+      cover_image_path: formData.coverImagePath || null,
+      youtube_url: formData.youtubeUrl || null,
+      instagram_url: formData.instagramUrl || null,
+      blog_url: formData.blogUrl || null,
+      threads_url: formData.threadsUrl || null,
+      kakao_url: formData.kakaoUrl || null,
+    });
+  }, [embedded, profileMeta, formData, commonSaveRegistry]);
+  useEffect(() => {
+    if (!embedded) return;
+    commonSaveRegistry.busy?.(imageUploading || coverUploading);
+    return () => commonSaveRegistry.busy?.(false);
+  }, [embedded, imageUploading, coverUploading, commonSaveRegistry]);
 
   const handleSaveDraft = async () => {
     await saveAllSections();

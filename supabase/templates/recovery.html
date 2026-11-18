@@ -1,0 +1,12 @@
+{{ $isPin := or (eq .RedirectTo "https://ptcareer.co.kr/auth/callback?next=/my/pin-reset") (eq .RedirectTo "https://www.ptcareer.co.kr/auth/callback?next=/my/pin-reset") (eq .RedirectTo "https://pt-career-web.vercel.app/auth/callback?next=/my/pin-reset") (eq .RedirectTo "http://localhost:3000/auth/callback?next=/my/pin-reset") (eq .RedirectTo "http://127.0.0.1:3000/auth/callback?next=/my/pin-reset") (eq .RedirectTo "http://localhost:3001/auth/callback?next=/my/pin-reset") (eq .RedirectTo "http://127.0.0.1:3001/auth/callback?next=/my/pin-reset") }}<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ if $isPin }}PIN을 재설정해주세요{{ else }}비밀번호를 재설정해주세요{{ end }}</title></head>
+<body style="margin:0;padding:0;background-color:#f5f7fa;font-family:Pretendard,-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;color:#14233b;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f5f7fa;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border:1px solid #e4e9f0;border-radius:12px;">
+<tr><td style="padding:32px 28px 0;font-size:25px;font-weight:700;">PT <span style="color:#2563eb;">Career</span></td></tr>
+<tr><td style="padding:28px 28px 0;"><h1 style="margin:0;font-size:23px;line-height:1.5;">{{ if $isPin }}PIN을 재설정해주세요{{ else }}비밀번호를 재설정해주세요{{ end }}</h1></td></tr>
+<tr><td style="padding:16px 28px 0;font-size:16px;line-height:1.8;color:#526075;">{{ if $isPin }}PT Career 계정의 PIN 재설정 요청을 받았습니다.<br>아래 버튼을 누르면 새 PIN을 설정할 수 있습니다.{{ else }}PT Career 계정의 비밀번호 재설정 요청을 받았습니다.<br>아래 버튼을 누르면 새 비밀번호를 설정할 수 있습니다.{{ end }}</td></tr>
+<tr><td style="padding:28px;"><table role="presentation" cellpadding="0" cellspacing="0"><tr><td bgcolor="#2563eb" style="border-radius:8px;"><a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:14px 24px;color:#ffffff;text-decoration:none;font-size:16px;font-weight:600;">{{ if $isPin }}PIN 재설정하기{{ else }}비밀번호 재설정하기{{ end }}</a></td></tr></table></td></tr>
+<tr><td style="padding:0 28px 24px;font-size:13px;line-height:1.7;color:#65748a;">본인이 요청하지 않았다면 이 메일을 무시해주세요.<br>인증 링크를 다른 사람에게 전달하지 마세요.<br>링크가 만료되면 PT Career에서 다시 요청해주세요.</td></tr>
+<tr><td style="padding:20px 28px;border-top:1px solid #e4e9f0;font-size:12px;line-height:1.7;color:#8290a3;">PT Career · 발신 전용 메일<br>noreply@ptcareer.co.kr</td></tr>
+</table></td></tr></table></body></html>

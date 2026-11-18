@@ -248,6 +248,18 @@ otp_expiry = 3600
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
+[auth.email.template.confirmation]
+subject = "[PT Career] 이메일 주소를 확인해주세요"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "[PT Career] 비밀번호·PIN 재설정 안내"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "[PT Career] 이메일 주소 변경을 확인해주세요"
+content_path = "./supabase/templates/email_change.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true

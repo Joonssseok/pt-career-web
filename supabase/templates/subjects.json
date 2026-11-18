@@ -1,0 +1,9 @@
+{
+  "sender_name": "PT Career",
+  "sender_email": "noreply@ptcareer.co.kr",
+  "subjects": {
+    "confirmation": "[PT Career] 이메일 주소를 확인해주세요",
+    "recovery": "[PT Career] 비밀번호·PIN 재설정 안내",
+    "email_change": "[PT Career] 이메일 주소 변경을 확인해주세요"
+  }
+}

@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
-import { getProfilePhotoUrl } from "@/lib/storage/profile-photo-url";
+import { getProfileShareImageUrl } from "@/lib/profile-sharing/share-image";
 import { ProfileHeaderActions } from "./ShareButton";
 import {
   LIVE_PROFILE_PUBLISH_ENABLED,
@@ -137,7 +137,7 @@ export async function generateMetadata({
   const description =
     expert.headline ??
     "경력과 자격으로 검증된 물리치료사, 트레이너, 재활 전문가를 찾아보세요.";
-  const imageUrl = getProfilePhotoUrl(expert.profile_image_path);
+  const imageUrl = getProfileShareImageUrl(expert);
 
   return {
     title,
@@ -146,8 +146,9 @@ export async function generateMetadata({
       title,
       description,
       type: "profile",
-      ...(imageUrl ? { images: [{ url: imageUrl }] } : {}),
+      images: [{ url: imageUrl, width: 1200, height: 630, alt: title }],
     },
+    twitter: { card: "summary_large_image", title, description, images: [imageUrl] },
   };
 }
 

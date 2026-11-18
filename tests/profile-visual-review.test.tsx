@@ -312,3 +312,10 @@ test("closing a nested preparation notice keeps the profile preview open", () =>
   fireEvent(outer, new Event("close", { bubbles: true }));
   expect(onClose).toHaveBeenCalledTimes(1);
 });
+
+
+test("legacy cover images are omitted from the public profile", () => {
+  const {container}=render(<ExpertProfileView expert={{...expert,cover_image_path:"legacy/cover.jpg"}} galleryImages={[]} />);
+  expect(container.querySelector('[aria-label="프로필 커버"]')).toBeNull();
+  expect(screen.queryByAltText(/커버 이미지/)).toBeNull();
+});

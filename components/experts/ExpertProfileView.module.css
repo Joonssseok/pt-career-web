@@ -65,12 +65,6 @@
 .actions {
   margin-top: 24px;
 }
-.cover {
-  position: relative;
-  aspect-ratio: 4/1;
-  overflow: hidden;
-  border-radius: 28px;
-}
 .introduction h2 {
   font: 400 clamp(27px, 4.6cqi, 38px)/1.45 var(--font-profile-display);
   letter-spacing: -0.015em;

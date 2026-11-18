@@ -6,7 +6,6 @@ export type CommonProfilePreview = Partial<
     ExpertProfileViewProps["expert"],
     | "display_name"
     | "profile_image_path"
-    | "cover_image_path"
     | "professions"
     | "specialties"
     | "youtube_url"

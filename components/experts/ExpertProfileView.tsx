@@ -163,7 +163,6 @@ export function ExpertProfileView({
   itemReviews,
   verifiedCareerCount,
 }: ExpertProfileViewProps) {
-  const coverImageUrl = getProfilePhotoUrl(expert.cover_image_path);
   const certifiedCount =
     verifiedCareerCount !== undefined
       ? verifiedCareerCount
@@ -782,20 +781,6 @@ export function ExpertProfileView({
         }
         ownerPreview={ownerPreview || !!renderItemActions}
         careerCount={careerCount}
-        cover={
-          coverImageUrl ? (
-            <div key="cover" className={styles.cover} aria-label="프로필 커버">
-              <Image
-                src={coverImageUrl}
-                alt={`${expert.display_name ?? "전문가"}의 커버 이미지`}
-                fill
-                priority
-                sizes="1080px"
-                className="object-cover object-center"
-              />
-            </div>
-          ) : undefined
-        }
       />
     </div>
   );

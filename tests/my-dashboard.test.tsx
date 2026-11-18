@@ -36,6 +36,14 @@ const data: MyDashboardData = {
   reviewError: false,
 };
 
+test('계정 관리에는 통합 내정보와 별도 행사 코드만 노출한다', () => {
+  render(<MyDashboard data={data} sharing={null} />);
+  const account = screen.getByRole('region', { name: '계정 관리' });
+  expect(within(account).getByRole('link', { name: /내정보 수정/ })).toHaveAttribute('href', '/my/personal');
+  expect(within(account).getByRole('link', { name: /추천인·행사 코드/ })).toHaveAttribute('href', '/my/referrals');
+  expect(within(account).queryByRole('link', { name: /로그인 정보|약관내역|회원탈퇴/ })).toBeNull();
+});
+
 test("관리용 제목은 편집으로 연결하고 사진 박스는 사진·이름·정보 수정만 표시", () => {
   render(
     <MyDashboard

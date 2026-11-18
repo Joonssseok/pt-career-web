@@ -308,14 +308,8 @@ export function MyDashboard({
             <Link href="/my/personal">
               내정보 수정 <span aria-hidden="true">›</span>
             </Link>
-            <Link href="/my/account">
-              로그인 정보·연락처 <span aria-hidden="true">›</span>
-            </Link>
-            <Link href="/my/terms">
-              약관내역 <span aria-hidden="true">›</span>
-            </Link>
-            <Link href="/my/delete-account">
-              회원탈퇴 <span aria-hidden="true">›</span>
+            <Link href="/my/referrals">
+              추천인·행사 코드 <span aria-hidden="true">›</span>
             </Link>
             <Link id="feedback" href="/my/feedback">
               제안·신고 <span aria-hidden="true">›</span>

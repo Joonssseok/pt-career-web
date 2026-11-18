@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { getSafeRedirectUrl } from '@/lib/auth/safe-redirect'
 import { startPinEnrollment } from '@/lib/auth/pin-enrollment'
 import { NAVER_PROVIDER } from '@/lib/auth/social-login'
+import { registerReferralCode } from '@/app/actions/referral'
 
 const ERROR_CODE_MAP: Record<string, string> = {
   invalid_code: 'missing_code',
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
     NextResponse.redirect(
       new URL(
         linkingNaver
-          ? `/my/account?naver_link_error=${errorCode}`
+          ? `/my/personal?naver_link_error=${errorCode}`
           : `/login?error=${errorCode}`,
         request.url,
       ),
@@ -89,7 +90,7 @@ export async function GET(request: NextRequest) {
       ) {
         return failure('confirmation_failed')
       }
-      return NextResponse.redirect(new URL('/my/account', request.url))
+      return NextResponse.redirect(new URL('/my/personal', request.url))
     }
 
     // Determine redirect URL
@@ -101,6 +102,17 @@ export async function GET(request: NextRequest) {
         return NextResponse.redirect(
           new URL('/login?error=server_error', request.url),
         )
+      }
+
+      // A campaign hint is untrusted input; eligibility is checked atomically in the DB.
+      const referral = searchParams.get('referral')
+      if (referral) {
+        const registered = await registerReferralCode(referral)
+        if (!registered.ok) {
+          return NextResponse.redirect(
+            new URL('/my/referrals?referral_notice=failed', request.url),
+          )
+        }
       }
     }
 

@@ -8,7 +8,13 @@ import { beginPinEnrollment } from '@/app/actions/account-pin'
 import Link from 'next/link'
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons'
 import { RequiredTermsConsent } from '@/components/auth/RequiredTermsConsent'
-import { getAuthCallbackUrl, NAVER_PROVIDER } from '@/lib/auth/social-login'
+import { NAVER_PROVIDER } from '@/lib/auth/social-login'
+import {
+  normalizeReferralCode,
+  validReferralCode,
+  signupCallbackUrl,
+} from '@/lib/referral'
+import { registerReferralCode } from '@/app/actions/referral'
 
 export default function SignUpForm({
   naverEnabled = false,
@@ -23,12 +29,22 @@ export default function SignUpForm({
   const [oauthLoading, setOauthLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [agreedTerms, setAgreedTerms] = useState(false)
+  const [referralCode, setReferralCode] = useState('')
   const [method, setMethod] = useState<'google' | 'naver' | 'email' | null>(
     null,
   )
   const inFlight = useRef(false)
   const router = useRouter()
   const supabase = createClient()
+
+  function referralValid() {
+    const code = normalizeReferralCode(referralCode)
+    if (code && !validReferralCode(code)) {
+      setError('행사 코드는 영문·숫자·밑줄·하이픈 4~32자로 입력해주세요.')
+      return false
+    }
+    return true
+  }
 
   useEffect(() => {
     function restore(event: PageTransitionEvent) {
@@ -49,6 +65,7 @@ export default function SignUpForm({
       inFlight.current
     )
       return
+    if (!referralValid()) return
     inFlight.current = true
     setOauthLoading(true)
     setError('')
@@ -56,7 +73,7 @@ export default function SignUpForm({
       const { error } = await supabase.auth.signInWithOAuth({
         provider: method === 'naver' ? NAVER_PROVIDER : 'google',
         options: {
-          redirectTo: getAuthCallbackUrl(window.location.origin, '/my'),
+          redirectTo: signupCallbackUrl(window.location.origin, referralCode),
         },
       })
       if (!error) return
@@ -77,6 +94,8 @@ export default function SignUpForm({
       setError('필수 약관에 동의해주세요')
       return
     }
+
+    if (!referralValid()) return
 
     if (!email || !password || !confirmPassword) {
       setError('모든 필드를 입력해주세요')
@@ -101,7 +120,10 @@ export default function SignUpForm({
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=/my`,
+            emailRedirectTo: signupCallbackUrl(
+              window.location.origin,
+              referralCode,
+            ),
           },
         })
 
@@ -121,7 +143,15 @@ export default function SignUpForm({
             setError(enrollment.error)
             return
           }
-          router.push('/my')
+          const referral = normalizeReferralCode(referralCode)
+          const registered = referral
+            ? await registerReferralCode(referral)
+            : null
+          router.push(
+            registered && !registered.ok
+              ? '/my/referrals?referral_notice=failed'
+              : '/my',
+          )
           router.refresh()
           return
         }
@@ -185,6 +215,32 @@ export default function SignUpForm({
                 disabled={loading || oauthLoading}
                 onChange={setAgreedTerms}
               />
+
+              <div className="mb-5">
+                <label
+                  htmlFor="signup-referral-code"
+                  className="mb-1 block text-sm font-medium text-slate-700"
+                >
+                  추천인·행사 코드{' '}
+                  <span className="font-normal text-slate-400">선택</span>
+                </label>
+                <input
+                  id="signup-referral-code"
+                  value={referralCode}
+                  onChange={(e) => setReferralCode(e.target.value)}
+                  maxLength={32}
+                  autoComplete="off"
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  disabled={loading || oauthLoading}
+                  placeholder="안내받은 코드가 있다면 입력"
+                  className="min-h-12 w-full rounded-lg border border-slate-300 px-4 text-sm"
+                />
+                <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                  가입 후 계정 관리에서도 등록할 수 있어요. 등록은 계정당 한
+                  번이며, 혜택은 추후 별도 안내됩니다.
+                </p>
+              </div>
 
               {method === 'email' ? (
                 <form

@@ -30,7 +30,7 @@ test("links Naver to the session instead of starting a separate login and blocks
   expect(callback.origin).toBe(window.location.origin);
   expect(callback.pathname).toBe("/auth/callback");
   expect(callback.searchParams.get("link")).toBe("naver");
-  expect(callback.searchParams.get("next")).toBe("/my/account");
+  expect(callback.searchParams.get("next")).toBe("/my/personal");
 });
 
 test("linked accounts show server-confirmed status without another connect button", () => {

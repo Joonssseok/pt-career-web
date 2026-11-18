@@ -407,40 +407,6 @@ export function ExpertProfileView({
           <ProfileEvidencePublic review={itemReviews?.get("introduction:0")} />
         </section>
       )}
-      {sortedExperiences.some((e) => e.is_current) && (
-        <section className={styles.homeSection}>
-          <h2>지금 일하는 곳</h2>
-          {sortedExperiences
-            .filter((e) => e.is_current)
-            .map((e, i) => (
-              <article
-                key={i}
-                data-profile-search-item
-                data-profile-search-title={e.organization_name}
-              >
-                <strong>{e.organization_name}</strong>
-                <ProfileEvidencePublic
-                  review={itemReviews?.get(profileItemKey("experiences", e))}
-                />
-                {e.position && <p>{e.position}</p>}
-              </article>
-            ))}
-          {expert.workplace_address && (
-            <div className={styles.homeMap}>
-              <WorkplaceMap
-                address={expert.workplace_address}
-                autoLoad={workplaceMapAutoLoad}
-              />
-              <p>
-                {expert.workplace_address}
-                {expert.workplace_address_detail
-                  ? ` ${expert.workplace_address_detail}`
-                  : ""}
-              </p>
-            </div>
-          )}
-        </section>
-      )}
       {highlights.length > 0 && (
         <section className={styles.homeSection}>
           <h2>주요 이력</h2>
@@ -462,6 +428,64 @@ export function ExpertProfileView({
               </a>
             ))}
           </div>
+        </section>
+      )}
+      {(sortedExperiences.some((e) => e.is_current) ||
+        expert.workplace_center_name ||
+        expert.workplace_address) && (
+        <section className={styles.homeSection}>
+          <h2>지금 일하는 곳</h2>
+          {expert.workplace_center_name ? (
+            <article
+              data-profile-search-item
+              data-profile-search-title={expert.workplace_center_name}
+            >
+              <strong>{expert.workplace_center_name}</strong>
+              <ProfileEvidencePublic review={itemReviews?.get("workplace:0")} />
+              {sortedExperiences.find(
+                (e) => e.organization_name === expert.workplace_center_name,
+              )?.position && (
+                <p>
+                  {
+                    sortedExperiences.find(
+                      (e) =>
+                        e.organization_name === expert.workplace_center_name,
+                    )?.position
+                  }
+                </p>
+              )}
+            </article>
+          ) : (
+            sortedExperiences
+              .filter((e) => e.is_current)
+              .map((e, i) => (
+                <article
+                  key={i}
+                  data-profile-search-item
+                  data-profile-search-title={e.organization_name}
+                >
+                  <strong>{e.organization_name}</strong>
+                  <ProfileEvidencePublic
+                    review={itemReviews?.get(profileItemKey("experiences", e))}
+                  />
+                  {e.position && <p>{e.position}</p>}
+                </article>
+              ))
+          )}
+          {expert.workplace_address && (
+            <div className={styles.homeMap}>
+              <WorkplaceMap
+                address={expert.workplace_address}
+                autoLoad={workplaceMapAutoLoad}
+              />
+              <p>
+                {expert.workplace_address}
+                {expert.workplace_address_detail
+                  ? ` ${expert.workplace_address_detail}`
+                  : ""}
+              </p>
+            </div>
+          )}
         </section>
       )}
       {ownerPreview && (
@@ -733,12 +757,6 @@ export function ExpertProfileView({
           className={styles.workplace}
         >
           {renderItemActions?.("workplace", 0)}
-          {expert.workplace_address && (
-            <WorkplaceMap
-              address={expert.workplace_address}
-              autoLoad={workplaceMapAutoLoad}
-            />
-          )}
           {expert.workplace_center_name && (
             <div className="mt-2 text-base font-semibold text-slate-900">
               {expert.workplace_center_name}

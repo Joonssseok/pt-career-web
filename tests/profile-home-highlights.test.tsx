@@ -129,7 +129,7 @@ test("current workplace map uses only a supplied public address, is on Home once
     map.closest("[data-profile-panel]")?.getAttribute("data-profile-panel"),
   ).toBe("home");
   expect(
-    screen.getAllByRole("img", { name: /근무 기관 위치 지도/ }),
+    screen.getAllByRole("img", { name: /근무 기관 위치 지도/, hidden: true }),
   ).toHaveLength(1);
   view.rerender(
     <ExpertProfileView
@@ -139,5 +139,40 @@ test("current workplace map uses only a supplied public address, is on Home once
   );
   expect(
     screen.queryByRole("img", { name: /근무 기관 위치 지도/, hidden: true }),
+  ).toBeNull();
+});
+
+test("home orders highlights before workplace and puts the sole map after the selected workplace", () => {
+  render(
+    <ExpertProfileView
+      expert={{
+        ...expert,
+        experiences: [],
+        workplace_center_name: "선택한 근무지",
+        workplace_address: "공개 주소",
+      }}
+      galleryImages={[]}
+    />,
+  );
+  const home = screen.getByRole("tabpanel", { name: "홈" });
+  const headings = within(home)
+    .getAllByRole("heading", { level: 2 })
+    .map((h) => h.textContent);
+  expect(headings.indexOf("주요 이력")).toBeLessThan(
+    headings.indexOf("지금 일하는 곳"),
+  );
+  const workplace = within(home).getByText("선택한 근무지");
+  const map = screen.getByRole("img", {
+    name: "근무 기관 위치 지도: 공개 주소",
+  });
+  expect(
+    workplace.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  fireEvent.click(screen.getByRole("tab", { name: "상세정보", exact: true }));
+  expect(
+    within(screen.getByRole("tabpanel", { name: "상세정보" })).queryByRole(
+      "img",
+      { name: /근무 기관 위치 지도/, hidden: true },
+    ),
   ).toBeNull();
 });

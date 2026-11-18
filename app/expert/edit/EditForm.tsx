@@ -243,7 +243,7 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
       }
 
       const ext = EXT_BY_TYPE[file.type];
-      const path = `${user.id}/${embedded ? crypto.randomUUID() : "photo"}.${ext}`;
+      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
 
       const { error: uploadError } = await supabase.storage
         .from('profile-images')

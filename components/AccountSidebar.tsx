@@ -43,14 +43,8 @@ export async function AccountSidebar({
         <Link href="/my/personal" className={linkClass}>
           내정보 수정
         </Link>
-        <Link href="/my/account" className={linkClass}>
-          로그인 정보·연락처
-        </Link>
-        <Link href="/my/terms" className={linkClass}>
-          약관내역
-        </Link>
-        <Link href="/my/delete-account" className={linkClass}>
-          회원탈퇴
+        <Link href="/my/referrals" className={linkClass}>
+          추천인·행사 코드
         </Link>
       </AccountMenuSection>
       <AccountMenuSection id="damoa" title="내활동 다모아">

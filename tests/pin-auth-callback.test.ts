@@ -4,6 +4,10 @@ const exchangeCodeForSession = jest.fn();
 const startPinEnrollment = jest.fn();
 const getUser = jest.fn();
 const signOut = jest.fn();
+const registerReferralCode = jest.fn();
+jest.mock("../app/actions/referral", () => ({
+  registerReferralCode: (...args: unknown[]) => registerReferralCode(...args),
+}));
 jest.mock("../lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { exchangeCodeForSession, getUser, signOut },
@@ -18,7 +22,43 @@ beforeEach(() => {
   startPinEnrollment.mockResolvedValue(true);
   getUser.mockResolvedValue({ data: { user: null }, error: null });
   signOut.mockResolvedValue({ error: null });
+  registerReferralCode.mockResolvedValue({ ok: true });
 });
+
+test("signup callback registers event code after session exchange without changing the next destination", async () => {
+  const result = await GET(
+    new NextRequest(
+      "https://test.example/auth/callback?code=fake-code&next=/my&referral=EVENT2026",
+    ),
+  );
+  expect(registerReferralCode).toHaveBeenCalledWith("EVENT2026");
+  expect(result.headers.get("location")).toBe("https://test.example/my");
+});
+
+test("invalid campaign never turns a successful login into an authentication failure", async () => {
+  registerReferralCode.mockResolvedValue({ ok: false, error: "fixture" });
+  const result = await GET(
+    new NextRequest(
+      "https://test.example/auth/callback?code=fake-code&next=/my&referral=INVALID",
+    ),
+  );
+  expect(result.headers.get("location")).toBe(
+    "https://test.example/my/referrals?referral_notice=failed",
+  );
+  expect(signOut).not.toHaveBeenCalled();
+});
+
+test.each(["/reset-password", "/my/pin-reset"])(
+  "recovery never consumes campaign codes: %s",
+  async (next) => {
+    await GET(
+      new NextRequest(
+        `https://test.example/auth/callback?code=fake-code&next=${next}&referral=EVENT2026`,
+      ),
+    );
+    expect(registerReferralCode).not.toHaveBeenCalled();
+  },
+);
 
 test("Naver linking keeps the authenticated account and skips PIN reenrollment", async () => {
   getUser.mockResolvedValue({
@@ -33,7 +73,7 @@ test("Naver linking keeps the authenticated account and skips PIN reenrollment",
     ),
   );
   expect(result.headers.get("location")).toBe(
-    "https://test.example/my/account",
+    "https://test.example/my/personal",
   );
   expect(getUser).toHaveBeenCalledTimes(2);
   expect(startPinEnrollment).not.toHaveBeenCalled();
@@ -46,7 +86,7 @@ test("Naver linking requires an existing validated session before exchange", asy
     ),
   );
   expect(result.headers.get("location")).toContain(
-    "/my/account?naver_link_error=confirmation_failed",
+    "/my/personal?naver_link_error=confirmation_failed",
   );
   expect(exchangeCodeForSession).not.toHaveBeenCalled();
 });
@@ -84,7 +124,7 @@ test("failed Naver linking preserves the original session and hides provider det
     ),
   );
   expect(result.headers.get("location")).toBe(
-    "https://test.example/my/account?naver_link_error=identity_already_exists",
+    "https://test.example/my/personal?naver_link_error=identity_already_exists",
   );
   expect(exchangeCodeForSession).not.toHaveBeenCalled();
   expect(signOut).not.toHaveBeenCalled();

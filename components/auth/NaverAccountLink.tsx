@@ -32,7 +32,7 @@ export function NaverAccountLink({
     setError('')
     try {
       const callback = new URL(
-        getAuthCallbackUrl(window.location.origin, '/my/account'),
+        getAuthCallbackUrl(window.location.origin, '/my/personal'),
       )
       callback.searchParams.set('link', 'naver')
       const { error } = await createClient().auth.linkIdentity({

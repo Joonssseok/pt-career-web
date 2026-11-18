@@ -103,7 +103,7 @@ export default function DeleteAccountPage() {
 
             <div className="flex gap-3 pt-2">
               <Link
-                href="/my"
+                href="/my/personal"
                 className="min-h-tap px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center justify-center"
               >
                 취소

@@ -18,7 +18,7 @@ export function AccountMenu({ children }: { children: React.ReactNode }) {
       : pathname.startsWith("/my/personal") ||
           pathname.startsWith("/my/pin-reset") ||
           pathname.startsWith("/my/account") ||
-          pathname.startsWith("/my/terms") ||
+          pathname.startsWith("/my/referrals") ||
           pathname.startsWith("/my/delete-account")
         ? "account"
         : null;

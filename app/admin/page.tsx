@@ -258,6 +258,7 @@ export default async function AdminDashboardPage({
                 <span aria-hidden="true">{view === id ? "→" : ""}</span>
               </Link>
             ))}
+            <Link href="/admin/referrals" className="flex min-h-12 shrink-0 items-center rounded-xl px-4 text-sm font-semibold text-slate-500 hover:bg-slate-50">추천인·행사 코드</Link>
           </nav>
         </aside>
         <div className="min-w-0 space-y-7">

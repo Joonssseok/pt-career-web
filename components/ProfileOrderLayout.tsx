@@ -25,6 +25,7 @@ type Props = {
   "data-order-key"?: string;
   "data-order-scope"?: string;
   className?: string;
+  count?: { total: number; verified: number };
 };
 const sectionFamilies: Record<string, string> = {
   "activity:경력": "experiences",
@@ -58,7 +59,15 @@ function combineSections(nodes: ReactNode[]) {
     // Keep each source's saved item-order scope while sharing one visible card.
     result[index] = cloneElement(
       preferred,
-      {},
+      previous.props.count && node.props.count
+        ? {
+            count: {
+              total: previous.props.count.total + node.props.count.total,
+              verified:
+                previous.props.count.verified + node.props.count.verified,
+            },
+          }
+        : {},
       <div className="space-y-2">
         <div data-order-scope={previous.props["data-order-key"]}>
           {previous.props.children}

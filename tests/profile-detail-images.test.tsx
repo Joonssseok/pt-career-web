@@ -176,11 +176,10 @@ test.each([false, true])(
         }
       />,
     );
-    expect(
-      screen
-        .getAllByRole("heading", { level: 2 })
-        .map((node) => node.textContent),
-    ).toEqual(["전문 분야", "마지막 활동", "소개", "상세 이미지"]);
+    expect(screen.getByRole("heading", { name: "입력한 소개" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: /^이력/ }));
+    expect(screen.getByRole("heading", { name: "마지막 활동" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "상세정보" }));
     const images = screen.getByRole("region", { name: "상세 이미지" });
     expect(images.closest("[data-order-target]")).toBeNull();
     expect(within(images).queryByRole("button")).toBeNull();
@@ -293,3 +292,5 @@ test("preview URLs survive step changes, and are released only after removal or 
   expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:preview");
   await waitFor(() => expect(screen.queryByText("preview.png")).toBeNull());
 });
+
+beforeEach(() => window.history.replaceState(null, "", "/"));

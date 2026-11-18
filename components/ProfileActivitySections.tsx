@@ -31,6 +31,13 @@ export function profileActivityCards({
           key={group}
           data-order-key={"activity:" + group}
           title={group}
+          count={(() => {
+            const rows = activities.filter((a) => a.category === group);
+            const count = rows.filter((a) =>
+              itemReviews?.has("damoa:" + a.id),
+            ).length;
+            return { total: rows.length, verified: count };
+          })()}
         >
           <div>
             {activities
@@ -49,6 +56,13 @@ export function profileActivityCards({
                 return (
                   <article
                     key={a.id}
+                    data-profile-search-item={
+                      hasPublicActivityContent(a) ? "" : undefined
+                    }
+                    data-profile-search-exclude={
+                      !hasPublicActivityContent(a) || undefined
+                    }
+                    data-profile-search-title={shown.title || group}
                     data-order-key={a.id}
                     className="py-2 first:pt-0 last:pb-0"
                   >
@@ -113,4 +127,28 @@ export function ProfileActivitySections(
       {profileActivityCards(props)}
     </div>
   );
+}
+
+// Same visible rows and approval marks used by the career tab, grouped only for display.
+export function profileActivityReviewCounts(
+  activities: ProfileActivity[],
+  itemReviews?: ReadonlyMap<string, PublicItemReview>,
+) {
+  const groups = new Map<
+    string,
+    { label: string; count: number; titles: string[] }
+  >();
+  for (const activity of activities) {
+    if (!hasPublicActivityContent(activity)) continue;
+    const shown = publicActivity(activity);
+    const group = groups.get(activity.category) ?? {
+      label: activity.category,
+      count: 0,
+      titles: [],
+    };
+    if (itemReviews?.has("damoa:" + activity.id)) group.count++;
+    if (shown.title) group.titles.push(shown.title);
+    groups.set(activity.category, group);
+  }
+  return Array.from(groups.values());
 }

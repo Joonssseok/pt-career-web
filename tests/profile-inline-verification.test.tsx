@@ -99,7 +99,7 @@ test("common records and original licenses show one mark beside their own title"
   expect(within(summary).queryByText("자격/면허")).toBeNull();
   for (const title of ["공통 교육", "원본 면허"])
     expect(
-      within(screen.getByText(title).closest("li")!).getAllByLabelText(
+      within(screen.getAllByText(title).find(node => node.closest('[data-profile-panel="career"]'))!.closest("li")!).getAllByLabelText(
         "인증완료",
       ),
     ).toHaveLength(1);
@@ -182,3 +182,5 @@ test("the preview uses the published approval count and does not count draft lic
     within(screen.getByLabelText("프로필 요약")).getByText("확인 필요"),
   ).toBeTruthy();
 });
+
+beforeEach(() => window.history.replaceState(null, "", "/"));

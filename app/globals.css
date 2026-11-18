@@ -15,6 +15,16 @@
      --color-blue-600 을 재정의하면 bg-blue-600/text-blue-600 전부에 반영된다.
    ========================================================================== */
 @theme {
+  /* 전문가 상세·작성 미리보기의 승인된 새 템플릿에만 사용한다. */
+  --font-profile-display: "Gowun Dodum", var(--font-sans);
+  --color-profile-background: #F4F6F8;
+  --color-profile-surface: #FFFFFF;
+  --color-profile-ink: #17212B;
+  --color-profile-sub: #55626F;
+  --color-profile-line: #E2E7EC;
+  --color-profile-tint: #DCE7FD;
+  --color-profile-soft: #EEF2F6;
+
   /* ---------- 글꼴 ---------- */
   --font-sans: "Pretendard Variable", Pretendard, Tossface, ui-sans-serif, system-ui, sans-serif;
 
@@ -171,3 +181,10 @@ body {
   .landing-trace { animation: none; width: 100%; }
   .landing-arrow { animation: none; left: 50%; }
 }
+
+/* 공통 헤더·푸터는 유지하고 공개 프로필 본문에만 배경을 확장한다. */
+[data-app-frame]:has([data-profile-page]),
+[data-app-content]:has([data-profile-page]) { background: var(--color-profile-background); }
+[data-app-content]:has([data-profile-page]) { max-width: none; padding-inline: 0; }
+
+[data-app-frame]:has([data-profile-page]) { --side-ad-background: var(--color-profile-background); }

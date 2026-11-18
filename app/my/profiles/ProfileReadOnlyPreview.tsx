@@ -6,7 +6,10 @@ import {
   type ExpertProfileViewProps,
 } from "@/components/experts/ExpertProfileView";
 import { ProfileHeaderActions } from "@/app/experts/[id]/ShareButton";
-import { profileActivityCards } from "@/components/ProfileActivitySections";
+import {
+  profileActivityCards,
+  profileActivityReviewCounts,
+} from "@/components/ProfileActivitySections";
 import type { PublicItemReview } from "@/components/ProfileEvidencePublic";
 import type { ProfileActivity } from "@/lib/profile-versions/types";
 
@@ -39,7 +42,9 @@ export function ProfileReadOnlyPreview({
     <dialog
       ref={dialog}
       aria-labelledby="profile-readonly-preview-title"
-      onClose={onClose}
+      onClose={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
       className="m-auto h-[92svh] max-h-[92svh] w-[calc(100%-1rem)] max-w-6xl overflow-hidden rounded-2xl border border-slate-200 bg-white p-0 shadow-2xl backdrop:bg-slate-900/30"
     >
       {open && (
@@ -68,16 +73,26 @@ export function ProfileReadOnlyPreview({
           </header>
           <div
             className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 sm:px-6"
-            style={{ "--profile-summary-top": "0px" } as CSSProperties}
+            style={
+              {
+                "--profile-template-sticky-top": "0px",
+                "--profile-template-card-top": "28px",
+              } as CSSProperties
+            }
           >
-            <div className="mx-auto max-w-4xl pb-8">
+            <div className="mx-auto max-w-6xl pb-8">
               <ExpertProfileView
+                ownerPreview
                 stickySummary
                 expert={expert}
                 order={order}
                 galleryImages={galleryImages}
                 detailImages={detailImages}
                 itemReviews={itemReviews}
+                activityReviewCounts={profileActivityReviewCounts(
+                  activities,
+                  itemReviews,
+                )}
                 verifiedCareerCount={verifiedCareerCount}
                 profileActions={
                   <ProfileHeaderActions

@@ -1,4 +1,5 @@
 /** @jest-environment jsdom */
+import { ProfileReadOnlyPreview } from "../app/my/profiles/ProfileReadOnlyPreview";
 import { useState } from "react";
 import { waitFor } from "@testing-library/react";
 import {
@@ -129,6 +130,7 @@ test("public view has no editing buttons, preview removes the intended sorted ro
   ).toBeNull();
   normal.unmount();
   render(<Preview />);
+  fireEvent.click(screen.getByRole("tab", { name: /^이력/ }));
   fireEvent.click(screen.getByRole("button", { name: "현재 기관 항목 삭제" }));
   const canvas = screen.getByLabelText("공개 프로필 편집 미리보기");
   const confirmation = screen.getByRole("dialog", {
@@ -161,6 +163,7 @@ test("public view has no editing buttons, preview removes the intended sorted ro
 });
 test("imported activity evidence is connected automatically and can be excluded", () => {
   render(<Preview />);
+  fireEvent.click(screen.getByRole("tab", { name: /^이력/ }));
   expect(screen.getByText("증빙자료 1개")).toBeTruthy();
   expect(screen.queryByRole("button", { name: /소개 증빙자료/ })).toBeNull();
   fireEvent.click(
@@ -179,6 +182,7 @@ test("imported activity evidence is connected automatically and can be excluded"
 
 test("new files stay local and invalid files are rejected", () => {
   render(<Preview />);
+  fireEvent.click(screen.getByRole("tab", { name: /^이력/ }));
   fireEvent.click(screen.getByRole("button", { name: "운동 봉사 세부항목" }));
   fireEvent.click(screen.getByRole("button", { name: "증빙자료 확인" }));
   const input = screen.getByLabelText("증빙자료 파일 선택");
@@ -201,6 +205,7 @@ test("new files stay local and invalid files are rejected", () => {
 
 test("details close outside and on Escape while specialty controls are absent", () => {
   render(<Preview />);
+  fireEvent.click(screen.getByRole("tab", { name: /^이력/ }));
   expect(
     screen.queryByRole("button", { name: "재활 전문 세부항목" }),
   ).toBeNull();
@@ -223,8 +228,9 @@ test("details close outside and on Escape while specialty controls are absent", 
 
 test("unrequested items do not create empty review tabs or an always-expanded list", () => {
   render(<Preview />);
+  fireEvent.click(screen.getByRole("tab", { name: /^이력/ }));
   expect(screen.getByText("증빙자료 1개")).toBeTruthy();
-  expect(screen.queryByRole("tab")).toBeNull();
+  expect(screen.getAllByRole("tab")).toHaveLength(5);
   expect(screen.queryByRole("region", { name: "심사 결과" })).toBeNull();
   expect(screen.queryByText("심사 미요청")).toBeNull();
 });
@@ -251,13 +257,21 @@ test("workplace stays after activity sections regardless of saved section order,
       }}
     />,
   );
+  fireEvent.click(screen.getByRole("tab", { name: "상세정보" }));
   const workplace = screen.getByText("선택한 근무 기관").closest("section")!;
   expect(screen.queryByRole("heading", { name: "근무 기관" })).toBeNull();
   expect(screen.queryByText("본인이 입력한 근무기관 정보")).toBeNull();
   expect(
-    screen.getByText(activity.title).compareDocumentPosition(workplace) &
-      Node.DOCUMENT_POSITION_FOLLOWING,
-  ).toBeTruthy();
+    workplace
+      .closest("[data-profile-panel]")
+      ?.getAttribute("data-profile-panel"),
+  ).toBe("detail");
+  expect(
+    screen
+      .getByText(activity.title)
+      .closest("[data-profile-panel]")
+      ?.getAttribute("data-profile-panel"),
+  ).toBe("career");
   const mapArea = workplace.querySelector(".max-w-80")!;
   const name = within(workplace as HTMLElement).getByText("선택한 근무 기관");
   const address = within(workplace as HTMLElement).getByText("공개 기관 주소");
@@ -272,4 +286,29 @@ test("workplace stays after activity sections regardless of saved section order,
       name: "네이버 지도에서 보기",
     }),
   ).toBeNull();
+});
+
+beforeEach(() => window.history.replaceState(null, "", "/"));
+
+test("closing a nested preparation notice keeps the profile preview open", () => {
+  const onClose = jest.fn();
+  render(
+    <ProfileReadOnlyPreview
+      open
+      onClose={onClose}
+      expert={expert}
+      activities={[]}
+      galleryImages={[]}
+      itemReviews={new Map()}
+    />,
+  );
+  const outer = screen.getByRole("dialog", {
+    name: "프로필 미리보기",
+    exact: true,
+  });
+  const nested = outer.querySelector("dialog")!;
+  fireEvent(nested, new Event("close", { bubbles: true }));
+  expect(onClose).not.toHaveBeenCalled();
+  fireEvent(outer, new Event("close", { bubbles: true }));
+  expect(onClose).toHaveBeenCalledTimes(1);
 });

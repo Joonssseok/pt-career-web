@@ -13,7 +13,10 @@ import {
   type Representative,
 } from "@/lib/profile-versions/types";
 import { representativeExpert } from "@/lib/profile-versions/public";
-import { profileActivityCards } from "@/components/ProfileActivitySections";
+import {
+  profileActivityCards,
+  profileActivityReviewCounts,
+} from "@/components/ProfileActivitySections";
 import { ExpertProfileView } from "@/components/experts/ExpertProfileView";
 import { detailImageSrc } from "@/lib/profile-versions/detail-images";
 import { ProfileUnavailable } from "@/components/ProfileUnavailable";
@@ -148,7 +151,12 @@ export async function generateMetadata({
       type: "profile",
       images: [{ url: imageUrl, width: 1200, height: 630, alt: title }],
     },
-    twitter: { card: "summary_large_image", title, description, images: [imageUrl] },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [imageUrl],
+    },
   };
 }
 
@@ -214,7 +222,7 @@ export default async function ExpertDetailPage({
   ]);
 
   return (
-    <main className="mx-auto min-h-screen max-w-4xl bg-white pb-10 pt-4 sm:pb-14 sm:pt-5">
+    <main data-profile-page className="min-h-screen">
       <div id="profile-details" className="scroll-mt-32">
         <ExpertProfileView
           workplaceMapAutoLoad
@@ -229,6 +237,10 @@ export default async function ExpertDetailPage({
           detailImages={detailImages}
           expert={expert}
           itemReviews={itemReviews}
+          activityReviewCounts={profileActivityReviewCounts(
+            activities,
+            itemReviews,
+          )}
           verifiedCareerCount={verifiedCareerCount}
           order={expert.representative?.content.order}
           activitySections={
@@ -248,7 +260,6 @@ export default async function ExpertDetailPage({
           }
         />
       </div>
-
     </main>
   );
 }

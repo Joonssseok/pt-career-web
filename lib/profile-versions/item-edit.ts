@@ -123,7 +123,8 @@ export function editProfileItem(
       values.description.length > 5000
     )
       throw new Error("소개를 확인해주세요.");
-    return { ...content, introduction: values.description };
+    const { introductionDocument, ...plainContent } = content;
+    return { ...plainContent, introduction: values.description };
   }
   const source =
     key === "introduction:0"

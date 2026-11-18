@@ -1,3 +1,7 @@
+import { DetailContent } from "@/components/profile-editor/DetailContent";
+import { validateDetailDocument } from "@/lib/profile-versions/detail-document";
+import { IntroductionContent } from "@/components/profile-editor/IntroductionContent";
+import { validateIntroductionDocument } from "@/lib/profile-versions/introduction-format";
 import { Gowun_Dodum } from "next/font/google";
 import { ProfileTemplate } from "./ProfileTemplate";
 import { ComingSoonButton } from "@/components/ComingSoonButton";
@@ -56,6 +60,8 @@ export type ExpertProfileViewProps = {
     professions: { slug: string; name: string; is_primary: boolean }[];
     headline: string | null;
     introduction: string | null;
+    introduction_document?: unknown;
+    detail_document?: unknown;
     total_experience_years: number | null;
     profile_image_path: string | null;
     cover_image_path: string | null;
@@ -230,6 +236,12 @@ export function ExpertProfileView({
   }))
     .filter((group) => group.titles.length > 0)
     .slice(0, 3);
+  const formattedIntroduction = validateIntroductionDocument(
+    expert.introduction_document,
+  );
+  const showFormattedIntroduction =
+    formattedIntroduction.ok &&
+    formattedIntroduction.text === expert.introduction;
   const introductionLines = expert.introduction?.split(/\r?\n/) ?? [];
   const careerCount =
     expert.experiences.length +
@@ -370,14 +382,27 @@ export function ExpertProfileView({
         <section
           data-profile-search-item
           data-profile-search-title="소개"
-          className={styles.introduction}
+          className={
+            showFormattedIntroduction
+              ? styles.formattedIntroduction
+              : styles.introduction
+          }
         >
           {renderItemActions?.("introduction", 0)}
-          <h2>
-            <span>{introductionLines[0]}</span>
-          </h2>
-          {introductionLines.length > 1 && (
-            <p>{introductionLines.slice(1).join("\n")}</p>
+          {showFormattedIntroduction ? (
+            <IntroductionContent
+              document={expert.introduction_document}
+              fallback={expert.introduction}
+            />
+          ) : (
+            <>
+              <h2>
+                <span>{introductionLines[0]}</span>
+              </h2>
+              {introductionLines.length > 1 && (
+                <p>{introductionLines.slice(1).join("\n")}</p>
+              )}
+            </>
           )}
           <ProfileEvidencePublic review={itemReviews?.get("introduction:0")} />
         </section>
@@ -681,10 +706,19 @@ export function ExpertProfileView({
           <GalleryCard images={galleryImages} />
         </div>
       )}
-      {detailImages.length > 0 && (
-        <div data-profile-search-item data-profile-search-title="상세 이미지">
-          <ProfileDetailImages images={detailImages} />
+      {validateDetailDocument(expert.detail_document).ok ? (
+        <div data-profile-search-item data-profile-search-title="상세소개">
+          <DetailContent
+            document={expert.detail_document}
+            images={detailImages}
+          />
         </div>
+      ) : (
+        detailImages.length > 0 && (
+          <div data-profile-search-item data-profile-search-title="상세 이미지">
+            <ProfileDetailImages images={detailImages} />
+          </div>
+        )
       )}
       {(expert.workplace_center_name ||
         expert.workplace_address ||

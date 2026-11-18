@@ -32,6 +32,7 @@ export async function uploadDetailImage(
     if (!reservation.ready) {
       const result = await client.storage
         .from("profile-detail-images")
+        // Keep animated GIFs and videos byte-for-byte; no image conversion here.
         .upload(reservation.path, image.file, {
           contentType: image.file.type,
           upsert: false,

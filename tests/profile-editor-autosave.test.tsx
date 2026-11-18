@@ -12,6 +12,69 @@ import { ProfileVersionManager } from "../app/my/profiles/ProfileVersionManager"
 import { CommonProfileSaveContext } from "../components/CommonProfileSaveContext";
 import { loadActivities } from "../lib/damoa/server-store";
 import { saveProfileVersion } from "../app/actions/profile-versions";
+// Exercise manager save/restore behavior while the official editor is covered in-browser.
+jest.mock("@/components/profile-editor/IntroductionEditor", () => {
+  const {
+    introductionFromText,
+    introductionText,
+  } = require("../lib/profile-versions/introduction-format");
+  const EditorAdapter = function EditorAdapter({
+    document,
+    onChange,
+    inputId,
+    label = "소개 글",
+  }: {
+    document: import("../lib/profile-versions/introduction-format").IntroductionDocument;
+    onChange: (
+      document: import("../lib/profile-versions/introduction-format").IntroductionDocument,
+    ) => void;
+    inputId?: string;
+    label?: string;
+  }) {
+    return (
+      <div>
+        <textarea
+          id={inputId}
+          aria-label={label}
+          value={introductionText(document)}
+          onChange={(e) => onChange(introductionFromText(e.target.value))}
+        />
+        <button
+          type="button"
+          onClick={() =>
+            onChange({
+              ...document,
+              content: [
+                {
+                  type: "paragraph",
+                  content: [
+                    {
+                      type: "text",
+                      text: introductionText(document),
+                      marks: [{ type: "bold" }],
+                    },
+                  ],
+                },
+              ],
+            })
+          }
+        >
+          테스트 서식 적용
+        </button>
+        <output
+          data-testid={
+            label === "소개 글"
+              ? "restored-introduction-format"
+              : "restored-detail-format"
+          }
+        >
+          {JSON.stringify(document)}
+        </output>
+      </div>
+    );
+  };
+  return { IntroductionEditor: EditorAdapter };
+});
 const mockReplace = jest.fn(),
   mockRefresh = jest.fn(),
   mockPush = jest.fn(),
@@ -221,7 +284,7 @@ test("basic preview updates immediately and common fields use the existing regis
   expect(mockCommonSave).toHaveBeenCalledTimes(1);
   expect(saveProfileVersion).toHaveBeenCalledTimes(1);
 });
-test("steps can be selected directly; unapproved rich text is absent and headline keeps its existing limit", () => {
+test("steps show the connected introduction editor while raw HTML remains absent and headline keeps its existing limit", () => {
   mount();
   expect(screen.getByLabelText("한 줄 소개")).toHaveProperty("maxLength", 100);
   fireEvent.click(screen.getByRole("tab", { name: "상세소개", exact: true }));
@@ -307,4 +370,27 @@ test("stage tabs support arrow keys, Home and End without saving", async () => {
   ).toHaveProperty("tabIndex", 0);
   await advance(3000);
   expect(saveProfileVersion).not.toHaveBeenCalled();
+});
+
+test("format-only changes autosave together with unchanged text and survive reopening", async () => {
+  const view = mount();
+  await advance(2000);
+  expect(saveProfileVersion).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("tab", { name: "소개", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "테스트 서식 적용" }));
+  await advance();
+  expect(saveProfileVersion).toHaveBeenCalledTimes(1);
+  const stored = (saveProfileVersion as jest.Mock).mock.calls[0][2];
+  expect(stored.introduction).toBe("기존 본문");
+  expect(stored.introductionDocument.content[0].content[0].marks).toEqual([
+    { type: "bold" },
+  ]);
+  view.unmount();
+  mount(stored);
+  fireEvent.click(screen.getByRole("tab", { name: "소개", exact: true }));
+  expect(screen.getByTestId("restored-introduction-format").textContent).toBe(
+    JSON.stringify(stored.introductionDocument),
+  );
+  await advance(3000);
+  expect(saveProfileVersion).toHaveBeenCalledTimes(1);
 });

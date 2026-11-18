@@ -1,5 +1,10 @@
 "use client";
 import Image from "next/image";
+import { IntroductionEditor } from "@/components/profile-editor/IntroductionEditor";
+import {
+  introductionFromText,
+  introductionText,
+} from "@/lib/profile-versions/introduction-format";
 import { getProfilePhotoUrl } from "@/lib/storage/profile-photo-url";
 import { ProfileEditorShell } from "./ProfileEditorShell";
 import contentStyles from "./ProfileEditorContent.module.css";
@@ -46,6 +51,7 @@ import {
   activityForProfile,
   activityOrganizer,
   LIVE_PROFILE_PUBLISH_ENABLED,
+  INTRODUCTION_FORMATTING_STORAGE_ENABLED,
   BASE_SECTIONS,
   applyVersion,
   sameProfileContent,
@@ -58,7 +64,10 @@ import { type ExpertProfileViewProps } from "@/components/experts/ExpertProfileV
 import { loadActivities } from "@/lib/damoa/server-store";
 import { CATEGORIES, type Activity } from "@/lib/damoa/categories";
 import { REGIONS } from "@/lib/constants/regions";
-import { ProfileDetailImageEditor } from "@/components/ProfileDetailImageEditor";
+import {
+  detailDocumentFromImages,
+  detailImagesForDocument,
+} from "@/lib/profile-versions/detail-document";
 import {
   type EditableDetailImage,
   type DetailImagesState,
@@ -177,8 +186,13 @@ export function ProfileVersionManager({
   );
   const [detailReady, setDetailReady] = useState(detailImagesState.ok);
   const detailGroup = useRef(crypto.randomUUID());
+  // Keep the media catalog alive for undo; only referenced files enter a saved snapshot.
+  const activeDetailImages = detailImagesForDocument(
+    detailImages,
+    content.detailDocument,
+  );
   const detailChanged =
-    JSON.stringify(detailImages.map((row) => row.id)) !==
+    JSON.stringify(activeDetailImages.map((row) => row.id)) !==
     JSON.stringify(savedDetailIds);
   const [uploadMessage, setUploadMessage] = useState("");
   // Keep local image URLs alive across hidden stages until removal or unmount.
@@ -451,7 +465,7 @@ export function ProfileVersionManager({
   const fingerprint = JSON.stringify({
     title,
     content,
-    detailIds: detailImages.map((row) => row.id),
+    detailIds: activeDetailImages.map((row) => row.id),
     commonRevision,
   });
   const latestFingerprint = useRef(fingerprint);
@@ -558,16 +572,16 @@ export function ProfileVersionManager({
         return false;
       }
       let imageSave: { ids: string[]; revision: string | null } | undefined;
-      if (detailChanged) {
+      if (detailChanged || content.detailDocument) {
         if (!detailReady) {
           setError("첨부파일을 다시 불러온 뒤 저장해주세요.");
           return false;
         }
         const ids: string[] = [];
-        for (const [index, image] of detailImages.entries()) {
+        for (const [index, image] of activeDetailImages.entries()) {
           if (image.file)
             setUploadMessage(
-              `이미지 업로드 중 · ${index + 1}/${detailImages.length}`,
+              `이미지 업로드 중 · ${index + 1}/${activeDetailImages.length}`,
             );
           ids.push(await uploadDetailImage(owner, detailGroup.current, image));
         }
@@ -587,7 +601,7 @@ export function ProfileVersionManager({
         setDetailRevision(r.detailRevision ?? null);
         setDetailImages((current) =>
           current.map((image) =>
-            detailImages.some((savedImage) => savedImage.id === image.id)
+            activeDetailImages.some((savedImage) => savedImage.id === image.id)
               ? (({ file, ...stored }) => stored)(image)
               : image,
           ),
@@ -840,7 +854,11 @@ export function ProfileVersionManager({
     },
     { label: "한 줄 소개", filled: !!content.headline.trim(), step: 0 },
     { label: "소개", filled: !!content.introduction.trim(), step: 1 },
-    { label: "상세소개 이미지", filled: detailImages.length > 0, step: 2 },
+    {
+      label: "상세소개",
+      filled: detailImages.length > 0 || !!content.detailDocument,
+      step: 2,
+    },
     {
       label: "이력",
       filled:
@@ -1136,6 +1154,17 @@ export function ProfileVersionManager({
                       </p>
                     </div>
                   </div>
+                  {process.env.NODE_ENV === "development" &&
+                    !INTRODUCTION_FORMATTING_STORAGE_ENABLED && (
+                      <a
+                        className={contentStyles.back}
+                        href={`/preview/profile-introduction${id ? `?profile=${id}` : ""}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        소개 서식 도구 미리보기 ↗
+                      </a>
+                    )}
                   <div>
                     <div className="flex items-center justify-between gap-3">
                       <label
@@ -1151,20 +1180,37 @@ export function ProfileVersionManager({
                         {content.introduction.length.toLocaleString()}/5,000
                       </span>
                     </div>
-                    <textarea
-                      id="profile-introduction-input"
-                      rows={5}
-                      maxLength={5000}
-                      placeholder="주로 하는 일, 나만의 강점, 함께하고 싶은 대상을 자유롭게 적어보세요."
-                      value={content.introduction}
-                      onChange={(e) =>
-                        setContent({
-                          ...content,
-                          introduction: e.target.value,
-                        })
-                      }
-                      className={field}
-                    />
+                    {INTRODUCTION_FORMATTING_STORAGE_ENABLED ? (
+                      <IntroductionEditor
+                        inputId="profile-introduction-input"
+                        document={
+                          content.introductionDocument ??
+                          introductionFromText(content.introduction)
+                        }
+                        onChange={(document) =>
+                          setContent((previous) => ({
+                            ...previous,
+                            introduction: introductionText(document),
+                            introductionDocument: document,
+                          }))
+                        }
+                      />
+                    ) : (
+                      <textarea
+                        id="profile-introduction-input"
+                        rows={5}
+                        maxLength={5000}
+                        placeholder="주로 하는 일, 나만의 강점, 함께하고 싶은 대상을 자유롭게 적어보세요."
+                        value={content.introduction}
+                        onChange={(e) =>
+                          setContent({
+                            ...content,
+                            introduction: e.target.value,
+                          })
+                        }
+                        className={field}
+                      />
+                    )}
                   </div>
                 </section>
               </div>
@@ -1199,18 +1245,30 @@ export function ProfileVersionManager({
                         </span>
                       </div>
                       <p className="mt-1 text-xs leading-6 text-slate-500">
-                        등록한 소개 이미지를 보여줄 수 있어요. 서식 있는
-                        글·사진·HTML 편집은 별도 준비 후 제공됩니다.
+                        글과 서식을 자유롭게 꾸미고, 사진·GIF·동영상과 유튜브를
+                        글 사이에 넣어보세요.
                       </p>
                     </div>
                   </div>
-                  <ProfileDetailImageEditor
-                    images={detailImages}
-                    onChange={(images) => {
+                  <IntroductionEditor
+                    label="상세소개 글"
+                    inputId="profile-detail-input"
+                    document={
+                      content.detailDocument ??
+                      detailDocumentFromImages(detailImages)
+                    }
+                    mediaImages={detailImages}
+                    disabled={pending || !detailReady}
+                    onMediaImagesChange={(images) => {
                       setHasUserEdits(true);
                       setDetailImages(images);
                     }}
-                    disabled={pending || !detailReady}
+                    onChange={(document) => {
+                      setContent((previous) => ({
+                        ...previous,
+                        detailDocument: document,
+                      }));
+                    }}
                   />
                   {!detailReady && (
                     <p role="alert" className="text-sm text-red-600">
@@ -1372,7 +1430,7 @@ export function ProfileVersionManager({
                     </p>
                   </div>
                 }
-                detailImages={detailImages}
+                detailImages={activeDetailImages}
                 evidence={evidence}
                 attachments={attachments}
                 onAttachmentChange={(attachment) =>

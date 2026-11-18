@@ -1,5 +1,8 @@
-import { workplaceExpertFields, type CurrentWorkplace } from './workplace';
+import { workplaceExpertFields, type CurrentWorkplace } from "./workplace";
 import type { ExpertProfileViewProps } from "@/components/experts/ExpertProfileView";
+import type { IntroductionDocument } from "./introduction-format";
+// The compatible validator accepts both legacy text and the closed formatting document.
+export const INTRODUCTION_FORMATTING_STORAGE_ENABLED = true;
 import {
   publicActivity,
   hasPublicActivityContent,
@@ -27,6 +30,8 @@ export type VersionContent = {
   activityRegion?: string;
   headline: string;
   introduction: string;
+  introductionDocument?: IntroductionDocument;
+  detailDocument?: IntroductionDocument;
   sections: string[];
   activities: ProfileActivity[];
   order?: Record<string, string[]>;
@@ -93,6 +98,10 @@ export function applyVersion(
     ...base,
     headline: content.headline,
     introduction: hidden("introduction:0") ? null : content.introduction,
+    introduction_document: hidden("introduction:0")
+      ? null
+      : (content.introductionDocument ?? null),
+    detail_document: content.detailDocument ?? null,
     experiences: show("experiences")
       ? base.experiences.filter(
           (row) => !hidden(profileItemKey("experiences", row)),
@@ -118,7 +127,9 @@ export function applyVersion(
     licenses: show("licenses")
       ? base.licenses.filter((row) => !hidden(profileItemKey("licenses", row)))
       : [],
-    ...(content.currentWorkplace !== undefined ? workplaceExpertFields(content.currentWorkplace) : {}),
+    ...(content.currentWorkplace !== undefined
+      ? workplaceExpertFields(content.currentWorkplace)
+      : {}),
     ...(hidden("workplace:0")
       ? {
           workplace_center_name: null,

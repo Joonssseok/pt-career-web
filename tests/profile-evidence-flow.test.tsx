@@ -16,6 +16,9 @@ import {
 } from "../app/actions/profile-versions";
 import type { Activity } from "../lib/damoa/categories";
 import { storeEvidenceFile } from "../lib/profile-versions/evidence";
+jest.mock("@/components/profile-editor/IntroductionEditor", () => ({
+  IntroductionEditor: () => null,
+}));
 const loadActivities = jest.fn<Promise<Activity[]>, [string]>();
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ replace: jest.fn(), refresh: jest.fn() }),

@@ -1,6 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ExpertListItem } from "@/app/experts/ExpertCard";
-import { LIVE_PROFILE_PUBLISH_ENABLED, type Representative } from "./types";
+import { applyVersion, LIVE_PROFILE_PUBLISH_ENABLED, type Representative } from "./types";
+
+export function representativeExpert(
+  representative: Representative,
+  current: Pick<Representative["expert"], "profile_image_path">,
+): Representative["expert"] {
+  // The portrait belongs to the account; the selected history stays published.
+  return applyVersion(
+    { ...representative.expert, profile_image_path: current.profile_image_path },
+    representative.content,
+  );
+}
 export async function representativeCards(
   supabase: SupabaseClient,
   rows: ExpertListItem[],

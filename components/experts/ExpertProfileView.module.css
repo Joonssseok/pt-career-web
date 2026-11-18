@@ -2,6 +2,16 @@
   margin-top: 1rem;
 }
 
+.itemDetails {
+  font-size: calc(var(--text-sm) - 2pt);
+  line-height: var(--text-sm--line-height);
+}
+
+.itemDate {
+  font-size: calc(var(--text-xs) - 2pt);
+  line-height: var(--text-xs--line-height);
+}
+
 .document [data-order-group="sections"] > [data-order-handle] {
   top: 0.5rem;
 }

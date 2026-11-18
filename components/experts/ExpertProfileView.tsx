@@ -425,7 +425,7 @@ export function ExpertProfileView({
 
           {sortedExperiences.length > 0 && (
             <SectionCard data-order-key="experiences" title="경력">
-              <ul className="divide-y divide-slate-100">
+              <ul>
                 {sortedExperiences.map((e, i) => (
                   <li
                     key={i}
@@ -436,39 +436,46 @@ export function ExpertProfileView({
                       "experiences",
                       expert.experiences.indexOf(e),
                     )}
-                    <div className="text-base font-semibold text-slate-900">
-                      {e.organization_name}
-                      <ProfileEvidencePublic
-                        review={itemReviews?.get(
-                          profileItemKey("experiences", e),
-                        )}
-                      />
-                      {/* (전)/(현)은 is_current 기준 -- 항목별 기간 비공개로 날짜가
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                      <div className="text-base font-semibold text-slate-900">
+                        {e.organization_name}
+                        <ProfileEvidencePublic
+                          review={itemReviews?.get(
+                            profileItemKey("experiences", e),
+                          )}
+                        />
+                        {/* (전)/(현)은 is_current 기준 -- 항목별 기간 비공개로 날짜가
                           NULL이어도 그대로 표시한다(PR #54/#57과 동일 근거). */}
-                      <span
-                        className={`ml-1.5 inline-block text-micro font-bold px-1.5 py-0.5 rounded ${
-                          e.is_current
-                            ? "bg-blue-50 text-blue-700"
-                            : "bg-slate-50 text-slate-500"
-                        }`}
-                      >
-                        {e.is_current ? "현" : "전"}
-                      </span>
-                    </div>
-                    {(e.position || e.start_date) && (
-                      <div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm text-slate-500">
-                        {e.position && <span>{e.position}</span>}
-                        {e.start_date && (
-                          <span className="text-xs">
-                            {formatActivityPeriod(
-                              [e.start_date, e.is_current ? "현재" : e.end_date]
-                                .filter(Boolean)
-                                .join(" ~ "),
-                            )}
-                          </span>
-                        )}
+                        <span
+                          className={`ml-1.5 inline-block text-micro font-bold px-1.5 py-0.5 rounded ${
+                            e.is_current
+                              ? "bg-blue-50 text-blue-700"
+                              : "bg-slate-50 text-slate-500"
+                          }`}
+                        >
+                          {e.is_current ? "현" : "전"}
+                        </span>
                       </div>
-                    )}
+                      {(e.position || e.start_date) && (
+                        <div
+                          className={`${styles.itemDetails} flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-slate-500`}
+                        >
+                          {e.position && <span>{e.position}</span>}
+                          {e.start_date && (
+                            <span className={styles.itemDate}>
+                              {formatActivityPeriod(
+                                [
+                                  e.start_date,
+                                  e.is_current ? "현재" : e.end_date,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" ~ "),
+                              )}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -477,7 +484,7 @@ export function ExpertProfileView({
 
           {expert.academic_records.length > 0 && (
             <SectionCard data-order-key="academic_records" title="학력">
-              <ul className="divide-y divide-gray-100">
+              <ul>
                 {expert.academic_records.map((a, i) => (
                   <li
                     key={i}
@@ -485,29 +492,33 @@ export function ExpertProfileView({
                     className="py-2 first:pt-0 last:pb-0"
                   >
                     {renderItemActions?.("academic_records", i)}
-                    <div className="text-base font-semibold text-slate-900">
-                      {a.school_name}
-                      {a.major ? ` · ${a.major}` : ""}
-                      <ProfileEvidencePublic
-                        review={itemReviews?.get(
-                          profileItemKey("academic_records", a),
-                        )}
-                      />
-                    </div>
-                    <div className="mt-0.5 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-sm text-slate-500">
-                      <span>
-                        {ACADEMIC_LEVEL_LABELS[a.level] ?? a.level}
-                        {a.degree ? `(${a.degree})` : ""}
-                      </span>
-                      {(a.start_date || a.end_date) && (
-                        <span className="text-xs">
-                          {formatActivityPeriod(
-                            [a.start_date, a.end_date]
-                              .filter(Boolean)
-                              .join(" ~ "),
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                      <div className="text-base font-semibold text-slate-900">
+                        {a.school_name}
+                        {a.major ? ` · ${a.major}` : ""}
+                        <ProfileEvidencePublic
+                          review={itemReviews?.get(
+                            profileItemKey("academic_records", a),
                           )}
+                        />
+                      </div>
+                      <div
+                        className={`${styles.itemDetails} flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-slate-500`}
+                      >
+                        <span>
+                          {ACADEMIC_LEVEL_LABELS[a.level] ?? a.level}
+                          {a.degree ? `(${a.degree})` : ""}
                         </span>
-                      )}
+                        {(a.start_date || a.end_date) && (
+                          <span className={styles.itemDate}>
+                            {formatActivityPeriod(
+                              [a.start_date, a.end_date]
+                                .filter(Boolean)
+                                .join(" ~ "),
+                            )}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -517,7 +528,7 @@ export function ExpertProfileView({
 
           {expert.educations.length > 0 && (
             <SectionCard data-order-key="educations" title="교육 이수">
-              <ul className="divide-y divide-gray-100">
+              <ul>
                 {expert.educations.map((e, i) => (
                   <li
                     key={i}
@@ -525,19 +536,21 @@ export function ExpertProfileView({
                     className="py-2 first:pt-0 last:pb-0"
                   >
                     {renderItemActions?.("educations", i)}
-                    <div className="text-base font-semibold text-slate-900">
-                      {e.education_name}
-                      <ProfileEvidencePublic
-                        review={itemReviews?.get(
-                          profileItemKey("educations", e),
-                        )}
-                      />
-                    </div>
-                    {e.organization_name && (
-                      <div className="mt-0.5 text-sm text-slate-500">
-                        {e.organization_name}
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                      <div className="text-base font-semibold text-slate-900">
+                        {e.education_name}
+                        <ProfileEvidencePublic
+                          review={itemReviews?.get(
+                            profileItemKey("educations", e),
+                          )}
+                        />
                       </div>
-                    )}
+                      {e.organization_name && (
+                        <div className={`${styles.itemDetails} text-slate-500`}>
+                          {e.organization_name}
+                        </div>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -546,7 +559,7 @@ export function ExpertProfileView({
 
           {expert.licenses.length > 0 && (
             <SectionCard data-order-key="licenses" title="자격/면허">
-              <ul className="divide-y divide-gray-100">
+              <ul>
                 {expert.licenses.map((l, i) => (
                   <li
                     key={i}
@@ -554,25 +567,29 @@ export function ExpertProfileView({
                     className="flex items-start gap-3 py-2 first:pt-0 last:pb-0"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="inline-flex max-w-full items-center gap-1.5 text-base font-semibold text-slate-900">
-                        <span className="min-w-0 break-words">
-                          {l.license_name}
-                        </span>
-                        {itemReviews?.has(profileItemKey("licenses", l)) ? (
-                          <ProfileEvidencePublic
-                            review={itemReviews.get(
-                              profileItemKey("licenses", l),
-                            )}
-                          />
-                        ) : (
-                          <ProfileVerificationMark />
+                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                        <div className="inline-flex max-w-full items-center gap-1.5 text-base font-semibold text-slate-900">
+                          <span className="min-w-0 break-words">
+                            {l.license_name}
+                          </span>
+                          {itemReviews?.has(profileItemKey("licenses", l)) ? (
+                            <ProfileEvidencePublic
+                              review={itemReviews.get(
+                                profileItemKey("licenses", l),
+                              )}
+                            />
+                          ) : (
+                            <ProfileVerificationMark />
+                          )}
+                        </div>
+                        {l.issuing_organization && (
+                          <div
+                            className={`${styles.itemDetails} break-words text-slate-500`}
+                          >
+                            {l.issuing_organization}
+                          </div>
                         )}
                       </div>
-                      {l.issuing_organization && (
-                        <div className="mt-0.5 break-words text-sm text-slate-500">
-                          {l.issuing_organization}
-                        </div>
-                      )}
                       {l.document_public && l.id && (
                         <a
                           href={`/api/license-document/${l.id}`}

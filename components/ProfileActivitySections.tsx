@@ -1,6 +1,7 @@
 import type { ProfileActivity } from "@/lib/profile-versions/types";
 import { formatActivityPeriod } from "@/lib/activity-period";
 import { ProfileSectionCard } from "@/components/experts/ProfileSectionCard";
+import styles from "./experts/ExpertProfileView.module.css";
 import {
   ProfileEvidencePublic,
   type PublicItemReview,
@@ -31,7 +32,7 @@ export function profileActivityCards({
           data-order-key={"activity:" + group}
           title={group}
         >
-          <div className="divide-y divide-gray-100">
+          <div>
             {activities
               .filter((a) => a.category === group)
               .map((a) => {
@@ -52,18 +53,22 @@ export function profileActivityCards({
                     className="py-2 first:pt-0 last:pb-0"
                   >
                     {renderItemActions?.(a.id)}
-                    {shown.title && (
-                      <h3 className="text-base font-semibold text-slate-900">
-                        {shown.title}
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                      {shown.title && (
+                        <h3 className="text-base font-semibold text-slate-900">
+                          {shown.title}
+                          <ProfileEvidencePublic review={review} />
+                        </h3>
+                      )}
+                      {!shown.title && (
                         <ProfileEvidencePublic review={review} />
-                      </h3>
-                    )}
-                    {!shown.title && <ProfileEvidencePublic review={review} />}
-                    {subtitle && (
-                      <p className="mt-0.5 text-sm text-slate-500">
-                        {subtitle}
-                      </p>
-                    )}
+                      )}
+                      {subtitle && (
+                        <p className={`${styles.itemDetails} text-slate-500`}>
+                          {subtitle}
+                        </p>
+                      )}
+                    </div>
                     {shown.description &&
                       a.presentation?.description !== "expand" && (
                         <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-600 sm:text-base">

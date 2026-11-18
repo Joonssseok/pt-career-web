@@ -173,6 +173,7 @@ test("plus opens an edit dialog, cancel does not apply, apply passes only this i
       retry={() => {}}
     />,
   );
+  fireEvent.click(screen.getByRole("tab", { name: /^이력/ }));
   const canvas = screen.getByLabelText("공개 프로필 편집 미리보기");
   expect(within(canvas).getByText("교육기관")).toBeTruthy();
   expect(within(canvas).queryByText("2026-01")).toBeNull();
@@ -198,3 +199,5 @@ test("plus opens an edit dialog, cancel does not apply, apply passes only this i
   );
   expect(activity.organizer).toBe("교육기관");
 });
+
+beforeEach(() => window.history.replaceState(null, "", "/"));

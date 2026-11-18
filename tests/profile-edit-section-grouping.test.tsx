@@ -80,6 +80,7 @@ test.each([false, true])(
         })}
       />,
     );
+    fireEvent.click(screen.getByRole("tab", { name: /^이력/ }));
     expect(
       screen.getAllByRole("heading", { name: "경력", exact: true }),
     ).toHaveLength(1);
@@ -145,6 +146,7 @@ test("already saved education copies and Damoa education join the original educa
       })}
     />,
   );
+  fireEvent.click(screen.getByRole("tab", { name: /^이력/ }));
   expect(
     screen.getAllByRole("heading", { name: "교육 이수", exact: true }),
   ).toHaveLength(1);
@@ -192,11 +194,12 @@ test("combining cards preserves saved item orders and writes back to the origina
     );
   }
   const view = render(<Preview />);
+  fireEvent.click(screen.getByRole("tab", { name: /^이력/ }));
   expect(
     screen.getAllByRole("heading", { name: "경력", exact: true }),
   ).toHaveLength(1);
   const articles = () =>
-    Array.from(view.container.querySelectorAll("article")).map(
+    Array.from(view.container.querySelectorAll('[data-profile-panel="career"] article')).map(
       (el) => el.textContent,
     );
   expect(articles()).toEqual(["둘째 사본", "첫 사본"]);
@@ -210,3 +213,5 @@ test("combining cards preserves saved item orders and writes back to the origina
     screen.getAllByRole("heading", { name: "경력", exact: true }),
   ).toHaveLength(1);
 });
+
+beforeEach(() => window.history.replaceState(null, "", "/"));

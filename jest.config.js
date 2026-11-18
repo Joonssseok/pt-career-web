@@ -14,6 +14,7 @@ export default {
     }],
   },
   moduleNameMapper: {
+    "^next/font/google$": "<rootDir>/tests/profile-font-mock.cjs",
     '\\.module\\.css$': '<rootDir>/tests/style-module-mock.cjs',
     '^@/lib/(.*)$': '<rootDir>/lib/$1',
     '^@/components/(.*)$': '<rootDir>/components/$1',

@@ -1,3 +1,6 @@
+import { Gowun_Dodum } from "next/font/google";
+import { ProfileTemplate } from "./ProfileTemplate";
+import { ComingSoonButton } from "@/components/ComingSoonButton";
 import { WorkplaceMap } from "./WorkplaceMap";
 import Image from "next/image";
 import { formatActivityPeriod } from "@/lib/activity-period";
@@ -25,6 +28,13 @@ import {
   KakaoIcon,
   BlogIcon,
 } from "@/components/icons/SocialIcons";
+
+const displayFont = Gowun_Dodum({
+  weight: "400",
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--profile-gowun",
+});
 
 const ACADEMIC_LEVEL_LABELS: Record<string, string> = {
   graduate: "대학원",
@@ -98,8 +108,10 @@ export type ExpertProfileViewProps = {
   order?: ProfileOrder;
   onOrderChange?: (order: ProfileOrder) => void;
   activitySections?: React.ReactNode;
+  activityReviewCounts?: { label: string; count: number; titles?: string[] }[];
   profileActions?: React.ReactNode;
   stickySummary?: boolean;
+  ownerPreview?: boolean;
   workplaceMapAutoLoad?: boolean;
   itemReviews?: ReadonlyMap<string, PublicItemReview>;
   verifiedCareerCount?: number | null;
@@ -144,8 +156,9 @@ export function ExpertProfileView({
   order,
   onOrderChange,
   activitySections,
+  activityReviewCounts = [],
   profileActions,
-  stickySummary = false,
+  ownerPreview = false,
   workplaceMapAutoLoad = false,
   itemReviews,
   verifiedCareerCount,
@@ -181,512 +194,609 @@ export function ExpertProfileView({
     return b.start_date.localeCompare(a.start_date);
   });
 
-  return (
-    <div>
-      {coverImageUrl && (
-        <div
-          aria-label="프로필 커버"
-          className="relative mb-3 aspect-[4/1] overflow-hidden rounded-2xl border border-blue-100 bg-slate-50 sm:mb-4"
-        >
-          <Image
-            src={coverImageUrl}
-            alt={`${expert.display_name ?? "전문가"}의 커버 이미지`}
-            fill
-            priority
-            sizes="(min-width: 1024px) 896px, 100vw"
-            className="object-cover object-center"
-          />
+  const groupCount = (section: string, rows: readonly object[]) => {
+    const verified = rows.filter((row) =>
+      itemReviews?.has(profileItemKey(section, row)),
+    ).length;
+    return { total: rows.length, verified };
+  };
+  const highlightGroups = new Map<string, string[]>([
+    ["자격·면허", expert.licenses.map((row) => row.license_name)],
+    ["교육·연수", expert.educations.map((row) => row.education_name)],
+    [
+      "학력",
+      expert.academic_records.map((row) =>
+        [row.school_name, row.major].filter(Boolean).join(" · "),
+      ),
+    ],
+  ]);
+  for (const { label, titles = [] } of activityReviewCounts) {
+    const category = /자격|면허/.test(label)
+      ? "자격·면허"
+      : /교육|연수/.test(label)
+        ? "교육·연수"
+        : label;
+    highlightGroups.set(category, [
+      ...(highlightGroups.get(category) ?? []),
+      ...titles,
+    ]);
+  }
+  highlightGroups.set("경력", [
+    ...(highlightGroups.get("경력") ?? []),
+    ...sortedExperiences.map((row) => row.organization_name),
+  ]);
+  const highlights = Array.from(highlightGroups, ([label, titles]) => ({
+    label,
+    titles,
+  }))
+    .filter((group) => group.titles.length > 0)
+    .slice(0, 3);
+  const introductionLines = expert.introduction?.split(/\r?\n/) ?? [];
+  const careerCount =
+    expert.experiences.length +
+    expert.academic_records.length +
+    expert.educations.length +
+    expert.licenses.length;
+  const identity = (
+    <div key="identity" className={styles.person}>
+      <div className={styles.personHead}>
+        <div className={styles.photo}>
+          {getProfilePhotoUrl(expert.profile_image_path) ? (
+            <Image
+              src={getProfilePhotoUrl(expert.profile_image_path)!}
+              alt={`${expert.display_name ?? "전문가"}의 프로필 사진`}
+              width={112}
+              height={112}
+              priority
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <svg
+              aria-hidden="true"
+              width="44"
+              height="44"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.3"
+            >
+              <circle cx="12" cy="8" r="3.5" />
+              <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
+            </svg>
+          )}
+        </div>
+        <div>
+          <h1 className={styles.name}>
+            {expert.display_name ?? "이름 미공개"}
+          </h1>
+          {expert.professions.length > 0 && (
+            <p className={styles.role}>
+              {expert.professions.map((p) => p.name).join(" · ")}
+            </p>
+          )}
+        </div>
+      </div>
+      {expert.headline && <p className={styles.headline}>{expert.headline}</p>}
+      <dl aria-label="프로필 요약" className={styles.facts}>
+        <dt>지역</dt>
+        <dd>{expert.workplace_region ?? "미등록"}</dd>
+        <dt>경력</dt>
+        <dd>
+          {expert.total_experience_years != null
+            ? `${expert.total_experience_years}년`
+            : "-"}
+        </dd>
+        <dt>인증 경력</dt>
+        <dd>{certifiedCount === null ? "확인 필요" : `${certifiedCount}건`}</dd>
+      </dl>
+      {expert.specialties.length > 0 && (
+        <div className={styles.specialties} aria-label="전문 분야">
+          {expert.specialties.map((s) => (
+            <span key={s.slug}>{s.name}</span>
+          ))}
+        </div>
+      )}
+      {socialLinks.length > 0 && (
+        <div className="relative mt-4 flex flex-wrap items-center gap-3">
+          {socialLinks.map(({ label, Icon, url }) => (
+            <a
+              key={label}
+              data-profile-contact
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={label}
+              className="inline-flex min-h-tap min-w-tap items-center justify-center rounded-xl border border-slate-100 bg-white transition-colors hover:border-blue-200 focus-visible:outline-2 focus-visible:outline-blue-600"
+            >
+              <Icon />
+            </a>
+          ))}
         </div>
       )}
 
-      <div>
-        <div
-          className={stickySummary ? styles.stickySummary : undefined}
-          data-profile-summary
-        >
-          <div
-            className={`${styles.identity} relative isolate min-h-[180px] overflow-hidden rounded-3xl border border-blue-100 bg-white p-5 sm:px-8 sm:py-6`}
-          >
-            <svg
-              aria-hidden
-              viewBox="0 0 900 320"
-              preserveAspectRatio="xMaxYMid slice"
-              fill="none"
-              className="pointer-events-none absolute inset-0 -z-10 h-full w-full"
+      {expert.extra_links.length > 0 && (
+        <div className="relative mt-3 flex flex-wrap gap-2">
+          {expert.extra_links.map((link, i) => (
+            <a
+              key={`${link.label}-${i}`}
+              data-profile-contact
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-tap items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition-colors hover:border-blue-200 hover:text-primary focus-visible:outline-2 focus-visible:outline-blue-600"
             >
-              <path
-                d="M0 310C200 300 380 220 520 170S760 50 900 30"
-                stroke="var(--color-primary)"
-                strokeOpacity="0.1"
-                strokeWidth="2"
-              />
-              <path
-                d="M0 340C240 335 430 260 600 210S800 100 900 90"
-                stroke="var(--color-motion)"
-                strokeOpacity="0.35"
-                strokeWidth="1.5"
-              />
-              <circle
-                cx="600"
-                cy="210"
-                r="5"
-                fill="white"
-                stroke="var(--color-motion)"
-                strokeOpacity="0.5"
-                strokeWidth="2"
-              />
-            </svg>
-            <div className="relative flex items-start gap-4 sm:items-center sm:gap-6">
-              <div
-                className={`${styles.photo} flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-100 bg-blue-50 text-motion sm:size-32`}
-              >
-                {expert.profile_image_path ? (
-                  <Image
-                    src={getProfilePhotoUrl(expert.profile_image_path) ?? ""}
-                    alt={expert.display_name ?? "전문가"}
-                    width={128}
-                    height={128}
-                    priority
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <svg
-                    aria-hidden
-                    width="44"
-                    height="44"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.3"
-                  >
-                    <circle cx="12" cy="8" r="3.5" />
-                    <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
-                  </svg>
-                )}
-              </div>
-              <div
-                className={`min-w-0 flex-1 ${profileActions ? "sm:pr-28" : ""}`}
-              >
-                <h1
-                  className={`${styles.name} text-hero font-extrabold tracking-tight text-slate-900 sm:text-4xl`}
-                >
-                  {expert.display_name ?? "이름 미공개"}
-                </h1>
-                {expert.professions.length > 0 && (
-                  <p className="mt-1 text-sm font-medium text-slate-500">
-                    {expert.professions.map((p) => p.name).join(" · ")}
-                  </p>
-                )}
-                {expert.headline && (
-                  <p className="mt-2 text-sm leading-relaxed text-slate-600 sm:text-base">
-                    {expert.headline}
-                  </p>
-                )}
-              </div>
-            </div>
-            {profileActions && (
-              <div className="relative z-10 mt-3 flex justify-end sm:absolute sm:bottom-4 sm:right-4 sm:mt-0">
-                {profileActions}
-              </div>
-            )}
-          </div>
-
-          {(expert.total_experience_years != null ||
-            certifiedCount !== null ||
-            expert.workplace_region) && (
-            <dl
-              aria-label="프로필 요약"
-              className={`${styles.summaryCounts} mt-3 grid min-h-20 grid-cols-3 overflow-hidden rounded-2xl border border-blue-100 bg-blue-50/40`}
+              <LinkIcon />
+              {link.label}
+            </a>
+          ))}
+        </div>
+      )}
+      {(expert.workplace_external_contact_url || expert.workplace_phone) && (
+        <div className="mt-3 flex gap-3">
+          {expert.workplace_external_contact_url && (
+            <a
+              data-profile-contact
+              href={expert.workplace_external_contact_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-h-14 flex-1 items-center justify-center rounded-xl bg-primary px-4 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
             >
-              <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 px-2 py-4">
-                <dt className="text-xs font-medium text-slate-500">경력</dt>
-                <dd className="text-base font-bold tracking-tight text-primary sm:text-lg">
-                  {expert.total_experience_years != null
-                    ? `${expert.total_experience_years}년`
-                    : "-"}
-                </dd>
-              </div>
-              <div
-                title="현재 공개 중인 항목 중 관리자 점검을 통과한 내역 수"
-                className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 border-l border-blue-100 px-2 py-4"
-              >
-                <dt className="text-xs font-medium text-slate-500">
-                  인증 경력
-                </dt>
-                <dd className="text-base font-bold tracking-tight text-primary sm:text-lg">
-                  {certifiedCount === null
-                    ? "확인 필요"
-                    : `${certifiedCount}건`}
-                </dd>
-              </div>
-              <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-2 gap-y-1 border-l border-blue-100 px-2 py-4">
-                <dt className="text-xs font-medium text-slate-500">지역</dt>
-                <dd className="min-w-0 break-words text-base font-bold tracking-tight text-primary sm:text-lg">
-                  {expert.workplace_region ?? "미등록"}
-                </dd>
-              </div>
-            </dl>
+              상담 문의
+            </a>
+          )}
+          {expert.workplace_phone && (
+            <a
+              data-profile-contact
+              href={`tel:${expert.workplace_phone}`}
+              className="flex min-h-14 flex-1 items-center justify-center rounded-xl border border-blue-100 bg-white px-4 text-center text-sm font-semibold text-primary transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-600"
+            >
+              전화 걸기
+            </a>
           )}
         </div>
+      )}
 
-        {socialLinks.length > 0 && (
-          <div className="relative mt-4 flex flex-wrap items-center gap-3">
-            {socialLinks.map(({ label, Icon, url }) => (
+      <div className={styles.actions}>
+        {profileActions ?? (
+          <ComingSoonButton className={styles.favorite}>
+            프로필 즐겨찾기
+          </ComingSoonButton>
+        )}
+      </div>
+    </div>
+  );
+  const home = (
+    <div key="home" className={styles.home}>
+      {expert.introduction && (
+        <section
+          data-profile-search-item
+          data-profile-search-title="소개"
+          className={styles.introduction}
+        >
+          {renderItemActions?.("introduction", 0)}
+          <h2>
+            <span>{introductionLines[0]}</span>
+          </h2>
+          {introductionLines.length > 1 && (
+            <p>{introductionLines.slice(1).join("\n")}</p>
+          )}
+          <ProfileEvidencePublic review={itemReviews?.get("introduction:0")} />
+        </section>
+      )}
+      {sortedExperiences.some((e) => e.is_current) && (
+        <section className={styles.homeSection}>
+          <h2>지금 일하는 곳</h2>
+          {sortedExperiences
+            .filter((e) => e.is_current)
+            .map((e, i) => (
+              <article
+                key={i}
+                data-profile-search-item
+                data-profile-search-title={e.organization_name}
+              >
+                <strong>{e.organization_name}</strong>
+                <ProfileEvidencePublic
+                  review={itemReviews?.get(profileItemKey("experiences", e))}
+                />
+                {e.position && <p>{e.position}</p>}
+              </article>
+            ))}
+          {expert.workplace_address && (
+            <div className={styles.homeMap}>
+              <WorkplaceMap
+                address={expert.workplace_address}
+                autoLoad={workplaceMapAutoLoad}
+              />
+              <p>
+                {expert.workplace_address}
+                {expert.workplace_address_detail
+                  ? ` ${expert.workplace_address_detail}`
+                  : ""}
+              </p>
+            </div>
+          )}
+        </section>
+      )}
+      {highlights.length > 0 && (
+        <section className={styles.homeSection}>
+          <h2>주요 이력</h2>
+          <div className={styles.careerHighlights}>
+            {highlights.map(({ label, titles }) => (
               <a
                 key={label}
-                data-profile-contact
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={label}
-                className="inline-flex min-h-tap min-w-tap items-center justify-center rounded-xl border border-slate-100 bg-white transition-colors hover:border-blue-200 focus-visible:outline-2 focus-visible:outline-blue-600"
+                href="?tab=career"
+                data-profile-career-link
+                className={styles.highlightCard}
+                aria-label={`${label} 이력으로 이동`}
               >
-                <Icon />
+                <h3>{label}</h3>
+                <ul>
+                  {titles.slice(0, 3).map((title, index) => (
+                    <li key={index}>{title}</li>
+                  ))}
+                </ul>
               </a>
             ))}
           </div>
-        )}
-
-        {expert.extra_links.length > 0 && (
-          <div className="relative mt-3 flex flex-wrap gap-2">
-            {expert.extra_links.map((link, i) => (
-              <a
-                key={`${link.label}-${i}`}
-                data-profile-contact
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex min-h-tap items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition-colors hover:border-blue-200 hover:text-primary focus-visible:outline-2 focus-visible:outline-blue-600"
-              >
-                <LinkIcon />
-                {link.label}
-              </a>
-            ))}
-          </div>
-        )}
-        {(expert.workplace_external_contact_url || expert.workplace_phone) && (
-          <div className="mt-3 flex gap-3">
-            {expert.workplace_external_contact_url && (
-              <a
-                data-profile-contact
-                href={expert.workplace_external_contact_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex min-h-14 flex-1 items-center justify-center rounded-xl bg-primary px-4 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-              >
-                상담 문의
-              </a>
-            )}
-            {expert.workplace_phone && (
-              <a
-                data-profile-contact
-                href={`tel:${expert.workplace_phone}`}
-                className="flex min-h-14 flex-1 items-center justify-center rounded-xl border border-blue-100 bg-white px-4 text-center text-sm font-semibold text-primary transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-600"
-              >
-                전화 걸기
-              </a>
-            )}
-          </div>
-        )}
-
-        <ProfileOrderLayout
-          className={styles.document}
-          order={order}
-          onChange={onOrderChange}
-          combineSimilarSections
-        >
-          {expert.specialties.length > 0 && (
-            <SectionCard data-order-key="specialties" title="전문 분야">
-              <div className="flex flex-wrap gap-2">
-                {expert.specialties.map((s) => (
-                  <span
-                    key={s.slug}
-                    data-order-key={s.slug}
-                    className="rounded-lg bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700"
-                  >
-                    {s.name}
-                  </span>
-                ))}
-              </div>
-            </SectionCard>
-          )}
-
-          {expert.introduction && (
-            <SectionCard data-order-key="introduction" title="소개">
-              {renderItemActions?.("introduction", 0)}
-              <p className="whitespace-pre-wrap text-sm leading-6 text-slate-600 sm:text-base">
-                {expert.introduction}
-                <ProfileEvidencePublic
-                  review={itemReviews?.get("introduction:0")}
-                />
-              </p>
-            </SectionCard>
-          )}
-
-          {sortedExperiences.length > 0 && (
-            <SectionCard data-order-key="experiences" title="경력">
-              <ul>
-                {sortedExperiences.map((e, i) => (
-                  <li
-                    key={i}
-                    data-order-key={JSON.stringify(e)}
-                    className="py-2 first:pt-0 last:pb-0"
-                  >
-                    {renderItemActions?.(
-                      "experiences",
-                      expert.experiences.indexOf(e),
-                    )}
-                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                      <div className="text-base font-semibold text-slate-900">
-                        {e.organization_name}
-                        <ProfileEvidencePublic
-                          review={itemReviews?.get(
-                            profileItemKey("experiences", e),
-                          )}
-                        />
-                        {/* (전)/(현)은 is_current 기준 -- 항목별 기간 비공개로 날짜가
+        </section>
+      )}
+      {ownerPreview && (
+        <section className={styles.homeSection}>
+          <h2>수업 안내</h2>
+          <ComingSoonButton className={styles.classPlaceholder}>
+            수업 안내는 추후 추가될 예정이에요
+          </ComingSoonButton>
+        </section>
+      )}
+    </div>
+  );
+  const career = (
+    <div key="career">
+      <ProfileOrderLayout
+        className={styles.document}
+        order={order}
+        onChange={onOrderChange}
+        combineSimilarSections
+      >
+        {sortedExperiences.length > 0 && (
+          <SectionCard
+            data-order-key="experiences"
+            title="경력"
+            count={groupCount("experiences", expert.experiences)}
+          >
+            <ul>
+              {sortedExperiences.map((e, i) => (
+                <li
+                  key={i}
+                  data-profile-search-item
+                  data-profile-search-title={e.organization_name}
+                  data-order-key={JSON.stringify(e)}
+                  className="py-2 first:pt-0 last:pb-0"
+                >
+                  {renderItemActions?.(
+                    "experiences",
+                    expert.experiences.indexOf(e),
+                  )}
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                    <div className="text-base font-semibold text-slate-900">
+                      {e.organization_name}
+                      <ProfileEvidencePublic
+                        review={itemReviews?.get(
+                          profileItemKey("experiences", e),
+                        )}
+                      />
+                      {/* (전)/(현)은 is_current 기준 -- 항목별 기간 비공개로 날짜가
                           NULL이어도 그대로 표시한다(PR #54/#57과 동일 근거). */}
-                        <span
-                          className={`ml-1.5 inline-block text-micro font-bold px-1.5 py-0.5 rounded ${
-                            e.is_current
-                              ? "bg-blue-50 text-blue-700"
-                              : "bg-slate-50 text-slate-500"
-                          }`}
-                        >
-                          {e.is_current ? "현" : "전"}
-                        </span>
-                      </div>
-                      {(e.position || e.start_date) && (
-                        <div
-                          className={`${styles.itemDetails} flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-slate-500`}
-                        >
-                          {e.position && <span>{e.position}</span>}
-                          {e.start_date && (
-                            <span className={styles.itemDate}>
-                              {formatActivityPeriod(
-                                [
-                                  e.start_date,
-                                  e.is_current ? "현재" : e.end_date,
-                                ]
-                                  .filter(Boolean)
-                                  .join(" ~ "),
-                              )}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      <span
+                        className={`ml-1.5 inline-block text-micro font-bold px-1.5 py-0.5 rounded ${
+                          e.is_current
+                            ? styles.currentBadge
+                            : styles.previousBadge
+                        }`}
+                      >
+                        {e.is_current ? "현 근무지" : "이전"}
+                      </span>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            </SectionCard>
-          )}
-
-          {expert.academic_records.length > 0 && (
-            <SectionCard data-order-key="academic_records" title="학력">
-              <ul>
-                {expert.academic_records.map((a, i) => (
-                  <li
-                    key={i}
-                    data-order-key={JSON.stringify(a)}
-                    className="py-2 first:pt-0 last:pb-0"
-                  >
-                    {renderItemActions?.("academic_records", i)}
-                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                      <div className="text-base font-semibold text-slate-900">
-                        {a.school_name}
-                        {a.major ? ` · ${a.major}` : ""}
-                        <ProfileEvidencePublic
-                          review={itemReviews?.get(
-                            profileItemKey("academic_records", a),
-                          )}
-                        />
-                      </div>
+                    {(e.position || e.start_date) && (
                       <div
                         className={`${styles.itemDetails} flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-slate-500`}
                       >
-                        <span>
-                          {ACADEMIC_LEVEL_LABELS[a.level] ?? a.level}
-                          {a.degree ? `(${a.degree})` : ""}
-                        </span>
-                        {(a.start_date || a.end_date) && (
+                        {e.position && <span>{e.position}</span>}
+                        {e.start_date && (
                           <span className={styles.itemDate}>
                             {formatActivityPeriod(
-                              [a.start_date, a.end_date]
+                              [e.start_date, e.is_current ? "현재" : e.end_date]
                                 .filter(Boolean)
                                 .join(" ~ "),
                             )}
                           </span>
                         )}
                       </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </SectionCard>
-          )}
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </SectionCard>
+        )}
 
-          {expert.educations.length > 0 && (
-            <SectionCard data-order-key="educations" title="교육 이수">
-              <ul>
-                {expert.educations.map((e, i) => (
-                  <li
-                    key={i}
-                    data-order-key={JSON.stringify(e)}
-                    className="py-2 first:pt-0 last:pb-0"
-                  >
-                    {renderItemActions?.("educations", i)}
-                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                      <div className="text-base font-semibold text-slate-900">
-                        {e.education_name}
-                        <ProfileEvidencePublic
-                          review={itemReviews?.get(
-                            profileItemKey("educations", e),
+        {expert.academic_records.length > 0 && (
+          <SectionCard
+            data-order-key="academic_records"
+            title="학력"
+            count={groupCount("academic_records", expert.academic_records)}
+          >
+            <ul>
+              {expert.academic_records.map((a, i) => (
+                <li
+                  key={i}
+                  data-profile-search-item
+                  data-profile-search-title={a.school_name}
+                  data-order-key={JSON.stringify(a)}
+                  className="py-2 first:pt-0 last:pb-0"
+                >
+                  {renderItemActions?.("academic_records", i)}
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                    <div className="text-base font-semibold text-slate-900">
+                      {a.school_name}
+                      {a.major ? ` · ${a.major}` : ""}
+                      <ProfileEvidencePublic
+                        review={itemReviews?.get(
+                          profileItemKey("academic_records", a),
+                        )}
+                      />
+                    </div>
+                    <div
+                      className={`${styles.itemDetails} flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-slate-500`}
+                    >
+                      <span>
+                        {ACADEMIC_LEVEL_LABELS[a.level] ?? a.level}
+                        {a.degree ? `(${a.degree})` : ""}
+                      </span>
+                      {(a.start_date || a.end_date) && (
+                        <span className={styles.itemDate}>
+                          {formatActivityPeriod(
+                            [a.start_date, a.end_date]
+                              .filter(Boolean)
+                              .join(" ~ "),
                           )}
-                        />
-                      </div>
-                      {e.organization_name && (
-                        <div className={`${styles.itemDetails} text-slate-500`}>
-                          {e.organization_name}
-                        </div>
+                        </span>
                       )}
                     </div>
-                  </li>
-                ))}
-              </ul>
-            </SectionCard>
-          )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </SectionCard>
+        )}
 
-          {expert.licenses.length > 0 && (
-            <SectionCard data-order-key="licenses" title="자격/면허">
-              <ul>
-                {expert.licenses.map((l, i) => (
-                  <li
-                    key={i}
-                    data-order-key={l.id || JSON.stringify(l)}
-                    className="flex items-start gap-3 py-2 first:pt-0 last:pb-0"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-                        <div className="inline-flex max-w-full items-center gap-1.5 text-base font-semibold text-slate-900">
-                          <span className="min-w-0 break-words">
-                            {l.license_name}
-                          </span>
-                          {itemReviews?.has(profileItemKey("licenses", l)) ? (
-                            <ProfileEvidencePublic
-                              review={itemReviews.get(
-                                profileItemKey("licenses", l),
-                              )}
-                            />
-                          ) : (
-                            <ProfileVerificationMark />
-                          )}
-                        </div>
-                        {l.issuing_organization && (
-                          <div
-                            className={`${styles.itemDetails} break-words text-slate-500`}
-                          >
-                            {l.issuing_organization}
-                          </div>
+        {expert.educations.length > 0 && (
+          <SectionCard
+            data-order-key="educations"
+            title="교육 이수"
+            count={groupCount("educations", expert.educations)}
+          >
+            <ul>
+              {expert.educations.map((e, i) => (
+                <li
+                  key={i}
+                  data-profile-search-item
+                  data-profile-search-title={e.education_name}
+                  data-order-key={JSON.stringify(e)}
+                  className="py-2 first:pt-0 last:pb-0"
+                >
+                  {renderItemActions?.("educations", i)}
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                    <div className="text-base font-semibold text-slate-900">
+                      {e.education_name}
+                      <ProfileEvidencePublic
+                        review={itemReviews?.get(
+                          profileItemKey("educations", e),
+                        )}
+                      />
+                    </div>
+                    {e.organization_name && (
+                      <div className={`${styles.itemDetails} text-slate-500`}>
+                        {e.organization_name}
+                      </div>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </SectionCard>
+        )}
+
+        {expert.licenses.length > 0 && (
+          <SectionCard
+            data-order-key="licenses"
+            title="자격/면허"
+            count={groupCount("licenses", expert.licenses)}
+          >
+            <ul>
+              {expert.licenses.map((l, i) => (
+                <li
+                  key={i}
+                  data-profile-search-item
+                  data-profile-search-title={l.license_name}
+                  data-order-key={l.id || JSON.stringify(l)}
+                  className="flex items-start gap-3 py-2 first:pt-0 last:pb-0"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                      <div className="inline-flex max-w-full items-center gap-1.5 text-base font-semibold text-slate-900">
+                        <span className="min-w-0 break-words">
+                          {l.license_name}
+                        </span>
+                        {itemReviews?.has(profileItemKey("licenses", l)) ? (
+                          <ProfileEvidencePublic
+                            review={itemReviews.get(
+                              profileItemKey("licenses", l),
+                            )}
+                          />
+                        ) : (
+                          <ProfileVerificationMark />
                         )}
                       </div>
-                      {l.document_public && l.id && (
-                        <a
-                          href={`/api/license-document/${l.id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 inline-flex min-h-10 items-center text-xs font-semibold text-blue-600 hover:underline"
+                      {l.issuing_organization && (
+                        <div
+                          className={`${styles.itemDetails} break-words text-slate-500`}
                         >
-                          증빙파일 보기 ↗
-                        </a>
+                          {l.issuing_organization}
+                        </div>
                       )}
                     </div>
-                    {renderItemActions && (
-                      <span className="w-11 shrink-0">
-                        {renderItemActions("licenses", i)}
-                      </span>
+                    {l.document_public && l.id && (
+                      <a
+                        href={`/api/license-document/${l.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 inline-flex min-h-10 items-center text-xs font-semibold text-blue-600 hover:underline"
+                      >
+                        증빙파일 보기 ↗
+                      </a>
                     )}
-                  </li>
-                ))}
-              </ul>
-            </SectionCard>
-          )}
-
-          {galleryImages.length > 0 && (
-            <GalleryCard data-order-key="gallery" images={galleryImages} />
-          )}
-
-          {activitySections}
-        </ProfileOrderLayout>
-        {detailImages.length > 0 && (
-          <div className="mt-3 sm:mt-4">
-            <ProfileDetailImages images={detailImages} />
-          </div>
+                  </div>
+                  {renderItemActions && (
+                    <span className="w-11 shrink-0">
+                      {renderItemActions("licenses", i)}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </SectionCard>
         )}
-        {(expert.workplace_center_name ||
-          expert.workplace_address ||
-          expert.workplace_phone ||
-          expert.workplace_external_contact_url ||
-          expert.workplace_website_url) && (
-          <section className="bg-white py-3 pl-3 sm:pl-4">
-            {renderItemActions?.("workplace", 0)}
-            {expert.workplace_address && (
-              <WorkplaceMap
-                address={expert.workplace_address}
-                autoLoad={workplaceMapAutoLoad}
-              />
-            )}
-            {expert.workplace_center_name && (
-              <div className="mt-2 text-base font-semibold text-slate-900">
-                {expert.workplace_center_name}
-                <ProfileEvidencePublic
-                  review={itemReviews?.get("workplace:0")}
-                />
-              </div>
-            )}
-            {expert.workplace_address && (
-              <p className="text-xs text-gray-500 mt-1">
-                {expert.workplace_address}
-                {expert.workplace_address_detail
-                  ? ` ${expert.workplace_address_detail}`
-                  : ""}
-              </p>
-            )}
-            <div className="flex gap-2 mt-3">
-              {expert.workplace_phone && (
-                <a
-                  data-profile-contact
-                  href={`tel:${expert.workplace_phone}`}
-                  className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
-                >
-                  📞 전화
-                </a>
-              )}
-              {expert.workplace_external_contact_url && (
-                <a
-                  data-profile-contact
-                  href={expert.workplace_external_contact_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
-                >
-                  ✉ 문의
-                </a>
-              )}
-              {expert.workplace_website_url && (
-                <a
-                  href={expert.workplace_website_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
-                >
-                  🌐 웹사이트
-                </a>
-              )}
+
+        {activitySections}
+      </ProfileOrderLayout>
+      <p className={styles.legend}>
+        <span aria-hidden="true">✓</span> 서류로 확인된 이력에 표시됩니다.
+      </p>
+    </div>
+  );
+  const detail = (
+    <div key="detail" className={styles.detail}>
+      {galleryImages.length > 0 && (
+        <div data-profile-search-item data-profile-search-title="활동 갤러리">
+          <GalleryCard images={galleryImages} />
+        </div>
+      )}
+      {detailImages.length > 0 && (
+        <div data-profile-search-item data-profile-search-title="상세 이미지">
+          <ProfileDetailImages images={detailImages} />
+        </div>
+      )}
+      {(expert.workplace_center_name ||
+        expert.workplace_address ||
+        expert.workplace_phone ||
+        expert.workplace_external_contact_url ||
+        expert.workplace_website_url) && (
+        <section
+          data-profile-search-item
+          data-profile-search-title={
+            expert.workplace_center_name || "근무 기관"
+          }
+          className={styles.workplace}
+        >
+          {renderItemActions?.("workplace", 0)}
+          {expert.workplace_address && (
+            <WorkplaceMap
+              address={expert.workplace_address}
+              autoLoad={workplaceMapAutoLoad}
+            />
+          )}
+          {expert.workplace_center_name && (
+            <div className="mt-2 text-base font-semibold text-slate-900">
+              {expert.workplace_center_name}
+              <ProfileEvidencePublic review={itemReviews?.get("workplace:0")} />
             </div>
-          </section>
-        )}
-      </div>
+          )}
+          {expert.workplace_address && (
+            <p className="text-xs text-gray-500 mt-1">
+              {expert.workplace_address}
+              {expert.workplace_address_detail
+                ? ` ${expert.workplace_address_detail}`
+                : ""}
+            </p>
+          )}
+          <div className="flex gap-2 mt-3">
+            {expert.workplace_phone && (
+              <a
+                data-profile-contact
+                href={`tel:${expert.workplace_phone}`}
+                className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
+              >
+                📞 전화
+              </a>
+            )}
+            {expert.workplace_external_contact_url && (
+              <a
+                data-profile-contact
+                href={expert.workplace_external_contact_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
+              >
+                ✉ 문의
+              </a>
+            )}
+            {expert.workplace_website_url && (
+              <a
+                href={expert.workplace_website_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
+              >
+                🌐 웹사이트
+              </a>
+            )}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+  return (
+    <div
+      className={`${displayFont.variable} ${styles.root}`}
+      data-profile-template
+      data-profile-editing={renderItemActions ? true : undefined}
+    >
+      <ProfileTemplate
+        identity={identity}
+        home={home}
+        career={career}
+        detail={detail}
+        video={
+          expert.youtube_url ? (
+            <a
+              key="video-channel"
+              className={styles.channel}
+              href={expert.youtube_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              유튜브 채널 보기 ↗
+            </a>
+          ) : undefined
+        }
+        ownerPreview={ownerPreview || !!renderItemActions}
+        careerCount={careerCount}
+        cover={
+          coverImageUrl ? (
+            <div key="cover" className={styles.cover} aria-label="프로필 커버">
+              <Image
+                src={coverImageUrl}
+                alt={`${expert.display_name ?? "전문가"}의 커버 이미지`}
+                fill
+                priority
+                sizes="1080px"
+                className="object-cover object-center"
+              />
+            </div>
+          ) : undefined
+        }
+      />
     </div>
   );
 }

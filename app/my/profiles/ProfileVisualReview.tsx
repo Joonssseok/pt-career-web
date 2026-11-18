@@ -4,7 +4,10 @@ import {
   ExpertProfileView,
   type ExpertProfileViewProps,
 } from "@/components/experts/ExpertProfileView";
-import { profileActivityCards } from "@/components/ProfileActivitySections";
+import {
+  profileActivityCards,
+  profileActivityReviewCounts,
+} from "@/components/ProfileActivitySections";
 import {
   connectedReviewFiles,
   reviewSubmissionPlan,
@@ -463,6 +466,14 @@ export function ProfileVisualReview({
       <div className="min-w-0" aria-label="공개 프로필 편집 미리보기">
         {shownExpert ? (
           <ExpertProfileView
+            ownerPreview
+            itemReviews={previewReviews}
+            activityReviewCounts={profileActivityReviewCounts(
+              activities.filter(
+                (row) => choices["damoa:" + row.id]?.visible !== false,
+              ),
+              previewReviews,
+            )}
             verifiedCareerCount={verifiedCareerCount}
             order={order}
             onOrderChange={onOrderChange}
@@ -470,6 +481,7 @@ export function ProfileVisualReview({
               activities: activities.filter(
                 (row) => choices["damoa:" + row.id]?.visible !== false,
               ),
+              itemReviews: previewReviews,
               renderItemActions: (id) =>
                 actions(records.find((row) => row.key === "damoa:" + id)),
             })}

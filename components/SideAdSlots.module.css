@@ -31,7 +31,7 @@
   .banner {
     width: 160px;
     height: 600px;
-    background: #fff;
+    background: var(--side-ad-background, #fff);
   }
 }
 

@@ -431,7 +431,8 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
       if (!r.ok) failed.push(r.error ? `${r.label}(${r.error})` : r.label);
     }
 
-    await loadProfile();
+    // Embedded saves keep live inputs; a reload can overwrite edits made in flight.
+    if (!embedded) await loadProfile();
 
     if (failed.length === 0) {
       setDraftSaveState('done');

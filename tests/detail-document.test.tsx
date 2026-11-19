@@ -47,6 +47,48 @@ test("accepts a closed rich document and preserves existing attachments in the i
   ]);
   expect(initial.content[1]).toEqual(doc.content[1]);
 });
+
+test.each([10, 55, 100])(
+  "preserves YouTube width %i in the document and displayed player",
+  (widthPercent) => {
+    const document = {
+      type: "doc",
+      content: [
+        {
+          type: "youtubeVideo",
+          attrs: { videoId: "abcdefghijk", widthPercent },
+        },
+      ],
+    };
+    expect(validateDetailDocument(document)).toEqual({ ok: true, document });
+    const view = render(<DetailContent document={document} images={[]} />);
+    const play = screen.getByRole("button", { name: /유튜브 동영상 보기/ });
+    expect(play.parentElement?.style.width).toBe(`${widthPercent}%`);
+    expect(play.parentElement?.style.aspectRatio).toBe("16 / 9");
+    expect(view.container.querySelector("iframe")).toBeNull();
+    fireEvent.click(play);
+    expect(
+      view.container.querySelector("iframe")?.parentElement?.style.width,
+    ).toBe(`${widthPercent}%`);
+  },
+);
+
+test.each([null, "55", 9, 101, 55.5, {}, false])(
+  "rejects invalid YouTube width %j",
+  (widthPercent) => {
+    expect(
+      validateDetailDocument({
+        type: "doc",
+        content: [
+          {
+            type: "youtubeVideo",
+            attrs: { videoId: "abcdefghijk", widthPercent },
+          },
+        ],
+      }).ok,
+    ).toBe(false);
+  },
+);
 test.each([
   { type: "image", attrs: { src: "https://external.example/image" } },
   { type: "profileMedia", attrs: { fileId: id, mime: "text/html" } },
@@ -91,7 +133,7 @@ test("enforces media count, duplicates and text limits across blocks", () => {
     }).ok,
   ).toBe(false);
 });
-test("renders only registered files and connects YouTube only after a click", () => {
+test("renders registered files and a YouTube thumbnail before loading the player on click", () => {
   const view = render(
     <DetailContent
       document={doc}
@@ -110,10 +152,29 @@ test("renders only registered files and connects YouTube only after a click", ()
     "/api/profile-detail-images/" + id,
   );
   expect(view.container.querySelector("iframe")).toBeNull();
+  const thumbnail = screen.getByRole("img", { name: "유튜브 동영상 썸네일" });
+  expect(thumbnail.getAttribute("src")).toBe(
+    "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg",
+  );
+  expect(thumbnail.getAttribute("referrerpolicy")).toBe("no-referrer");
+  fireEvent.error(thumbnail);
+  expect(
+    screen.queryByRole("img", { name: "유튜브 동영상 썸네일" }),
+  ).toBeNull();
+  expect(
+    (
+      screen.getByRole("button", {
+        name: "유튜브 동영상 보기",
+      }) as HTMLButtonElement
+    ).disabled,
+  ).toBe(false);
   fireEvent.click(screen.getByRole("button", { name: /유튜브 동영상 보기/ }));
   expect(view.container.querySelector("iframe")?.getAttribute("src")).toBe(
-    "https://www.youtube-nocookie.com/embed/abcdefghijk",
+    "https://www.youtube-nocookie.com/embed/abcdefghijk?autoplay=1&playsinline=1",
   );
+  expect(
+    view.container.querySelector("iframe")?.getAttribute("allow"),
+  ).toContain("autoplay");
   view.rerender(<DetailContent document={doc} images={[]} />);
   expect(view.container.querySelector("img")).toBeNull();
 });

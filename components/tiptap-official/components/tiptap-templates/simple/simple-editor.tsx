@@ -115,7 +115,17 @@ export function SimpleEditor({
               ...(node.attrs?.crop != null ? { crop: node.attrs.crop } : {}),
             },
           }
-        : node,
+        : node.type === "youtubeVideo"
+          ? {
+              type: node.type,
+              attrs: {
+                videoId: node.attrs?.videoId,
+                ...(node.attrs?.widthPercent != null
+                  ? { widthPercent: node.attrs.widthPercent }
+                  : {}),
+              },
+            }
+          : node,
     ),
   });
 

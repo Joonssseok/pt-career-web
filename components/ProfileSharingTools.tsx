@@ -13,27 +13,6 @@ function qrPngBlob(image: string) {
   return new Blob([bytes], { type: "image/png" });
 }
 
-function drawHeadline(context: CanvasRenderingContext2D, text: string) {
-  const lines: string[] = [];
-  let line = "";
-  for (const character of text.replace(/\s+/g, " ")) {
-    if (context.measureText(line + character).width > 600 && line) {
-      lines.push(line);
-      line = "";
-    }
-    line += character;
-  }
-  if (line) lines.push(line);
-  lines.slice(0, 3).forEach((value, index) => {
-    if (index === 2 && lines.length > 3) {
-      while (context.measureText(`${value}…`).width > 600)
-        value = value.slice(0, -1);
-      value += "…";
-    }
-    context.fillText(value, 74, 338 + index * 36);
-  });
-}
-
 export function ProfileSharingTools({
   profileId,
   displayName,
@@ -51,8 +30,6 @@ export function ProfileSharingTools({
   compact?: boolean;
   preview?: boolean;
 }) {
-  const [blue, setBlue] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [message, setMessage] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
@@ -170,203 +147,6 @@ export function ProfileSharingTools({
     }
   };
 
-  const downloadCard = async () => {
-    if (preview) {
-      setMessage("예시 화면에서는 명함 파일을 저장하지 않습니다.");
-      return;
-    }
-    if (!url || !qrImage || saving) return;
-    setSaving(true);
-    setMessage("");
-    try {
-      await document.fonts.load(
-        '650 60px "Pretendard Variable"',
-        name + introduction,
-      );
-      await document.fonts.ready;
-      const canvas = document.createElement("canvas");
-      canvas.width = 1050;
-      canvas.height = 600;
-      const context = canvas.getContext("2d");
-      if (!context) throw new Error("canvas-unavailable");
-      context.fillStyle = blue ? "#2563eb" : "#ffffff";
-      context.fillRect(0, 0, 1050, 600);
-      context.strokeStyle = blue ? "#ffffff33" : "#dbeafe";
-      context.lineWidth = 2;
-      for (const y of [440, 500]) {
-        context.beginPath();
-        context.moveTo(260, 600);
-        context.bezierCurveTo(500, y + 50, 740, y + 100, 1050, y - 100);
-        context.stroke();
-      }
-      context.font = '800 32px "Pretendard Variable", Pretendard, sans-serif';
-      context.fillStyle = blue ? "#ffffff" : "#0f172a";
-      context.fillText("PT", 72, 97);
-      context.fillStyle = blue ? "#ffffff" : "#2563eb";
-      context.fillText("Career", 123, 97);
-      context.fillStyle = blue ? "#ffffff" : "#0f172a";
-      context.font = '650 60px "Pretendard Variable", Pretendard, sans-serif';
-      context.fillText(name, 72, 272, 630);
-      context.fillStyle = blue ? "#dbeafe" : "#64748b";
-      context.font = '25px "Pretendard Variable", Pretendard, sans-serif';
-      drawHeadline(context, introduction);
-      const qrPicture = new Image();
-      await new Promise<void>((resolve, reject) => {
-        qrPicture.onload = () => resolve();
-        qrPicture.onerror = () => reject(new Error("qr-image-unavailable"));
-        qrPicture.src = qrImage;
-      });
-      context.imageSmoothingEnabled = false;
-      context.drawImage(qrPicture, 740, 210, 240, 240);
-      context.fillStyle = blue ? "#ffffff" : "#2563eb";
-      context.font = '20px "Pretendard Variable", Pretendard, sans-serif';
-      context.fillText(url, 74, 526, 906);
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, "image/png"),
-      );
-      if (!blob) throw new Error("image-unavailable");
-      const blobUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement("a");
-      anchor.href = blobUrl;
-      anchor.download = `pt-career-card-${blue ? "blue" : "basic"}.png`;
-      anchor.click();
-      setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-      setMessage("명함 이미지 저장을 시작했어요.");
-    } catch {
-      setMessage("명함 이미지를 만들지 못했어요. 잠시 후 다시 시도해주세요.");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const cardContent = (
-    <section
-      id="card"
-      aria-labelledby="profile-card-title"
-      className="mt-8 scroll-mt-28 border-t border-slate-200 pt-6"
-    >
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h3
-            id="profile-card-title"
-            className="text-lg font-bold text-slate-950"
-          >
-            프로필 명함
-          </h3>
-          <p className="mt-1 text-caption text-slate-500">
-            이름과 소개, 공유 주소를 한 장에 담았어요.
-          </p>
-        </div>
-        <div
-          role="group"
-          aria-label="명함 디자인"
-          className="flex gap-1 rounded-lg border border-slate-200 p-1"
-        >
-          {[
-            { value: false, label: "기본형" },
-            { value: true, label: "블루" },
-          ].map((format) => (
-            <button
-              key={format.label}
-              type="button"
-              aria-pressed={blue === format.value}
-              disabled={saving}
-              onClick={() => setBlue(format.value)}
-              className={`min-h-11 rounded-md px-3 text-caption disabled:cursor-wait ${blue === format.value ? "bg-blue-50 font-semibold text-primary" : "text-slate-500 hover:bg-slate-50"} ${focusClass}`}
-            >
-              {format.label}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="overflow-hidden rounded-2xl bg-slate-50 p-3 sm:p-7">
-        <div
-          className={`relative isolate flex aspect-[7/4] w-full flex-col overflow-hidden rounded-xl border p-[7%] shadow-sm ${blue ? "border-blue-600 bg-primary text-white" : "border-blue-100 bg-white text-slate-950"}`}
-        >
-          <div
-            aria-hidden="true"
-            className={`pointer-events-none absolute -right-[9%] -bottom-[3%] -z-10 h-[90%] w-[95%] ${blue ? "opacity-25" : ""}`}
-          >
-            <svg
-              viewBox="0 0 650 350"
-              fill="none"
-              preserveAspectRatio="none"
-              className="size-full"
-            >
-              <path
-                d="M0 310C180 310 200 230 320 240S500 180 650 70M0 335C180 335 210 265 335 275S530 190 650 120"
-                stroke={blue ? "#ffffff" : "#dbeafe"}
-                strokeWidth="1.5"
-              />
-            </svg>
-          </div>
-          <p className="text-caption font-extrabold tracking-tight sm:text-lg">
-            PT{" "}
-            <span className={blue ? "text-white" : "text-primary"}>Career</span>
-          </p>
-          <div className="flex min-h-0 flex-1 items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-xl font-semibold tracking-tight sm:text-3xl">
-                {name}
-              </p>
-              <p
-                className={`mt-1 truncate text-micro sm:mt-2 sm:text-xs ${blue ? "text-blue-100" : "text-slate-500"}`}
-              >
-                {introduction}
-              </p>
-            </div>
-            {qrImage && (
-              <img
-                src={qrImage}
-                alt="공개 프로필 QR코드"
-                width={1024}
-                height={1024}
-                className="aspect-square w-[26%] shrink-0 bg-white"
-              />
-            )}
-          </div>
-          <p
-            className={`truncate text-tiny sm:text-micro ${blue ? "text-white" : "text-primary"}`}
-            title={url}
-          >
-            {url}
-          </p>
-        </div>
-      </div>
-      <div className="mt-4 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <p className="text-caption leading-relaxed text-slate-500">
-          PNG 이미지 · 1050 × 600px
-          <br />
-          저장한 명함을 SNS나 메시지에 첨부해보세요.
-        </p>
-        <button
-          type="button"
-          onClick={downloadCard}
-          disabled={saving || !qrImage}
-          className={`w-full sm:w-auto ${primaryClass}`}
-        >
-          <svg
-            aria-hidden="true"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.7"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 3v12m-4-4 4 4 4-4M4 16v5h16v-5" />
-          </svg>
-          {saving ? "이미지 준비 중…" : "명함 이미지 저장"}
-        </button>
-      </div>
-      <p className="mt-3 text-caption text-slate-500">
-        QR코드를 스캔하면 공개 중인 대표 프로필로 연결돼요.
-      </p>
-    </section>
-  );
-
   return (
     <section
       id="share"
@@ -386,7 +166,7 @@ export function ProfileSharingTools({
           공유 관리
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-slate-500">
-          내 공개 프로필을 링크와 명함으로 전해보세요.
+          내 공개 프로필을 링크와 QR코드로 전해보세요.
         </p>
       </header>
 
@@ -425,7 +205,7 @@ export function ProfileSharingTools({
             {availabilityError
               ? "페이지를 새로고침해 다시 확인해주세요. 계속 문제가 생기면 잠시 후 다시 시도해주세요."
               : !published
-                ? "프로필을 작성하고 공개 전 확인을 마친 뒤 대표 프로필을 게시해주세요. 게시 후 링크 공유와 명함 저장을 이용할 수 있어요."
+                ? "프로필을 작성하고 공개 전 확인을 마친 뒤 대표 프로필을 게시해주세요. 게시 후 링크 공유와 QR코드를 이용할 수 있어요."
                 : "대표 프로필의 공개 승인과 공개 설정을 확인해주세요."}
           </p>
           {availabilityError ? (
@@ -554,17 +334,6 @@ export function ProfileSharingTools({
           <p className="mt-1 text-caption leading-relaxed text-slate-500">
             카카오톡은 기기의 공유 메뉴에서 직접 선택해주세요.
           </p>
-
-          {compact ? (
-            <details className={styles.cardDetails}>
-              <summary>
-                명함 디자인·이미지 저장 <span aria-hidden="true">⌄</span>
-              </summary>
-              {cardContent}
-            </details>
-          ) : (
-            cardContent
-          )}
         </>
       )}
       <p

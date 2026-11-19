@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import {
   Node,
   ReactNodeViewRenderer,
@@ -8,7 +9,32 @@ import {
 import { Plugin } from "@tiptap/pm/state";
 import { photoNodeView } from "./PhotoNodeView";
 import { YoutubeVideo } from "./YoutubeVideo";
-function MediaView({ node, deleteNode, selected, editor }: NodeViewProps) {
+function MediaView({
+  node,
+  deleteNode,
+  selected,
+  editor,
+  updateAttributes,
+  view,
+}: NodeViewProps) {
+  const [editable, setEditable] = useState(editor.isEditable);
+  useEffect(() => {
+    const sync = () => setEditable(editor.isEditable);
+    const observer = new MutationObserver(sync);
+    observer.observe(view.dom, {
+      attributes: true,
+      attributeFilter: ["contenteditable"],
+    });
+    editor.on("update", sync);
+    sync();
+    return () => {
+      observer.disconnect();
+      editor.off("update", sync);
+    };
+  }, [editor, view]);
+  const youtube = node.type.name === "youtubeVideo";
+  const width =
+    typeof node.attrs.widthPercent === "number" ? node.attrs.widthPercent : 100;
   return (
     <NodeViewWrapper
       className="detail-media-node"
@@ -17,8 +43,39 @@ function MediaView({ node, deleteNode, selected, editor }: NodeViewProps) {
     >
       <div className="detail-media-actions">
         <span data-drag-handle>⋮⋮ 끌어서 이동</span>
+        {youtube && (
+          <label className="detail-youtube-width">
+            너비{" "}
+            <input
+              type="range"
+              min="10"
+              max="100"
+              step="1"
+              aria-label="유튜브 너비"
+              value={width}
+              disabled={!editable}
+              onChange={(event) => {
+                if (editor.isEditable)
+                  updateAttributes({
+                    widthPercent: Number(event.target.value),
+                  });
+              }}
+            />
+            <output>{width}%</output>
+            <button
+              type="button"
+              disabled={!editable}
+              onClick={() => {
+                if (editor.isEditable) updateAttributes({ widthPercent: null });
+              }}
+            >
+              너비 초기화
+            </button>
+          </label>
+        )}
         <button
           type="button"
+          disabled={!editable}
           onClick={() => {
             if (editor.isEditable) deleteNode();
           }}
@@ -28,7 +85,10 @@ function MediaView({ node, deleteNode, selected, editor }: NodeViewProps) {
         </button>
       </div>
       {node.type.name === "youtubeVideo" ? (
-        <YoutubeVideo videoId={String(node.attrs.videoId)} />
+        <YoutubeVideo
+          videoId={String(node.attrs.videoId)}
+          widthPercent={width}
+        />
       ) : String(node.attrs.mime).startsWith("video/") ? (
         <video
           src={node.attrs.src || undefined}
@@ -94,7 +154,7 @@ export const YoutubeVideoNode = Node.create({
   atom: true,
   draggable: true,
   addAttributes() {
-    return { videoId: { default: null } };
+    return { videoId: { default: null }, widthPercent: { default: null } };
   },
   parseHTML() {
     return [];

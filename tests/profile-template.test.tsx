@@ -135,11 +135,43 @@ function openTab(name: string | RegExp) {
   fireEvent.click(tab(name));
 }
 function search(value: string) {
+  if (!screen.queryByRole("searchbox"))
+    fireEvent.click(
+      screen.getByRole("button", { name: "프로필 검색", exact: true }),
+    );
   fireEvent.change(screen.getByRole("searchbox"), { target: { value } });
 }
 function panel(id: string) {
   return document.querySelector<HTMLElement>(`[data-profile-panel="${id}"]`)!;
 }
+
+test("search starts collapsed beside video and supports focus, Escape, and clearing on close", async () => {
+  render(fixture());
+  const toggle = screen.getByRole("button", {
+    name: "프로필 검색",
+    exact: true,
+  });
+  expect(screen.queryByRole("searchbox")).toBeNull();
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  expect(
+    tab("영상").compareDocumentPosition(toggle) &
+      Node.DOCUMENT_POSITION_FOLLOWING,
+  ).toBeTruthy();
+  search("needle");
+  const input = screen.getByRole("searchbox");
+  expect(document.activeElement).toBe(input);
+  expect(screen.getByRole("region", { name: "프로필 검색 결과" })).toBeTruthy();
+  fireEvent.keyDown(input, { key: "Escape" });
+  expect(document.activeElement).toBe(toggle);
+  expect(screen.queryByRole("searchbox")).toBeNull();
+  expect(screen.queryByRole("region", { name: "프로필 검색 결과" })).toBeNull();
+  expect(panel("home").hidden).toBe(false);
+  fireEvent.click(toggle);
+  expect((screen.getByRole("searchbox") as HTMLInputElement).value).toBe("");
+  fireEvent.click(toggle);
+  expect(screen.queryByRole("searchbox")).toBeNull();
+  await act(async () => {});
+});
 
 test("reads a shared tab URL, preserves query/hash/state, and responds to back and forward", async () => {
   window.history.replaceState(

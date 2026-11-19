@@ -7,6 +7,7 @@ import {
   Activity,
   CATEGORIES,
   STORAGE_LIMIT,
+  STORAGE_LIMIT_MB,
   fileBytes,
 } from "@/lib/damoa/categories";
 import { recordFormIssues, recordPeriod } from "@/lib/damoa/record-form";
@@ -202,7 +203,9 @@ export function DamoaWorkspace({ owner }: { owner: string }) {
       fileBytes(records.filter((r) => r.id === draft.id)) +
       fileBytes([{ ...draft, files: [...draft.files, ...additions] }]);
     if (total > STORAGE_LIMIT) {
-      setFormError("첨부하면 100MB를 초과합니다. 파일 수나 크기를 줄여주세요.");
+      setFormError(
+        `첨부하면 ${STORAGE_LIMIT_MB}MB를 초과합니다. 파일 수나 크기를 줄여주세요.`,
+      );
       return;
     }
     setDraft({ ...draft, files: [...draft.files, ...additions] });

@@ -68,6 +68,9 @@ export function ProfileTemplate({
   >({});
   const [activeTab, setActiveTab] = useState<ProfileTemplateTab>("home");
   const [query, setQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchInput = useRef<HTMLInputElement>(null);
+  const searchButton = useRef<HTMLButtonElement>(null);
   const [items, setItems] = useState<SearchItem[] | null>(null);
   const [hasVideoLink, setHasVideoLink] = useState(false);
   const [destination, setDestination] = useState<{
@@ -79,6 +82,16 @@ export function ProfileTemplate({
   );
   const indexedCareerCount =
     items?.filter((item) => item.tab === "career").length ?? careerCount;
+
+  useEffect(() => {
+    if (searchOpen) searchInput.current?.focus();
+  }, [searchOpen]);
+
+  function closeSearch() {
+    setSearchOpen(false);
+    setQuery("");
+    searchButton.current?.focus();
+  }
 
   useEffect(() => {
     if (ownerPreview) return;
@@ -301,37 +314,69 @@ export function ProfileTemplate({
         </aside>
         <div className={styles.read}>
           <div className={styles.nav}>
-            <div
-              className={styles.tabs}
-              role="tablist"
-              aria-label="전문가 프로필"
-            >
-              {tabs.map((tab, index) => (
-                <button
-                  key={tab.id}
-                  ref={(button) => {
-                    tabButtons.current[tab.id] = button;
-                  }}
-                  type="button"
-                  role="tab"
-                  id={`${id}-tab-${tab.id}`}
-                  aria-controls={`${id}-panel-${tab.id}`}
-                  aria-selected={activeTab === tab.id}
-                  tabIndex={activeTab === tab.id ? 0 : -1}
-                  onClick={() => selectTab(tab.id)}
-                  onKeyDown={(event) => moveTab(event, index)}
+            <div className={styles.tabRow}>
+              <div
+                className={styles.tabs}
+                role="tablist"
+                aria-label="전문가 프로필"
+              >
+                {tabs.map((tab, index) => (
+                  <button
+                    key={tab.id}
+                    ref={(button) => {
+                      tabButtons.current[tab.id] = button;
+                    }}
+                    type="button"
+                    role="tab"
+                    id={`${id}-tab-${tab.id}`}
+                    aria-controls={`${id}-panel-${tab.id}`}
+                    aria-selected={activeTab === tab.id}
+                    tabIndex={activeTab === tab.id ? 0 : -1}
+                    onClick={() => selectTab(tab.id)}
+                    onKeyDown={(event) => moveTab(event, index)}
+                  >
+                    {tab.label}
+                    {tab.id === "career" && indexedCareerCount > 0 && (
+                      <sup>{indexedCareerCount}</sup>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <button
+                ref={searchButton}
+                type="button"
+                className={styles.searchToggle}
+                aria-label="프로필 검색"
+                aria-expanded={searchOpen}
+                aria-controls={`${id}-search-area`}
+                onClick={() =>
+                  searchOpen ? closeSearch() : setSearchOpen(true)
+                }
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  aria-hidden="true"
                 >
-                  {tab.label}
-                  {tab.id === "career" && indexedCareerCount > 0 && (
-                    <sup>{indexedCareerCount}</sup>
-                  )}
-                </button>
-              ))}
+                  <circle cx="10.5" cy="10.5" r="6.5" />
+                  <path d="m16 16 4.5 4.5" />
+                </svg>
+              </button>
             </div>
             <div
+              id={`${id}-search-area`}
+              hidden={!searchOpen}
               className={styles.find}
               role="search"
               aria-label="이 전문가의 프로필 검색"
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  closeSearch();
+                }
+              }}
             >
               <svg
                 viewBox="0 0 24 24"
@@ -347,6 +392,7 @@ export function ProfileTemplate({
                 이 전문가의 이력·글·영상에서 찾기
               </label>
               <input
+                ref={searchInput}
                 id={`${id}-search`}
                 type="search"
                 value={query}

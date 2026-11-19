@@ -75,12 +75,40 @@
   padding: 10px 0 0;
   margin-top: -10px;
 }
+.tabRow {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--color-profile-line);
+}
+.searchToggle {
+  display: grid;
+  place-items: center;
+  flex: none;
+  min-width: 44px;
+  min-height: 46px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-profile-sub);
+  cursor: pointer;
+}
+.searchToggle svg {
+  width: 20px;
+  height: 20px;
+}
+.searchToggle:hover,
+.searchToggle[aria-expanded="true"] {
+  color: var(--color-profile-ink);
+}
+.searchToggle:focus-visible {
+  outline-offset: -3px;
+}
 .tabs {
   display: flex;
+  min-width: 0;
   gap: 4px;
   overflow-x: auto;
   scrollbar-width: none;
-  border-bottom: 1px solid var(--color-profile-line);
 }
 .tabs::-webkit-scrollbar {
   display: none;
@@ -120,6 +148,9 @@
   position: relative;
   display: block;
   margin: 14px 0 0;
+}
+.find[hidden] {
+  display: none;
 }
 .find input {
   width: 100%;

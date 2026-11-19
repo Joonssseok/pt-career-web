@@ -116,6 +116,11 @@ export const CATEGORIES = [
   fields: fields.split("|"),
 }));
 export const STORAGE_LIMIT = 100 * 1024 * 1024;
+export const DATE_DETAIL_KEYS = {
+  start: "period_start",
+  end: "period_end",
+  ongoing: "period_ongoing",
+} as const;
 export type Attachment = {
   id: string;
   name: string;

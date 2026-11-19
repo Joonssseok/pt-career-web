@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ko" style="color-scheme:light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>다모아 경력 작성 시안</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/toss/tossface/dist/tossface.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap">
+<style>
+:root{
+  --bg:#F4F6F8; --surface:#FFFFFF; --ink:#17212B; --sub:#55626F; --line:#E2E7EC;
+  --blue:#2563EB; --tint:#DCE7FD; --soft:#EEF2F6;
+  --display:"Gowun Dodum","Pretendard Variable",sans-serif;
+  --body:"Pretendard Variable",Pretendard,Tossface,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.75;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button,input,select,textarea{font-family:inherit;color:inherit;font-size:17px}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:6px}
+[hidden]{display:none!important}
+.emo{font-family:Tossface,sans-serif}
+
+/* 공통 헤더·푸터 (현황판 기준) */
+.site{position:sticky;top:0;z-index:40;height:96px;background:rgba(255,255,255,.88);backdrop-filter:blur(24px)}
+.site .in{max-width:1240px;height:96px;margin:0 auto;padding:0 20px;display:flex;align-items:center;justify-content:space-between}
+.site .left{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.logo{font-size:calc(1.875rem + 1pt);font-weight:800;letter-spacing:-.025em;color:#0f172a;text-decoration:none;white-space:nowrap;line-height:1.2}
+.logo span{color:#2563eb}
+.site a.m{font-size:calc(.9375rem + 1pt);font-weight:500;color:#4b5563;text-decoration:none}
+.site .right{display:flex;gap:16px;align-items:center;transform:translateY(18px)}
+.site .right a:last-child{color:#2563eb}
+.site::after{content:"";position:absolute;inset:auto 0 0;height:2px;background:linear-gradient(90deg,transparent,#2563eb,transparent);pointer-events:none}
+@media(min-width:640px){.site .left{flex-direction:row;align-items:baseline;gap:24px}.logo{font-size:calc(2.25rem + 1pt)}.site .left a.m{transform:translateY(10px)}}
+@media(min-width:1024px){.site .in{padding:0 32px}.site .left,.site .right{gap:36px}}
+.foot{background:#fff;border-top:1px solid #e2e8f0;padding:32px 20px 112px;text-align:center;font-size:calc(.8125rem + 1pt);color:#475569;line-height:1.9}
+.foot b{display:block;font-size:calc(.9375rem + 1pt);color:#0f172a;font-weight:800}
+.foot b span{color:#2563eb}
+.foot nav{margin-top:8px;display:flex;gap:4px 16px;justify-content:center;flex-wrap:wrap}
+.foot nav a{min-height:44px;display:inline-flex;align-items:center;text-decoration:none}
+
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 72px;display:grid;gap:24px}
+@media(min-width:900px){.wrap{grid-template-columns:320px minmax(0,1fr);gap:40px}.pv{position:sticky;top:124px}}
+
+/* 왼쪽: 미리보기 (프로필 이력과 같은 타임라인 모양) */
+.pv{background:var(--surface);border-radius:28px;padding:28px;align-self:start}
+.cap{margin:0 0 18px;font-size:14px;color:var(--sub)}
+.tl{position:relative;padding-left:22px;border-left:2px solid var(--line);margin-left:5px}
+.tl::before{content:"";position:absolute;left:-7px;top:9px;width:12px;height:12px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 4px var(--tint)}
+.kind{font-size:13.5px;font-weight:600;color:var(--blue)}
+.pv h2{font-family:var(--display);font-weight:400;font-size:25px;line-height:1.4;margin:2px 0 4px;word-break:keep-all}
+.pv .ph{color:#A9B4BF}
+.pv p{margin:0;font-size:15.5px;color:var(--sub)}
+.pv .when{color:var(--ink);font-weight:600}
+.now{display:inline-block;margin-top:10px;background:var(--tint);color:var(--blue);font-size:13px;font-weight:600;border-radius:99px;padding:1px 10px}
+.pv .long{margin-top:12px;font-size:15px;line-height:1.7;white-space:pre-line}
+.prog{margin-top:24px;padding-top:18px;border-top:1px solid var(--line)}
+.prog div{display:flex;gap:6px}
+.prog i{flex:1;height:6px;border-radius:99px;background:var(--soft)}
+.prog i.on{background:var(--blue)}
+.prog p{margin-top:10px;font-size:14.5px}
+.prog p.ok{color:var(--blue);font-weight:600}
+
+/* 오른쪽: 작성 */
+.form{min-width:0;max-width:660px}
+.form h1{font-family:var(--display);font-weight:400;font-size:32px;line-height:1.3;margin:0}
+.lead{margin:6px 0 20px;color:var(--sub);font-size:16px}
+.cats{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -20px;padding:0 20px 2px}
+.cats button{flex:none;min-height:48px;padding:0 18px 0 14px;border:1px solid var(--line);border-radius:16px;background:var(--surface);cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:8px;font-size:16px}
+.cats button:hover{border-color:#C5CFD9}
+.cats button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+
+.sheet{background:var(--surface);border-radius:28px;margin-top:18px;padding:4px 28px}
+.q{padding:28px 0}
+.q+.q{border-top:1px solid var(--line)}
+.q>h2{font-family:var(--display);font-weight:400;font-size:23px;line-height:1.4;margin:0 0 4px;display:flex;align-items:baseline;gap:10px}
+.q>h2 small{font-family:var(--body);font-size:13.5px;color:var(--sub)}
+.f{display:block;margin-top:18px}
+.lab{display:block;font-size:15px;font-weight:600;color:var(--sub)}
+.lab i{font-style:normal;color:var(--blue)}
+.in{width:100%;min-height:54px;margin-top:6px;padding:12px 16px;border:1.5px solid transparent;border-radius:16px;background:var(--bg);transition:background .15s,border-color .15s}
+textarea.in{min-height:120px;line-height:1.7;resize:vertical;display:block}
+.in:hover{background:var(--soft)}
+.in:focus{background:#fff;border-color:var(--blue);outline:0}
+.in::placeholder{color:#8794A1}
+.hint{display:block;margin-top:6px;font-size:14px;color:var(--sub)}
+
+/* 기간 */
+.span{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:18px}
+.span select{min-height:54px;padding:0 34px 0 16px;border:1.5px solid transparent;border-radius:16px;background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%2355626F' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m1 1.5 5 5 5-5'/%3E%3C/svg%3E") no-repeat right 14px center;appearance:none;-webkit-appearance:none;cursor:pointer}
+.span select:focus{background-color:#fff;border-color:var(--blue);outline:0}
+.span select:disabled{color:#A9B4BF;cursor:not-allowed;opacity:.6}
+.span .side{display:inline-flex;align-items:center;gap:8px}
+.span .word{color:var(--sub);font-size:16px;margin-right:6px}
+.toggle{display:inline-flex;align-items:center;gap:10px;min-height:48px;margin-top:12px;padding:0 16px 0 12px;border-radius:99px;background:var(--bg);cursor:pointer;font-size:16px}
+.toggle:has(input:checked){background:var(--tint);color:var(--blue);font-weight:600}
+.toggle input{width:20px;height:20px;accent-color:var(--blue);margin:0}
+.total{margin:14px 0 0;font-size:16px;color:var(--sub)}
+.total b{color:var(--ink);font-family:var(--display);font-weight:400;font-size:21px;margin-left:6px}
+.total.bad,.total.bad b{color:#B42318;font-family:var(--body);font-size:15.5px}
+
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.opts button{min-height:46px;padding:0 18px;border:1.5px solid transparent;border-radius:99px;background:var(--bg);cursor:pointer;font-size:16px}
+.opts button:hover{background:var(--soft)}
+.opts button[aria-pressed="true"]{background:var(--tint);border-color:var(--blue);color:var(--blue);font-weight:600}
+.drop{width:100%;min-height:96px;margin-top:18px;border:1.5px dashed #C5CFD9;border-radius:18px;background:none;color:var(--sub);cursor:pointer;display:grid;place-content:center;gap:2px;font-size:16px;line-height:1.5}
+.drop b{color:var(--ink);font-weight:600}
+.drop span{font-size:14px}
+.drop:hover{border-color:var(--blue);background:var(--bg)}
+.place{width:100%;min-height:54px;margin-top:6px;border:0;border-radius:16px;background:var(--bg);text-align:left;padding:0 16px;color:var(--sub);cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+.soon{font-size:12.5px;background:#fff;color:var(--sub);border-radius:99px;padding:1px 10px}
+.more{min-height:48px;border:0;background:none;padding:0;color:var(--blue);font-weight:600;cursor:pointer;font-size:16px}
+.more small{font-weight:400;color:var(--sub);font-size:14px;margin-left:8px}
+
+.bar{position:fixed;inset:auto 0 0;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(16px);border-top:1px solid var(--line)}
+.bar div{max-width:1080px;margin:0 auto;padding:12px 20px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.bar span{font-size:14.5px;color:var(--sub);min-width:0}
+.go{flex:none;min-height:50px;padding:0 28px;border:0;border-radius:16px;background:var(--blue);color:#fff;font-weight:700;cursor:pointer}
+.go:disabled{background:#C5CFD9;cursor:not-allowed}
+@media(max-width:899px){
+  .pv{padding:22px;border-radius:24px}.pv h2{font-size:22px}
+  .form h1{font-size:27px}
+  .sheet{padding:0 20px;border-radius:24px}.q{padding:24px 0}.q>h2{font-size:21px}
+  .span .side{width:100%}.span .side select{flex:1;min-width:0}
+}
+</style>
+</head>
+<body>
+<nav class="site" aria-label="공통 메뉴">
+  <div class="in">
+    <div class="left"><a class="logo" href="#">PT <span>Career</span></a><a class="m" href="#">전문가 탐색</a></div>
+    <div class="right"><a class="m" href="#">마이페이지</a><a class="m" href="#">로그아웃</a></div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <aside class="pv" aria-label="저장 미리보기">
+    <p class="cap">보관함에 이렇게 저장돼요</p>
+    <div class="tl">
+      <span class="kind" id="pv-kind"></span>
+      <h2 id="pv-title"></h2>
+      <p id="pv-sub"></p>
+      <p class="when" id="pv-when"></p>
+      <span class="now" id="pv-now" hidden></span>
+      <p class="long" id="pv-long" hidden></p>
+    </div>
+    <div class="prog">
+      <div id="dots" aria-hidden="true"></div>
+      <p id="todo"></p>
+    </div>
+  </aside>
+
+  <form class="form" id="form" onsubmit="return false">
+    <h1 id="h1"></h1>
+    <p class="lead"><span style="color:var(--blue)">*</span> 표시 네 칸만 채우면 저장할 수 있어요. 나머지는 나중에 채워도 돼요.</p>
+    <div class="cats" role="group" aria-label="분류" id="cats"></div>
+
+    <div class="sheet">
+      <section class="q">
+        <h2 id="q1"></h2>
+        <label class="f"><span class="lab" id="l-title"></span>
+          <input class="in" id="title" maxlength="150" autocomplete="off"></label>
+        <label class="f"><span class="lab" id="l-sub"></span>
+          <input class="in" id="sub" maxlength="150" autocomplete="off"></label>
+      </section>
+
+      <section class="q">
+        <h2 id="q2"></h2>
+        <div class="span">
+          <span class="side"><select id="fy" aria-label="시작 연도"></select><select id="fm" aria-label="시작 월"></select><span class="word" id="w-from">부터</span></span>
+          <span class="side" id="to"><select id="ty" aria-label="종료 연도"></select><select id="tm" aria-label="종료 월"></select><span class="word">까지</span></span>
+        </div>
+        <label class="toggle" id="f-now"><input type="checkbox" id="nowc"><span id="l-now"></span></label>
+        <p class="total" id="total" hidden></p>
+      </section>
+
+      <section class="q">
+        <h2><span id="q3"></span><small>선택</small></h2>
+        <div class="f" id="f-opt">
+          <span class="lab" id="l-opt"></span>
+          <div class="opts" id="opts"></div>
+        </div>
+        <label class="f"><span class="lab" id="l-long"></span>
+          <textarea class="in" id="long" maxlength="5000"></textarea></label>
+        <div class="f" id="f-place">
+          <span class="lab">근무지 위치</span>
+          <button type="button" class="place"><span>지도에서 근무지 찾기</span><span class="soon">추후 연결</span></button>
+          <span class="hint">재직 중인 곳은 프로필의 "현 근무지"와 지도에 쓸 수 있어요.</span>
+        </div>
+      </section>
+
+      <section class="q">
+        <h2><span>증빙 자료가 있나요?</span><small>선택 · 나만 보기</small></h2>
+        <button type="button" class="drop"><b id="l-file"></b><span>사진·PDF · 파일 한 개 10MB까지</span></button>
+        <span class="hint">자료가 있으면 나중에 인증 표시를 받을 때 쓸 수 있어요.</span>
+      </section>
+
+      <section class="q" style="padding:14px 0">
+        <button type="button" class="more" id="moreb" aria-expanded="false"></button>
+        <div id="more" hidden></div>
+      </section>
+    </div>
+  </form>
+</main>
+
+<div class="bar"><div><span id="miss"></span><button class="go" id="go" type="button" disabled>비공개로 저장</button></div></div>
+
+<footer class="foot">
+  <b>PT <span>Career</span></b>
+  상호 피티커리어 · 대표자 김준석 · 사업자등록번호 179-24-02294<br>
+  소재지 경기도 성남시 중원구 산성대로 106, 3층 C342호 · 호스팅 서비스 Vercel Inc.
+  <nav aria-label="안내"><a href="#">서비스 소개</a><a href="#">이용약관</a><a href="#">개인정보처리방침</a><a href="#">제안·신고</a></nav>
+  © 2026 PT Career. 신뢰할 수 있는 전문가 찾기
+</footer>
+
+<script>
+(function(){
+  // 분류별 구성. when: range(시작~종료) | one(연월 하나). now: 진행 중 체크 문구(없으면 숨김)
+  var C={
+    career:{emo:"💼",name:"경력",q:["어디서 일했나요?","언제 일했나요?","어떤 일을 했나요?"],title:["근무지 이름","예: △△정형외과 재활센터"],sub:["직무·직책","예: 물리치료사, 재활팀장"],when:"range",now:"지금 재직 중이에요",nowTag:"재직 중",total:"근무 기간",
+      opt:["근무 형태",["정규직","계약직","파트타임","프리랜서","대표·운영"]],long:["담당 업무","예: 수술 후 재활, 만성 통증 운동 지도"],file:"재직·경력증명서 올리기",place:true,more:["부서","배운 점·성과","관련 링크","개인 메모 (나만 보기)"]},
+    academic:{emo:"🎓",name:"학력",q:["어느 학교를 다녔나요?","언제 다녔나요?","덧붙일 내용이 있나요?"],title:["학교 이름","예: ○○대학교"],sub:["학과·전공","예: 물리치료학과"],when:"range",now:"지금 재학 중이에요",nowTag:"재학 중",total:"재학 기간",
+      opt:["상태",["졸업","수료","재학","휴학","중퇴"]],long:["내용","예: 부전공, 졸업 논문 주제"],file:"졸업·재학증명서 올리기",more:["학위 과정","관련 링크","개인 메모 (나만 보기)"]},
+    license:{emo:"📜",name:"자격·면허",q:["어떤 자격인가요?","언제 취득했나요?","덧붙일 내용이 있나요?"],title:["자격·면허 이름","예: 물리치료사 면허"],sub:["발급 기관","예: 보건복지부"],when:"one",
+      opt:["상태",["취득","갱신","만료"]],long:["내용","예: 등급, 유효기간"],file:"자격증·면허증 올리기",more:["자격 번호 (나만 보기)","유효기간","관련 링크","개인 메모 (나만 보기)"]},
+    education:{emo:"📚",name:"교육·연수",q:["어떤 교육을 들었나요?","언제 들었나요?","무엇을 배웠나요?"],title:["과정 이름","예: 근골격 평가 과정"],sub:["교육 기관","예: 4S Academy"],when:"range",now:"지금 듣는 중이에요",nowTag:"수강 중",total:"교육 기간",
+      opt:["상태",["수료","참여","진행 중"]],long:["배운 내용","예: 어깨·골반 평가와 운동 처방"],file:"수료증 올리기",more:["교육 시간","국가·지역","관련 링크","개인 메모 (나만 보기)"]},
+    etc:{emo:"✨",name:"다른 활동",q:["어떤 활동을 했나요?","언제 했나요?","무엇을 했나요?"],title:["활동 이름","예: 복지관 어르신 운동 프로그램 보조"],sub:["주관한 곳","예: ○○종합사회복지관"],when:"range",now:"지금도 하고 있어요",nowTag:"진행 중",total:"활동 기간",
+      opt:null,long:["짧은 기록","한 문장으로 시작해도 좋아요."],file:"사진·확인서 올리기",more:["본인 역할","배운 점·결과","관련 링크","개인 메모 (나만 보기)"]}
+  };
+  var cur="career", opt="", $=function(id){return document.getElementById(id)};
+  var NOW=new Date(), Y=NOW.getFullYear();
+  function fill(sel,a,b,suffix,first){var h='<option value="">'+first+'</option>',d=a>b?-1:1;for(var i=a;i!==b+d;i+=d)h+='<option value="'+i+'">'+i+suffix+'</option>';sel.innerHTML=h}
+  fill($("fy"),Y,Y-50,"년","연도");fill($("ty"),Y,Y-50,"년","연도");fill($("fm"),1,12,"월","월");fill($("tm"),1,12,"월","월");
+  $("cats").innerHTML=Object.keys(C).map(function(k){return '<button type="button" data-cat="'+k+'"><span class="emo" aria-hidden="true">'+C[k].emo+'</span>'+C[k].name+'</button>'}).join("");
+
+  function star(t){return t+' <i aria-hidden="true">*</i>'}
+  function setup(){
+    var c=C[cur]; opt="";
+    document.querySelectorAll("[data-cat]").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.cat===cur)});
+    $("h1").textContent=c.name+" 기록하기";
+    $("q1").textContent=c.q[0];$("q2").textContent=c.q[1];$("q3").textContent=c.q[2];
+    $("l-title").innerHTML=star(c.title[0]);$("title").placeholder=c.title[1];
+    $("l-sub").innerHTML=star(c.sub[0]);$("sub").placeholder=c.sub[1];
+    $("to").hidden=c.when==="one";$("w-from").hidden=c.when==="one";
+    $("f-now").hidden=!c.now;$("l-now").textContent=c.now||"";if(!c.now)$("nowc").checked=false;
+    $("f-opt").hidden=!c.opt;
+    if(c.opt){$("l-opt").textContent=c.opt[0];$("opts").innerHTML=c.opt[1].map(function(o){return '<button type="button" data-opt="'+o+'" aria-pressed="false">'+o+'</button>'}).join("")}
+    $("l-long").textContent=c.long[0];$("long").placeholder=c.long[1];
+    $("l-file").textContent=c.file;
+    $("moreb").innerHTML='＋ 더 적기<small>'+c.more.map(function(m){return m.replace(/ \(.*/,"")}).join(" · ")+'</small>';
+    $("moreb").setAttribute("aria-expanded","false");$("more").hidden=true;
+    $("more").innerHTML=c.more.map(function(m){return '<label class="f"><span class="lab">'+m+'</span><input class="in" maxlength="1000"></label>'}).join("")+'<div style="height:14px"></div>';
+    show();
+  }
+  function ym(y,m){return y&&m?y+". "+("0"+m).slice(-2)+".":""}
+  function show(){
+    var c=C[cur], t=$("title").value.trim(), s=$("sub").value.trim(), now=$("nowc").checked&&!!c.now;
+    var a=ym($("fy").value,$("fm").value), b=now?"현재":ym($("ty").value,$("tm").value);
+    $("ty").disabled=$("tm").disabled=now;
+    $("f-place").hidden=!(c.place&&now);
+    $("pv-kind").textContent=c.name;
+    $("pv-title").textContent=t||c.title[0];$("pv-title").className=t?"":"ph";
+    $("pv-sub").textContent=[s,opt].filter(Boolean).join(" · ");
+    var len="", wrong=false;
+    if(c.when==="range"&&a&&b){ // 시작~종료(또는 이번 달) 개월 수
+      var ey=now?Y:+$("ty").value, em=now?NOW.getMonth()+1:+$("tm").value;
+      var n=(ey-$("fy").value)*12+(em-$("fm").value)+1;
+      if(n<1)wrong=true; else len=[n>=12?Math.floor(n/12)+"년":"",n%12?n%12+"개월":""].filter(Boolean).join(" ");
+    }
+    $("pv-when").textContent=c.when==="one"?a:(a&&b?a+" – "+b:a);
+    $("total").hidden=!(len||wrong);$("total").className="total"+(wrong?" bad":"");
+    $("total").innerHTML=wrong?"종료가 시작보다 빨라요. 기간을 확인해 주세요.":c.total+"<b>"+len+"</b>";
+    $("pv-now").hidden=!now;$("pv-now").textContent=c.nowTag||"";
+    $("pv-long").hidden=!$("long").value.trim();$("pv-long").textContent=$("long").value.trim();
+    var need=[[c.title[0],!!t],[c.sub[0],!!s],[c.when==="one"?"취득 연월":"시작 연월",!!a],[c.when==="one"?"":(c.now?"종료 연월 또는 "+c.nowTag:"종료 연월"),c.when==="one"||!!b]].filter(function(x){return x[0]});
+    var miss=need.filter(function(x){return !x[1]}).map(function(x){return x[0]});
+    $("dots").innerHTML=need.map(function(x){return '<i class="'+(x[1]?"on":"")+'"></i>'}).join("");
+    var ok=!wrong&&!miss.length;
+    var msg=wrong?"기간을 확인해 주세요.":ok?"필수 칸을 다 채웠어요.":"남은 칸: "+miss.join(", ");
+    $("todo").textContent=msg;$("todo").className=ok?"ok":"";
+    $("miss").textContent=msg;$("go").disabled=!ok;
+  }
+  document.addEventListener("click",function(e){
+    var b=e.target.closest("button");if(!b)return;
+    if(b.dataset.cat){cur=b.dataset.cat;setup()}
+    else if(b.dataset.opt){opt=opt===b.dataset.opt?"":b.dataset.opt;document.querySelectorAll("[data-opt]").forEach(function(o){o.setAttribute("aria-pressed",o.dataset.opt===opt)});show()}
+    else if(b.id==="moreb"){var o=$("more").hidden;$("more").hidden=!o;b.setAttribute("aria-expanded",o);b.firstChild.textContent=o?"－ 접기":"＋ 더 적기"}
+  });
+  $("form").addEventListener("input",show);$("form").addEventListener("change",show);
+  setup();
+})();
+</script>
+</body>
+</html>

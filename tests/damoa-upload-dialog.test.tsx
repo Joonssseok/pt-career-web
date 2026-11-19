@@ -7,7 +7,7 @@ import {
   cleanup,
 } from "@testing-library/react";
 import { DamoaWorkspace } from "../app/my/damoa/DamoaWorkspace";
-import { saveActivity } from "../lib/damoa/server-store";
+import { saveActivity, loadFileUsage } from "../lib/damoa/server-store";
 
 jest.mock("../lib/damoa/server-store", () => ({
   loadActivities: jest.fn().mockResolvedValue([]),
@@ -35,6 +35,7 @@ beforeAll(() => {
 afterEach(() => {
   cleanup();
   jest.clearAllMocks();
+  jest.mocked(loadFileUsage).mockResolvedValue(0);
 });
 
 async function openUpload() {
@@ -65,6 +66,24 @@ test("dropping a supported image attaches it without saving", async () => {
     screen.getByRole("button", { name: "photo.png 첨부 해제" }),
   ).toBeTruthy();
 });
+
+test.each([
+  [40, false],
+  [41, true],
+  [60, true],
+])(
+  "50MB quota checks new files with %iMB already stored",
+  async (usedMb, blocked) => {
+    jest.mocked(loadFileUsage).mockResolvedValue(Number(usedMb) * 1024 * 1024);
+    const { target } = await openUpload();
+    const file = new File(["image"], "quota.png", { type: "image/png" });
+    Object.defineProperty(file, "size", { value: 10 * 1024 * 1024 });
+    fireEvent.drop(target, { dataTransfer: { files: [file] } });
+    expect(Boolean(screen.queryByText("quota.png"))).toBe(!blocked);
+    expect(Boolean(screen.queryByText(/첨부하면 50MB를 초과/))).toBe(blocked);
+    expect(saveActivity).not.toHaveBeenCalled();
+  },
+);
 
 test("region and organizer follow the activity name and are included when saved", async () => {
   await openUpload();

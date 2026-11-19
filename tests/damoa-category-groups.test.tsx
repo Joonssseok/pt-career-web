@@ -324,3 +324,15 @@ test("library searches legacy records without details", () => {
   expect(screen.getByText("A 기관")).toBeTruthy();
   expect(Object.prototype.hasOwnProperty.call(legacy, "details")).toBe(false);
 });
+
+test("50MB limit keeps over-quota records readable and shows actual usage", () => {
+  const props = libraryProps({ used: 60 * 1024 * 1024 });
+  render(<DamoaLibrary {...props} />);
+  expect(screen.getByText("60.0 / 50MB")).toBeTruthy();
+  expect(screen.getByRole("progressbar").getAttribute("aria-valuenow")).toBe(
+    "100",
+  );
+  fireEvent.click(screen.getByRole("button", { name: /^A 기관/ }));
+  expect(props.onEdit).toHaveBeenCalledWith(records[0]);
+  expect(props.onCleanup).not.toHaveBeenCalled();
+});

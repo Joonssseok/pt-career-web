@@ -6,6 +6,7 @@ import { formatActivityPeriod } from "@/lib/activity-period";
 import {
   CATEGORIES,
   STORAGE_LIMIT,
+  STORAGE_LIMIT_MB,
   type Activity,
   type Attachment,
 } from "@/lib/damoa/categories";
@@ -157,7 +158,7 @@ export function DamoaLibrary({
     100,
     Math.max(0, ((Number.isFinite(used) ? used : 0) / STORAGE_LIMIT) * 100),
   );
-  const storage = `${(Math.max(0, Number.isFinite(used) ? used : 0) / 1024 / 1024).toFixed(1)} / 100MB`;
+  const storage = `${(Math.max(0, Number.isFinite(used) ? used : 0) / 1024 / 1024).toFixed(1)} / ${STORAGE_LIMIT_MB}MB`;
   const filtered =
     !!query || selected !== "all" || (view === "files" && fileFilter !== "all");
   const hasResults = view === "files" ? files.length > 0 : visible.length > 0;

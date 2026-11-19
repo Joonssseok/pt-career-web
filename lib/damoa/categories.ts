@@ -115,7 +115,8 @@ export const CATEGORIES = [
   group,
   fields: fields.split("|"),
 }));
-export const STORAGE_LIMIT = 100 * 1024 * 1024;
+export const STORAGE_LIMIT = 50 * 1024 * 1024;
+export const STORAGE_LIMIT_MB = STORAGE_LIMIT / 1024 / 1024;
 export const DATE_DETAIL_KEYS = {
   start: "period_start",
   end: "period_end",

@@ -2,6 +2,7 @@ import {
   Activity,
   fileBytes,
   STORAGE_LIMIT,
+  STORAGE_LIMIT_MB,
   validateActivity,
 } from "./categories";
 async function openDatabase(): Promise<IDBDatabase> {
@@ -55,8 +56,7 @@ export async function saveActivity(activity: Activity): Promise<void> {
           (row: Activity) => row.id !== activity.id,
         );
         if (fileBytes([...rows, activity]) > STORAGE_LIMIT) {
-          failure =
-            "개인 저장 용량 100MB를 초과합니다. 첨부 자료를 줄여주세요.";
+          failure = `개인 저장 용량 ${STORAGE_LIMIT_MB}MB를 초과합니다. 첨부 자료를 줄여주세요.`;
           tx.abort();
           return;
         }

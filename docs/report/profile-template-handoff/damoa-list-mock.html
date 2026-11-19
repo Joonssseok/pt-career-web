@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ko" style="color-scheme:light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>다모아 보관함 시안</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/toss/tossface/dist/tossface.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&display=swap">
+<style>
+:root{
+  --bg:#F4F6F8; --surface:#FFFFFF; --ink:#17212B; --sub:#55626F; --line:#E2E7EC;
+  --blue:#2563EB; --tint:#DCE7FD; --soft:#EEF2F6;
+  --display:"Gowun Dodum","Pretendard Variable",sans-serif;
+  --body:"Pretendard Variable",Pretendard,Tossface,system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.75;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+button,input{font-family:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--blue);outline-offset:3px;border-radius:6px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+[hidden]{display:none!important}
+
+/* 공통 헤더 (현황판 기준) */
+.site{position:sticky;top:0;z-index:40;height:96px;background:rgba(255,255,255,.88);backdrop-filter:blur(24px)}
+.site .in{max-width:1240px;height:96px;margin:0 auto;padding:0 20px;display:flex;align-items:center;justify-content:space-between}
+.site .left{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
+.logo{font-size:calc(1.875rem + 1pt);font-weight:800;letter-spacing:-.025em;color:#0f172a;text-decoration:none;white-space:nowrap;line-height:1.2}
+.logo span{color:#2563eb}
+.site a.m{font-size:calc(.9375rem + 1pt);font-weight:500;color:#4b5563;text-decoration:none}
+.site .right{display:flex;gap:16px;align-items:center;transform:translateY(18px)}
+.site .right a:last-child{color:#2563eb}
+.site::after{content:"";position:absolute;inset:auto 0 0;height:2px;background:linear-gradient(90deg,transparent,#2563eb,transparent);pointer-events:none}
+@media(min-width:640px){.site .left{flex-direction:row;align-items:baseline;gap:24px}.logo{font-size:calc(2.25rem + 1pt)}.site .left a.m{transform:translateY(10px)}}
+@media(min-width:1024px){.site .in{padding:0 32px}.site .left,.site .right{gap:36px}}
+
+/* 공통 푸터 (현황판 기준) */
+.foot{background:#fff;border-top:1px solid #e2e8f0;padding:32px 20px;text-align:center;font-size:calc(.8125rem + 1pt);color:#475569;line-height:1.9}
+.foot b{display:block;font-size:calc(.9375rem + 1pt);color:#0f172a;font-weight:800}
+.foot b span{color:#2563eb}
+.foot nav{margin-top:8px;display:flex;gap:4px 16px;justify-content:center;flex-wrap:wrap}
+.foot nav a{min-height:44px;display:inline-flex;align-items:center;text-decoration:none}
+
+.wrap{max-width:1080px;margin:0 auto;padding:28px 20px 96px;display:grid;gap:24px}
+@media(min-width:900px){.wrap{grid-template-columns:320px minmax(0,1fr);gap:40px}.box{position:sticky;top:124px;max-height:calc(100vh - 148px);overflow-y:auto}}
+
+/* 왼쪽: 보관함 */
+.box{background:var(--surface);border-radius:28px;padding:28px;align-self:start}
+.cap{margin:0;font-size:14px;color:var(--sub);display:flex;align-items:center;gap:6px}
+.cap svg{width:15px;height:15px}
+.box h1{font-family:var(--display);font-weight:400;font-size:34px;line-height:1.25;margin:10px 0 2px}
+.box h1 span{color:var(--blue)}
+.count{margin:0;color:var(--sub);font-size:16px}
+.meter{margin-top:20px;padding-top:18px;border-top:1px solid var(--line);font-size:15px}
+.meter div:first-child{display:flex;justify-content:space-between;color:var(--sub)}
+.meter b{color:var(--ink)}
+.bar{height:8px;border-radius:99px;background:var(--soft);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:38%;background:var(--blue);border-radius:99px}
+.meter small{display:block;margin-top:6px;font-size:13.5px;color:var(--sub)}
+.acts{display:grid;gap:8px;margin-top:20px}
+.btn{min-height:48px;border-radius:16px;border:1px solid var(--line);background:var(--surface);font-size:16px;font-weight:600;cursor:pointer}
+.btn:hover{background:var(--bg)}
+.btn.main{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.main:hover{background:#1D4FD7}
+.box h2{font-size:14px;font-weight:600;color:var(--sub);margin:24px 0 8px}
+.groups{list-style:none;margin:0;padding:0}
+.groups button{width:100%;min-height:44px;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:0 12px;border:0;border-radius:12px;background:none;font-size:16px;text-align:left;cursor:pointer}
+.groups button:hover{background:var(--bg)}
+.groups button[aria-pressed="true"]{background:var(--tint);font-weight:700}
+.groups em{font-style:normal;font-size:14px;color:var(--sub);font-weight:400}
+.subs{list-style:none;margin:2px 0 6px;padding:0 0 0 12px;border-left:2px solid var(--line);margin-left:16px}
+.subs button{min-height:40px;font-size:15px}
+.subs button.empty{color:#8794A1}
+.tidy{margin-top:18px;min-height:44px;border:0;background:none;padding:0;font-size:14px;color:var(--sub);text-decoration:underline;cursor:pointer}
+
+/* 오른쪽: 목록 */
+.read{min-width:0;max-width:660px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tabs button{flex:none;min-height:46px;padding:0 14px;border:0;background:none;font-size:16.5px;color:var(--sub);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);font-weight:700;border-bottom-color:var(--ink)}
+.tabs sup{font-size:12px;margin-left:3px;font-weight:400}
+.find{position:relative;display:block;margin:14px 0 0}
+.find input{width:100%;height:48px;border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:0 16px 0 44px;font-size:16px}
+.find input::placeholder{color:#8794A1}
+.find svg{position:absolute;left:15px;top:15px;width:18px;height:18px;color:var(--sub);pointer-events:none}
+.now{margin:22px 0 0;font-size:15px;color:var(--sub);display:flex;justify-content:space-between;gap:12px;align-items:center}
+.now b{color:var(--ink);font-weight:600}
+.now button{min-height:44px;border:0;background:none;font-size:15px;color:var(--blue);cursor:pointer}
+
+.sec{margin-top:28px}
+.sec>h2{font-family:var(--display);font-weight:400;font-size:22px;margin:0 0 10px;display:flex;align-items:baseline;gap:8px}
+.sec>h2 em{font-style:normal;font-family:var(--body);font-size:14px;color:var(--sub)}
+.list{list-style:none;margin:0;padding:0 22px;background:var(--surface);border-radius:22px}
+.list li+li{border-top:1px solid var(--line)}
+.row{width:100%;display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;padding:18px 0;border:0;background:none;text-align:left;cursor:pointer}
+.row:hover .t{text-decoration:underline}
+.kind{font-size:13.5px;font-weight:600;color:var(--blue)}
+.t{display:block;font-size:18px;font-weight:700;line-height:1.45;word-break:keep-all}
+.meta{display:block;font-size:14.5px;color:var(--sub)}
+.meta .miss{color:#B45309}
+.desc{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:6px;font-size:15.5px;line-height:1.65;color:var(--sub)}
+.thumb{width:64px;height:64px;border-radius:14px;background:var(--tint);display:grid;place-items:center;font-size:12px;font-weight:700;color:var(--blue);position:relative}
+.thumb.pdf{background:var(--soft);color:var(--sub)}
+.thumb u{position:absolute;right:-6px;bottom:-6px;background:var(--ink);color:#fff;text-decoration:none;font-size:11px;border-radius:99px;padding:0 6px;line-height:18px}
+.add{width:100%;min-height:48px;margin-top:10px;border:1px dashed #C5CFD9;border-radius:16px;background:none;font-size:15.5px;color:var(--sub);cursor:pointer}
+.add:hover{border-color:var(--blue);color:var(--blue)}
+.none{padding:40px 0;text-align:center;color:var(--sub)}
+
+.chips{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+.chips button{min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:99px;background:var(--surface);font-size:15px;cursor:pointer}
+.chips button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:18px}
+@media(min-width:560px){.grid{grid-template-columns:repeat(3,1fr)}}
+.file{background:var(--surface);border-radius:18px;padding:10px;min-width:0}
+.file .pic{aspect-ratio:4/3;border-radius:12px;background:var(--tint);display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--blue)}
+.file .pic.pdf{background:var(--soft);color:var(--sub)}
+.file b{display:block;margin-top:8px;font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file span{display:block;font-size:13px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.soon{margin-top:24px;background:var(--surface);border-radius:22px;padding:26px}
+.soon h2{font-family:var(--display);font-weight:400;font-size:24px;margin:0 0 8px}
+.soon p{margin:0;color:var(--sub);font-size:16px}
+.tag{display:inline-block;font-size:12.5px;background:var(--soft);color:var(--sub);border-radius:99px;padding:1px 10px;margin-bottom:10px}
+
+/* 분류 고르기 창 */
+dialog{border:0;border-radius:24px;padding:0;width:min(560px,calc(100% - 32px));max-height:88dvh;color:var(--ink)}
+dialog::backdrop{background:rgba(23,33,43,.35)}
+.dh{position:sticky;top:0;background:#fff;display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--line)}
+.dh h2{font-family:var(--display);font-weight:400;font-size:22px;margin:0}
+.dh button{width:44px;height:44px;border:0;background:none;font-size:22px;cursor:pointer;border-radius:99px}
+.db{padding:8px 24px 24px}
+.db h3{font-size:14px;font-weight:600;color:var(--sub);margin:18px 0 8px}
+.pick{display:flex;flex-wrap:wrap;gap:8px}
+.pick button{min-height:44px;padding:0 16px;border:1px solid var(--line);border-radius:99px;background:#fff;font-size:15.5px;cursor:pointer}
+.pick button:hover{border-color:var(--blue);background:var(--tint)}
+.db p{font-size:14px;color:var(--sub);margin:18px 0 0}
+
+/* 휴대폰: 분류를 가로 칩으로 */
+@media(max-width:899px){
+  .box{padding:22px;border-radius:24px}
+  .box h1{font-size:28px}
+  .acts{grid-template-columns:1fr 1fr}
+  .groups{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -22px;padding:0 22px}
+  .groups>li{flex:none}
+  .groups button{border:1px solid var(--line);border-radius:99px;white-space:nowrap;padding:0 14px}
+  .groups button[aria-pressed="true"]{border-color:var(--tint)}
+  .subs{display:none}
+  .tidy{display:none}
+  .list{padding:0 16px}
+  .thumb{width:52px;height:52px}
+}
+</style>
+</head>
+<body>
+<nav class="site" aria-label="공통 메뉴">
+  <div class="in">
+    <div class="left"><a class="logo" href="#">PT <span>Career</span></a><a class="m" href="#">전문가 탐색</a></div>
+    <div class="right"><a class="m" href="#">마이페이지</a><a class="m" href="#">로그아웃</a></div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <aside class="box" aria-label="보관함">
+    <p class="cap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v11H5V10Z"/></svg>나만 보는 보관함</p>
+    <h1>내활동 <span>다모아</span></h1>
+    <p class="count" id="count"></p>
+    <div class="meter">
+      <div><span>저장 공간</span><span><b>38.2</b> / 100MB</span></div>
+      <div class="bar" role="progressbar" aria-label="저장 공간 사용량" aria-valuenow="38" aria-valuemin="0" aria-valuemax="100"><i></i></div>
+      <small>파일 한 개 10MB까지</small>
+    </div>
+    <div class="acts">
+      <button class="btn main" type="button" data-open>+ 활동 기록하기</button>
+      <button class="btn" type="button" data-open>자료만 올리기</button>
+    </div>
+    <h2>분류</h2>
+    <ul class="groups" id="groups"></ul>
+    <button class="tidy" type="button">사용하지 않는 업로드 정리</button>
+  </aside>
+
+  <section class="read">
+    <div class="tabs" role="tablist" aria-label="보관함 보기">
+      <button role="tab" aria-selected="true" data-tab="records">활동 기록<sup id="n-rec"></sup></button>
+      <button role="tab" aria-selected="false" data-tab="files">보관 자료<sup id="n-file"></sup></button>
+      <button role="tab" aria-selected="false" data-tab="ai">AI 묶음 요약<sup>준비중</sup></button>
+    </div>
+    <label class="find" id="find"><span class="sr">보관함 안에서 찾기</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="q" type="search" placeholder="활동 이름이나 내용으로 찾기">
+    </label>
+
+    <div id="records">
+      <p class="now" id="now"></p>
+      <div id="out"></div>
+    </div>
+
+    <div id="files" hidden>
+      <div class="chips" role="group" aria-label="자료 종류">
+        <button type="button" aria-pressed="true" data-kind="all">전체</button>
+        <button type="button" aria-pressed="false" data-kind="img">사진</button>
+        <button type="button" aria-pressed="false" data-kind="pdf">문서(PDF)</button>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <div id="ai" hidden>
+      <div class="soon">
+        <span class="tag">준비중인 기능</span>
+        <h2>쌓인 기록을 한 줄 이력으로</h2>
+        <p>비슷한 기록을 묶어 한 줄로 제안하는 기능을 준비하고 있어요. 지금은 자료를 분석하거나 외부 AI로 보내지 않습니다.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<dialog id="dlg" aria-labelledby="dlg-t">
+  <div class="dh"><h2 id="dlg-t">어떤 활동을 했나요?</h2><button type="button" aria-label="닫기" onclick="dlg.close()">×</button></div>
+  <div class="db" id="pick"></div>
+</dialog>
+
+<footer class="foot">
+  <b>PT <span>Career</span></b>
+  상호 피티커리어 · 대표자 김준석 · 사업자등록번호 179-24-02294<br>
+  소재지 경기도 성남시 중원구 산성대로 106, 3층 C342호 · 호스팅 서비스 Vercel Inc.
+  <nav aria-label="안내"><a href="#">서비스 소개</a><a href="#">이용약관</a><a href="#">개인정보처리방침</a><a href="#">제안·신고</a></nav>
+  © 2026 PT Career. 신뢰할 수 있는 전문가 찾기
+</footer>
+
+<script>
+(function(){
+  // 분류: lib/damoa/categories.ts 와 같은 18개·5묶음 (기타 활동은 맨 아래 따로)
+  var CATS=[
+    ["academic","학력","배우고 준비한 경험"],["education","교육·연수","배우고 준비한 경험"],["license","자격·면허","배우고 준비한 경험"],["study","스터디·학습활동","배우고 준비한 경험"],
+    ["career","경력","일하고 실천한 경험"],["intern","실습·인턴십","일하고 실천한 경험"],["project","프로젝트","일하고 실천한 경험"],
+    ["volunteer","봉사활동","참여하고 기여한 경험"],["external","대외활동","참여하고 기여한 경험"],["club","동아리·학생활동","참여하고 기여한 경험"],["association","협회·전문단체 활동","참여하고 기여한 경험"],
+    ["lecture","강의·발표·출강","전하고 만들어낸 경험"],["mentor","멘토링·지도","전하고 만들어낸 경험"],["research","연구·논문·저술","전하고 만들어낸 경험"],["content","콘텐츠 제작·운영","전하고 만들어낸 경험"],
+    ["award","수상 경력","도전한 경험"],["contest","대회·공모전 참가","도전한 경험"],
+    ["other","기타 활동","새로운 경험"]
+  ];
+    var name={};CATS.forEach(function(c){name[c[0]]=c});
+  // 예시 기록 (실제 데이터 아님)
+  var R=[
+    {c:"academic",t:"○○대학교 물리치료학과 졸업",p:"2012 – 2016",d:"",f:["졸업증명서.pdf"]},
+    {c:"license",t:"물리치료사 면허",p:"2016. 02.",d:"보건복지부 발급.",f:["면허증.jpg","면허증_뒷면.jpg"]},
+    {c:"education",t:"4S Academy 근골격 평가 과정 수료",p:"2024. 03. – 2024. 06.",d:"어깨·골반 평가와 운동 처방을 12주 동안 배웠습니다. 사례 발표 1회 포함.",f:["수료증.jpg"]},
+    {c:"education",t:"도수치료 워크숍 (해외 연수)",p:"",d:"3일 과정. 수료증은 나중에 올릴 예정.",f:[]},
+    {c:"study",t:"논문 읽기 모임",p:"2025 – 현재",d:"격주로 재활 논문 한 편씩 읽고 정리합니다.",f:[]},
+    {c:"career",t:"△△정형외과 재활센터 물리치료사",p:"2019. 03. – 현재",d:"수술 후 재활과 만성 통증 운동 지도 담당.",f:["재직증명서.pdf"]},
+    {c:"career",t:"□□병원 물리치료실",p:"2016. 03. – 2019. 02.",d:"",f:["경력증명서.pdf"]},
+    {c:"volunteer",t:"복지관 어르신 운동 프로그램 보조",p:"2025. 10. 24.",d:"낙상 예방 운동을 함께 진행했습니다.",f:["현장사진1.jpg","현장사진2.jpg","확인서.pdf"]},
+    {c:"lecture",t:"지역 보건소 허리 건강 강의",p:"2025. 05.",d:"주민 40명 대상 90분 강의.",f:["강의자료.pdf"]},
+    {c:"content",t:"블로그 '통증 없는 하루' 운영",p:"2023 – 현재",d:"주 1회 운동 안내 글을 올립니다.",f:[]},
+    {c:"award",t:"학술대회 우수 포스터상",p:"2022. 11.",d:"",f:["상장.jpg"]},
+    {c:"other",t:"",p:"",d:"",f:["스캔_0412.pdf"]}
+  ];
+  var sel="all", tab="records", kind="all";
+  var $=function(id){return document.getElementById(id)};
+  function esc(s){return String(s).replace(/[&<>"]/g,function(m){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[m]})}
+  function isImg(f){return !/\.pdf$/i.test(f)}
+  function match(r){
+    var q=$("q").value.trim().toLowerCase();
+    var inSel=sel==="all"||r.c===sel;
+    return inSel&&(r.t+" "+r.d+" "+name[r.c][1]).toLowerCase().indexOf(q)>-1;
+  }
+  function n(test){return R.filter(test).length}
+
+  function side(){
+    var h='<li><button type="button" data-sel="all" aria-pressed="'+(sel==="all")+'">전체<em>'+R.length+'</em></button></li>';
+    CATS.forEach(function(c){
+      var k=n(function(r){return r.c===c[0]}); if(!k)return;
+      h+='<li><button type="button" data-sel="'+c[0]+'" aria-pressed="'+(sel===c[0])+'">'+c[1]+'<em>'+k+'</em></button></li>';
+    });
+    h+='<li><button type="button" data-open style="color:var(--blue)">+ 다른 분류 기록하기</button></li>';
+    $("groups").innerHTML=h;
+  }
+  function list(){
+    var rows=R.filter(match), h="";
+    var label=sel==="all"?"전체":name[sel][1];
+    $("now").innerHTML='<span><b>'+esc(label)+'</b> · '+rows.length+'건</span>'+(sel!=="all"||$("q").value?'<button type="button" id="reset">전체 보기</button>':'');
+    CATS.forEach(function(c){
+      var g=c[1], part=rows.filter(function(r){return r.c===c[0]});
+      if(!part.length)return;
+      h+='<section class="sec"><h2>'+g+'<em>'+part.length+'</em></h2><ul class="list">';
+      part.forEach(function(r){
+        var img=r.f.filter(isImg).length, th="";
+        if(r.f.length) th='<span class="thumb '+(img?"":"pdf")+'">'+(img?"사진":"PDF")+(r.f.length>1?'<u>+'+(r.f.length-1)+'</u>':'')+'</span>';
+        h+='<li><button class="row" type="button" data-open><span>'
+          +'<span class="t">'+esc(r.t||"보관한 자료")+'</span>'
+          +'<span class="meta">'+(r.p?esc(r.p):'<span class="miss">기간을 적어 주세요</span>')+' · 첨부 '+r.f.length+'개</span>'
+          +(r.d?'<span class="desc">'+esc(r.d)+'</span>':'')+'</span>'+th+'</button></li>';
+      });
+      h+='</ul><button class="add" type="button" data-open>+ '+g+' 추가하기</button></section>';
+    });
+    $("out").innerHTML=h;
+    if(!rows.length){var p=document.createElement("p");p.className="none";p.textContent="조건에 맞는 기록이 없어요. 검색어나 분류를 바꿔 보세요.";$("out").appendChild(p)}
+  }
+  function grid(){
+    var h="";
+    R.filter(match).forEach(function(r){r.f.forEach(function(f){
+      var img=isImg(f); if(kind!=="all"&&(kind==="img")!==img)return;
+      h+='<div class="file"><div class="pic '+(img?"":"pdf")+'">'+(img?"사진":"PDF")+'</div><b>'+esc(f)+'</b><span>'+esc(r.t||"보관한 자료")+'</span></div>';
+    })});
+    $("grid").innerHTML=h||'<p class="none" style="grid-column:1/-1">조건에 맞는 자료가 없어요.</p>';
+  }
+  function draw(){
+    side();list();grid();
+    $("count").textContent="기록 "+R.length+"건 · 자료 "+R.reduce(function(a,r){return a+r.f.length},0)+"개";
+    $("n-rec").textContent=R.length;$("n-file").textContent=R.reduce(function(a,r){return a+r.f.length},0);
+    ["records","files","ai"].forEach(function(t){$(t).hidden=t!==tab});
+    $("find").hidden=tab==="ai";
+    document.querySelectorAll("[data-tab]").forEach(function(b){b.setAttribute("aria-selected",b.dataset.tab===tab)});
+    document.querySelectorAll("[data-kind]").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.kind===kind)});
+  }
+  // 분류 고르기 창: 묶음별 칩
+  var p='<div class="pick" style="margin-top:18px">'+CATS.map(function(c){return '<button type="button" onclick="dlg.close()">'+c[1]+'</button>'}).join("")+'</div>';
+  $("pick").innerHTML=p+'<p>고른 뒤에는 지금과 같은 작성창이 열려요. 분류는 나중에 바꿀 수 있어요.</p>';
+
+  document.addEventListener("click",function(e){
+    var b=e.target.closest("button"); if(!b)return;
+    if(b.dataset.sel){sel=b.dataset.sel;if(tab==="ai")tab="records";draw()}
+    else if(b.dataset.tab){tab=b.dataset.tab;draw()}
+    else if(b.dataset.kind){kind=b.dataset.kind;draw()}
+    else if(b.id==="reset"){sel="all";$("q").value="";draw()}
+    else if("open" in b.dataset){$("dlg").showModal()}
+  });
+  $("q").addEventListener("input",function(){list();grid()});
+  draw();
+})();
+</script>
+</body>
+</html>

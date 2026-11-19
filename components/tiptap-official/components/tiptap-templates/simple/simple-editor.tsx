@@ -339,7 +339,7 @@ export function SimpleEditor({
             >
               ＋ 유튜브
             </button>
-            <span>파일당 20MB · 전용 공간 200MB</span>
+            <span>파일당 20MB · 전용 공간 20MB</span>
           </div>
         )}
         {mediaImages && (

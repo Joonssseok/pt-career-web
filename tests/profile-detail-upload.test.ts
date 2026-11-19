@@ -162,9 +162,9 @@ test.each([
   },
 );
 
-test("media validation keeps 20MiB/file, 20 files, and 200MiB total bounds", () => {
+test("media validation keeps 20MiB/file, 20 files, and 20MiB total bounds", () => {
   const sized = (size: number, type = "video/mp4") => ({ size, type }) as File;
-  expect(DETAIL_IMAGE_TOTAL_LIMIT).toBe(200 * 1024 * 1024);
+  expect(DETAIL_IMAGE_TOTAL_LIMIT).toBe(20 * 1024 * 1024);
   expect(validateDetailImages([sized(DETAIL_IMAGE_LIMIT)], 19)).toBe("");
   expect(validateDetailImages([sized(DETAIL_IMAGE_LIMIT + 1)], 0)).toContain(
     "20MB",
@@ -172,14 +172,14 @@ test("media validation keeps 20MiB/file, 20 files, and 200MiB total bounds", () 
   expect(validateDetailImages([sized(0)], 0)).toContain("20MB");
   expect(validateDetailImages([sized(1)], 20)).toContain("20장");
   expect(
-    validateDetailImages(Array(10).fill(sized(DETAIL_IMAGE_LIMIT)), 0),
+    validateDetailImages(Array(10).fill(sized(DETAIL_IMAGE_LIMIT / 10)), 0),
   ).toBe("");
   expect(
-    validateDetailImages(Array(11).fill(sized(DETAIL_IMAGE_LIMIT)), 0),
-  ).toContain("200MB");
+    validateDetailImages(Array(11).fill(sized(DETAIL_IMAGE_LIMIT / 10)), 0),
+  ).toContain("20MB");
   expect(
     validateDetailImages([sized(1)], 0, DETAIL_IMAGE_TOTAL_LIMIT),
-  ).toContain("200MB");
+  ).toContain("20MB");
   expect(
     validateDetailImages(
       [sized(1, "image/gif")],

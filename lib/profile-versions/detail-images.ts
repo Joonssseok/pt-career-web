@@ -1,6 +1,6 @@
 export const DETAIL_IMAGE_LIMIT = 20 * 1024 * 1024;
 export const DETAIL_IMAGE_COUNT = 20;
-export const DETAIL_IMAGE_TOTAL_LIMIT = 200 * 1024 * 1024;
+export const DETAIL_IMAGE_TOTAL_LIMIT = 20 * 1024 * 1024;
 export const DETAIL_IMAGE_MIME_TYPES = [
   "image/jpeg",
   "image/png",
@@ -39,7 +39,7 @@ export function validateDetailImages(
     existingBytes + files.reduce((total, file) => total + file.size, 0) >
     DETAIL_IMAGE_TOTAL_LIMIT
   )
-    return "첨부파일은 합계 200MB 이하로 선택해주세요.";
+    return "첨부파일은 합계 20MB 이하로 선택해주세요.";
   return "";
 }
 export const detailImageSrc = (id: string) =>

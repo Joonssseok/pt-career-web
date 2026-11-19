@@ -85,7 +85,7 @@ export function ProfileDetailImageEditor({
         </span>
       </button>
       <p className="text-xs leading-6 text-slate-400">
-        JPG · PNG · WebP · 한 장당 20MB · 전용 공간 200MB
+        JPG · PNG · WebP · 한 장당 20MB · 전용 공간 20MB
         <br />긴 이미지도 원본 비율로 표시해요. 다모아 저장 공간과는 별도입니다.
       </p>
       {error && (

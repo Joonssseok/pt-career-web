@@ -18,7 +18,11 @@ export function DetailContent({
       {checked.document.content.map((node, index) => {
         if (node.type === "youtubeVideo")
           return (
-            <YoutubeVideo key={index} videoId={String(node.attrs?.videoId)} />
+            <YoutubeVideo
+              key={index}
+              videoId={String(node.attrs?.videoId)}
+              widthPercent={node.attrs?.widthPercent as number | undefined}
+            />
           );
         if (node.type === "profileMedia") {
           const image = images.find((row) => row.id === node.attrs?.fileId);

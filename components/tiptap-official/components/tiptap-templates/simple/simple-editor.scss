@@ -240,4 +240,29 @@
   .detail-photo-resize-wrapper {
     max-width: 100%;
   }
+  .detail-media-actions {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    button {
+      min-height: 44px;
+    }
+  }
+  .detail-youtube-width {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 44px;
+    font-size: 14px;
+    input {
+      width: 120px;
+      min-width: 60px;
+      max-width: 100%;
+      min-height: 44px;
+    }
+    output {
+      min-width: 40px;
+    }
+  }
 }

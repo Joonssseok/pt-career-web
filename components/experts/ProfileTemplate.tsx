@@ -266,12 +266,7 @@ export function ProfileTemplate({
 
   const content = {
     home,
-    detail: (
-      <>
-        {detail}
-        {notice("꾸미기")}
-      </>
-    ),
+    detail,
     career,
     video: (
       <>

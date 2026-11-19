@@ -365,25 +365,19 @@ test("updates the index and counts when rows or their exclusion marker change", 
   await act(async () => {});
 });
 
-test("detail always supplements real content with the correct notice and owner actions reuse the existing dialog", async () => {
+test("detail contains real content without a coming-soon notice or decorating action", async () => {
   const view = render(fixture());
   openTab("상세정보");
   expect(within(panel("detail")).getByText("detail needle")).toBeTruthy();
-  expect(within(panel("detail")).getByText(visitorNotice)).toBeTruthy();
+  expect(within(panel("detail")).queryByText(visitorNotice)).toBeNull();
   expect(
     within(panel("detail")).queryByRole("button", { name: "꾸미기" }),
   ).toBeNull();
   view.rerender(fixture({ ownerPreview: true }));
-  const showModal = jest.fn();
-  const dialog = within(panel("detail")).getByLabelText(
-    "기능 준비 안내",
-  ) as HTMLDialogElement;
-  dialog.showModal = showModal;
-  expect(within(panel("detail")).getByText(ownerNotice)).toBeTruthy();
-  fireEvent.click(
-    within(panel("detail")).getByRole("button", { name: "꾸미기" }),
-  );
-  expect(showModal).toHaveBeenCalledTimes(1);
+  expect(within(panel("detail")).queryByText(ownerNotice)).toBeNull();
+  expect(
+    within(panel("detail")).queryByRole("button", { name: "꾸미기" }),
+  ).toBeNull();
   openTab("게시판");
   expect(within(panel("board")).getByText(ownerNotice)).toBeTruthy();
   expect(

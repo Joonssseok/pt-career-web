@@ -116,9 +116,16 @@ export function validateDetailDocument(
             return fail;
           seen.add(node.attrs.fileId);
         } else if (
-          Object.keys(node.attrs).some((k) => k !== "videoId") ||
+          Object.keys(node.attrs).some(
+            (k) => !["videoId", "widthPercent"].includes(k),
+          ) ||
           typeof node.attrs.videoId !== "string" ||
-          !/^[A-Za-z0-9_-]{11}$/.test(node.attrs.videoId)
+          !/^[A-Za-z0-9_-]{11}$/.test(node.attrs.videoId) ||
+          (Object.prototype.hasOwnProperty.call(node.attrs, "widthPercent") &&
+            (typeof node.attrs.widthPercent !== "number" ||
+              !Number.isInteger(node.attrs.widthPercent) ||
+              node.attrs.widthPercent < 10 ||
+              node.attrs.widthPercent > 100))
         )
           return fail;
         content.push(node);

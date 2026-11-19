@@ -40,7 +40,38 @@ beforeEach(() => {
   };
 });
 
-test("가입·초안 단계는 게시 이력 없이 공유·명함을 제공하지 않음", () => {
+test.each([
+  { compact: false, preview: false },
+  { compact: true, preview: false },
+  { compact: false, preview: true },
+  { compact: true, preview: true },
+])("명함 UI 없이 링크·QR·카카오 공유를 유지한다: %j", async (mode) => {
+  const { container } = render(
+    <ProfileSharingTools {...props} {...mode} published />,
+  );
+  expect(container).not.toHaveTextContent("명함");
+  expect(container.querySelector("details, canvas")).toBeNull();
+  expect(
+    screen.queryByRole("group", { name: "명함 디자인" }),
+  ).not.toBeInTheDocument();
+  expect(screen.getByRole("textbox", { name: "공유 주소" })).toHaveValue(url);
+  expect(
+    screen.getByRole("button", { name: "링크 복사", exact: true }),
+  ).toBeEnabled();
+  expect(screen.getByRole("button", { name: "카카오톡 공유" })).toBeEnabled();
+  fireEvent.click(screen.getByRole("button", { name: "QR코드", exact: true }));
+  const dialog = screen.getByRole("dialog", { name: "프로필 QR코드" });
+  await within(dialog).findByRole("img", { name: "공개 프로필 QR코드" });
+  expect(
+    within(dialog).getByRole("button", { name: "QR 이미지 복사" }),
+  ).toBeEnabled();
+  expect(within(dialog).getByText("QR 이미지 저장")).toHaveAttribute(
+    "aria-disabled",
+    String(mode.preview),
+  );
+});
+
+test("가입·초안 단계는 게시 이력 없이 공유를 제공하지 않음", () => {
   render(<ProfileSharingTools {...props} />);
   expect(
     screen.getByText("대표 프로필을 게시하면 공유할 수 있어요."),
@@ -199,6 +230,27 @@ test("기기 공유 취소는 성공으로 집계하지 않음", async () => {
   expect(trackEvent).not.toHaveBeenCalled();
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
+
+test.each([false, true])(
+  "기기 공유 성공만 집계한다: compact=%s",
+  async (compact) => {
+    const share = jest.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "share", {
+      value: share,
+      configurable: true,
+    });
+    render(<ProfileSharingTools {...props} compact={compact} published />);
+    fireEvent.click(screen.getByRole("button", { name: "카카오톡 공유" }));
+    await waitFor(() => expect(trackEvent).toHaveBeenCalledWith("share"));
+    expect(trackEvent).toHaveBeenCalledTimes(1);
+    expect(share).toHaveBeenCalledWith({
+      title: props.displayName + " · PT Career",
+      text: props.headline,
+      url,
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  },
+);
 
 test("QR 저장 링크는 PNG Blob 주소와 다운로드 파일명을 제공한다", async () => {
   render(<ProfileSharingTools {...props} published />);

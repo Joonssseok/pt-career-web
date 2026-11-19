@@ -744,9 +744,7 @@ export function ExpertProfileView({
           </div>
         )
       )}
-      {(expert.workplace_center_name ||
-        expert.workplace_address ||
-        expert.workplace_phone ||
+      {(expert.workplace_phone ||
         expert.workplace_external_contact_url ||
         expert.workplace_website_url) && (
         <section
@@ -757,20 +755,6 @@ export function ExpertProfileView({
           className={styles.workplace}
         >
           {renderItemActions?.("workplace", 0)}
-          {expert.workplace_center_name && (
-            <div className="mt-2 text-base font-semibold text-slate-900">
-              {expert.workplace_center_name}
-              <ProfileEvidencePublic review={itemReviews?.get("workplace:0")} />
-            </div>
-          )}
-          {expert.workplace_address && (
-            <p className="text-xs text-gray-500 mt-1">
-              {expert.workplace_address}
-              {expert.workplace_address_detail
-                ? ` ${expert.workplace_address_detail}`
-                : ""}
-            </p>
-          )}
           <div className="flex gap-2 mt-3">
             {expert.workplace_phone && (
               <a

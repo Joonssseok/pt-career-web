@@ -35,6 +35,7 @@ export function EvidenceMaskingDialog({
 }) {
   const dialog = useRef<HTMLDialogElement>(null),
     canvas = useRef<HTMLCanvasElement>(null),
+    stage = useRef<HTMLDivElement>(null),
     viewport = useRef<HTMLDivElement>(null),
     guide = useRef<HTMLDetailsElement>(null);
   const [index, setIndex] = useState(0),
@@ -42,7 +43,9 @@ export function EvidenceMaskingDialog({
     [rects, setRects] = useState<MaskRect[]>([]),
     [history, setHistory] = useState<MaskRect[][]>([]),
     [words, setWords] = useState<MaskWord[]>([]);
-  const [mode, setMode] = useState<"draw" | "pan">("draw"),
+  const [mode, setMode] = useState<"draw" | "adjust" | "select" | "pan">(
+      "draw",
+    ),
     [zoom, setZoom] = useState(1),
     [ghost, setGhost] = useState<MaskRect | null>(null),
     [step, setStep] = useState<"mask" | "confirm">("mask");
@@ -54,6 +57,13 @@ export function EvidenceMaskingDialog({
     [busy, setBusy] = useState(false);
   const [copies, setCopies] = useState<MaskedEvidenceCopy[]>([]),
     [publicIds, setPublicIds] = useState<string[]>([]);
+  const [selected, setSelected] = useState<number | null>(null);
+  const adjustment = useRef<{
+    index: number;
+    operation: "move" | "resize";
+    origin: { x: number; y: number };
+    before: MaskRect[];
+  } | null>(null);
   const copy = useRef<File | null>(null),
     drag = useRef<{
       x: number;
@@ -81,6 +91,8 @@ export function EvidenceMaskingDialog({
     setStep("mask");
     setChecked(false);
     setZoom(1);
+    setMode("draw");
+    setSelected(null);
     setError("");
     setIsPublic(initialPublicIds.includes(current.id));
     setOcrStatus("사진을 불러오는 중…");
@@ -103,7 +115,7 @@ export function EvidenceMaskingDialog({
           setChecked(false);
           setOcrStatus(
             found.length
-              ? "글자를 누르거나 끌어서 가려 주세요."
+              ? "사진 위를 끌어서 가려 주세요. 노란 테두리는 개인정보 의심 영역입니다."
               : "글자를 찾지 못했어요. 끌어서 가려 주세요.",
           );
         } catch {
@@ -142,18 +154,23 @@ export function EvidenceMaskingDialog({
     setHistory((previous) => [...previous.slice(-49), rects]);
     setRects(next);
     setChecked(false);
+    setSelected(null);
   }
   const sensitive = words.filter((w) => w.sensitive && !containsWord(rects, w));
   const required = words.filter((w) => w.required && overlapsWord(rects, w));
   function point(e: PointerEvent<HTMLDivElement>) {
-    const bounds = e.currentTarget.getBoundingClientRect();
+    const bounds = stage.current!.getBoundingClientRect();
     return {
       x: Math.max(0, Math.min(1, (e.clientX - bounds.left) / bounds.width)),
       y: Math.max(0, Math.min(1, (e.clientY - bounds.top) / bounds.height)),
     };
   }
   function start(e: PointerEvent<HTMLDivElement>) {
-    if (e.button !== 0 || !source || busy) return;
+    if (e.button !== 0 || !source || busy || mode === "select") return;
+    if (mode === "adjust") {
+      setSelected(null);
+      return;
+    }
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     drag.current = {
@@ -165,6 +182,33 @@ export function EvidenceMaskingDialog({
     };
   }
   function move(e: PointerEvent<HTMLDivElement>) {
+    const editing = adjustment.current;
+    if (editing) {
+      const p = point(e),
+        original = editing.before[editing.index];
+      const dx = p.x - editing.origin.x,
+        dy = p.y - editing.origin.y;
+      const next =
+        editing.operation === "move"
+          ? {
+              ...original,
+              x: Math.max(0, Math.min(1 - original.width, original.x + dx)),
+              y: Math.max(0, Math.min(1 - original.height, original.y + dy)),
+            }
+          : {
+              ...original,
+              width: Math.min(
+                1 - original.x,
+                Math.max(0.01, original.width + dx),
+              ),
+              height: Math.min(
+                1 - original.y,
+                Math.max(0.01, original.height + dy),
+              ),
+            };
+      setRects(editing.before.map((r, i) => (i === editing.index ? next : r)));
+      return;
+    }
     const a = drag.current;
     if (!a) return;
     if (mode === "pan" && viewport.current) {
@@ -173,6 +217,11 @@ export function EvidenceMaskingDialog({
     } else setGhost(normalizedRect(a, point(e)));
   }
   function end(e: PointerEvent<HTMLDivElement>) {
+    if (adjustment.current) {
+      move(e);
+      adjustment.current = null;
+      return;
+    }
     const a = drag.current;
     drag.current = null;
     setGhost(null);
@@ -180,6 +229,29 @@ export function EvidenceMaskingDialog({
     const r = normalizedRect(a, point(e));
     if (r.width * source!.width >= 3 && r.height * source!.height >= 3)
       change([...rects, r]);
+  }
+  function adjust(
+    e: PointerEvent<HTMLElement>,
+    index: number,
+    operation: "move" | "resize",
+  ) {
+    if (e.button !== 0 || mode !== "adjust") return;
+    e.preventDefault();
+    e.stopPropagation();
+    setSelected(index);
+    stage.current!.setPointerCapture(e.pointerId);
+    const bounds = stage.current!.getBoundingClientRect();
+    adjustment.current = {
+      index,
+      operation,
+      before: rects,
+      origin: {
+        x: (e.clientX - bounds.left) / bounds.width,
+        y: (e.clientY - bounds.top) / bounds.height,
+      },
+    };
+    setHistory((previous) => [...previous.slice(-49), rects]);
+    setChecked(false);
   }
   async function confirm() {
     if (!source) return;
@@ -302,7 +374,21 @@ export function EvidenceMaskingDialog({
                   aria-pressed={mode === "draw"}
                   onClick={() => setMode("draw")}
                 >
-                  가리기
+                  직접 그리기
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={mode === "adjust"}
+                  onClick={() => setMode("adjust")}
+                >
+                  네모 조절
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={mode === "select"}
+                  onClick={() => setMode("select")}
+                >
+                  인식 영역 선택
                 </button>
                 <button
                   type="button"
@@ -335,6 +421,8 @@ export function EvidenceMaskingDialog({
                   onClick={() => {
                     setRects(history[history.length - 1]);
                     setHistory(history.slice(0, -1));
+                    setSelected(null);
+                    setChecked(false);
                   }}
                 >
                   되돌리기
@@ -358,6 +446,16 @@ export function EvidenceMaskingDialog({
                 >
                   중앙 네모 추가
                 </button>
+                {selected !== null && rects[selected] && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      change(rects.filter((_, i) => i !== selected))
+                    }
+                  >
+                    선택한 네모 삭제
+                  </button>
+                )}
               </div>
               <div
                 ref={viewport}
@@ -365,29 +463,31 @@ export function EvidenceMaskingDialog({
                 aria-label="가릴 사진 영역"
               >
                 <div
+                  ref={stage}
                   className={styles.stage}
+                  aria-label="사진 위 편집 영역"
                   data-mode={mode}
                   style={{ width: `${zoom * 100}%` }}
                   onPointerDown={start}
                   onPointerMove={move}
                   onPointerUp={end}
                   onPointerCancel={() => {
+                    if (adjustment.current) setRects(adjustment.current.before);
+                    adjustment.current = null;
                     drag.current = null;
                     setGhost(null);
                   }}
                 >
                   <canvas ref={canvas} aria-label="개인정보 가리기 사진" />
                   {source &&
-                    mode === "draw" &&
                     words
-                      .filter((w) => !containsWord(rects, w))
+                      .filter((w) => w.sensitive && !containsWord(rects, w))
                       .map((w) => (
                         <button
                           key={w.id}
                           type="button"
-                          className={
-                            w.sensitive ? styles.sensitive : styles.word
-                          }
+                          className={styles.sensitive}
+                          tabIndex={mode === "select" ? 0 : -1}
                           style={{
                             left: `${w.x * 100}%`,
                             top: `${w.y * 100}%`,
@@ -410,20 +510,35 @@ export function EvidenceMaskingDialog({
                         />
                       ))}
                   {rects.map((r, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className={styles.mask}
-                      aria-label={`가린 영역 ${i + 1} 지우기`}
-                      style={{
-                        left: `${r.x * 100}%`,
-                        top: `${r.y * 100}%`,
-                        width: `${r.width * 100}%`,
-                        height: `${r.height * 100}%`,
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                      onClick={() => change(rects.filter((_, n) => n !== i))}
-                    />
+                    <div key={i}>
+                      <button
+                        type="button"
+                        className={styles.mask}
+                        aria-label={`가린 영역 ${i + 1} 이동`}
+                        aria-pressed={selected === i}
+                        tabIndex={mode === "adjust" ? 0 : -1}
+                        style={{
+                          left: `${r.x * 100}%`,
+                          top: `${r.y * 100}%`,
+                          width: `${r.width * 100}%`,
+                          height: `${r.height * 100}%`,
+                        }}
+                        onPointerDown={(e) => adjust(e, i, "move")}
+                        onClick={() => setSelected(i)}
+                      />
+                      {mode === "adjust" && (
+                        <button
+                          type="button"
+                          className={styles.resize}
+                          aria-label={`가린 영역 ${i + 1} 크기 조절`}
+                          style={{
+                            left: `${(r.x + r.width) * 100}%`,
+                            top: `${(r.y + r.height) * 100}%`,
+                          }}
+                          onPointerDown={(e) => adjust(e, i, "resize")}
+                        />
+                      )}
+                    </div>
                   ))}
                   {ghost && (
                     <div
@@ -439,9 +554,14 @@ export function EvidenceMaskingDialog({
                 </div>
               </div>
               <p>
-                글자를 누르거나 끌어서 네모로 가려 주세요. 사진·도장도 직접 가릴
-                수 있습니다. 글자 인식은 빠뜨릴 수 있으니 마지막에 전체를
-                확인해주세요.
+                {mode === "draw"
+                  ? "사진 어디서든 끌어서 네모를 그리세요. 노란 테두리 위에서도 그릴 수 있어요."
+                  : mode === "adjust"
+                    ? "검은 네모를 끌어서 옮기고, 오른쪽 아래 손잡이로 크기를 조절하세요. 네모를 선택하면 삭제할 수 있어요."
+                    : mode === "select"
+                      ? "노란 개인정보 의심 영역을 누르면 그 부분만 가려집니다."
+                      : "사진을 끌어서 화면을 옮기세요."}{" "}
+                글자 인식은 빠뜨릴 수 있으니 마지막에 전체를 확인해주세요.
               </p>
             </section>
           ) : (

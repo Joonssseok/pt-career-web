@@ -42,15 +42,17 @@ export async function storeEvidenceFile(
   version: string,
   file: ReviewFile,
 ) {
-  if (!file.blob && file.href.startsWith("/api/damoa/files/")) return file.id;
-  let blob = file.blob;
-  if (!blob) {
-    const response = await fetch(file.href, { cache: "no-store" });
-    if (!response.ok) throw new Error("기존 증빙자료를 불러오지 못했습니다.");
-    blob = await response.blob();
-  }
+  if (
+    !file.maskedCopy ||
+    !file.blob ||
+    file.blob.type !== "image/jpeg" ||
+    !file.blob.size ||
+    file.blob.size > 10 * 1024 * 1024
+  )
+    throw new Error("먼저 개인정보 가리기에서 사본을 확인해주세요.");
+  const blob = file.blob;
   const attachment = {
-    id: file.blob ? file.id : crypto.randomUUID(),
+    id: file.id,
     name: file.name,
     size: blob.size,
     type: blob.type,

@@ -4,6 +4,7 @@ backup_pre_*_migration_*.sql
 
 # Dependencies
 node_modules/
+public/evidence-ocr/
 .pnp
 .pnp.js
 

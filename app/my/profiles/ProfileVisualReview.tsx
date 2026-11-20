@@ -33,6 +33,11 @@ import {
 } from "@/lib/profile-versions/review-preview";
 import { ProfileReadOnlyPreview } from "./ProfileReadOnlyPreview";
 import type { PublicItemReview } from "@/components/ProfileEvidencePublic";
+import {
+  EvidenceMaskingDialog,
+  type MaskedEvidenceCopy,
+} from "@/components/evidence/EvidenceMaskingDialog";
+import { isEvidencePdf } from "@/lib/evidence-masking";
 export function ProfileVisualReview({
   expert,
   activities,
@@ -102,6 +107,7 @@ export function ProfileVisualReview({
   const [publicSelection, setPublicSelection] = useState<string[]>([]);
   const [selection, setSelection] = useState<string[]>([]);
   const [fileError, setFileError] = useState("");
+  const [maskingFiles, setMaskingFiles] = useState<ReviewFile[] | null>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const menu = useRef<HTMLSpanElement>(null);
   useEffect(() => {
@@ -195,7 +201,11 @@ export function ProfileVisualReview({
     setTarget(row);
     setExpanded(null);
     setFileError("");
-    setSelection(attachedFor(row).map((file) => file.id));
+    setSelection(
+      attachedFor(row)
+        .filter((file) => !isEvidencePdf(file))
+        .map((file) => file.id),
+    );
     setPublicSelection(
       attachments[row.key]?.publicIds ??
         evidence?.rows.find((r) => r.item_key === row.key)?.public_file_ids ??
@@ -401,15 +411,13 @@ export function ProfileVisualReview({
     if (
       incoming.some(
         (file) =>
-          ![
-            "image/jpeg",
-            "image/png",
-            "image/webp",
-            "application/pdf",
-          ].includes(file.type) || file.size > 10 * 1024 * 1024,
+          !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
+          file.size > 10 * 1024 * 1024,
       )
     ) {
-      setFileError("JPG·PNG·WebP·PDF 파일을 한 개당 10MB 이하로 첨부해주세요.");
+      setFileError(
+        "PDF는 보낼 수 없어요. JPG·PNG·WebP 사진을 한 개당 10MB 이하로 첨부해주세요.",
+      );
       return;
     }
     setFileError("");
@@ -424,6 +432,52 @@ export function ProfileVisualReview({
     }));
     setSelection((previous) => [...previous, ...added.map((file) => file.id)]);
   }
+  function applyAttachment(files: ReviewFile[], publicIds: string[]) {
+    if (!target) return;
+    onAttachmentChange?.({ key: target.key, files, publicIds });
+    onChange(target.key, {
+      ...(choices[target.key] ?? emptyReviewChoice()),
+      files: Object.fromEntries(
+        [...available, ...files].map((file) => [
+          file.id,
+          {
+            selected: files.some((f) => f.id === file.id),
+            public: publicIds.includes(file.id),
+          },
+        ]),
+      ),
+      requested: false,
+    });
+    setMaskingFiles(null);
+    dialog.current?.close();
+  }
+  function finishMasking(
+    copies: MaskedEvidenceCopy[],
+    publicSourceIds: string[],
+  ) {
+    if (!target) return;
+    const files = copies.map((copy) => {
+      const href = URL.createObjectURL(copy.file);
+      urls.current.add(href);
+      return {
+        id: crypto.randomUUID(),
+        name: copy.file.name,
+        href,
+        blob: copy.file,
+        type: copy.file.type,
+        size: copy.file.size,
+        maskedCopy: true as const,
+      };
+    });
+    const publicIds = files.flatMap((file, index) =>
+      publicSourceIds.includes(copies[index].sourceId) ? [file.id] : [],
+    );
+    setLocalFiles((previous) => ({
+      ...previous,
+      [target.key]: [...(previous[target.key] ?? []), ...files],
+    }));
+    applyAttachment(files, publicIds);
+  }
   function attach() {
     if (!target) return;
     if (selection.length > 20) {
@@ -431,22 +485,15 @@ export function ProfileVisualReview({
       return;
     }
     const files = available.filter((file) => selection.includes(file.id));
-    const publicIds = publicSelection.filter((id) => selection.includes(id));
-    onAttachmentChange?.({ key: target.key, files, publicIds });
-    onChange(target.key, {
-      ...(choices[target.key] ?? emptyReviewChoice()),
-      files: Object.fromEntries(
-        available.map((file) => [
-          file.id,
-          {
-            selected: selection.includes(file.id),
-            public: publicIds.includes(file.id),
-          },
-        ]),
-      ),
-      requested: false,
-    });
-    dialog.current?.close();
+    if (files.some(isEvidencePdf)) {
+      setFileError("PDF는 보낼 수 없어요. 사진으로 올려 주세요.");
+      return;
+    }
+    if (!files.length) {
+      applyAttachment([], []);
+      return;
+    }
+    setMaskingFiles(files);
   }
   return (
     <div
@@ -811,10 +858,19 @@ export function ProfileVisualReview({
             onClick={attach}
             className="min-h-11 rounded-xl bg-primary px-5 text-sm font-semibold text-white disabled:opacity-40"
           >
-            반영
+            {selection.length ? "개인정보 가리기" : "선택 해제 반영"}
           </button>
         </div>
       </dialog>
+      {maskingFiles && (
+        <EvidenceMaskingDialog
+          files={maskingFiles}
+          ownName={expert?.display_name ?? ""}
+          initialPublicIds={publicSelection}
+          onCancel={() => setMaskingFiles(null)}
+          onComplete={finishMasking}
+        />
+      )}
     </div>
   );
 }

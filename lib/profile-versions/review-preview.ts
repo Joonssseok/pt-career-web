@@ -6,6 +6,7 @@ export type ReviewFile = {
   type?: string;
   size?: number;
   activityTitle?: string;
+  maskedCopy?: true;
 };
 export type ReviewItem = {
   key: string;

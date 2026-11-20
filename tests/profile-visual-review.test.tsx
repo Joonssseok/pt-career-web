@@ -64,7 +64,7 @@ const item: ReviewItem = {
   title: activity.title,
   category: activity.category,
   source: "damoa",
-  files: [{ id: "proof", name: "확인서.pdf", href: "/api/damoa/files/proof" }],
+  files: [{ id: "proof", name: "확인서.jpg", href: "/api/damoa/files/proof" }],
 };
 function Preview() {
   const [choices, setChoices] = useState<Record<string, ReviewChoice>>({});
@@ -170,10 +170,12 @@ test("imported activity evidence is connected automatically and can be excluded"
     screen.getByRole("button", { name: "운동 봉사 증빙자료 1개 미리보기" }),
   );
   const modal = screen.getByRole("dialog", { name: "증빙자료 확인" });
-  const checkbox = within(modal).getByRole("checkbox", { name: "확인서.pdf" });
+  const checkbox = within(modal).getByRole("checkbox", { name: "확인서.jpg" });
   expect(checkbox).toHaveProperty("checked", true);
   fireEvent.click(checkbox);
-  fireEvent.click(within(modal).getByRole("button", { name: "반영" }));
+  fireEvent.click(
+    within(modal).getByRole("button", { name: "선택 해제 반영" }),
+  );
   expect(screen.getByText("증빙자료 0개")).toBeTruthy();
   expect(
     screen.queryByRole("button", { name: /운동 봉사 증빙자료/ }),
@@ -195,11 +197,12 @@ test("new files stay local and invalid files are rejected", () => {
       files: [new File(["pdf"], "새 증빙.pdf", { type: "application/pdf" })],
     },
   });
-  expect(screen.queryByRole("alert")).toBeNull();
-  fireEvent.click(screen.getByRole("button", { name: "반영" }));
-  expect(screen.getByText("증빙자료 2개")).toBeTruthy();
+  expect(screen.getByRole("alert").textContent).toContain(
+    "PDF는 보낼 수 없어요",
+  );
+  expect(screen.getByText("증빙자료 1개")).toBeTruthy();
   expect(
-    screen.getByRole("button", { name: "운동 봉사 증빙자료 2개 미리보기" }),
+    screen.getByRole("button", { name: "운동 봉사 증빙자료 1개 미리보기" }),
   ).toBeTruthy();
 });
 
@@ -235,7 +238,7 @@ test("unrequested items do not create empty review tabs or an always-expanded li
   expect(screen.queryByText("심사 미요청")).toBeNull();
 });
 
-test("workplace stays after activity sections regardless of saved section order, with map before name and address", () => {
+test("workplace stays on home with its name above the map and address below it", () => {
   render(
     <ExpertProfileView
       expert={{
@@ -265,7 +268,7 @@ test("workplace stays after activity sections regardless of saved section order,
     workplace
       .closest("[data-profile-panel]")
       ?.getAttribute("data-profile-panel"),
-  ).toBe("detail");
+  ).toBe("home");
   expect(
     screen
       .getByText(activity.title)
@@ -276,7 +279,7 @@ test("workplace stays after activity sections regardless of saved section order,
   const name = within(workplace as HTMLElement).getByText("선택한 근무 기관");
   const address = within(workplace as HTMLElement).getByText("공개 기관 주소");
   expect(
-    mapArea.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING,
+    mapArea.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_PRECEDING,
   ).toBeTruthy();
   expect(
     name.compareDocumentPosition(address) & Node.DOCUMENT_POSITION_FOLLOWING,
@@ -313,9 +316,13 @@ test("closing a nested preparation notice keeps the profile preview open", () =>
   expect(onClose).toHaveBeenCalledTimes(1);
 });
 
-
 test("legacy cover images are omitted from the public profile", () => {
-  const {container}=render(<ExpertProfileView expert={{...expert,cover_image_path:"legacy/cover.jpg"}} galleryImages={[]} />);
+  const { container } = render(
+    <ExpertProfileView
+      expert={{ ...expert, cover_image_path: "legacy/cover.jpg" }}
+      galleryImages={[]}
+    />,
+  );
   expect(container.querySelector('[aria-label="프로필 커버"]')).toBeNull();
   expect(screen.queryByAltText(/커버 이미지/)).toBeNull();
 });

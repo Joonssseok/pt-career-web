@@ -168,7 +168,7 @@ export default function ProfilePublishPreview() {
               sources.flatMap((row) =>
                 row.files.map((file) => [
                   file.id,
-                  { ...file, href: "/preview/proof-sample.png" },
+                  { ...file, href: "/preview/masking-sample.png" },
                 ]),
               ),
             ),

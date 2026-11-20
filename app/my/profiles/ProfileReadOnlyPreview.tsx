@@ -9,6 +9,7 @@ import { ProfileHeaderActions } from "@/app/experts/[id]/ShareButton";
 import {
   profileActivityCards,
   profileActivityReviewCounts,
+  profileActivityEvidenceTitles,
 } from "@/components/ProfileActivitySections";
 import type { PublicItemReview } from "@/components/ProfileEvidencePublic";
 import type { ProfileActivity } from "@/lib/profile-versions/types";
@@ -89,6 +90,9 @@ export function ProfileReadOnlyPreview({
                 galleryImages={galleryImages}
                 detailImages={detailImages}
                 itemReviews={itemReviews}
+                activityEvidenceTitles={profileActivityEvidenceTitles(
+                  activities,
+                )}
                 activityReviewCounts={profileActivityReviewCounts(
                   activities,
                   itemReviews,

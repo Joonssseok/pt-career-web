@@ -16,6 +16,7 @@ import { representativeExpert } from "@/lib/profile-versions/public";
 import {
   profileActivityCards,
   profileActivityReviewCounts,
+  profileActivityEvidenceTitles,
 } from "@/components/ProfileActivitySections";
 import { ExpertProfileView } from "@/components/experts/ExpertProfileView";
 import { detailImageSrc } from "@/lib/profile-versions/detail-images";
@@ -237,6 +238,7 @@ export default async function ExpertDetailPage({
           detailImages={detailImages}
           expert={expert}
           itemReviews={itemReviews}
+          activityEvidenceTitles={profileActivityEvidenceTitles(activities)}
           activityReviewCounts={profileActivityReviewCounts(
             activities,
             itemReviews,

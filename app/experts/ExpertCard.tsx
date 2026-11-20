@@ -34,7 +34,7 @@ export function ExpertCard({ expert, variant = 'default' }: { expert: ExpertList
             alt={expert.display_name ?? '전문가'}
             width={isExplore ? 96 : 64}
             height={isExplore ? 96 : 64}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain object-top"
           />
         ) : (
           isExplore ? (

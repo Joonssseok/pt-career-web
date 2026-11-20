@@ -4,6 +4,7 @@ import { IntroductionContent } from "@/components/profile-editor/IntroductionCon
 import { validateIntroductionDocument } from "@/lib/profile-versions/introduction-format";
 import { Gowun_Dodum } from "next/font/google";
 import { ProfileTemplate } from "./ProfileTemplate";
+import { ProfileContentChapter } from "./ProfileContentChapter";
 import { ComingSoonButton } from "@/components/ComingSoonButton";
 import { WorkplaceMap } from "./WorkplaceMap";
 import Image from "next/image";
@@ -119,6 +120,10 @@ export type ExpertProfileViewProps = {
   profileActions?: React.ReactNode;
   stickySummary?: boolean;
   ownerPreview?: boolean;
+  videoLibrary?: React.ReactNode;
+  homeVideoLibrary?: React.ReactNode;
+  postBoard?: React.ReactNode;
+  homePostBoard?: React.ReactNode;
   workplaceMapAutoLoad?: boolean;
   itemReviews?: ReadonlyMap<string, PublicItemReview>;
   activityEvidenceTitles?: Record<string, string>;
@@ -167,6 +172,10 @@ export function ExpertProfileView({
   activityReviewCounts = [],
   profileActions,
   ownerPreview = false,
+  videoLibrary,
+  homeVideoLibrary,
+  postBoard,
+  homePostBoard,
   workplaceMapAutoLoad = false,
   itemReviews,
   activityEvidenceTitles = {},
@@ -398,10 +407,45 @@ export function ExpertProfileView({
       </div>
     </div>
   );
+  const checkedDetail = validateDetailDocument(expert.detail_document);
+  const detailNodes = checkedDetail.ok ? checkedDetail.document.content : [];
+  const videoNodes = detailNodes.filter(
+    (node) =>
+      node.type === "youtubeVideo" ||
+      (node.type === "profileMedia" &&
+        String(node.attrs?.mime).startsWith("video/")),
+  );
+  const homeVideoDocument = { type: "doc", content: videoNodes };
+  const hasHomeVideo =
+    !!expert.youtube_url ||
+    videoNodes.some(
+      (node) =>
+        node.type === "youtubeVideo" ||
+        detailImages.some((image) => image.id === node.attrs?.fileId),
+    );
+  const chapterOwner = ownerPreview || !!renderItemActions;
+  const videoChapterContent = hasHomeVideo ? (
+    <>
+      {videoNodes.length > 0 && (
+        <DetailContent document={homeVideoDocument} images={detailImages} />
+      )}
+      {expert.youtube_url && (
+        <a
+          href={expert.youtube_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={styles.channel}
+        >
+          유튜브 채널 보기 ↗
+        </a>
+      )}
+    </>
+  ) : undefined;
   const home = (
     <div key="home" className={styles.home}>
       {expert.introduction && (
         <section
+          data-home-section="introduction"
           data-profile-search-item
           data-profile-search-title="소개"
           className={
@@ -430,7 +474,7 @@ export function ExpertProfileView({
         </section>
       )}
       {highlights.length > 0 && (
-        <section className={styles.homeSection}>
+        <section data-home-section="career" className={styles.homeSection}>
           <h2>주요 이력</h2>
           <div className={styles.careerHighlights}>
             {highlights.map(({ label, titles }) => (
@@ -453,10 +497,21 @@ export function ExpertProfileView({
           <ProfileEvidenceGallery groups={publicEvidenceGroups} />
         </section>
       )}
+      <ProfileContentChapter kind="board" home>
+        {homePostBoard}
+      </ProfileContentChapter>
+      <ProfileContentChapter kind="video" home ownerPreview={chapterOwner}>
+        {(videoChapterContent || homeVideoLibrary) && (
+          <>
+            {videoChapterContent}
+            {homeVideoLibrary}
+          </>
+        )}
+      </ProfileContentChapter>
       {(sortedExperiences.some((e) => e.is_current) ||
         expert.workplace_center_name ||
         expert.workplace_address) && (
-        <section className={styles.homeSection}>
+        <section data-home-section="workplace" className={styles.homeSection}>
           <h2>지금 일하는 곳</h2>
           {expert.workplace_center_name ? (
             <article
@@ -509,14 +564,6 @@ export function ExpertProfileView({
               </p>
             </div>
           )}
-        </section>
-      )}
-      {ownerPreview && (
-        <section className={styles.homeSection}>
-          <h2>수업 안내</h2>
-          <ComingSoonButton className={styles.classPlaceholder}>
-            수업 안내는 추후 추가될 예정이에요
-          </ComingSoonButton>
         </section>
       )}
     </div>
@@ -822,18 +869,27 @@ export function ExpertProfileView({
         home={home}
         career={career}
         detail={detail}
-        video={
-          expert.youtube_url ? (
-            <a
-              key="video-channel"
-              className={styles.channel}
-              href={expert.youtube_url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              유튜브 채널 보기 ↗
-            </a>
-          ) : undefined
+        video={undefined}
+        board={
+          <ProfileContentChapter
+            kind="board"
+            ownerPreview={chapterOwner && !postBoard}
+          >
+            {postBoard}
+          </ProfileContentChapter>
+        }
+        videoChapter={
+          <ProfileContentChapter
+            kind="video"
+            ownerPreview={chapterOwner && !videoLibrary}
+          >
+            {(videoChapterContent || videoLibrary) && (
+              <>
+                {videoChapterContent}
+                {videoLibrary}
+              </>
+            )}
+          </ProfileContentChapter>
         }
         ownerPreview={ownerPreview || !!renderItemActions}
         careerCount={careerCount}
@@ -842,7 +898,13 @@ export function ExpertProfileView({
   );
 }
 
-function GalleryCard({ images }: { images: GalleryImage[] }) {
+function GalleryCard({
+  images,
+  fullId = "gallery-full",
+}: {
+  images: GalleryImage[];
+  fullId?: string;
+}) {
   const preview = images.slice(0, 6);
 
   return (
@@ -850,7 +912,7 @@ function GalleryCard({ images }: { images: GalleryImage[] }) {
       data-order-key="gallery"
       title="활동 갤러리"
       action={
-        <a href="#gallery-full" className="text-xs font-semibold text-blue-600">
+        <a href={`#${fullId}`} className="text-xs font-semibold text-blue-600">
           전체 보기
         </a>
       }
@@ -873,7 +935,7 @@ function GalleryCard({ images }: { images: GalleryImage[] }) {
       </div>
 
       <div
-        id="gallery-full"
+        id={fullId}
         className="mt-4 pt-4 border-t border-gray-100 scroll-mt-32"
       >
         <GalleryFullScroll images={images} />

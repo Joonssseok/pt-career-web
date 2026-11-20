@@ -26,13 +26,15 @@ export type ProfileTemplateProps = {
   career: ReactNode;
   detail: ReactNode;
   video: ReactNode;
+  board?: ReactNode;
+  videoChapter?: ReactNode;
   ownerPreview: boolean;
   careerCount: number;
 };
 
 type SearchItem = {
   target: HTMLElement;
-  tab: "home" | "detail" | "career";
+  tab: "home" | "detail" | "career" | "video" | "board";
   title: string;
   text: string;
 };
@@ -49,6 +51,8 @@ function searchableText(element: HTMLElement) {
 
 function tabFromLocation(): ProfileTemplateTab {
   const value = new URL(window.location.href).searchParams.get("tab");
+  if (!value && /\/posts\/[0-9a-f-]+$/i.test(window.location.pathname))
+    return "board";
   return tabs.find((tab) => tab.id === value)?.id ?? "home";
 }
 
@@ -58,6 +62,8 @@ export function ProfileTemplate({
   career,
   detail,
   video,
+  board,
+  videoChapter,
   ownerPreview,
   careerCount,
 }: ProfileTemplateProps) {
@@ -117,7 +123,13 @@ export function ProfileTemplate({
         ),
       );
       const next: SearchItem[] = [];
-      for (const tab of ["home", "detail", "career"] as const) {
+      for (const tab of [
+        "home",
+        "detail",
+        "career",
+        "video",
+        "board",
+      ] as const) {
         const panel = container.querySelector<HTMLElement>(
           `[data-profile-panel="${tab}"]`,
         );
@@ -268,13 +280,13 @@ export function ProfileTemplate({
     home,
     detail,
     career,
-    video: (
+    video: videoChapter ?? (
       <>
         {video}
         {(ownerPreview || !hasVideoLink) && notice("영상 추가")}
       </>
     ),
-    board: notice("글쓰기"),
+    board: board ?? notice("글쓰기"),
   };
 
   return (
@@ -284,7 +296,7 @@ export function ProfileTemplate({
       data-profile-template
       onClick={(event) => {
         const link = (event.target as HTMLElement).closest?.(
-          "[data-profile-career-link]",
+          "[data-profile-career-link], [data-profile-tab-link]",
         );
         if (
           !link ||
@@ -295,9 +307,12 @@ export function ProfileTemplate({
         )
           return;
         event.preventDefault();
-        selectTab("career");
-        tabButtons.current.career?.focus();
-        tabButtons.current.career?.scrollIntoView({
+        const requested = link.getAttribute("data-profile-tab-link");
+        const target =
+          requested === "board" || requested === "video" ? requested : "career";
+        selectTab(target);
+        tabButtons.current[target]?.focus();
+        tabButtons.current[target]?.scrollIntoView({
           block: "start",
           behavior: "instant",
         });

@@ -1266,6 +1266,7 @@ export function ProfileVersionManager({
                   </div>
                   <IntroductionEditor
                     label="상세소개 글"
+                    richMode
                     inputId="profile-detail-input"
                     document={
                       content.detailDocument ??

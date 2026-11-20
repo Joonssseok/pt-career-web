@@ -23,6 +23,7 @@
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.38.0",
     "@tiptap/extension-highlight": "3.34.0",
+    "@tiptap/extension-table": "3.34.0",
     "@tiptap/extension-text-align": "3.34.0",
     "@tiptap/extension-text-style": "3.34.0",
     "@tiptap/pm": "3.34.0",

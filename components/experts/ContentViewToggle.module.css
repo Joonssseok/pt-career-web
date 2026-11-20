@@ -1,0 +1,36 @@
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Keep the shared control independent of each library's general button styles. */
+.toggle.toggle button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #75818d;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+.toggle.toggle button:hover {
+  color: #394957;
+  background: #edf0f3;
+}
+.toggle.toggle button[aria-pressed="true"] {
+  color: #394957;
+  background: #e9edf1;
+  border-color: #cbd3db;
+}
+.toggle.toggle button:focus-visible {
+  outline: 2px solid #8495a6;
+  outline-offset: 3px;
+}

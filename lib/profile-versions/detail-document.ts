@@ -1,12 +1,12 @@
 import {
   introductionFromText,
   introductionText,
-  validateIntroductionDocument,
   type IntroductionDocument,
   type IntroductionNode,
 } from "./introduction-format";
 import type { DetailImage } from "./detail-images";
 import { imagePresentationValid } from "./image-presentation";
+import { validatePostDocument } from "../profile-post-document";
 export { DETAIL_IMAGE_MIME_TYPES as DETAIL_MIME_TYPES } from "./detail-images";
 import { DETAIL_IMAGE_MIME_TYPES as DETAIL_MIME_TYPES } from "./detail-images";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -130,7 +130,7 @@ export function validateDetailDocument(
           return fail;
         content.push(node);
       } else {
-        const checked = validateIntroductionDocument({
+        const checked = validatePostDocument({
           type: "doc",
           content: [node],
         });
@@ -141,7 +141,7 @@ export function validateDetailDocument(
     const document: IntroductionDocument = { type: "doc", content };
     if (introductionText(document).length > 5000) return fail;
     // Also enforce the shared text-node/depth limit across all text blocks.
-    const textOnly = validateIntroductionDocument({
+    const textOnly = validatePostDocument({
       type: "doc",
       content: content.map((n) =>
         ["profileMedia", "youtubeVideo"].includes(n.type)
@@ -149,7 +149,17 @@ export function validateDetailDocument(
           : n,
       ),
     });
-    return textOnly.ok ? { ok: true, document } : fail;
+    let nodes = 0;
+    function withinBounds(node: IntroductionNode, depth: number): boolean {
+      return (
+        ++nodes <= 2500 &&
+        depth <= 12 &&
+        (node.content ?? []).every((child) => withinBounds(child, depth + 1))
+      );
+    }
+    return textOnly.ok && withinBounds(document, 0)
+      ? { ok: true, document }
+      : fail;
   } catch {
     return fail;
   }

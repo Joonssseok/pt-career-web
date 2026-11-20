@@ -1,0 +1,99 @@
+.content {
+  min-width: 0;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.content p {
+  margin: 0 0 0.9em;
+  min-height: 1.5em;
+}
+.content h2 {
+  font-size: 1.4em;
+  font-weight: 600;
+  margin: 1.3em 0 0.6em;
+}
+.content h3 {
+  font-size: 1.2em;
+  font-weight: 600;
+  margin: 1.2em 0 0.5em;
+}
+.content ul,
+.content ol {
+  padding-left: 1.7em;
+  margin: 1em 0;
+}
+.content ul {
+  list-style: disc;
+}
+.content ol {
+  list-style: decimal;
+}
+.content li > p {
+  margin-bottom: 0.3em;
+}
+.content blockquote {
+  border-left: 3px solid #cbd5e1;
+  padding: 8px 18px;
+  margin: 20px 0;
+  background: #f8fafc;
+  color: #475569;
+}
+.content a {
+  color: #2563eb;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.content code {
+  font-family: ui-monospace, monospace;
+  background: #f1f5f9;
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+.content pre {
+  overflow: auto;
+  background: #f1f5f9;
+  padding: 18px;
+  border-radius: 8px;
+  white-space: pre;
+  line-height: 1.6;
+}
+.content pre code {
+  padding: 0;
+}
+.content hr {
+  margin: 24px 0;
+  border: 0;
+  border-top: 1px solid #cbd5e1;
+}
+.tableScroll {
+  width: 100%;
+  overflow-x: auto;
+  margin: 20px 0;
+}
+.content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  min-width: 100%;
+  max-width: none;
+}
+.content th,
+.content td {
+  border: 1px solid #cbd5e1;
+  padding: 10px;
+  vertical-align: top;
+  min-width: 25px;
+}
+.content th {
+  background: #f1f5f9;
+  font-weight: 600;
+}
+.content td p,
+.content th p {
+  margin-bottom: 0;
+}
+.content mark {
+  padding: 0 2px;
+}
+.content strong {
+  font-weight: 700;
+}

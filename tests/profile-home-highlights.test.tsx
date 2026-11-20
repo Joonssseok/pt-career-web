@@ -61,6 +61,97 @@ beforeEach(() => {
   HTMLElement.prototype.scrollIntoView = jest.fn();
 });
 afterEach(cleanup);
+
+test("home follows the configured order for recorded sections and preserves the detail tab", () => {
+  const detailDocument = {
+    type: "doc",
+    content: [
+      { type: "paragraph", content: [{ type: "text", text: "상세 글" }] },
+      {
+        type: "youtubeVideo",
+        attrs: { videoId: "ABCDEFGHIJK", widthPercent: 60 },
+      },
+    ],
+  };
+  render(
+    <ExpertProfileView
+      expert={{
+        ...expert,
+        introduction: "사용자 설명",
+        detail_document: detailDocument,
+        youtube_url: "https://www.youtube.com/@example",
+      }}
+      galleryImages={[]}
+      ownerPreview
+    />,
+  );
+  const home = screen.getByRole("tabpanel", { name: "홈" });
+  expect(
+    Array.from(home.querySelectorAll("[data-home-section]")).map((node) =>
+      node.getAttribute("data-home-section"),
+    ),
+  ).toEqual(["introduction", "career", "video", "workplace"]);
+  const video = home.querySelector('[data-home-section="video"]')!;
+  expect(home.querySelector('[data-home-section="detail"]')).toBeNull();
+  expect(home.textContent).not.toContain("상세 글");
+  expect(video.querySelector("img")).toBeTruthy();
+  fireEvent.click(screen.getByRole("tab", { name: "상세정보", exact: true }));
+  const original = screen.getByRole("tabpanel", { name: "상세정보" });
+  expect(original.textContent).toContain("상세 글");
+  expect(original.querySelector("img")).toBeTruthy();
+});
+
+test("empty chapters are omitted on Home while their tabs remain available", () => {
+  render(
+    <ExpertProfileView
+      expert={{
+        ...expert,
+        introduction: "설명",
+        detail_document: null,
+        youtube_url: null,
+      }}
+      galleryImages={[]}
+    />,
+  );
+  const home = screen.getByRole("tabpanel", { name: "홈" });
+  expect(
+    Array.from(home.querySelectorAll("[data-home-section]")).map((node) =>
+      node.getAttribute("data-home-section"),
+    ),
+  ).toEqual(["introduction", "career", "workplace"]);
+  expect(within(home).queryByText("등록된 게시글이 없습니다.")).toBeNull();
+  expect(within(home).queryByText("등록된 영상이 없습니다.")).toBeNull();
+  expect(screen.getByRole("tab", { name: "게시판" })).toBeTruthy();
+  expect(screen.getByRole("tab", { name: "영상" })).toBeTruthy();
+  expect(within(home).queryByRole("button", { name: "글쓰기" })).toBeNull();
+  expect(within(home).queryByRole("button", { name: "영상 추가" })).toBeNull();
+});
+
+test("chapter tabs and recorded video links preserve the owner preview URL", () => {
+  render(
+    <ExpertProfileView
+      expert={{ ...expert, youtube_url: "https://www.youtube.com/@example" }}
+      galleryImages={[]}
+      ownerPreview
+    />,
+  );
+  const home = screen.getByRole("tabpanel", { name: "홈" });
+  expect(
+    within(home).queryByRole("link", { name: "게시판 전체 보기" }),
+  ).toBeNull();
+  fireEvent.click(screen.getByRole("tab", { name: "게시판" }));
+  const board = screen.getByRole("tabpanel", { name: "게시판" });
+  expect(within(board).getByRole("heading", { name: "게시판" })).toBeTruthy();
+  expect(within(board).getByText("등록된 게시글이 없습니다.")).toBeTruthy();
+  expect(within(board).getByRole("button", { name: "글쓰기" })).toBeTruthy();
+  expect(window.location.search).toBe("?profile=kept");
+  fireEvent.click(screen.getByRole("tab", { name: "홈", exact: true }));
+  fireEvent.click(within(home).getByRole("link", { name: "영상 전체 보기" }));
+  const video = screen.getByRole("tabpanel", { name: "영상" });
+  expect(within(video).getByRole("heading", { name: "영상" })).toBeTruthy();
+  expect(within(video).getByRole("button", { name: "영상 추가" })).toBeTruthy();
+  expect(window.location.search).toBe("?profile=kept");
+});
 test("home shows three nonempty categories with at most three actual titles and preserves owner URL on career navigation", () => {
   render(<ExpertProfileView expert={expert} galleryImages={[]} ownerPreview />);
   const home = screen.getByRole("tabpanel", { name: "홈" });

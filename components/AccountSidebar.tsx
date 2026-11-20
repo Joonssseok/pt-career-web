@@ -67,6 +67,12 @@ export async function AccountSidebar({
         />
       </AccountMenuSection>
       <Link
+        href="/my/content"
+        className="flex min-h-12 items-center rounded-xl px-3 text-sm font-bold text-slate-950 hover:bg-blue-50 hover:text-primary"
+      >
+        내 글·영상
+      </Link>
+      <Link
         href="/my#share"
         className="block px-3 py-2 text-sm font-bold text-slate-950 hover:text-primary"
       >

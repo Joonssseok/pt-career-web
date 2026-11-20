@@ -68,8 +68,8 @@
 }
 .side h2,
 .main h1 {
-  word-break:keep-all;
-  text-wrap:balance;
+  word-break: keep-all;
+  text-wrap: balance;
   font-family: var(--masking-gowun), sans-serif;
   font-weight: 500;
   line-height: 1.4;
@@ -192,7 +192,6 @@
   width: 100%;
   height: auto;
 }
-.dialog .word,
 .dialog .sensitive,
 .dialog .mask {
   position: absolute;
@@ -202,15 +201,37 @@
   background: transparent;
   min-width: 0;
 }
-.word {
-  outline: 1px solid #93b4ef;
-}
 .sensitive {
   outline: 2px solid #f59e0b;
   background: #f59e0b20 !important;
 }
 .dialog .mask {
   outline: 1px solid #fff5;
+}
+.stage .sensitive,
+.stage .mask {
+  pointer-events: none;
+}
+.stage[data-mode="select"] .sensitive,
+.stage[data-mode="adjust"] .mask {
+  pointer-events: auto;
+}
+.stage[data-mode="adjust"] .mask {
+  cursor: move;
+  outline: 2px solid #2563eb;
+}
+.dialog .resize {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 2px solid white;
+  border-radius: 6px;
+  background: #2563eb;
+  transform: translate(-50%, -50%);
+  cursor: nwse-resize;
+  touch-action: none;
 }
 .mask:focus-visible {
   outline: 3px solid #2563eb !important;

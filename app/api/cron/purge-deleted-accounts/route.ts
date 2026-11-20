@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { GRACE_PERIOD_DAYS } from '@/lib/constants/account-deletion';
 import { purgeDamoaFiles } from '@/lib/damoa/purge-files';
+import { cleanupPostImages } from '@/lib/profile-post-cleanup';
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
@@ -133,5 +134,6 @@ export async function GET(request: NextRequest) {
   }
 
   console.log(`[purge-deleted-accounts] run complete: ${purged} purged, ${failed} failed`);
-  return NextResponse.json({ ok: true, purged, failed });
+  const postCleanup = await cleanupPostImages(supabase);
+  return NextResponse.json({ ok: true, purged, failed, postImagesRemoved: postCleanup.removed, postImagesPending: postCleanup.pending });
 }

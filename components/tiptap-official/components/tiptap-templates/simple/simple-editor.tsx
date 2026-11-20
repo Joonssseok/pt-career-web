@@ -19,7 +19,15 @@ import {
   type EditableDetailImage,
 } from "@/lib/profile-versions/detail-images";
 import StarterKit from "@tiptap/starter-kit";
-import { TextStyle, Color, FontSize } from "@tiptap/extension-text-style";
+import {
+  TextStyle,
+  Color,
+  FontSize,
+  FontFamily,
+} from "@tiptap/extension-text-style";
+import { TableKit } from "@tiptap/extension-table";
+import { PostEditorToolbar } from "@/components/profile-editor/PostEditorToolbar";
+import { normalizePostLink } from "@/lib/profile-post-document";
 import Highlight from "@tiptap/extension-highlight";
 import TextAlign from "@tiptap/extension-text-align";
 import {
@@ -58,6 +66,8 @@ export type IntroductionEditorProps = {
   mediaImages?: EditableDetailImage[];
   onMediaImagesChange?: (images: EditableDetailImage[]) => void;
   disabled?: boolean;
+  postMode?: boolean;
+  richMode?: boolean;
 };
 
 // Tiptap includes unset attributes (for example orderedList.type: null).
@@ -74,7 +84,10 @@ export function SimpleEditor({
   mediaImages,
   onMediaImagesChange,
   disabled = false,
+  postMode = false,
+  richMode = false,
 }: IntroductionEditorProps) {
+  const richToolbar = postMode || richMode;
   const id = useId();
   const fileInput = useRef<HTMLInputElement>(null);
   const videoDialog = useRef<HTMLDialogElement>(null);
@@ -138,10 +151,29 @@ export function SimpleEditor({
     editable: !disabled,
     extensions: [
       ...(mediaImages ? [ProfileMediaNode, YoutubeVideoNode] : []),
+      ...(richToolbar
+        ? [
+            TableKit.configure({
+              table: { resizable: true, cellMinWidth: 25 },
+            }),
+            FontFamily,
+          ]
+        : []),
       StarterKit.configure({
-        link: false,
-        code: false,
-        codeBlock: false,
+        link: richToolbar
+          ? {
+              openOnClick: false,
+              autolink: false,
+              linkOnPaste: false,
+              isAllowedUri: (url) => !!normalizePostLink(url),
+              HTMLAttributes: {
+                target: "_blank",
+                rel: "noopener noreferrer nofollow",
+              },
+            }
+          : false,
+        code: richToolbar ? {} : false,
+        codeBlock: richToolbar ? {} : false,
         heading: { levels: [2, 3] },
       }),
       TextStyle,
@@ -150,11 +182,54 @@ export function SimpleEditor({
       Highlight.configure({ multicolor: true }),
       TextAlign.configure({
         types: ["heading", "paragraph"],
-        alignments: ["left", "center", "right"],
+        alignments: richToolbar
+          ? ["left", "center", "right", "justify"]
+          : ["left", "center", "right"],
       }),
     ],
     content: hydrate(document),
     editorProps: {
+      ...(richToolbar
+        ? {
+            handlePaste: (_view: unknown, event: ClipboardEvent) => {
+              const files = Array.from(event.clipboardData?.files ?? []);
+              if (files.length) {
+                event.preventDefault();
+                addFiles(files);
+                return true;
+              }
+              const text = event.clipboardData?.getData("text/plain");
+              if (!text) return false;
+              event.preventDefault();
+              if (editor?.isActive("codeBlock"))
+                editor.commands.insertContent({ type: "text", text });
+              else
+                editor?.commands.insertContent(
+                  text.includes("\n")
+                    ? text.split(/\r?\n/).map((line) => ({
+                        type: "paragraph",
+                        ...(line
+                          ? { content: [{ type: "text", text: line }] }
+                          : {}),
+                      }))
+                    : { type: "text", text },
+                );
+              return true;
+            },
+            handleDrop: (
+              _view: unknown,
+              event: DragEvent,
+              _slice: unknown,
+              moved: boolean,
+            ) => {
+              const files = Array.from(event.dataTransfer?.files ?? []);
+              if (moved || !files.length) return false;
+              event.preventDefault();
+              addFiles(files);
+              return true;
+            },
+          }
+        : {}),
       attributes: {
         class: "simple-editor",
         ...(inputId ? { id: inputId } : {}),
@@ -188,7 +263,7 @@ export function SimpleEditor({
         : null,
   });
   const count = state?.count ?? 0;
-  const overLimit = count > 5000;
+  const overLimit = !postMode && count > 5000;
 
   useEffect(() => {
     if (!editor || editor.isDestroyed) return;
@@ -218,21 +293,31 @@ export function SimpleEditor({
   function addFiles(files: File[]) {
     if (!mediaImages || !onMediaImagesChange || disabled) return;
     if (
+      !postMode &&
       document.content.filter((n) =>
         ["profileMedia", "youtubeVideo"].includes(n.type),
       ).length +
         files.length >
-      20
+        20
     ) {
       setMediaError("사진·동영상은 합해서 20개까지 넣을 수 있습니다.");
       return;
     }
     const activeFiles = detailImagesForDocument(mediaImages, document);
-    const error = validateDetailImages(
-      files,
-      activeFiles.length,
-      activeFiles.reduce((sum, image) => sum + image.size, 0),
-    );
+    const error = postMode
+      ? files.some(
+          (file) =>
+            !["image/jpeg", "image/png", "image/webp", "image/gif"].includes(
+              file.type,
+            ) || !file.size,
+        )
+        ? "JPG·PNG·WebP·GIF 사진을 선택해주세요."
+        : ""
+      : validateDetailImages(
+          files,
+          activeFiles.length,
+          activeFiles.reduce((sum, image) => sum + image.size, 0),
+        );
     setMediaError(error);
     if (error || !files.length) return;
     const added = files.map((file) => ({
@@ -255,6 +340,7 @@ export function SimpleEditor({
   useEffect(() => {
     editor?.setOptions({
       editorProps: {
+        ...editor.options.editorProps,
         attributes: {
           class: "simple-editor",
           ...(inputId ? { id: inputId } : {}),
@@ -269,45 +355,73 @@ export function SimpleEditor({
   }, [editor, id, inputId, label, overLimit]);
 
   return (
-    <div className="pt-introduction-editor simple-editor-wrapper">
+    <div
+      className={`pt-introduction-editor simple-editor-wrapper${richToolbar ? " post-editor-wrapper" : ""}`}
+    >
       <EditorContext.Provider value={{ editor }}>
-        <Toolbar aria-label="소개 글 서식">
-          <ToolbarGroup>
-            <UndoRedoButton action="undo" />
-            <UndoRedoButton action="redo" />
-          </ToolbarGroup>
-          <ToolbarSeparator />
-          <ToolbarGroup>
-            <HeadingDropdownMenu levels={[2, 3]} />
-            <ListDropdownMenu types={["bulletList", "orderedList"]} />
-            <BlockquoteButton />
-          </ToolbarGroup>
-          <ToolbarSeparator />
-          <ToolbarGroup>
-            <MarkButton type="bold" />
-            <MarkButton type="italic" />
-            <MarkButton type="strike" />
-            <MarkButton type="underline" />
-            <ColorHighlightPopover colors={highlightColors} />
-          </ToolbarGroup>
-          <ToolbarSeparator />
-          <ToolbarGroup>
-            <TextAlignButton align="left" />
-            <TextAlignButton align="center" />
-            <TextAlignButton align="right" />
-          </ToolbarGroup>
-        </Toolbar>
+        {richToolbar ? (
+          <PostEditorToolbar
+            editor={editor}
+            disabled={disabled}
+            label={postMode ? "게시글 편집 도구" : "상세소개 편집 도구"}
+            mediaLabel={postMode ? "사진·GIF 넣기" : "사진·GIF·동영상 넣기"}
+            onPickImages={() => fileInput.current?.click()}
+            onInsertYoutube={() => {
+              setMediaError("");
+              setVideoUrl("");
+              videoDialog.current?.showModal();
+            }}
+          />
+        ) : (
+          <Toolbar aria-label="소개 글 서식">
+            <ToolbarGroup>
+              <UndoRedoButton action="undo" />
+              <UndoRedoButton action="redo" />
+            </ToolbarGroup>
+            <ToolbarSeparator />
+            <ToolbarGroup>
+              <HeadingDropdownMenu levels={[2, 3]} />
+              <ListDropdownMenu types={["bulletList", "orderedList"]} />
+              <BlockquoteButton />
+            </ToolbarGroup>
+            <ToolbarSeparator />
+            <ToolbarGroup>
+              <MarkButton type="bold" />
+              <MarkButton type="italic" />
+              <MarkButton type="strike" />
+              <MarkButton type="underline" />
+              <ColorHighlightPopover colors={highlightColors} />
+            </ToolbarGroup>
+            <ToolbarSeparator />
+            <ToolbarGroup>
+              <TextAlignButton align="left" />
+              <TextAlignButton align="center" />
+              <TextAlignButton align="right" />
+            </ToolbarGroup>
+          </Toolbar>
+        )}
         {mediaImages && (
           <div
             className="detail-insert-toolbar"
+            style={richToolbar ? { display: "none" } : undefined}
             role="group"
-            aria-label="상세소개 콘텐츠 넣기"
+            aria-label={
+              postMode ? "게시글 콘텐츠 넣기" : "상세소개 콘텐츠 넣기"
+            }
           >
             <input
               type="file"
               ref={fileInput}
-              aria-label="상세소개 사진·GIF·동영상 선택"
-              accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
+              aria-label={
+                postMode
+                  ? "게시글 사진·GIF 선택"
+                  : "상세소개 사진·GIF·동영상 선택"
+              }
+              accept={
+                postMode
+                  ? "image/jpeg,image/png,image/webp,image/gif"
+                  : "image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm"
+              }
               multiple
               hidden
               disabled={disabled}
@@ -316,30 +430,35 @@ export function SimpleEditor({
                 e.target.value = "";
               }}
             />
-            <button
-              type="button"
-              disabled={
-                disabled ||
-                document.content.filter((n) =>
-                  ["profileMedia", "youtubeVideo"].includes(n.type),
-                ).length >= 20
-              }
-              onClick={() => fileInput.current?.click()}
-            >
-              ＋ 사진·GIF·동영상
-            </button>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => {
-                setMediaError("");
-                setVideoUrl("");
-                videoDialog.current?.showModal();
-              }}
-            >
-              ＋ 유튜브
-            </button>
-            <span>파일당 20MB · 전용 공간 20MB</span>
+            {!richToolbar && (
+              <>
+                <button
+                  type="button"
+                  disabled={
+                    disabled ||
+                    (!postMode &&
+                      document.content.filter((n) =>
+                        ["profileMedia", "youtubeVideo"].includes(n.type),
+                      ).length >= 20)
+                  }
+                  onClick={() => fileInput.current?.click()}
+                >
+                  {postMode ? "＋ 사진·GIF" : "＋ 사진·GIF·동영상"}
+                </button>
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => {
+                    setMediaError("");
+                    setVideoUrl("");
+                    videoDialog.current?.showModal();
+                  }}
+                >
+                  ＋ 유튜브
+                </button>
+                <span>파일당 20MB · 전용 공간 20MB</span>
+              </>
+            )}
           </div>
         )}
         {mediaImages && (
@@ -352,6 +471,7 @@ export function SimpleEditor({
               onSubmit={(e) => {
                 e.preventDefault();
                 if (
+                  !postMode &&
                   document.content.filter((n) =>
                     ["profileMedia", "youtubeVideo"].includes(n.type),
                   ).length >= 20
@@ -401,46 +521,48 @@ export function SimpleEditor({
             {mediaError}
           </p>
         )}
-        <div className="introduction-text-options">
-          <label>
-            글자 크기
-            <select
-              aria-label="글자 크기"
-              value={state?.fontSize ?? ""}
-              onChange={(e) => {
-                const chain = editor?.chain().focus();
-                if (e.target.value) chain?.setFontSize(e.target.value).run();
-                else chain?.unsetFontSize().run();
-              }}
-            >
-              <option value="">기본 17</option>
-              {INTRODUCTION_FONT_SIZES.map((size) => (
-                <option key={size} value={size}>
-                  {size.replace("px", "")}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            글자색
-            <select
-              aria-label="글자색"
-              value={state?.color ?? ""}
-              onChange={(e) => {
-                const chain = editor?.chain().focus();
-                if (e.target.value) chain?.setColor(e.target.value).run();
-                else chain?.unsetColor().run();
-              }}
-            >
-              <option value="">기본색</option>
-              {INTRODUCTION_TEXT_COLORS.map((color, i) => (
-                <option key={color} value={color}>
-                  {["검정", "파랑", "초록", "갈색", "보라"][i]}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        {!richToolbar && (
+          <div className="introduction-text-options">
+            <label>
+              글자 크기
+              <select
+                aria-label="글자 크기"
+                value={state?.fontSize ?? ""}
+                onChange={(e) => {
+                  const chain = editor?.chain().focus();
+                  if (e.target.value) chain?.setFontSize(e.target.value).run();
+                  else chain?.unsetFontSize().run();
+                }}
+              >
+                <option value="">기본 17</option>
+                {INTRODUCTION_FONT_SIZES.map((size) => (
+                  <option key={size} value={size}>
+                    {size.replace("px", "")}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              글자색
+              <select
+                aria-label="글자색"
+                value={state?.color ?? ""}
+                onChange={(e) => {
+                  const chain = editor?.chain().focus();
+                  if (e.target.value) chain?.setColor(e.target.value).run();
+                  else chain?.unsetColor().run();
+                }}
+              >
+                <option value="">기본색</option>
+                {INTRODUCTION_TEXT_COLORS.map((color, i) => (
+                  <option key={color} value={color}>
+                    {["검정", "파랑", "초록", "갈색", "보라"][i]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
         <EditorContent
           editor={editor}
           role="presentation"
@@ -449,7 +571,8 @@ export function SimpleEditor({
       </EditorContext.Provider>
       <div className="introduction-editor-feedback">
         <p id={`${id}-count`} aria-live="polite">
-          {count.toLocaleString("ko-KR")} / 5000자
+          {count.toLocaleString("ko-KR")}
+          {postMode ? "자" : " / 5000자"}
         </p>
         <p id={`${id}-error`} role="alert">
           {overLimit

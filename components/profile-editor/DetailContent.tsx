@@ -1,4 +1,4 @@
-import { IntroductionContent } from "./IntroductionContent";
+import { PostDocumentContent } from "./PostDocumentContent";
 import { YoutubeVideo } from "./YoutubeVideo";
 import { validateDetailDocument } from "@/lib/profile-versions/detail-document";
 import type { DetailImage } from "@/lib/profile-versions/detail-images";
@@ -49,7 +49,7 @@ export function DetailContent({
           );
         }
         return (
-          <IntroductionContent
+          <PostDocumentContent
             key={index}
             document={{ type: "doc", content: [node] }}
           />

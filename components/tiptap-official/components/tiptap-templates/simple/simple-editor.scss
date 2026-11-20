@@ -266,3 +266,50 @@
     }
   }
 }
+.post-editor-wrapper .tiptap {
+  .tableWrapper {
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+  table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: 100%;
+    margin: 16px 0;
+  }
+  td,
+  th {
+    border: 1px solid #cbd5e1;
+    min-width: 25px;
+    padding: 8px 12px;
+    vertical-align: top;
+    position: relative;
+  }
+  th {
+    background: #f1f5f9;
+    font-weight: 600;
+  }
+  td > p,
+  th > p {
+    margin: 0;
+  }
+  .selectedCell::after {
+    background: #2563eb22;
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: absolute;
+  }
+  .column-resize-handle {
+    position: absolute;
+    right: -2px;
+    top: 0;
+    bottom: -2px;
+    width: 4px;
+    background: #2563eb;
+    pointer-events: none;
+  }
+  &.resize-cursor {
+    cursor: col-resize;
+  }
+}

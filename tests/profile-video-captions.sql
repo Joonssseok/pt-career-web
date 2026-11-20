@@ -1,0 +1,15 @@
+begin;
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
+set local role authenticated;
+select set_config('test.caption_id',public.save_profile_video_caption(null,'abcdefghijk','Caption fixture','private',null,E'첫 줄\n둘째 줄')::text,true);
+select public.fixture_assert(public.list_profile_videos('10000000-0000-0000-0000-000000000001',true,0,12,'첫 줄')->0->>'caption'=E'첫 줄\n둘째 줄','caption roundtrip/newlines');
+select set_config('test.caption_revision',(public.list_profile_videos('10000000-0000-0000-0000-000000000001',true,0,12,'Caption fixture')->0->>'updatedAt'),true);
+select public.save_profile_video(current_setting('test.caption_id')::uuid,'abcdefghijk','Caption fixture','private',current_setting('test.caption_revision')::timestamptz);
+select public.fixture_assert(public.list_profile_videos('10000000-0000-0000-0000-000000000001',true,0,12,'Caption fixture')->0->>'caption'=E'첫 줄\n둘째 줄','legacy edit preserves caption');
+select public.fixture_throws($s$select public.save_profile_video_caption(current_setting('test.caption_id')::uuid,'abcdefghijk','Caption fixture','public',current_setting('test.caption_revision')::timestamptz,'stale')$s$,'40001');
+reset role;
+set local role anon;
+select public.fixture_assert(public.list_profile_videos('10000000-0000-0000-0000-000000000001',false,0,12,'첫 줄')='[]','private caption excluded from search');
+select public.fixture_throws($s$select public.save_profile_video_caption(null,'abcdefghijk','Caption fixture','public',null,'not allowed')$s$,'42501');
+reset role;
+rollback;

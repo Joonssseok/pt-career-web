@@ -1,0 +1,143 @@
+.page {
+  --font-profile-display: var(--post-gowun), var(--font-sans);
+  background: #f4f6f8;
+  min-height: calc(100vh - 96px);
+  padding: 0 20px 70px;
+  color: #17212b;
+}
+.toolbar {
+  position: sticky;
+  top: 96px;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  max-width: 1080px;
+  margin: auto;
+  padding: 16px 0;
+  background: #f4f6f8;
+}
+.toolbar div {
+  display: flex;
+  gap: 10px;
+}
+.page button {
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #e2e7ec;
+  border-radius: 8px;
+  background: white;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.page button:disabled {
+  opacity: 0.5;
+}
+.toolbar button:last-child,
+.publish > button {
+  background: #2563eb;
+  color: white;
+}
+.paper {
+  border: 0;
+  min-width: 0;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 32px;
+  background: white;
+  border-radius: 18px;
+}
+.titleLabel {
+  display: block;
+  font-size: 14px;
+  color: #55626f;
+}
+.titleLabel input {
+  width: 100%;
+  font: inherit;
+  font-size: 30px;
+  border: 0;
+  border-bottom: 1px solid #e2e7ec;
+  padding: 16px 0 22px;
+  outline: none;
+  color: #17212b;
+}
+.previewTools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  margin: 18px 0;
+}
+.previewTools p {
+  font-size: 13px;
+  color: #55626f;
+}
+.preview {
+  min-height: 300px;
+  line-height: 1.8;
+}
+.publish {
+  display: grid;
+  gap: 18px;
+  margin-top: 25px;
+  padding: 24px;
+  border: 1px solid #e2e7ec;
+  border-radius: 12px;
+}
+.publish h2 {
+  font-size: 23px;
+  font-weight: 400;
+}
+.publish label {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+}
+.publish input,
+.publish select {
+  padding: 12px;
+  min-height: 44px;
+  border: 1px solid #e2e7ec;
+  border-radius: 8px;
+  font: inherit;
+  background: white;
+}
+.publish p {
+  font-size: 13px;
+  line-height: 1.8;
+  color: #55626f;
+}
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.page :focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+@media (max-width: 600px) {
+  .paper {
+    padding: 20px 12px;
+  }
+  .titleLabel input {
+    font-size: 24px;
+  }
+  .toolbar {
+    gap: 8px;
+  }
+  .page {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .toolbar div {
+    gap: 6px;
+  }
+  .toolbar button {
+    padding: 8px 10px;
+    font-size: 14px;
+  }
+}

@@ -1,0 +1,63 @@
+.chapter {
+  min-width: 0;
+}
+.home {
+  margin-top: 48px;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.header h2 {
+  margin: 0;
+  font: 400 25px/1.5 var(--font-profile-display);
+  color: var(--color-profile-ink);
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 14px;
+  color: var(--color-profile-sub);
+}
+.actions a:hover {
+  color: var(--color-profile-ink);
+  text-decoration: underline;
+}
+.actions .add {
+  padding: 8px 14px;
+  border: 1px solid var(--color-profile-line);
+  border-radius: 10px;
+  background: var(--color-profile-surface);
+  font-size: 14px;
+}
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 160px;
+  padding: 24px;
+  background: var(--color-profile-surface);
+  border: 1px solid var(--color-profile-line);
+  border-radius: 18px;
+  color: var(--color-profile-sub);
+}
+.empty p {
+  margin: 0;
+  font-size: 15px;
+}
+.video {
+  aspect-ratio: 16 / 9;
+  min-height: 160px;
+}

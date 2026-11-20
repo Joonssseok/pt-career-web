@@ -21,6 +21,13 @@ import {
 import { ExpertProfileView } from "@/components/experts/ExpertProfileView";
 import { detailImageSrc } from "@/lib/profile-versions/detail-images";
 import { ProfileUnavailable } from "@/components/ProfileUnavailable";
+import { ProfileVideoLibrary } from "@/components/experts/ProfileVideoLibrary";
+import { loadProfilePosts, getProfilePost } from "@/app/actions/profile-posts";
+import { ProfilePostBoard } from "@/components/experts/ProfilePostBoard";
+import {
+  loadProfileVideos,
+  ownVideoProfile,
+} from "@/app/actions/profile-videos";
 import {
   getUnavailableProfileState,
   isProfileId,
@@ -164,9 +171,9 @@ export async function generateMetadata({
 export default async function ExpertDetailPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ id: string; postId?: string }>;
 }) {
-  const { id } = await params;
+  const { id, postId } = await params;
   if (!isProfileId(id)) notFound();
   const expert = await fetchExpert(id);
 
@@ -180,6 +187,26 @@ export default async function ExpertDetailPage({
   // anon_select_public/authenticated_select_public RLS 정책이 이미 공개+승인
   // 프로필의 갤러리만 걸러주므로 추가 SECURITY DEFINER 함수는 필요 없다.
   const supabase = await createClient();
+  const videoResult = await loadProfileVideos(id);
+  const {
+    data: { user: videoUser },
+  } = await supabase.auth.getUser();
+  const ownVideos = videoUser ? await ownVideoProfile() : null;
+  const videoOwner = !!(ownVideos?.ok && ownVideos.profileId === id);
+  const publicVideos = videoResult.ok ? videoResult.videos : [];
+  const tabVideos = videoOwner
+    ? await loadProfileVideos(id, true)
+    : videoResult;
+  const [publicPostResult, ownPostResult, selectedPostResult] =
+    await Promise.all([
+      loadProfilePosts(id),
+      videoOwner ? loadProfilePosts(id, true) : Promise.resolve(null),
+      postId ? getProfilePost(id, postId, videoOwner) : Promise.resolve(null),
+    ]);
+  if (postId && (!selectedPostResult?.ok || !selectedPostResult.post))
+    notFound();
+  const tabPosts = ownPostResult ?? publicPostResult;
+  const publicPosts = publicPostResult.ok ? publicPostResult.posts : [];
   const { data: galleryRows } = await supabase
     .from("profile_gallery_images")
     .select("id, image_path, caption")
@@ -226,6 +253,49 @@ export default async function ExpertDetailPage({
     <main data-profile-page className="min-h-screen">
       <div id="profile-details" className="scroll-mt-32">
         <ExpertProfileView
+          postBoard={
+            <ProfilePostBoard
+              key={JSON.stringify(tabPosts)}
+              profileId={id}
+              initialPosts={tabPosts.ok ? tabPosts.posts : []}
+              storageReady={tabPosts.ok}
+              owner={videoOwner}
+              canWrite={videoOwner && !!(ownVideos?.ok && ownVideos.canWrite)}
+              selectedPost={
+                selectedPostResult?.ok ? selectedPostResult.post : undefined
+              }
+            />
+          }
+          homePostBoard={
+            publicPosts.length ? (
+              <ProfilePostBoard
+                profileId={id}
+                initialPosts={publicPosts}
+                home
+              />
+            ) : undefined
+          }
+          videoLibrary={
+            tabVideos.ok ? (
+              <ProfileVideoLibrary
+                profileId={id}
+                initialVideos={tabVideos.videos}
+                owner={videoOwner}
+                canWrite={videoOwner && !!(ownVideos?.ok && ownVideos.canWrite)}
+              />
+            ) : (
+              <p role="alert">{tabVideos.error}</p>
+            )
+          }
+          homeVideoLibrary={
+            publicVideos.length ? (
+              <ProfileVideoLibrary
+                profileId={id}
+                initialVideos={publicVideos}
+                home
+              />
+            ) : undefined
+          }
           workplaceMapAutoLoad
           stickySummary
           profileActions={

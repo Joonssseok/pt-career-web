@@ -177,9 +177,6 @@
   line-height: 1.5;
   color: var(--color-profile-sub);
 }
-.document li > div > .itemDetails {
-  margin-top: 4px;
-}
 .document li > div.flex {
   display: flex;
   align-items: baseline;
@@ -208,9 +205,9 @@
   background: var(--color-profile-tint);
   color: var(--color-primary);
   border-radius: 50%;
-  width: 26px;
-  height: 26px;
-  padding: 5px;
+  width: 16px;
+  height: 16px;
+  padding: 2px;
   vertical-align: middle;
 }
 .root [role="img"][aria-label="인증완료"] svg {
@@ -330,16 +327,32 @@
 }
 .document .itemDetails {
   display: block;
-  margin-top: 3px;
+  margin: 2px 0 0;
+  line-height: 1.4;
 }
-.root:not([data-profile-editing])
-  .document
-  :is(h3, :global(.text-base))
-  > span:has(> [role="img"]),
-.root:not([data-profile-editing])
-  .document
-  :is(h3, :global(.text-base))
-  > [role="img"],
+.document :is(h3, :global(.text-base)) {
+  margin: 0;
+  line-height: 1.4;
+}
+.document :is(h3, :global(.text-base)) button {
+  font: inherit;
+  line-height: inherit;
+  padding: 0;
+}
+.document button[data-profile-evidence-title] {
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+}
+/* Keep the touch target without adding space above the institution name. */
+.document button[data-profile-evidence-title]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 50%;
+  height: 44px;
+  transform: translateY(-50%);
+}
 .root:not([data-profile-editing]) .document .currentBadge,
 .root:not([data-profile-editing]) .document .previousBadge {
   float: right;
@@ -388,4 +401,6 @@
   margin-top: 8px;
 }
 
-.formattedIntroduction { min-width: 0; }
+.formattedIntroduction {
+  min-width: 0;
+}

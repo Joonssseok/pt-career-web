@@ -23,6 +23,7 @@ import { profileItemKey } from "@/lib/profile-versions/types";
 import {
   ProfileEvidencePublic,
   ProfileVerificationMark,
+  ProfileEvidenceGallery,
   type PublicItemReview,
 } from "@/components/ProfileEvidencePublic";
 import {
@@ -120,6 +121,7 @@ export type ExpertProfileViewProps = {
   ownerPreview?: boolean;
   workplaceMapAutoLoad?: boolean;
   itemReviews?: ReadonlyMap<string, PublicItemReview>;
+  activityEvidenceTitles?: Record<string, string>;
   verifiedCareerCount?: number | null;
   renderItemActions?: (
     section:
@@ -167,6 +169,7 @@ export function ExpertProfileView({
   ownerPreview = false,
   workplaceMapAutoLoad = false,
   itemReviews,
+  activityEvidenceTitles = {},
   verifiedCareerCount,
 }: ExpertProfileViewProps) {
   const certifiedCount =
@@ -205,6 +208,25 @@ export function ExpertProfileView({
     ).length;
     return { total: rows.length, verified };
   };
+  const evidenceTitles = new Map(Object.entries(activityEvidenceTitles));
+  for (const row of expert.experiences)
+    evidenceTitles.set(
+      profileItemKey("experiences", row),
+      row.organization_name,
+    );
+  for (const row of expert.academic_records)
+    evidenceTitles.set(
+      profileItemKey("academic_records", row),
+      [row.school_name, row.major].filter(Boolean).join(" · "),
+    );
+  for (const row of expert.educations)
+    evidenceTitles.set(profileItemKey("educations", row), row.education_name);
+  for (const row of expert.licenses)
+    evidenceTitles.set(profileItemKey("licenses", row), row.license_name);
+  const publicEvidenceGroups = [...evidenceTitles].flatMap(([key, title]) => {
+    const review = itemReviews?.get(key);
+    return review?.files.length ? [{ title, review }] : [];
+  });
   const highlightGroups = new Map<string, string[]>([
     ["자격·면허", expert.licenses.map((row) => row.license_name)],
     ["교육·연수", expert.educations.map((row) => row.education_name)],
@@ -428,6 +450,7 @@ export function ExpertProfileView({
               </a>
             ))}
           </div>
+          <ProfileEvidenceGallery groups={publicEvidenceGroups} />
         </section>
       )}
       {(sortedExperiences.some((e) => e.is_current) ||
@@ -527,8 +550,8 @@ export function ExpertProfileView({
                   )}
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                     <div className="text-base font-semibold text-slate-900">
-                      {e.organization_name}
                       <ProfileEvidencePublic
+                        title={e.organization_name}
                         review={itemReviews?.get(
                           profileItemKey("experiences", e),
                         )}
@@ -586,9 +609,8 @@ export function ExpertProfileView({
                   {renderItemActions?.("academic_records", i)}
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                     <div className="text-base font-semibold text-slate-900">
-                      {a.school_name}
-                      {a.major ? ` · ${a.major}` : ""}
                       <ProfileEvidencePublic
+                        title={a.school_name + (a.major ? ` · ${a.major}` : "")}
                         review={itemReviews?.get(
                           profileItemKey("academic_records", a),
                         )}
@@ -636,8 +658,8 @@ export function ExpertProfileView({
                   {renderItemActions?.("educations", i)}
                   <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                     <div className="text-base font-semibold text-slate-900">
-                      {e.education_name}
                       <ProfileEvidencePublic
+                        title={e.education_name}
                         review={itemReviews?.get(
                           profileItemKey("educations", e),
                         )}
@@ -673,17 +695,25 @@ export function ExpertProfileView({
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                       <div className="inline-flex max-w-full items-center gap-1.5 text-base font-semibold text-slate-900">
-                        <span className="min-w-0 break-words">
-                          {l.license_name}
-                        </span>
                         {itemReviews?.has(profileItemKey("licenses", l)) ? (
                           <ProfileEvidencePublic
+                            title={l.license_name}
                             review={itemReviews.get(
                               profileItemKey("licenses", l),
                             )}
                           />
+                        ) : l.document_public && l.id ? (
+                          <ProfileEvidencePublic
+                            title={l.license_name}
+                            licenseDocumentId={l.id}
+                          />
                         ) : (
-                          <ProfileVerificationMark />
+                          <>
+                            <span className="min-w-0 break-words">
+                              {l.license_name}
+                            </span>
+                            <ProfileVerificationMark />
+                          </>
                         )}
                       </div>
                       {l.issuing_organization && (
@@ -694,16 +724,6 @@ export function ExpertProfileView({
                         </div>
                       )}
                     </div>
-                    {l.document_public && l.id && (
-                      <a
-                        href={`/api/license-document/${l.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-2 inline-flex min-h-10 items-center text-xs font-semibold text-blue-600 hover:underline"
-                      >
-                        증빙파일 보기 ↗
-                      </a>
-                    )}
                   </div>
                   {renderItemActions && (
                     <span className="w-11 shrink-0">

@@ -1,14 +1,87 @@
 /** @jest-environment jsdom */
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+  cleanup,
+  render,
+  screen,
+  within,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 import {
   ExpertProfileView,
   type ExpertProfileViewProps,
 } from "../components/experts/ExpertProfileView";
 import { profileActivityCards } from "../components/ProfileActivitySections";
 import { profileItemKey } from "../lib/profile-versions/types";
-import { ProfileEvidencePublic } from "../components/ProfileEvidencePublic";
+import {
+  ProfileEvidencePublic,
+  ProfileEvidenceGallery,
+} from "../components/ProfileEvidencePublic";
 
 afterEach(cleanup);
+
+test("the gallery omits empty approvals and opens the chosen document across reviews", async () => {
+  HTMLDialogElement.prototype.showModal = function () {
+    this.setAttribute("open", "");
+  };
+  HTMLDialogElement.prototype.close = function () {
+    this.removeAttribute("open");
+  };
+  URL.createObjectURL = jest.fn(() => "blob:gallery");
+  URL.revokeObjectURL = jest.fn();
+  const originalFetch = global.fetch;
+  const request = jest
+    .fn()
+    .mockResolvedValue({
+      ok: true,
+      blob: async () => new Blob(["public"], { type: "image/jpeg" }),
+    });
+  global.fetch = request;
+  const view = render(
+    <ProfileEvidenceGallery
+      groups={[
+        {
+          title: "비공개 파일만 있는 승인",
+          review: { id: "private", files: [] },
+        },
+      ]}
+    />,
+  );
+  expect(
+    screen.queryByRole("region", { name: "공개 증빙자료 모아보기" }),
+  ).toBeNull();
+  view.rerender(
+    <ProfileEvidenceGallery
+      groups={[
+        {
+          title: "첫 자격",
+          review: { id: "r1", files: [{ id: "f1", name: "first.jpg" }] },
+        },
+        {
+          title: "둘째 교육",
+          review: { id: "r2", files: [{ id: "f2", name: "second.jpg" }] },
+        },
+      ]}
+    />,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "둘째 교육 증빙자료 2 열기" }),
+  );
+  const popup = screen.getByRole("dialog", { name: "둘째 교육 공개 증빙자료" });
+  await within(popup).findByRole("img");
+  expect(request).toHaveBeenLastCalledWith(
+    "/api/profile-evidence/r2/f2",
+    expect.any(Object),
+  );
+  fireEvent.click(within(popup).getByRole("button", { name: "이전" }));
+  await waitFor(() =>
+    expect(request).toHaveBeenLastCalledWith(
+      "/api/profile-evidence/r1/f1",
+      expect.any(Object),
+    ),
+  );
+  global.fetch = originalFetch;
+});
 const activity = (id: string) => ({
   id,
   category: "교육·연수",
@@ -36,18 +109,74 @@ test("each activity owns its approval, without a duplicated certification list",
   expect(screen.queryByRole("link")).toBeNull();
 });
 
-test("the inline file links use the existing protected watermark endpoint", () => {
+test("clicking the title opens approved evidence through the protected watermark endpoint", async () => {
+  HTMLDialogElement.prototype.showModal = function () {
+    this.setAttribute("open", "");
+  };
+  HTMLDialogElement.prototype.close = function () {
+    this.removeAttribute("open");
+  };
+  URL.createObjectURL = jest.fn(() => "blob:public-evidence");
+  URL.revokeObjectURL = jest.fn();
+  const originalFetch = global.fetch;
+  const request = jest.fn().mockResolvedValue({
+    ok: true,
+    blob: async () => new Blob(["test"], { type: "image/jpeg" }),
+  });
+  global.fetch = request;
   render(
     <ProfileEvidencePublic
-      review={{ id: "review", files: [{ id: "file", name: "서류.png" }] }}
+      title="선수트레이너"
+      review={{
+        id: "review",
+        files: [
+          { id: "file", name: "서류.png" },
+          { id: "second", name: "두번째.png" },
+        ],
+      }}
     />,
   );
   expect(screen.getByLabelText("인증완료")).toBeTruthy();
-  const link = screen.getByRole("link", {
-    name: "서류.png 공개 증빙자료 보기",
+  expect(screen.queryByRole("link")).toBeNull();
+  expect(screen.queryByText("서류.png")).toBeNull();
+  expect(request).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "선수트레이너" }));
+  const popup = screen.getByRole("dialog", {
+    name: "선수트레이너 공개 증빙자료",
   });
-  expect(link.getAttribute("href")).toBe("/api/profile-evidence/review/file");
-  expect(link.getAttribute("rel")).toContain("noopener");
+  await within(popup).findByRole("img", { name: "선수트레이너 공개 증빙자료" });
+  expect(request).toHaveBeenLastCalledWith(
+    "/api/profile-evidence/review/file",
+    expect.objectContaining({ cache: "no-store" }),
+  );
+  fireEvent.click(within(popup).getByRole("button", { name: "다음" }));
+  await waitFor(() =>
+    expect(request).toHaveBeenLastCalledWith(
+      "/api/profile-evidence/review/second",
+      expect.any(Object),
+    ),
+  );
+  fireEvent.click(within(popup).getByRole("button", { name: "닫기" }));
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(URL.revokeObjectURL).toHaveBeenCalled();
+  global.fetch = originalFetch;
+});
+
+test("an approved item with no public files has a title and badge but no document button or category summary", () => {
+  render(
+    <>
+      {profileActivityCards({
+        activities: [activity("private")],
+        itemReviews: new Map([
+          ["damoa:private", { id: "private-review", files: [] }],
+        ]),
+      })}
+    </>,
+  );
+  expect(screen.getByText("같은 이름")).toBeTruthy();
+  expect(screen.getByLabelText("인증완료")).toBeTruthy();
+  expect(screen.queryByRole("button")).toBeNull();
+  expect(screen.queryByText(/모두 인증|건 중/)).toBeNull();
 });
 
 test("common records and original licenses show one mark beside their own title", () => {
@@ -99,9 +228,12 @@ test("common records and original licenses show one mark beside their own title"
   expect(within(summary).queryByText("자격/면허")).toBeNull();
   for (const title of ["공통 교육", "원본 면허"])
     expect(
-      within(screen.getAllByText(title).find(node => node.closest('[data-profile-panel="career"]'))!.closest("li")!).getAllByLabelText(
-        "인증완료",
-      ),
+      within(
+        screen
+          .getAllByText(title)
+          .find((node) => node.closest('[data-profile-panel="career"]'))!
+          .closest("li")!,
+      ).getAllByLabelText("인증완료"),
     ).toHaveLength(1);
   expect(screen.queryByText("인증 내역")).toBeNull();
 });

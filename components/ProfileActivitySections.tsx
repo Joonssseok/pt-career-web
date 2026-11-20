@@ -70,8 +70,10 @@ export function profileActivityCards({
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
                       {shown.title && (
                         <h3 className="text-base font-semibold text-slate-900">
-                          {shown.title}
-                          <ProfileEvidencePublic review={review} />
+                          <ProfileEvidencePublic
+                            review={review}
+                            title={shown.title}
+                          />
                         </h3>
                       )}
                       {!shown.title && (
@@ -126,6 +128,17 @@ export function ProfileActivitySections(
     <div className="mt-4 space-y-3 sm:space-y-4">
       {profileActivityCards(props)}
     </div>
+  );
+}
+
+export function profileActivityEvidenceTitles(activities: ProfileActivity[]) {
+  return Object.fromEntries(
+    activities
+      .filter(hasPublicActivityContent)
+      .map((activity) => [
+        "damoa:" + activity.id,
+        publicActivity(activity).title || activity.category,
+      ]),
   );
 }
 

@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 export function ProfileSectionCard({
   title,
   action,
-  count,
   children,
 }: {
   title: string;
@@ -25,13 +24,7 @@ export function ProfileSectionCard({
           className="h-3 w-0.5 shrink-0 rounded-full bg-motion"
         />
         {title}
-        {(count || action) && (
-          <span className="ml-auto">
-            {count
-              ? `${count.total}건${count.verified ? (count.verified === count.total ? " 모두 인증" : ` 중 ${count.verified}건 인증`) : ""}`
-              : action}
-          </span>
-        )}
+        {action && <span className="ml-auto">{action}</span>}
       </h2>
       <div className="pl-3 sm:pl-4">{children}</div>
     </section>

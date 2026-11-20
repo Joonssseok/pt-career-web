@@ -316,7 +316,7 @@ export function ProfileVersionManager({
                 id: file.id,
                 name: file.name,
                 href: previewData
-                  ? "/preview/proof-sample.png"
+                  ? "/preview/masking-sample.png"
                   : "/api/damoa/files/" + encodeURIComponent(file.id),
                 type: file.type,
                 size: file.size,
@@ -346,7 +346,7 @@ export function ProfileVersionManager({
               id: file.id,
               name: file.name,
               href: previewData
-                ? "/preview/proof-sample.png"
+                ? "/preview/masking-sample.png"
                 : "/api/damoa/files/" + encodeURIComponent(file.id),
             })),
         };
@@ -666,6 +666,18 @@ export function ProfileVersionManager({
     setError("");
     try {
       const submissions = [];
+      if (
+        reviewPlan.some(
+          (row) =>
+            row.request &&
+            row.files.some((file) => !file.maskedCopy || !file.blob),
+        )
+      ) {
+        setError(
+          "새로 심사할 자료는 증빙자료 확인에서 개인정보를 가리고 직접 확인해주세요.",
+        );
+        return;
+      }
       for (const row of reviewPlan.filter(
         (row) =>
           !row.legacyVerified &&
@@ -674,7 +686,9 @@ export function ProfileVersionManager({
         const fileIds: string[] = [];
         for (const file of row.files)
           fileIds.push(
-            previewData ? file.id : await storeEvidenceFile(owner, id, file),
+            previewData || !row.request
+              ? file.id
+              : await storeEvidenceFile(owner, id, file),
           );
         submissions.push({
           key: row.key,

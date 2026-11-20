@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ReviewFile } from "@/lib/profile-versions/review-preview";
+import { isEvidencePdf } from "@/lib/evidence-masking";
 
 function FilePreview({ file }: { file: ReviewFile }) {
   const [preview, setPreview] = useState<{ src: string; type: string } | null>(
@@ -15,6 +16,10 @@ function FilePreview({ file }: { file: ReviewFile }) {
     let url = "";
     setPreview(null);
     setError("");
+    if (isEvidencePdf(file)) {
+      setError("PDF는 보낼 수 없어요. 사진(JPG·PNG·WebP)으로 올려 주세요.");
+      return;
+    }
     async function load() {
       try {
         let blob = file.blob;
@@ -151,14 +156,14 @@ export function EvidenceFilePicker({
             파일 선택
           </span>
           <span className="mt-2 block text-xs text-slate-400">
-            JPG·PNG·WebP·PDF / 파일당 10MB 이하
+            JPG·PNG·WebP / 파일당 10MB 이하 · PDF는 보낼 수 없어요
           </span>
           <input
             aria-label="증빙자료 파일 선택"
             disabled={disabled}
             type="file"
             multiple
-            accept="image/jpeg,image/png,image/webp,application/pdf"
+            accept="image/jpeg,image/png,image/webp"
             onChange={(event) => {
               onAddFiles(event.target.files);
               event.target.value = "";
@@ -199,6 +204,7 @@ export function EvidenceFilePicker({
                     <label className="flex min-w-0 flex-1 cursor-pointer items-start gap-3">
                       <input
                         type="checkbox"
+                        disabled={isEvidencePdf(item)}
                         aria-label={item.name}
                         checked={selection.includes(item.id)}
                         onChange={(event) => {
@@ -221,6 +227,8 @@ export function EvidenceFilePicker({
                             : item.activityTitle || "기존 첨부자료"}
                           {item.size !== undefined &&
                             ` · ${(item.size / 1024 / 1024).toFixed(2)}MB`}
+                          {isEvidencePdf(item) &&
+                            " · 심사 제출 불가: 사진으로 올려 주세요"}
                         </span>
                       </span>
                     </label>

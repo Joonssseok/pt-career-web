@@ -20,6 +20,25 @@ jest.mock("@/components/profile-editor/IntroductionEditor", () => ({
   IntroductionEditor: () => null,
 }));
 const loadActivities = jest.fn<Promise<Activity[]>, [string]>();
+jest.mock("@/components/evidence/EvidenceMaskingDialog", () => ({
+  EvidenceMaskingDialog: ({ files, onComplete, initialPublicIds }: any) => (
+    <button
+      onClick={() =>
+        onComplete(
+          files.map((file: any) => ({
+            sourceId: file.id,
+            file: new File(["flattened-jpeg"], "증빙자료-가린사본.jpg", {
+              type: "image/jpeg",
+            }),
+          })),
+          initialPublicIds,
+        )
+      }
+    >
+      시험 사본 확인
+    </button>
+  ),
+}));
 jest.mock("next/navigation", () => ({
   useRouter: () => ({ replace: jest.fn(), refresh: jest.fn() }),
 }));
@@ -74,6 +93,8 @@ const expert = {
 } as unknown as import("../components/experts/ExpertProfileView").ExpertProfileViewProps["expert"];
 beforeEach(() => loadActivities.mockResolvedValue([]));
 beforeAll(() => {
+  URL.createObjectURL = jest.fn(() => "blob:confirmed-copy");
+  URL.revokeObjectURL = jest.fn();
   HTMLDialogElement.prototype.showModal = function () {
     this.setAttribute("open", "");
   };
@@ -183,7 +204,7 @@ test("attachment choices are staged locally with one apply button and no separat
           },
         ],
         files: {
-          f: { id: "f", name: "증명서.pdf", href: "/api/damoa/files/f" },
+          f: { id: "f", name: "증명서.jpg", href: "/api/damoa/files/f" },
         },
       }}
     />,
@@ -205,12 +226,19 @@ test("attachment choices are staged locally with one apply button and no separat
       name: "관리자 승인 후 선택한 파일 공개",
     }),
   );
-  fireEvent.click(within(dialog).getByRole("button", { name: "반영" }));
-  expect(change).toHaveBeenCalledWith({
-    key: "introduction:0",
-    files: [{ id: "f", name: "증명서.pdf", href: "/api/damoa/files/f" }],
-    publicIds: ["f"],
+  fireEvent.click(
+    within(dialog).getByRole("button", { name: "개인정보 가리기" }),
+  );
+  expect(change).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "시험 사본 확인" }));
+  const staged = change.mock.calls[0][0];
+  expect(staged.key).toBe("introduction:0");
+  expect(staged.files[0]).toMatchObject({
+    name: "증빙자료-가린사본.jpg",
+    maskedCopy: true,
   });
+  expect(staged.files[0].id).not.toBe("f");
+  expect(staged.publicIds).toEqual([staged.files[0].id]);
   expect(dialog.hasAttribute("open")).toBe(false);
 });
 
@@ -262,13 +290,13 @@ test("the picker includes own Damoa files even from activities absent from this 
   expect(within(dialog).queryByText("미저장 자료.png")).toBeNull();
 });
 
-test("selecting an existing Damoa file saves only that file and keeps it private by default", async () => {
+test("selecting an existing Damoa file stages a new confirmed copy and keeps the original private", async () => {
   const save = jest.fn().mockResolvedValue(undefined);
   const file = {
     id: "stored",
-    name: "보관된 증명서.pdf",
+    name: "보관된 증명서.jpg",
     href: "/api/damoa/files/stored",
-    type: "application/pdf",
+    type: "image/jpeg",
     activityTitle: "다른 활동",
   };
   render(
@@ -290,17 +318,26 @@ test("selecting an existing Damoa file saves only that file and keeps it private
   const dialog = screen.getByRole("dialog", { name: "증빙자료 확인" });
   fireEvent.click(within(dialog).getByRole("checkbox", { name: file.name }));
   expect(save).not.toHaveBeenCalled();
-  fireEvent.click(within(dialog).getByRole("button", { name: "반영" }));
+  fireEvent.click(
+    within(dialog).getByRole("button", { name: "개인정보 가리기" }),
+  );
+  expect(save).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "시험 사본 확인" }));
   await waitFor(() =>
     expect(save).toHaveBeenCalledWith({
       key: "introduction:0",
-      files: [file],
+      files: [
+        expect.objectContaining({
+          name: "증빙자료-가린사본.jpg",
+          maskedCopy: true,
+        }),
+      ],
       publicIds: [],
     }),
   );
 });
 
-test("one publish action submits only files from included activities and preserves private defaults", async () => {
+test("publishing cannot send an original file that has not passed masking confirmation", async () => {
   const selectedActivity = {
     id: "a",
     category: "교육·연수",
@@ -401,15 +438,11 @@ test("one publish action submits only files from included activities and preserv
   expect(publishProfileVersion).not.toHaveBeenCalled();
   fireEvent.click(within(confirmation).getByRole("checkbox"));
   fireEvent.click(submit);
-  await waitFor(() =>
-    expect(publishProfileVersion).toHaveBeenCalledWith(
-      "v",
-      expect.objectContaining({ activities: [selectedActivity] }),
-      [{ key: "damoa:a", fileIds: ["file-a"], publicIds: [], expected: null }],
-    ),
+  await screen.findByText(
+    "새로 심사할 자료는 증빙자료 확인에서 개인정보를 가리고 직접 확인해주세요.",
   );
-  expect(storeEvidenceFile).toHaveBeenCalledTimes(1);
-  await waitFor(() => expect(confirmation.hasAttribute("open")).toBe(false));
+  expect(storeEvidenceFile).not.toHaveBeenCalled();
+  expect(publishProfileVersion).not.toHaveBeenCalled();
 });
 
 test("a failed source load blocks publication rather than silently publishing without evidence", async () => {

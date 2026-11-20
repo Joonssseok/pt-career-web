@@ -93,6 +93,20 @@ export function EvidenceReviewQueue({ rows }: { rows: EvidenceReview[] }) {
               </label>
               <div className="mt-3 flex gap-3">
                 <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() =>
+                    setReasons((previous) => ({
+                      ...previous,
+                      [row.id]:
+                        "개인정보 가림 부족: 심사에 필요한 정보는 남기고, 주민등록번호 뒷자리·집 주소·전화번호·이메일·얼굴 사진 등 개인정보를 가린 사진 사본으로 다시 제출해주세요.",
+                    }))
+                  }
+                  className="rounded-lg bg-amber-50 px-4 py-3 text-amber-800"
+                >
+                  개인정보 가림 부족
+                </button>
+                <button
                   disabled={pending}
                   onClick={() => decide(row, "verified")}
                   className="rounded-lg bg-blue-50 px-4 py-3 text-primary"

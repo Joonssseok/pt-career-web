@@ -67,7 +67,7 @@ function Picker({ files = [image, pdf] }: { files?: ReviewFile[] }) {
     />
   );
 }
-test("stored images and PDFs have inline previews without being selected just by viewing", async () => {
+test("stored images preview without selection and PDFs cannot enter a review", async () => {
   const view = render(<Picker />);
   expect(screen.getByText("응급처치 교육")).toBeTruthy();
   expect(
@@ -78,18 +78,19 @@ test("stored images and PDFs have inline previews without being selected just by
     false,
   );
   fireEvent.click(screen.getByRole("button", { name: "수료증.pdf 미리보기" }));
-  const frame = await screen.findByTitle("수료증.pdf 미리보기");
-  expect(frame.getAttribute("src")).toBe("blob:preview-2");
+  await screen.findByText(
+    "PDF는 보낼 수 없어요. 사진(JPG·PNG·WebP)으로 올려 주세요.",
+  );
+  expect(screen.queryByTitle("수료증.pdf 미리보기")).toBeNull();
   expect(screen.getByRole("checkbox", { name: pdf.name })).toHaveProperty(
     "checked",
     false,
   );
-  fireEvent.click(screen.getByRole("checkbox", { name: pdf.name }));
   expect(screen.getByRole("checkbox", { name: pdf.name })).toHaveProperty(
-    "checked",
+    "disabled",
     true,
   );
-  expect(fetchFile).toHaveBeenCalledTimes(2);
+  expect(fetchFile).toHaveBeenCalledTimes(1);
   expect(fetchFile).toHaveBeenCalledWith(
     image.href,
     expect.objectContaining({
@@ -99,7 +100,7 @@ test("stored images and PDFs have inline previews without being selected just by
   );
   expect(revokeUrl).toHaveBeenCalledWith("blob:preview-1");
   view.unmount();
-  expect(revokeUrl).toHaveBeenCalledWith("blob:preview-2");
+  expect(revokeUrl).toHaveBeenCalledTimes(1);
 });
 test("failed private file requests show a recovery message instead of a false preview", async () => {
   fetchFile.mockResolvedValueOnce({ ok: false });
@@ -110,8 +111,12 @@ test("failed private file requests show a recovery message instead of a false pr
     screen.getByRole("link", { name: "원본 열기 ↗" }).getAttribute("href"),
   ).toBe(image.href);
   expect(createUrl).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole("button", { name: "미리보기 다시 불러오기" }));
-  expect(await screen.findByRole("img", { name: "교육사진.png 미리보기" })).toBeTruthy();
+  fireEvent.click(
+    screen.getByRole("button", { name: "미리보기 다시 불러오기" }),
+  );
+  expect(
+    await screen.findByRole("img", { name: "교육사진.png 미리보기" }),
+  ).toBeTruthy();
 });
 test("a late response for the previous file cannot replace the current preview", async () => {
   let finish: (response: unknown) => void = () => {};
@@ -123,7 +128,9 @@ test("a late response for the previous file cannot replace the current preview",
   );
   render(<Picker />);
   fireEvent.click(screen.getByRole("button", { name: "수료증.pdf 미리보기" }));
-  await screen.findByTitle("수료증.pdf 미리보기");
+  await screen.findByText(
+    "PDF는 보낼 수 없어요. 사진(JPG·PNG·WebP)으로 올려 주세요.",
+  );
   await act(async () =>
     finish({
       ok: true,
@@ -131,7 +138,7 @@ test("a late response for the previous file cannot replace the current preview",
     }),
   );
   await waitFor(() => expect(screen.queryByRole("img")).toBeNull());
-  expect(createUrl).toHaveBeenCalledTimes(1);
+  expect(createUrl).not.toHaveBeenCalled();
 });
 test("empty storage and load failure retain useful controls", () => {
   const view = render(<Picker files={[]} />);

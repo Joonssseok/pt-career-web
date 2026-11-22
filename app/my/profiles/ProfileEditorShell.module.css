@@ -39,9 +39,15 @@
 .preview {
   min-width: 0;
   align-self: start;
+}
+.disclosure {
   background: var(--color-profile-surface);
   border-radius: 28px;
   padding: 28px;
+}
+.identityFooter {
+  margin-top: 8px;
+  text-align: left;
 }
 .summary {
   min-height: 44px;

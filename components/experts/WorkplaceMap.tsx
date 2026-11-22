@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 // 네이버 콘솔에 등록한 도메인에서만 동작한다. Client Secret은 여기서 쓰지 않는다.
 
 // 네이버 지도 SDK 중 이 파일에서 쓰는 부분만 적은 최소 타입.
-type NaverMaps = {
+export type NaverMaps = {
   LatLng: new (lat: number, lng: number) => unknown;
   Map: new (el: HTMLElement, options: Record<string, unknown>) => unknown;
   Marker: new (options: Record<string, unknown>) => unknown;
@@ -17,7 +17,7 @@ type NaverMaps = {
       options: { query: string },
       callback: (
         status: unknown,
-        response?: { v2?: { addresses?: { x: string; y: string }[] } },
+        response?: { v2?: { addresses?: { x: string; y: string; roadAddress?: string; jibunAddress?: string }[] } },
       ) => void,
     ) => void;
   };

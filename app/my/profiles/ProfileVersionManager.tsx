@@ -8,7 +8,7 @@ import {
 import { getProfilePhotoUrl } from "@/lib/storage/profile-photo-url";
 import { ProfileEditorShell } from "./ProfileEditorShell";
 import contentStyles from "./ProfileEditorContent.module.css";
-import { CurrentWorkplaceSelector } from "@/components/profile-sections/CurrentWorkplaceSelector";
+import { ContactInquiryFields, ContactInquiryCard, emptyContactInquiry } from "@/components/profile-editor/ContactInquiryPreview";
 import {
   loadEvidenceReviews,
   storeEvidenceFile,
@@ -169,6 +169,10 @@ export function ProfileVersionManager({
   function setContent(value: SetStateAction<VersionContent>) {
     setHasUserEdits(true);
     setContentState(value);
+  }
+  const contactInquiry = content.contactInquiry ?? emptyContactInquiry();
+  function setContactInquiry(next: typeof contactInquiry) {
+    setContent((previous) => ({ ...previous, contactInquiry: next }));
   }
   function markCommonDirty() {
     setHasUserEdits(true);
@@ -911,6 +915,7 @@ export function ProfileVersionManager({
       <button type="button" onClick={openPreview}>
         전체 미리보기
       </button>
+      <ContactInquiryCard value={contactInquiry} />
     </div>
   );
   return (
@@ -995,6 +1000,19 @@ export function ProfileVersionManager({
               step={editorStep}
               onStepChange={changeEditorStep}
               identity={identity}
+              identityFooter={id && (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => {
+                    setDeleteError("");
+                    deleteDialog.current?.showModal();
+                  }}
+                  className={contentStyles.deleteButton}
+                >
+                  프로필 삭제
+                </button>
+              )}
               saveStatus={saveStatus}
               pending={pending}
               onRetry={() => {
@@ -1112,35 +1130,9 @@ export function ProfileVersionManager({
                       저장 후 게시한 프로필에 시·도만 표시됩니다.
                     </span>
                   </label>
-                  <CurrentWorkplaceSelector
-                    previewActivities={previewData?.sources}
-                    owner={owner}
-                    value={content.currentWorkplace}
-                    onChange={(currentWorkplace) =>
-                      setContent((previous) => ({
-                        ...previous,
-                        currentWorkplace,
-                        excluded: (previous.excluded ?? []).filter(
-                          (key) => key !== "workplace:0",
-                        ),
-                      }))
-                    }
-                  />
+                  <ContactInquiryFields value={contactInquiry} onChange={setContactInquiry} />
                 </section>
 
-                {id && (
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => {
-                      setDeleteError("");
-                      deleteDialog.current?.showModal();
-                    }}
-                    className={contentStyles.deleteButton}
-                  >
-                    프로필 삭제
-                  </button>
-                )}
               </div>
               <div hidden={editorStep !== 1} role="tabpanel" aria-label="소개">
                 {" "}

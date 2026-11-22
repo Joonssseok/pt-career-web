@@ -210,7 +210,7 @@ describe('EditForm save wiring', () => {
     await waitFor(() => expect(container.querySelector('input[name="displayName"]')).not.toBeNull());
     await waitFor(() => expect(parentSave).not.toBeNull());
     await act(async () => { expect(await parentSave!()).toBe(false); });
-    const links = Array.from(container.querySelectorAll('details')).find(section => section.querySelector('summary')?.textContent?.includes('외부 링크'));
+    const links = Array.from(container.querySelectorAll('details')).find(section => section.querySelector('summary')?.textContent?.includes('링크 안내'));
     expect(links?.open).toBe(true);
     expect(saveOwnProfile).not.toHaveBeenCalled();
     expect(submitProfile).not.toHaveBeenCalled();

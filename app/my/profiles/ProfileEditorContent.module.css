@@ -61,7 +61,6 @@
   font-size: 14px;
   margin-top: 20px;
 }
-.deleteButton,
 .manualSave {
   display: inline-flex;
   align-items: center;
@@ -74,6 +73,21 @@
   border: 1px solid var(--color-profile-line);
   border-radius: 14px;
   background: var(--color-profile-surface);
+}
+.root .deleteButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 0;
+  background: transparent;
+  color: #9f5555;
+  font-size: 12px;
+}
+.deleteButton:hover:not(:disabled) {
+  color: #b91c1c;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .pick > p,
 .checklist > p {

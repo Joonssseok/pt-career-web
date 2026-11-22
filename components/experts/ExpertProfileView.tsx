@@ -1,4 +1,6 @@
 import { ExternalLinkButtons } from "@/components/profile-editor/ExternalLinksPreview";
+import { PublicContactInquiryCard } from "@/components/profile-editor/ContactInquiryPreview";
+import type { PublicContactInquiry } from "@/lib/profile-versions/contact-inquiry";
 import { DetailContent } from "@/components/profile-editor/DetailContent";
 import { validateDetailDocument } from "@/lib/profile-versions/detail-document";
 import { IntroductionContent } from "@/components/profile-editor/IntroductionContent";
@@ -58,6 +60,7 @@ export type ExpertProfileViewProps = {
     introduction: string | null;
     introduction_document?: unknown;
     detail_document?: unknown;
+    contact_inquiry?: PublicContactInquiry | null;
     total_experience_years: number | null;
     profile_image_path: string | null;
     cover_image_path: string | null;
@@ -315,29 +318,33 @@ export function ExpertProfileView({
           ))}
         </div>
       )}
-      {(expert.workplace_external_contact_url || expert.workplace_phone) && (
-        <div className="mt-3 flex gap-3">
-          {expert.workplace_external_contact_url && (
-            <a
-              data-profile-contact
-              href={expert.workplace_external_contact_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex min-h-14 flex-1 items-center justify-center rounded-xl bg-primary px-4 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-            >
-              상담 문의
-            </a>
-          )}
-          {expert.workplace_phone && (
-            <a
-              data-profile-contact
-              href={`tel:${expert.workplace_phone}`}
-              className="flex min-h-14 flex-1 items-center justify-center rounded-xl border border-blue-100 bg-white px-4 text-center text-sm font-semibold text-primary transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-600"
-            >
-              전화 걸기
-            </a>
-          )}
-        </div>
+      {expert.contact_inquiry != null ? (
+        <PublicContactInquiryCard value={expert.contact_inquiry} />
+      ) : (
+        (expert.workplace_external_contact_url || expert.workplace_phone) && (
+          <div className="mt-3 flex gap-3">
+            {expert.workplace_external_contact_url && (
+              <a
+                data-profile-contact
+                href={expert.workplace_external_contact_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex min-h-14 flex-1 items-center justify-center rounded-xl bg-primary px-4 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+              >
+                상담 문의
+              </a>
+            )}
+            {expert.workplace_phone && (
+              <a
+                data-profile-contact
+                href={`tel:${expert.workplace_phone}`}
+                className="flex min-h-14 flex-1 items-center justify-center rounded-xl border border-blue-100 bg-white px-4 text-center text-sm font-semibold text-primary transition-colors hover:bg-blue-50 focus-visible:outline-2 focus-visible:outline-blue-600"
+              >
+                전화 걸기
+              </a>
+            )}
+          </div>
+        )
       )}
 
       <div className={styles.actions}>

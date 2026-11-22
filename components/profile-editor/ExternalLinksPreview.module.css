@@ -109,15 +109,16 @@
 }
 .icon {
   display: flex;
-  width: 24px;
-  height: 28px;
+  width: 32px;
+  height: 36px;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
 }
 .platformIcon {
-  width: 20px;
-  height: 20px;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
   flex-shrink: 0;
 }
 .linkText {
@@ -272,7 +273,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
-  min-height: 32px;
+  min-height: 40px;
   width: fit-content;
   max-width: 100%;
   padding: 2px 0;
@@ -283,6 +284,10 @@
 }
 .publicLinks a:hover {
   color: #687581;
+}
+.publicLinks .platformIcon {
+  width: 24px;
+  height: 24px;
 }
 .publicLinks a:focus-visible {
   outline: 2px solid #8495a6;

@@ -83,12 +83,14 @@ export function ProfileOrderLayout({
   order = {},
   onChange,
   combineSimilarSections = false,
+  showSingleHandle = false,
   className,
 }: {
   children: ReactNode;
   order?: ProfileOrder;
   onChange?: (order: ProfileOrder) => void;
   combineSimilarSections?: boolean;
+  showSingleHandle?: boolean;
   className?: string;
 }) {
   const [drag, setDrag] = useState<{
@@ -112,6 +114,7 @@ export function ProfileOrderLayout({
       >
         <button
           type="button"
+          disabled={keys.length < 2}
           aria-label={`${label} 순서 이동`}
           title="드래그해서 순서 변경 · 위아래 방향키로도 이동할 수 있어요"
           aria-keyshortcuts="ArrowUp ArrowDown"
@@ -248,7 +251,7 @@ export function ProfileOrderLayout({
       if (!key) return element;
       if (!onChange || key === "specialties" || group === "specialties")
         return element;
-      const canMove = movableKeys.length >= 2;
+      const canMove = movableKeys.length >= 2 || showSingleHandle;
       const label =
         typeof (node.props as { title?: string }).title === "string"
           ? (node.props as { title?: string }).title!

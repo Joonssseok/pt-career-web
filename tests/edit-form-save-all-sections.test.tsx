@@ -65,10 +65,11 @@ jest.mock('@/app/actions/terms', () => ({
 // "무엇을" 넘기는지지, 각 섹션 자체의 저장 로직이 아니다.
 let mockProfessionValid = true;
 let mockExtraLinksError = '';
+const mockSaveExternalLinks = jest.fn(async () => ({ok:true,error:''}));
 function makeStubSection(name: string) {
   const Stub = forwardRef((_props, ref) => {
     useImperativeHandle(ref, () => ({
-      save: async () => ({ ok: true }),
+      save: name === 'ExtraLinksSection' ? mockSaveExternalLinks : async () => ({ ok: true }),
       validate: () => name === 'ExtraLinksSection' && mockExtraLinksError
         ? { ok: false, error: mockExtraLinksError }
         : { ok: name !== 'ProfessionSection' || mockProfessionValid, error: '직군을 선택해주세요.' },
@@ -87,7 +88,7 @@ jest.mock('@/components/profile-sections/WorkplaceSection', () => makeStubSectio
 jest.mock('@/components/profile-sections/ProfessionSection', () => makeStubSection('ProfessionSection'));
 jest.mock('@/components/profile-sections/SpecialtySection', () => makeStubSection('SpecialtySection'));
 jest.mock('@/components/profile-sections/GallerySection', () => makeStubSection('GallerySection'));
-jest.mock('@/components/profile-sections/ExtraLinksSection', () => makeStubSection('ExtraLinksSection'));
+jest.mock('@/components/profile-sections/ExternalLinksSection', () => makeStubSection('ExtraLinksSection'));
 
 async function renderAndWaitForLoad() {
   const utils = render(<EditForm />);
@@ -109,7 +110,8 @@ describe('EditForm save wiring', () => {
     expect(queryByText("커버 이미지")).toBeNull();
     for (const section of optionalSections) expect(section.open).toBe(false);
     await act(async () => { await parentSave!(); });
-    expect(saveOwnProfile).toHaveBeenCalledWith(expect.objectContaining({ coverImagePath: 'user/cover.jpg', youtubeUrl: 'https://youtube.com/@existing' }));
+    expect(saveOwnProfile).toHaveBeenCalledWith(expect.objectContaining({ coverImagePath: 'user/cover.jpg', youtubeUrl: '' }));
+    expect(mockSaveExternalLinks.mock.invocationCallOrder[0]).toBeLessThan(jest.mocked(saveOwnProfile).mock.invocationCallOrder[0]);
   });
 
   it('embedded saving preserves newer common input while an older request completes', async () => {
@@ -133,11 +135,12 @@ describe('EditForm save wiring', () => {
     jest.clearAllMocks();
     mockProfessionValid=true;
     mockExtraLinksError='';
+    mockSaveExternalLinks.mockResolvedValue({ok:true,error:''});
     (saveOwnProfile as jest.Mock).mockResolvedValue({ ok: true });
     (submitProfile as jest.Mock).mockResolvedValue({ ok: true });
   });
 
-  it('임시저장을 두 번 눌러도 커버 이미지/유튜브 링크가 매번 saveOwnProfile 호출에 그대로 포함된다 (NULL로 덮어쓰지 않음)', async () => {
+  it('반복 저장은 링크를 먼저 통합 저장하고 기존 소셜 필드를 다시 채우지 않는다', async () => {
     const { getByText } = await renderAndWaitForLoad();
     const draftButton = getByText('임시저장');
 
@@ -152,9 +155,18 @@ describe('EditForm save wiring', () => {
     for (const call of (saveOwnProfile as jest.Mock).mock.calls) {
       expect(call[0]).toMatchObject({
         coverImagePath: 'user/cover.jpg',
-        youtubeUrl: 'https://youtube.com/@existing',
+        youtubeUrl: '',
       });
     }
+  });
+
+  it('외부 링크 충돌 시 기본 정보와 게시 요청을 쓰기 전에 중단한다', async () => {
+    mockSaveExternalLinks.mockResolvedValueOnce({ok:false,error:'다른 창에서 외부 링크가 변경되었습니다.'});
+    const {getByText}=await renderAndWaitForLoad();
+    await act(async()=>{fireEvent.click(getByText('임시저장'));});
+    expect(saveOwnProfile).not.toHaveBeenCalled();
+    expect(submitProfile).not.toHaveBeenCalled();
+    expect(getByText('다른 창에서 외부 링크가 변경되었습니다.')).toBeTruthy();
   });
 
   it('"업로드"는 submit_profile()을 호출하기 전에 반드시 saveOwnProfile()로 화면 내용을 먼저 저장한다', async () => {
@@ -198,7 +210,7 @@ describe('EditForm save wiring', () => {
     await waitFor(() => expect(container.querySelector('input[name="displayName"]')).not.toBeNull());
     await waitFor(() => expect(parentSave).not.toBeNull());
     await act(async () => { expect(await parentSave!()).toBe(false); });
-    const links = Array.from(container.querySelectorAll('details')).find(section => section.querySelector('summary')?.textContent?.includes('소셜·추가 링크'));
+    const links = Array.from(container.querySelectorAll('details')).find(section => section.querySelector('summary')?.textContent?.includes('외부 링크'));
     expect(links?.open).toBe(true);
     expect(saveOwnProfile).not.toHaveBeenCalled();
     expect(submitProfile).not.toHaveBeenCalled();

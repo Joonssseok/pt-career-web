@@ -1,3 +1,4 @@
+import { ExternalLinkButtons } from "@/components/profile-editor/ExternalLinksPreview";
 import { DetailContent } from "@/components/profile-editor/DetailContent";
 import { validateDetailDocument } from "@/lib/profile-versions/detail-document";
 import { IntroductionContent } from "@/components/profile-editor/IntroductionContent";
@@ -27,13 +28,6 @@ import {
   ProfileEvidenceGallery,
   type PublicItemReview,
 } from "@/components/ProfileEvidencePublic";
-import {
-  YoutubeIcon,
-  InstagramIcon,
-  ThreadsIcon,
-  KakaoIcon,
-  BlogIcon,
-} from "@/components/icons/SocialIcons";
 
 const displayFont = Gowun_Dodum({
   weight: "400",
@@ -109,7 +103,12 @@ export type ExpertProfileViewProps = {
       issuing_organization: string | null;
       acquired_date: string | null;
     }[];
-    extra_links: { label: string; url: string }[];
+    extra_links: {
+      label: string;
+      url: string;
+      kind?: string;
+      is_primary?: boolean;
+    }[];
   };
   galleryImages: GalleryImage[];
   detailImages?: DetailImage[];
@@ -141,26 +140,6 @@ export type ExpertProfileViewProps = {
   ) => React.ReactNode;
 };
 
-// 고정 5종 브랜드가 없는 자유 라벨 링크용 일반 체인링크 아이콘.
-function LinkIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="w-3.5 h-3.5"
-      aria-hidden="true"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 1 1 0 10h-2M8 12h8"
-      />
-    </svg>
-  );
-}
-
 export function ExpertProfileView({
   expert,
   galleryImages,
@@ -188,15 +167,12 @@ export function ExpertProfileView({
 
   // 값이 있는 소셜 링크만 렌더링, 전부 비어 있으면 로고 줄 자체를 숨긴다.
   const socialLinks = [
-    { label: "유튜브", Icon: YoutubeIcon, url: expert.youtube_url },
-    { label: "인스타그램", Icon: InstagramIcon, url: expert.instagram_url },
-    { label: "블로그", Icon: BlogIcon, url: expert.blog_url },
-    { label: "스레드", Icon: ThreadsIcon, url: expert.threads_url },
-    { label: "카카오톡", Icon: KakaoIcon, url: expert.kakao_url },
-  ].filter(
-    (l): l is { label: string; Icon: typeof YoutubeIcon; url: string } =>
-      !!l.url,
-  );
+    { label: "유튜브", kind: "youtube", url: expert.youtube_url },
+    { label: "인스타그램", kind: "instagram", url: expert.instagram_url },
+    { label: "블로그", kind: "blog", url: expert.blog_url },
+    { label: "스레드", kind: "threads", url: expert.threads_url },
+    { label: "카카오톡", kind: "kakao", url: expert.kakao_url },
+  ].filter((l): l is { label: string; kind: string; url: string } => !!l.url);
 
   // 정렬: ① 현재 재직중(is_current)이 항상 최상단 → ② 그 다음 시작일 내림차순
   // (최근이 위). 프로필 소유자가 "경력 기간 비공개"를 켜면 뷰가 모든 경력의
@@ -331,45 +307,11 @@ export function ExpertProfileView({
         <dt>인증 경력</dt>
         <dd>{certifiedCount === null ? "확인 필요" : `${certifiedCount}건`}</dd>
       </dl>
+      <ExternalLinkButtons links={[...socialLinks, ...expert.extra_links]} />
       {expert.specialties.length > 0 && (
         <div className={styles.specialties} aria-label="전문 분야">
           {expert.specialties.map((s) => (
             <span key={s.slug}>{s.name}</span>
-          ))}
-        </div>
-      )}
-      {socialLinks.length > 0 && (
-        <div className="relative mt-4 flex flex-wrap items-center gap-3">
-          {socialLinks.map(({ label, Icon, url }) => (
-            <a
-              key={label}
-              data-profile-contact
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={label}
-              className="inline-flex min-h-tap min-w-tap items-center justify-center rounded-xl border border-slate-100 bg-white transition-colors hover:border-blue-200 focus-visible:outline-2 focus-visible:outline-blue-600"
-            >
-              <Icon />
-            </a>
-          ))}
-        </div>
-      )}
-
-      {expert.extra_links.length > 0 && (
-        <div className="relative mt-3 flex flex-wrap gap-2">
-          {expert.extra_links.map((link, i) => (
-            <a
-              key={`${link.label}-${i}`}
-              data-profile-contact
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-tap items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition-colors hover:border-blue-200 hover:text-primary focus-visible:outline-2 focus-visible:outline-blue-600"
-            >
-              <LinkIcon />
-              {link.label}
-            </a>
           ))}
         </div>
       )}
@@ -454,7 +396,6 @@ export function ExpertProfileView({
               : styles.introduction
           }
         >
-          {renderItemActions?.("introduction", 0)}
           {showFormattedIntroduction ? (
             <IntroductionContent
               document={expert.introduction_document}

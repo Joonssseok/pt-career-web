@@ -13,6 +13,7 @@ export type CommonProfilePreview = Partial<
     | "blog_url"
     | "threads_url"
     | "kakao_url"
+    | "extra_links"
   >
 >;
 export type CommonProfileSave = () => Promise<boolean>;
@@ -20,4 +21,5 @@ export const CommonProfileSaveContext = createContext<{
   register: (save: CommonProfileSave | null) => void;
   preview?: (value: CommonProfilePreview) => void;
   busy?: (value: boolean) => void;
+  dirty?: () => void;
 }>({ register: () => {} });

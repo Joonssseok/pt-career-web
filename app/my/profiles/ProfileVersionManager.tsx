@@ -143,6 +143,7 @@ export function ProfileVersionManager({
             : next;
         }),
       busy: setCommonBusy,
+      dirty: () => markCommonDirty(),
       register: (save: CommonProfileSave | null) => {
         commonSave.current = save;
       },

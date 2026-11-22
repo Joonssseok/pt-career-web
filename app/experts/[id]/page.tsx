@@ -91,7 +91,7 @@ type ExpertDetail = {
     issuing_organization: string | null;
     acquired_date: string | null;
   }[];
-  extra_links: { label: string; url: string }[];
+  extra_links: { label: string; url: string; kind?:string; is_primary?:boolean }[];
 };
 
 const fetchExpert = cache(async (id: string): Promise<ExpertDetail | null> => {

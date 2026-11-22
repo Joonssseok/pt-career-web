@@ -21,9 +21,8 @@ import WorkplaceSection from '@/components/profile-sections/WorkplaceSection';
 import ProfessionSection from '@/components/profile-sections/ProfessionSection';
 import SpecialtySection from '@/components/profile-sections/SpecialtySection';
 import GallerySection from '@/components/profile-sections/GallerySection';
-import ExtraLinksSection from '@/components/profile-sections/ExtraLinksSection';
+import ExternalLinksSection from '@/components/profile-sections/ExternalLinksSection';
 import type { SectionSaveHandle } from '@/components/profile-sections/types';
-import { YoutubeIcon, InstagramIcon, ThreadsIcon, KakaoIcon, BlogIcon } from '@/components/icons/SocialIcons';
 
 type FormState = 'default' | 'error' | 'loading' | 'saved';
 type ProfileMeta = {
@@ -136,8 +135,6 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
   const [formState, setFormState] = useState<FormState>('default');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [imageUploading, setImageUploading] = useState(false);
-  // 소셜링크 아이콘별 입력창 펼침 상태 -- 독립 토글(여러 개 동시 펼침 가능)
-  const [openSocial, setOpenSocial] = useState<Record<string, boolean>>({});
   // 한 줄 소개 placeholder -- 서버 렌더링 시 항상 0번 예시로 시작하고,
   // 마운트 후(useEffect)에만 랜덤으로 바꾼다. 초기 state에서 바로
   // Math.random()을 쓰면 서버와 클라이언트가 다른 값을 그려 hydration
@@ -298,16 +295,11 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
   // RPC는 이미 DB에 저장된 값만 공개 전환할 뿐 화면(React state)의
   // 미저장 내용을 저장하는 로직이 없어서, 이 함수를 거치지 않고 바로
   // 업로드하면 방금 입력한 내용이 조용히 사라지는 긴급 버그였다
-  // (2026-08-13 지시서). 기본 정보를 먼저 저장(await)해야 한다: 프로필
-  // 행 자체가 없는 상태(신규 사용자)에서는 하위 섹션 RPC가 전부
-  // "Profile not found"로 실패하므로, 순서가 바뀌면 안 된다.
+  // (2026-08-13 지시서). 최초 작성자는 약관 동의 과정에서 프로필 행을
+  // 만든다. 외부 링크를 옮긴 뒤 기본 정보와 나머지 항목을 저장한다.
   //
-  // saveOwnProfile 호출에는 formData의 모든 필드를 포함해야 한다 --
-  // 하나라도 빠뜨리면 save_own_profile의 DEFAULT NULL + EXCLUDED
-  // 업서트 때문에 그 필드가 매번 NULL로 덮어써진다. 실제로 coverImagePath/
-  // youtubeUrl/instagramUrl/blogUrl/threadsUrl/kakaoUrl이 빠져있어서
-  // "임시저장"을 누를 때마다 커버 이미지와 소셜링크 5종이 지워지는
-  // 활성 데이터 유실 버그였다(resumePhone만 먼저 고쳐져 있었음).
+  // Save external links first: its conflict check must run before basic-profile
+  // writes, and only a successful transfer may clear the five legacy columns.
   const saveAllSections = async (): Promise<boolean> => {
     setDraftSaveState('loading');
     setDraftSaveMessage('');
@@ -328,19 +320,28 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       setFormState('error');
-      failed.push('기본 정보(필수 항목을 확인해주세요)');
+      setDraftSaveState('error');
+      setDraftSaveMessage('기본 정보의 필수 항목을 확인해주세요.');
+      return false;
     } else {
+      const linksResult = await extraLinksRef.current?.save();
+      if (!linksResult?.ok) {
+        if (linksDetails.current) linksDetails.current.open = true;
+        setDraftSaveState('error');
+        setDraftSaveMessage(linksResult?.error || '외부 링크를 불러온 후 다시 저장해주세요.');
+        return false;
+      }
       const basicResult = await saveOwnProfile({
         displayName: formData.displayName,
         bio: formData.bio,
         description: formData.description,
         profileImagePath: formData.profileImagePath,
         coverImagePath: formData.coverImagePath,
-        youtubeUrl: formData.youtubeUrl,
-        instagramUrl: formData.instagramUrl,
-        blogUrl: formData.blogUrl,
-        threadsUrl: formData.threadsUrl,
-        kakaoUrl: formData.kakaoUrl,
+        youtubeUrl: '',
+        instagramUrl: '',
+        blogUrl: '',
+        threadsUrl: '',
+        kakaoUrl: '',
         resumePhone: formData.resumePhone,
       });
       if (basicResult.ok) {
@@ -362,7 +363,6 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
       { label: '직군', ref: professionRef },
       { label: '전문분야', ref: specialtyRef },
       { label: '상세정보 이미지', ref: galleryRef },
-      { label: '추가링크', ref: extraLinksRef },
     ];
 
     const results = await Promise.all(
@@ -673,84 +673,10 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
                     </>}
 
                     <OptionalSection ref={(element: HTMLElement | null) => { linksDetails.current = element instanceof HTMLDetailsElement ? element : null; }} className="group border-t border-slate-100 pt-4">
-                      {embedded && <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-slate-800 [&::-webkit-details-marker]:hidden"><span>소셜·추가 링크 <span className="ml-2 text-xs font-normal text-slate-400">선택</span></span><span aria-hidden className="text-slate-400 transition-transform group-open:rotate-180">⌄</span></summary>}
-                      <div className={embedded ? "mt-3 space-y-5" : ""}>
-                    {/* 소셜링크 -- 아이콘을 클릭하면 그 플랫폼의 URL 입력창이
-                        펼쳐진다(독립 토글). 값이 등록된 아이콘은 파란 강조 +
-                        체크 배지로 표시. http(s) 형식은 저장 시 서버에서 검증.
-                        kakaoUrl(개인 카카오톡 채널)은 근무기관의 "공식 문의처"
-                        (workplaces.external_contact_url)와 별개 필드다. */}
-                    <div className={embedded ? "space-y-3" : "pt-4 border-t border-gray-100 space-y-3"}>
-                      <h3 className="text-sm font-semibold text-gray-900">소셜링크</h3>
-                      <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                        {(
-                          [
-                            { name: 'youtubeUrl', label: '유튜브', Icon: YoutubeIcon },
-                            { name: 'instagramUrl', label: '인스타그램', Icon: InstagramIcon },
-                            { name: 'blogUrl', label: '블로그', Icon: BlogIcon },
-                            { name: 'threadsUrl', label: '스레드', Icon: ThreadsIcon },
-                            { name: 'kakaoUrl', label: '카카오톡', Icon: KakaoIcon },
-                          ] as const
-                        ).map(({ name, label, Icon }) => {
-                          const filled = !!formData[name].trim();
-                          const open = !!openSocial[name];
-                          return (
-                            <button
-                              key={name}
-                              type="button"
-                              onClick={() =>
-                                setOpenSocial((prev) => ({ ...prev, [name]: !prev[name] }))
-                              }
-                              aria-expanded={open}
-                              title={label}
-                              className={`relative flex flex-col items-center gap-1 flex-1 min-h-14 py-2.5 rounded-lg border transition-colors ${
-                                filled
-                                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                  : open
-                                    ? 'border-gray-400 bg-gray-50 text-gray-700'
-                                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
-                              }`}
-                            >
-                              <Icon className="w-6 h-6" />
-                              <span className="text-micro font-medium">{label}</span>
-                              {filled && (
-                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-blue-500 text-white text-micro flex items-center justify-center">
-                                  ✓
-                                </span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      {(
-                        [
-                          { name: 'youtubeUrl', label: '유튜브', placeholder: 'https://youtube.com/@channel' },
-                          { name: 'instagramUrl', label: '인스타그램', placeholder: 'https://instagram.com/id' },
-                          { name: 'blogUrl', label: '블로그', placeholder: 'https://blog.naver.com/id' },
-                          { name: 'threadsUrl', label: '스레드', placeholder: 'https://threads.net/@id' },
-                          { name: 'kakaoUrl', label: '카카오톡', placeholder: 'https://pf.kakao.com/... 또는 오픈채팅 링크' },
-                        ] as const
-                      )
-                        .filter(({ name }) => openSocial[name])
-                        .map(({ name, label, placeholder }) => (
-                          <div key={name}>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              {label} 링크 <span className="text-gray-400">(선택)</span>
-                            </label>
-                            <input
-                              type="url"
-                              name={name}
-                              value={formData[name]}
-                              onChange={handleChange}
-                              placeholder={placeholder}
-                              disabled={formState === 'loading'}
-                              className={getInputClass(name)}
-                            />
-                          </div>
-                        ))}
-                    </div>
-
-                    <ExtraLinksSection ref={extraLinksRef} />
+                      {embedded && <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-slate-800 [&::-webkit-details-marker]:hidden"><span>외부 링크 <span className="ml-2 text-xs font-normal text-slate-400">선택</span></span><span aria-hidden className="text-slate-400">⌄</span></summary>}
+                      <div className="mt-3">
+                        {!embedded && <h3 className="mb-4 text-sm font-semibold">외부 링크</h3>}
+                        <ExternalLinksSection ref={extraLinksRef} onSaved={() => setFormData(previous => ({...previous,youtubeUrl:'',instagramUrl:'',blogUrl:'',threadsUrl:'',kakaoUrl:''}))}/>
                       </div>
                     </OptionalSection>
                   </div>

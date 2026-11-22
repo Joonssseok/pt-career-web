@@ -673,9 +673,9 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
                     </>}
 
                     <OptionalSection ref={(element: HTMLElement | null) => { linksDetails.current = element instanceof HTMLDetailsElement ? element : null; }} className="group border-t border-slate-100 pt-4">
-                      {embedded && <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-slate-800 [&::-webkit-details-marker]:hidden"><span>외부 링크 <span className="ml-2 text-xs font-normal text-slate-400">선택</span></span><span aria-hidden className="text-slate-400">⌄</span></summary>}
+                      {embedded && <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-slate-800 [&::-webkit-details-marker]:hidden"><span>링크 안내 <span className="ml-2 text-xs font-normal text-slate-400">선택</span></span><span aria-hidden className="text-slate-400">⌄</span></summary>}
                       <div className="mt-3">
-                        {!embedded && <h3 className="mb-4 text-sm font-semibold">외부 링크</h3>}
+                        {!embedded && <h3 className="mb-4 text-sm font-semibold">링크 안내</h3>}
                         <ExternalLinksSection ref={extraLinksRef} onSaved={() => setFormData(previous => ({...previous,youtubeUrl:'',instagramUrl:'',blogUrl:'',threadsUrl:'',kakaoUrl:''}))}/>
                       </div>
                     </OptionalSection>

@@ -12,6 +12,14 @@ import { ProfileVersionManager } from "../app/my/profiles/ProfileVersionManager"
 import { CommonProfileSaveContext } from "../components/CommonProfileSaveContext";
 import { loadActivities } from "../lib/damoa/server-store";
 import { saveProfileVersion } from "../app/actions/profile-versions";
+import { emptyContactInquiry } from "@/lib/profile-versions/contact-inquiry";
+import type { VersionContent } from "@/lib/profile-versions/types";
+jest.mock("@/lib/naver-maps-browser", () => ({
+  searchNaverAddresses: jest.fn(),
+  loadNaverMaps: jest.fn(() =>
+    Promise.resolve({ LatLng: jest.fn(), Map: jest.fn(), Marker: jest.fn() }),
+  ),
+}));
 // Exercise manager save/restore behavior while the official editor is covered in-browser.
 jest.mock("@/components/profile-editor/IntroductionEditor", () => {
   const {
@@ -142,7 +150,7 @@ function CommonEditor() {
     </label>
   );
 }
-function mount(draft = content) {
+function mount(draft: VersionContent = content) {
   return render(
     <ProfileVersionManager
       owner="owner"
@@ -204,6 +212,55 @@ test("initial loads never write; typing is debounced and acknowledged content su
     "value",
     "수정한 소개",
   );
+  await advance(2000);
+  expect(saveProfileVersion).toHaveBeenCalledTimes(1);
+});
+test("contact edits autosave with private details and independent visibility, then restore on remount", async () => {
+  const contactInquiry = {
+    ...emptyContactInquiry(),
+    address: { value: "선택한 근무지", visible: false },
+    detailAddress: "3층",
+    mapVisible: true,
+    location: {
+      name: "기관",
+      address: "선택한 근무지",
+      latitude: 37.5,
+      longitude: 127.1,
+    },
+  };
+  const view = mount({ ...content, contactInquiry });
+  await advance(2000);
+  expect(saveProfileVersion).not.toHaveBeenCalled();
+  expect(screen.getByLabelText("상세주소")).toHaveProperty("value", "3층");
+  fireEvent.change(screen.getByLabelText("공개 이메일", { exact: true }), {
+    target: { value: "private@example.com" },
+  });
+  await advance();
+  expect(saveProfileVersion).toHaveBeenCalledTimes(1);
+  const stored = (saveProfileVersion as jest.Mock).mock.calls[0][2];
+  expect(stored.contactInquiry.email).toEqual({
+    value: "private@example.com",
+    visible: false,
+  });
+  expect(stored.contactInquiry.address.visible).toBe(false);
+  expect(stored.contactInquiry.mapVisible).toBe(true);
+  expect(stored.contactInquiry.detailAddress).toBe("3층");
+  view.unmount();
+  mount(stored);
+  expect(screen.getByLabelText("공개 이메일", { exact: true })).toHaveProperty(
+    "value",
+    "private@example.com",
+  );
+  expect(screen.getByLabelText("방문 주소 공개")).toHaveProperty(
+    "checked",
+    false,
+  );
+  expect(screen.getByLabelText("지도 공개")).toHaveProperty("checked", true);
+  expect(
+    within(
+      screen.getByRole("region", { name: "연락·문의 안내 미리보기" }),
+    ).queryByText("private@example.com"),
+  ).toBeNull();
   await advance(2000);
   expect(saveProfileVersion).toHaveBeenCalledTimes(1);
 });

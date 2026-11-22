@@ -9,7 +9,15 @@ import {
 } from "@/lib/profile-versions/types";
 import { validateDetailDocument } from "@/lib/profile-versions/detail-document";
 import { validateIntroductionDocument } from "@/lib/profile-versions/introduction-format";
+import { validateContactInquiry } from "@/lib/profile-versions/contact-inquiry";
 function prepareFormattedIntroduction(content: VersionContent) {
+  if (!content || typeof content !== "object" || Array.isArray(content))
+    return { ok: false as const, error: "프로필 입력 형식을 확인해주세요." };
+  if (content.contactInquiry !== undefined) {
+    const checked = validateContactInquiry(content.contactInquiry);
+    if (!checked.ok) return checked;
+    content = { ...content, contactInquiry: checked.contact };
+  }
   if (content.detailDocument !== undefined) {
     const detail = validateDetailDocument(content.detailDocument);
     if (!detail.ok) return detail;

@@ -32,6 +32,7 @@ export type ProfileEditorShellProps = {
   step: number;
   onStepChange: (step: number) => void;
   identity: ReactNode;
+  identityFooter?: ReactNode;
   children: ReactNode;
   saveStatus: ProfileEditorSaveStatus;
   onRetry: () => void;
@@ -50,6 +51,7 @@ export function ProfileEditorShell({
   step,
   onStepChange,
   identity,
+  identityFooter,
   children,
   saveStatus,
   onRetry,
@@ -126,6 +128,7 @@ export function ProfileEditorShell({
               {identity}
             </div>
           </details>
+          {identityFooter && <div className={styles.identityFooter}>{identityFooter}</div>}
         </aside>
         <div className={styles.read}>
           <nav className={styles.nav} aria-label="프로필 작성 단계">

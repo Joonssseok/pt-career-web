@@ -1,6 +1,7 @@
 import { workplaceExpertFields, type CurrentWorkplace } from "./workplace";
 import type { ExpertProfileViewProps } from "@/components/experts/ExpertProfileView";
 import type { IntroductionDocument } from "./introduction-format";
+import { publicContactInquiry, type ContactInquiry } from "./contact-inquiry";
 // The compatible validator accepts both legacy text and the closed formatting document.
 export const INTRODUCTION_FORMATTING_STORAGE_ENABLED = true;
 import {
@@ -26,6 +27,7 @@ export type ProfileActivity = {
   presentation?: ItemPresentation;
 };
 export type VersionContent = {
+  contactInquiry?: ContactInquiry;
   currentWorkplace?: CurrentWorkplace | null;
   activityRegion?: string;
   headline: string;
@@ -102,6 +104,9 @@ export function applyVersion(
       ? null
       : (content.introductionDocument ?? null),
     detail_document: content.detailDocument ?? null,
+    ...(content.contactInquiry !== undefined
+      ? { contact_inquiry: publicContactInquiry(content.contactInquiry) }
+      : {}),
     experiences: show("experiences")
       ? base.experiences.filter(
           (row) => !hidden(profileItemKey("experiences", row)),

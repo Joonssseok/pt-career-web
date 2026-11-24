@@ -24,7 +24,7 @@
  * forwardRef exposing save(), and every server action, so it can render the
  * real EditForm and drive its actual save wiring without touching Supabase.
  */
-import { forwardRef, useImperativeHandle } from 'react';
+import { forwardRef, useEffect, useImperativeHandle } from 'react';
 import { render, act, fireEvent, waitFor } from '@testing-library/react';
 import { CommonProfileSaveContext, type CommonProfileSave } from '@/components/CommonProfileSaveContext';
 import EditForm from '@/app/expert/edit/EditForm';
@@ -65,16 +65,26 @@ jest.mock('@/app/actions/terms', () => ({
 // "무엇을" 넘기는지지, 각 섹션 자체의 저장 로직이 아니다.
 let mockProfessionValid = true;
 let mockExtraLinksError = '';
+let mockMedicalEligibility: boolean | undefined;
+let mockSelectionFailure = '';
+const mockSelectionOrder: string[] = [];
 const mockSaveExternalLinks = jest.fn(async () => ({ok:true,error:''}));
 function makeStubSection(name: string) {
-  const Stub = forwardRef((_props, ref) => {
+  const Stub = forwardRef((props: { onMedicalTechnicianChange?: (value: boolean) => void; medicalTechnician?: boolean }, ref) => {
+    useEffect(() => {
+      if (name === 'ProfessionSection' && mockMedicalEligibility !== undefined)
+        props.onMedicalTechnicianChange?.(mockMedicalEligibility);
+    }, [props.onMedicalTechnicianChange]);
     useImperativeHandle(ref, () => ({
-      save: name === 'ExtraLinksSection' ? mockSaveExternalLinks : async () => ({ ok: true }),
+      save: name === 'ExtraLinksSection' ? mockSaveExternalLinks : async () => {
+        if (name === 'ProfessionSection' || name === 'SpecialtySection') mockSelectionOrder.push(name);
+        return { ok: mockSelectionFailure !== name, error: mockSelectionFailure === name ? '선택 저장 실패' : undefined };
+      },
       validate: () => name === 'ExtraLinksSection' && mockExtraLinksError
         ? { ok: false, error: mockExtraLinksError }
         : { ok: name !== 'ProfessionSection' || mockProfessionValid, error: '직군을 선택해주세요.' },
     }));
-    return null;
+    return name === 'SpecialtySection' ? <output data-testid="medical-role-state">{String(props.medicalTechnician)}</output> : null;
   });
   Stub.displayName = name;
   return Stub;
@@ -135,9 +145,33 @@ describe('EditForm save wiring', () => {
     jest.clearAllMocks();
     mockProfessionValid=true;
     mockExtraLinksError='';
+    mockMedicalEligibility=undefined;
+    mockSelectionFailure='';
+    mockSelectionOrder.length=0;
     mockSaveExternalLinks.mockResolvedValue({ok:true,error:''});
     (saveOwnProfile as jest.Mock).mockResolvedValue({ ok: true });
     (submitProfile as jest.Mock).mockResolvedValue({ ok: true });
+  });
+
+  it.each([true, false])('직군과 전문분야를 자격 전환에 맞는 순서로 저장한다: 의료기사=%s', async (medical) => {
+    mockMedicalEligibility=medical;
+    let save: CommonProfileSave | null=null;
+    const {container}=render(<CommonProfileSaveContext.Provider value={{register: next=>{save=next;}}}><EditForm embedded commonOnly /></CommonProfileSaveContext.Provider>);
+    await waitFor(()=>expect(container.querySelector('input[name="displayName"]')).not.toBeNull());
+    await waitFor(()=>expect(container.querySelector('[data-testid="medical-role-state"]')?.textContent).toBe(String(medical)));
+    await act(async()=>{expect(await save!()).toBe(true);});
+    expect(mockSelectionOrder).toEqual(medical ? ['ProfessionSection','SpecialtySection'] : ['SpecialtySection','ProfessionSection']);
+  });
+
+  it.each([true, false])('선행 선택 저장이 실패하면 자격 전환의 후행 저장은 실행하지 않는다: 의료기사=%s', async (medical) => {
+    mockMedicalEligibility=medical;
+    mockSelectionFailure=medical?'ProfessionSection':'SpecialtySection';
+    let save: CommonProfileSave | null=null;
+    const {container}=render(<CommonProfileSaveContext.Provider value={{register: next=>{save=next;}}}><EditForm embedded commonOnly /></CommonProfileSaveContext.Provider>);
+    await waitFor(()=>expect(container.querySelector('input[name="displayName"]')).not.toBeNull());
+    await waitFor(()=>expect(container.querySelector('[data-testid="medical-role-state"]')?.textContent).toBe(String(medical)));
+    await act(async()=>{expect(await save!()).toBe(false);});
+    expect(mockSelectionOrder).toEqual([mockSelectionFailure]);
   });
 
   it('반복 저장은 링크를 먼저 통합 저장하고 기존 소셜 필드를 다시 채우지 않는다', async () => {

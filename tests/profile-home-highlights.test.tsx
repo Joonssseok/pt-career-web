@@ -11,11 +11,6 @@ import {
   type ExpertProfileViewProps,
 } from "../components/experts/ExpertProfileView";
 import { profileActivityReviewCounts } from "../components/ProfileActivitySections";
-jest.mock("../components/experts/WorkplaceMap", () => ({
-  WorkplaceMap: ({ address }: { address: string }) => (
-    <div role="img" aria-label={`근무 기관 위치 지도: ${address}`} />
-  ),
-}));
 const expert = {
   id: "test",
   display_name: "전문가",
@@ -90,7 +85,7 @@ test("home follows the configured order for recorded sections and preserves the 
     Array.from(home.querySelectorAll("[data-home-section]")).map((node) =>
       node.getAttribute("data-home-section"),
     ),
-  ).toEqual(["introduction", "career", "video", "workplace"]);
+  ).toEqual(["introduction", "career", "video"]);
   const video = home.querySelector('[data-home-section="video"]')!;
   expect(home.querySelector('[data-home-section="detail"]')).toBeNull();
   expect(home.textContent).not.toContain("상세 글");
@@ -118,7 +113,7 @@ test("empty chapters are omitted on Home while their tabs remain available", () 
     Array.from(home.querySelectorAll("[data-home-section]")).map((node) =>
       node.getAttribute("data-home-section"),
     ),
-  ).toEqual(["introduction", "career", "workplace"]);
+  ).toEqual(["introduction", "career"]);
   expect(within(home).queryByText("등록된 게시글이 없습니다.")).toBeNull();
   expect(within(home).queryByText("등록된 영상이 없습니다.")).toBeNull();
   expect(screen.getByRole("tab", { name: "게시판" })).toBeTruthy();
@@ -206,41 +201,17 @@ test("activity highlights include unreviewed visible titles but never hidden tit
   ).toContain("공개 교육");
   expect(screen.queryByText("비공개 제목")).toBeNull();
 });
-test("current workplace map uses only a supplied public address, is on Home once, and is absent when address is hidden", () => {
-  const view = render(
-    <ExpertProfileView
-      expert={{ ...expert, workplace_address: "공개된 공식 주소" }}
-      galleryImages={[]}
-    />,
-  );
-  const map = screen.getByRole("img", {
-    name: "근무 기관 위치 지도: 공개된 공식 주소",
-  });
-  expect(
-    map.closest("[data-profile-panel]")?.getAttribute("data-profile-panel"),
-  ).toBe("home");
-  expect(
-    screen.getAllByRole("img", { name: /근무 기관 위치 지도/, hidden: true }),
-  ).toHaveLength(1);
-  view.rerender(
-    <ExpertProfileView
-      expert={{ ...expert, workplace_address: null }}
-      galleryImages={[]}
-    />,
-  );
-  expect(
-    screen.queryByRole("img", { name: /근무 기관 위치 지도/, hidden: true }),
-  ).toBeNull();
-});
-
-test("home orders highlights before workplace and puts the sole map after the selected workplace", () => {
+test("home omits the duplicate workplace section while the identity retains public workplace contact", () => {
   render(
     <ExpertProfileView
       expert={{
         ...expert,
         experiences: [],
         workplace_center_name: "선택한 근무지",
-        workplace_address: "공개 주소",
+        workplace_address: "이전 근무지 주소",
+        contact_inquiry: {
+          address: { name: "선택한 근무지", base: "공개 주소", detail: "2층" },
+        },
       }}
       galleryImages={[]}
     />,
@@ -249,21 +220,13 @@ test("home orders highlights before workplace and puts the sole map after the se
   const headings = within(home)
     .getAllByRole("heading", { level: 2 })
     .map((h) => h.textContent);
-  expect(headings.indexOf("주요 이력")).toBeLessThan(
-    headings.indexOf("지금 일하는 곳"),
+  expect(headings).toContain("주요 이력");
+  expect(headings).not.toContain("지금 일하는 곳");
+  expect(home.querySelector('[data-home-section="workplace"]')).toBeNull();
+  expect(within(home).queryByText("선택한 근무지")).toBeNull();
+  const contact = within(
+    screen.getByRole("region", { name: "연락·문의 안내", exact: true }),
   );
-  const workplace = within(home).getByText("선택한 근무지");
-  const map = screen.getByRole("img", {
-    name: "근무 기관 위치 지도: 공개 주소",
-  });
-  expect(
-    workplace.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING,
-  ).toBeTruthy();
-  fireEvent.click(screen.getByRole("tab", { name: "상세정보", exact: true }));
-  expect(
-    within(screen.getByRole("tabpanel", { name: "상세정보" })).queryByRole(
-      "img",
-      { name: /근무 기관 위치 지도/, hidden: true },
-    ),
-  ).toBeNull();
+  expect(contact.getByText("선택한 근무지")).toBeTruthy();
+  expect(contact.getByText("공개 주소 2층")).toBeTruthy();
 });

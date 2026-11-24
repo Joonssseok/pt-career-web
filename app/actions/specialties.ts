@@ -32,8 +32,7 @@ export async function getOwnSelectedSpecialtyIds(): Promise<{
     .order('display_order');
 
   if (error) {
-    console.error('[getOwnSelectedSpecialtyIds] Supabase error:', error);
-    return { ok: false, error: error.message, specialtyIds: [], specialties: [] };
+    return { ok: false, error: '선택한 전문분야를 불러오지 못했습니다.', specialtyIds: [], specialties: [] };
   }
 
   return {
@@ -50,23 +49,26 @@ export async function getSpecialties() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('specialties')
-    .select('id, name, slug, sort_order')
+    .select('*')
     .eq('is_active', true)
     .order('sort_order');
 
   if (error) {
-    console.error('[getSpecialties] Supabase error:', error);
-    return { ok: false as const, error: error.message, specialties: [] };
+    return { ok: false as const, error: '전문분야를 불러오지 못했습니다.', specialties: [] };
   }
 
-  return { ok: true as const, error: '', specialties: data };
+  return { ok: true as const, error: '', specialties: data.map(row => ({
+    id: row.id as string, name: row.name as string, slug: row.slug as string,
+    sort_order: row.sort_order as number,
+    medical_technician_only: row.medical_technician_only === true,
+  })) };
 }
 
 export async function replaceProfileSpecialties(
   specialties: Array<{ specialtyId: string; ownerVisible?: boolean }>
 ) {
   try {
-    if (specialties.length < 1 || specialties.length > 3) {
+    if (!Array.isArray(specialties) || specialties.length < 1 || specialties.length > 3) {
       return { ok: false, error: 'Must select 1-3 specialties' };
     }
 
@@ -85,8 +87,7 @@ export async function replaceProfileSpecialties(
     );
 
     if (error) {
-      console.error('[replaceProfileSpecialties] Supabase error:', error);
-      return { ok: false, error: error.message };
+      return { ok: false, error: '전문분야를 저장하지 못했습니다. 직군과 선택 항목을 확인해주세요.' };
     }
 
     if (result && result.length > 0) {
@@ -95,9 +96,8 @@ export async function replaceProfileSpecialties(
     }
 
     return { ok: false, error: 'Unexpected response' };
-  } catch (err) {
-    console.error('[replaceProfileSpecialties] threw:', err);
-    return { ok: false, error: String(err) };
+  } catch {
+    return { ok: false, error: '전문분야를 저장하지 못했습니다. 잠시 후 다시 시도해주세요.' };
   }
 }
 

@@ -95,6 +95,14 @@ try{
  const migrations=await readdir('supabase/migrations');
  const migration=migrations.find((f)=>/^\d+_profile_contact_inquiry\.sql$/.test(f)); assert.ok(migration);
  await pg.exec(await readFile(`supabase/migrations/${migration}`,'utf8'));
+ const projectionMetaSQL="select jsonb_build_object('acl',proacl::text,'definer',prosecdef,'config',proconfig) v from pg_proc where oid='public.profile_contact_inquiry_public(jsonb)'::regprocedure";
+ const originalProjectionMeta=await scalar(projectionMetaSQL);
+ const originalProjectionDefinition=await scalar("select pg_get_functiondef('public.profile_contact_inquiry_public(jsonb)'::regprocedure) v");
+ const nameMigration=migrations.find((f)=>/^\d+_profile_contact_location_name\.sql$/.test(f));assert.ok(nameMigration);
+ const nameMigrationSQL=await readFile(`supabase/migrations/${nameMigration}`,'utf8');
+ const nameRollbackSQL=await readFile('supabase/rollback/profile_contact_location_name.sql','utf8');
+ await pg.exec(nameMigrationSQL);
+ eq(await scalar(projectionMetaSQL),originalProjectionMeta,'location-name migration preserves projection ACL/invoker/search path');
  eq(await scalar(rowsSQL),before,'migration preserves all synthetic rows');
  eq(await scalar(aclSQL,[names]),acl,'existing ACLs/security modes/search paths unchanged');
  eq(await scalar("select pg_get_functiondef('public.get_representative_profiles(uuid[])'::regprocedure) v"),getter,'public getter unchanged');
@@ -159,13 +167,33 @@ try{
   eq(Object.hasOwn(result.content,'contactInquiry'),false,'public content never includes private configuration');
   for(const role of ['authenticated','service_role'])eq((await representative(role)).expert.contact_inquiry,expected,'all public RPC audiences get same safe DTO');
   await claim(other);eq((await representative('authenticated')).expert.contact_inquiry,expected,'unrelated reader receives public projection only');await claim(owner);
-  const serialized=JSON.stringify(result);for(const secret of [c.inquiry.value,c.phone.value,c.email.value,c.location.name])eq(serialized.includes(secret),false,'hidden contact/name absent throughout public response');
+  const serialized=JSON.stringify(result);for(const secret of [c.inquiry.value,c.phone.value,c.email.value])eq(serialized.includes(secret),false,'hidden contacts absent throughout public response');
+  eq(serialized.includes(c.location.name),addressVisible,'location name public only with explicitly visible address');
+  if(addressVisible)eq(result.expert.contact_inquiry.address.name,c.location.name,'public address includes selected place name');
+  if(mapVisible)eq(Object.keys(result.expert.contact_inquiry.map).sort(),['latitude','longitude'],'map DTO has no place name or address text');
   if(!addressVisible){eq(serialized.includes(c.address.value),false,'hidden base address absent');eq(serialized.includes(c.detailAddress),false,'hidden detailed address absent');}
   if(!mapVisible){eq(serialized.includes(String(c.location.latitude)),false,'hidden latitude absent');eq(serialized.includes(String(c.location.longitude)),false,'hidden longitude absent');}
  }
  const allVisible=complete();for(const key of ['inquiry','phone','email','address'])allVisible[key].visible=true;allVisible.mapVisible=true;
  await save(allVisible);await run('authenticated','select public.publish_profile_version($1)',[version]);
  eq((await representative()).expert.contact_inquiry,plain(publicContactInquiry(allVisible)),'all explicitly visible fields projected');
+ for(const blankName of ['','   ']){
+  const c=complete();c.address.visible=true;c.location.name=blankName;
+  const projected=await value('authenticated','select public.profile_contact_inquiry_public($1) v',[JSON.stringify(c)]);
+  eq(Object.hasOwn(projected.address,'name'),false,'blank place name omits optional name key');
+  eq(projected,plain(publicContactInquiry(c)),'blank-name projection matches actual TS');
+ }
+ const beforeNameRollback=await scalar(rowsSQL);
+ await pg.exec(nameRollbackSQL);
+ eq(await scalar(rowsSQL),beforeNameRollback,'name rollback preserves private and published data');
+ eq(await scalar(projectionMetaSQL),originalProjectionMeta,'name rollback preserves projection ACL/security');
+ eq((await scalar("select pg_get_functiondef('public.profile_contact_inquiry_public(jsonb)'::regprocedure) v")).replace(/\r\n/g,'\n'),originalProjectionDefinition.replace(/\r\n/g,'\n'),'name rollback restores former function definition ignoring platform line endings');
+ const oldProjection=await value('authenticated','select public.profile_contact_inquiry_public($1) v',[JSON.stringify(allVisible)]);
+ eq(Object.hasOwn(oldProjection.address,'name'),false,'name-only rollback removes name from public address');
+ eq(Object.hasOwn((await representative()).expert.contact_inquiry.address,'name'),false,'name-only rollback also removes stale snapshot name from public RPC projection');
+ eq(oldProjection.map,{latitude:allVisible.location.latitude,longitude:allVisible.location.longitude},'name rollback keeps independent map coordinates');
+ await pg.exec(nameMigrationSQL);
+ eq((await value('authenticated','select public.profile_contact_inquiry_public($1) v',[JSON.stringify(allVisible)])).address.name,allVisible.location.name,'name migration can be reapplied without data edits');
  const defaultLabel=complete();defaultLabel.inquiryLabel='';defaultLabel.inquiry.visible=true;
  eq(await value('authenticated','select public.profile_contact_inquiry_public($1) v',[JSON.stringify(defaultLabel)]),plain(publicContactInquiry(defaultLabel)),'blank inquiry label uses existing fallback');
  const malformed={...complete(),unexpected:'PRIVATE MALFORMED SECRET'};
@@ -201,6 +229,10 @@ try{
  await save(null,legacy);eq(await value('authenticated','select draft_content v from public.profile_versions where id=$1',[version]),legacy,'legacy saves remain usable after rollback');
  await save(complete());await run('authenticated',"select public.save_profile_with_detail_images($1,'Profile',$2,'{}',null) v",[version,JSON.stringify({...legacy,contactInquiry:complete()})]);
  eq((await value('authenticated','select draft_content v from public.profile_versions where id=$1',[version])).contactInquiry,complete(),'detail-image save path retains contacts after rollback');
+ const beforeCombinedRollback=await scalar(rowsSQL);
+ await pg.exec(nameRollbackSQL);
+ eq(await scalar(rowsSQL),beforeCombinedRollback,'name rollback after original contact rollback preserves all rows');
+ eq((await representative()).expert.contact_inquiry,{},'name rollback cannot reactivate disabled contact card or legacy fallback');
  console.log(`PASS: ${checks} isolated contact schema/TS projection/owner/public/privacy/snapshot/rollback checks; no real database connection.`);
 }catch(error){console.error('FAIL:',error.code||'',error.message,'line',error.query&&error.position?error.query.slice(0,Number(error.position)).split('\n').length:'unknown');process.exitCode=1;}
 finally{await pg.close();}

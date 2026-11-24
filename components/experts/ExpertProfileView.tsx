@@ -1,15 +1,17 @@
 import { ExternalLinkButtons } from "@/components/profile-editor/ExternalLinksPreview";
 import { PublicContactInquiryCard } from "@/components/profile-editor/ContactInquiryPreview";
 import type { PublicContactInquiry } from "@/lib/profile-versions/contact-inquiry";
+import { hasHospitalWork } from "@/lib/specialties/catalog";
+import { SpecialtyLabel } from "@/components/specialties/SpecialtyLabel";
 import { DetailContent } from "@/components/profile-editor/DetailContent";
 import { validateDetailDocument } from "@/lib/profile-versions/detail-document";
 import { IntroductionContent } from "@/components/profile-editor/IntroductionContent";
 import { validateIntroductionDocument } from "@/lib/profile-versions/introduction-format";
 import { Gowun_Dodum } from "next/font/google";
 import { ProfileTemplate } from "./ProfileTemplate";
+import { AdaptiveHomeCareer } from "./AdaptiveHomeCareer";
 import { ProfileContentChapter } from "./ProfileContentChapter";
 import { ComingSoonButton } from "@/components/ComingSoonButton";
-import { WorkplaceMap } from "./WorkplaceMap";
 import Image from "next/image";
 import { formatActivityPeriod } from "@/lib/activity-period";
 import { ProfileSectionCard as SectionCard } from "./ProfileSectionCard";
@@ -126,7 +128,6 @@ export type ExpertProfileViewProps = {
   homeVideoLibrary?: React.ReactNode;
   postBoard?: React.ReactNode;
   homePostBoard?: React.ReactNode;
-  workplaceMapAutoLoad?: boolean;
   itemReviews?: ReadonlyMap<string, PublicItemReview>;
   activityEvidenceTitles?: Record<string, string>;
   verifiedCareerCount?: number | null;
@@ -158,11 +159,14 @@ export function ExpertProfileView({
   homeVideoLibrary,
   postBoard,
   homePostBoard,
-  workplaceMapAutoLoad = false,
   itemReviews,
   activityEvidenceTitles = {},
   verifiedCareerCount,
 }: ExpertProfileViewProps) {
+  const hospitalWork = hasHospitalWork(expert.specialties);
+  const legacyInquiryUrl = hospitalWork
+    ? null
+    : expert.workplace_external_contact_url;
   const certifiedCount =
     verifiedCareerCount !== undefined
       ? verifiedCareerCount
@@ -314,19 +318,25 @@ export function ExpertProfileView({
       {expert.specialties.length > 0 && (
         <div className={styles.specialties} aria-label="전문 분야">
           {expert.specialties.map((s) => (
-            <span key={s.slug}>{s.name}</span>
+            <SpecialtyLabel key={s.slug} slug={s.slug} name={s.name} />
           ))}
         </div>
       )}
       {expert.contact_inquiry != null ? (
-        <PublicContactInquiryCard value={expert.contact_inquiry} />
+        <PublicContactInquiryCard
+          value={
+            hospitalWork
+              ? { ...expert.contact_inquiry, inquiry: undefined }
+              : expert.contact_inquiry
+          }
+        />
       ) : (
-        (expert.workplace_external_contact_url || expert.workplace_phone) && (
+        (legacyInquiryUrl || expert.workplace_phone) && (
           <div className="mt-3 flex gap-3">
-            {expert.workplace_external_contact_url && (
+            {legacyInquiryUrl && (
               <a
                 data-profile-contact
-                href={expert.workplace_external_contact_url}
+                href={legacyInquiryUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex min-h-14 flex-1 items-center justify-center rounded-xl bg-primary px-4 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
@@ -390,7 +400,7 @@ export function ExpertProfileView({
       )}
     </>
   ) : undefined;
-  const home = (
+  const home = () => (
     <div key="home" className={styles.home}>
       {expert.introduction && (
         <section
@@ -423,25 +433,29 @@ export function ExpertProfileView({
       )}
       {highlights.length > 0 && (
         <section data-home-section="career" className={styles.homeSection}>
-          <h2>주요 이력</h2>
-          <div className={styles.careerHighlights}>
-            {highlights.map(({ label, titles }) => (
-              <a
-                key={label}
-                href="?tab=career"
-                data-profile-career-link
-                className={styles.highlightCard}
-                aria-label={`${label} 이력으로 이동`}
-              >
-                <h3>{label}</h3>
-                <ul>
-                  {titles.slice(0, 3).map((title, index) => (
-                    <li key={index}>{title}</li>
-                  ))}
-                </ul>
-              </a>
-            ))}
-          </div>
+          <AdaptiveHomeCareer
+            full={career}
+            summary={
+              <div className={styles.careerHighlights}>
+                {highlights.map(({ label, titles }) => (
+                  <a
+                    key={label}
+                    href="?tab=career"
+                    data-profile-career-link
+                    className={styles.highlightCard}
+                    aria-label={`${label} 이력으로 이동`}
+                  >
+                    <h3>{label}</h3>
+                    <ul>
+                      {titles.slice(0, 3).map((title, index) => (
+                        <li key={index}>{title}</li>
+                      ))}
+                    </ul>
+                  </a>
+                ))}
+              </div>
+            }
+          />
           <ProfileEvidenceGallery groups={publicEvidenceGroups} />
         </section>
       )}
@@ -456,64 +470,6 @@ export function ExpertProfileView({
           </>
         )}
       </ProfileContentChapter>
-      {(sortedExperiences.some((e) => e.is_current) ||
-        expert.workplace_center_name ||
-        expert.workplace_address) && (
-        <section data-home-section="workplace" className={styles.homeSection}>
-          <h2>지금 일하는 곳</h2>
-          {expert.workplace_center_name ? (
-            <article
-              data-profile-search-item
-              data-profile-search-title={expert.workplace_center_name}
-            >
-              <strong>{expert.workplace_center_name}</strong>
-              <ProfileEvidencePublic review={itemReviews?.get("workplace:0")} />
-              {sortedExperiences.find(
-                (e) => e.organization_name === expert.workplace_center_name,
-              )?.position && (
-                <p>
-                  {
-                    sortedExperiences.find(
-                      (e) =>
-                        e.organization_name === expert.workplace_center_name,
-                    )?.position
-                  }
-                </p>
-              )}
-            </article>
-          ) : (
-            sortedExperiences
-              .filter((e) => e.is_current)
-              .map((e, i) => (
-                <article
-                  key={i}
-                  data-profile-search-item
-                  data-profile-search-title={e.organization_name}
-                >
-                  <strong>{e.organization_name}</strong>
-                  <ProfileEvidencePublic
-                    review={itemReviews?.get(profileItemKey("experiences", e))}
-                  />
-                  {e.position && <p>{e.position}</p>}
-                </article>
-              ))
-          )}
-          {expert.workplace_address && (
-            <div className={styles.homeMap}>
-              <WorkplaceMap
-                address={expert.workplace_address}
-                autoLoad={workplaceMapAutoLoad}
-              />
-              <p>
-                {expert.workplace_address}
-                {expert.workplace_address_detail
-                  ? ` ${expert.workplace_address_detail}`
-                  : ""}
-              </p>
-            </div>
-          )}
-        </section>
-      )}
     </div>
   );
   const career = (
@@ -760,7 +716,7 @@ export function ExpertProfileView({
         )
       )}
       {(expert.workplace_phone ||
-        expert.workplace_external_contact_url ||
+        legacyInquiryUrl ||
         expert.workplace_website_url) && (
         <section
           data-profile-search-item
@@ -780,10 +736,10 @@ export function ExpertProfileView({
                 📞 전화
               </a>
             )}
-            {expert.workplace_external_contact_url && (
+            {legacyInquiryUrl && (
               <a
                 data-profile-contact
-                href={expert.workplace_external_contact_url}
+                href={legacyInquiryUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex min-h-tap flex-1 items-center justify-center rounded-xl bg-blue-50 px-3 py-2.5 text-center text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-100 focus-visible:outline-2 focus-visible:outline-blue-600"
@@ -814,7 +770,7 @@ export function ExpertProfileView({
     >
       <ProfileTemplate
         identity={identity}
-        home={home}
+        home={home()}
         career={career}
         detail={detail}
         video={undefined}

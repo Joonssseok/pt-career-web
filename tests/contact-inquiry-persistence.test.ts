@@ -59,7 +59,11 @@ test.each([
     const safe = publicContactInquiry(saved);
     expect(safe.address).toEqual(
       addressVisible
-        ? { base: saved.address.value, detail: saved.detailAddress }
+        ? {
+            base: saved.address.value,
+            detail: saved.detailAddress,
+            name: saved.location!.name,
+          }
         : undefined,
     );
     expect(safe.map).toEqual(
@@ -67,10 +71,10 @@ test.each([
     );
     expect(safe.phone).toBeUndefined();
     expect(safe.email).toBeUndefined();
-    expect(JSON.stringify(safe)).not.toContain(saved.location!.name);
     expect(JSON.stringify(safe)).not.toContain(saved.email.value);
     expect(JSON.stringify(safe)).not.toContain(saved.phone.value);
     if (!addressVisible) {
+      expect(JSON.stringify(safe)).not.toContain(saved.location!.name);
       expect(JSON.stringify(safe)).not.toContain(saved.address.value);
       expect(JSON.stringify(safe)).not.toContain(saved.detailAddress);
     }

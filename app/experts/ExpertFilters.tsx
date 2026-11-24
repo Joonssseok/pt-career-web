@@ -73,9 +73,11 @@ function MultiSelectField({
 export function ExpertFilters({
   specialties,
   professions,
+  preview = false,
 }: {
   specialties: Specialty[];
   professions: Profession[];
+  preview?: boolean;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -96,11 +98,11 @@ export function ExpertFilters({
 
   // 로컬 상태가 커밋된 URL과 달라지면(= 사용자가 필터를 바꿨으면) 반영한다.
   useEffect(() => {
-    if (paramsString !== searchParams.toString()) {
+    if (!preview && paramsString !== searchParams.toString()) {
       router.push(`/experts?${paramsString}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paramsString]);
+  }, [paramsString, preview]);
 
   const params = new URLSearchParams(paramsString);
   const selectedProfessions = parseMulti(params, 'profession');
@@ -109,7 +111,7 @@ export function ExpertFilters({
   const committedQuery = params.get('query') ?? '';
 
   const updateFilter = (key: string, value: string) => {
-    trackEvent("search");
+    if (!preview) trackEvent("search");
     setParamsString((prev) => {
       const next = new URLSearchParams(prev);
       if (value) {

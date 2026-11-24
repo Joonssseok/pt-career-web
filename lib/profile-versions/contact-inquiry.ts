@@ -12,7 +12,7 @@ export type PublicContactInquiry = {
   inquiry?: { label: string; url: string };
   phone?: string;
   email?: string;
-  address?: { base: string; detail: string };
+  address?: { base: string; detail: string; name?: string };
   map?: Pick<NaverLocation, "latitude" | "longitude">;
 };
 export function emptyContactInquiry(): ContactInquiry {
@@ -162,6 +162,7 @@ export function publicContactInquiry(value: unknown): PublicContactInquiry {
     result.address = {
       base: contact.address.value,
       detail: contact.detailAddress,
+      ...(contact.location?.name ? { name: contact.location.name } : {}),
     };
   if (contact.mapVisible && contact.location)
     result.map = {

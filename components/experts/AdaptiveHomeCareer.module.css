@@ -1,0 +1,13 @@
+.layout {
+  position: relative;
+  display: flow-root;
+  min-width: 0;
+}
+.probe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  visibility: hidden;
+  pointer-events: none;
+}

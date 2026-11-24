@@ -22,6 +22,7 @@ type Profession = {
   name: string;
   slug: string;
   sort_order: number;
+  is_medical_technician?: boolean;
 };
 
 const MIN_SELECTION = 1;
@@ -29,8 +30,12 @@ const MAX_SELECTION = 5;
 const CUSTOM_LABEL_MAX = 20;
 
 // 첫 선택의 대표 직군 순서와 직접 입력 슬롯을 보존한다.
-const ProfessionSection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
-  function ProfessionSection({ compact = false }, ref) {
+const ProfessionSection = forwardRef<SectionSaveHandle, {
+  compact?: boolean;
+  onMedicalTechnicianChange?: (value: boolean) => void;
+  previewData?: { professions: Profession[]; selected: { professionId: string; customLabel: string | null; ownerVisible: boolean }[] };
+}>(
+  function ProfessionSection({ compact = false, onMedicalTechnicianChange, previewData }, ref) {
     const previewRegistry = useContext(CommonProfileSaveContext);
     const requiredDialog = useRef<HTMLDialogElement>(null);
     const selectionList = useRef<HTMLDetailsElement>(null);
@@ -51,7 +56,9 @@ const ProfessionSection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
     const customProfession = professions.find((p) => p.slug === "custom");
 
     useEffect(() => {
-      Promise.all([getProfessions(), getOwnSelectedProfessions()])
+      (previewData
+        ? Promise.resolve([{ ok: true, error: "", professions: previewData.professions }, { ok: true, error: "", professions: previewData.selected }] as const)
+        : Promise.all([getProfessions(), getOwnSelectedProfessions()]))
         .then(([professionsResult, selectedResult]) => {
           if (!professionsResult.ok || !selectedResult.ok) {
             setLoadError(
@@ -84,7 +91,13 @@ const ProfessionSection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
             "직군을 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.",
           ),
         );
-    }, []);
+    }, [previewData]);
+
+    useEffect(() => {
+      if (loaded) onMedicalTechnicianChange?.(professions.some(
+        row => selectedIds.includes(row.id) && row.is_medical_technician === true,
+      ));
+    }, [loaded, professions, selectedIds, onMedicalTechnicianChange]);
 
     useEffect(() => {
       if (!loaded || !previewRegistry.preview) return;
@@ -162,6 +175,7 @@ const ProfessionSection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
     const save = async (): Promise<{ ok: boolean; error?: string }> => {
       const checked = validate();
       if (!checked.ok) return checked;
+      if (previewData) return { ok: true };
       const result = await replaceProfileProfessions(
         selectedIds.map((id) => ({
           professionId: id,

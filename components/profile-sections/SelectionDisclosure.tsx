@@ -4,8 +4,8 @@ import { forwardRef, type ReactNode } from "react";
 
 export const SelectionDisclosure = forwardRef<
   HTMLDetailsElement,
-  { label: string; selected: string[]; max: number; children: ReactNode }
->(function SelectionDisclosure({ label, selected, max, children }, ref) {
+  { label: string; selected: string[]; max: number; children: ReactNode; scrollable?: boolean }
+>(function SelectionDisclosure({ label, selected, max, children, scrollable = true }, ref) {
   return (
     <details ref={ref} className="group border-b border-slate-100">
       <summary
@@ -32,7 +32,7 @@ export const SelectionDisclosure = forwardRef<
         role="group"
         aria-label={`${label} 선택`}
         tabIndex={0}
-        className="max-h-60 overflow-y-auto overscroll-contain border-t border-slate-100 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600"
+        className={`${scrollable ? "max-h-60 overflow-y-auto overscroll-contain " : ""}border-t border-slate-100 py-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600`}
       >
         {children}
       </div>

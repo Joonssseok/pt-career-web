@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { getProfilePhotoUrl } from '@/lib/storage/profile-photo-url';
+import { hasHospitalWork } from '@/lib/specialties/catalog';
+import { HospitalWorkNotice } from '@/components/specialties/HospitalWorkNotice';
 
 export type ExpertListItem = {
   id: string;
@@ -85,6 +87,7 @@ export function ExpertCard({ expert, variant = 'default' }: { expert: ExpertList
             ))}
           </div>
         )}
+        {hasHospitalWork(expert.specialties) && <HospitalWorkNotice />}
       </div>
       {isExplore && (
         <span aria-hidden className="ml-auto hidden size-9 shrink-0 items-center justify-center self-center rounded-full bg-blue-50 text-primary transition-transform group-hover:translate-x-1 motion-reduce:transform-none sm:flex">↗</span>

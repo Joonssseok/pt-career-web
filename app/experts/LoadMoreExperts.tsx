@@ -4,6 +4,7 @@ import { useState } from "react";
 import { representativeCards } from "@/lib/profile-versions/public";
 import { createClient } from "@/lib/supabase/client";
 import { ExpertCard, type ExpertListItem } from "./ExpertCard";
+import { canonicalSpecialtySlugs } from "@/lib/specialties/catalog";
 
 export const EXPERTS_PAGE_SIZE = 20;
 
@@ -50,7 +51,7 @@ export function LoadMoreExperts({
       {
         p_professions: parseMulti(filters.profession),
         p_regions: parseMulti(filters.region),
-        p_specialty_slugs: parseMulti(filters.specialty),
+        p_specialty_slugs: canonicalSpecialtySlugs(filters.specialty).length ? canonicalSpecialtySlugs(filters.specialty) : null,
         p_query: filters.query,
         p_limit: EXPERTS_PAGE_SIZE,
         p_offset: experts.length,

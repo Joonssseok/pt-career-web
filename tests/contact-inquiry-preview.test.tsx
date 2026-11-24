@@ -124,8 +124,10 @@ test("NAVER selections keep address and map privacy separate and clear old unit 
     screen.getByRole("region", { name: "연락·문의 안내 미리보기" }),
   );
   expect(card.queryByText(/산성대로/)).toBeNull();
+  expect(card.queryByText("테스트 센터")).toBeNull();
   fireEvent.click(screen.getByLabelText("방문 주소 공개"));
   expect(card.getByText("성남시 산성대로 106 3층")).toBeTruthy();
+  expect(card.getByText("테스트 센터")).toBeTruthy();
   fireEvent.click(screen.getByLabelText("지도 공개"));
   expect(card.queryByRole("img")).toBeNull();
   expect(card.getByText("성남시 산성대로 106 3층")).toBeTruthy();
@@ -143,8 +145,12 @@ test("NAVER selections keep address and map privacy separate and clear old unit 
     ),
   );
   expect(card.getByText("성남시 산성대로 108")).toBeTruthy();
+  expect(card.queryByText("테스트 센터")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "주소 선택 해제" }));
-  expect(screen.getByLabelText("방문 주소", { exact: true })).toHaveProperty("value", "");
+  expect(screen.getByLabelText("방문 주소", { exact: true })).toHaveProperty(
+    "value",
+    "",
+  );
   expect(screen.getByLabelText("상세주소")).toHaveProperty("value", "");
   expect(screen.getByLabelText("지도 공개")).toHaveProperty("checked", false);
   expect(screen.getByLabelText("지도 공개")).toHaveProperty("disabled", true);

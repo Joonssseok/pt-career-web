@@ -88,6 +88,7 @@ function toSubmitMessage(rawError: string): string {
 
 export default function EditForm({ evidenceArchive, embedded = false, commonOnly = false }: { evidenceArchive?: React.ReactNode; embedded?: boolean; commonOnly?: boolean }) {
   const commonSaveRegistry = useContext(CommonProfileSaveContext);
+  const [medicalTechnician, setMedicalTechnician] = useState<boolean | undefined>(undefined);
   const OptionalSection = embedded ? 'details' : 'div';
   const linksDetails = useRef<HTMLDetailsElement>(null);
   // 조회가 끝나기 전까지는 false로 두어 아래 !termsChecked ? null : ... 분기가
@@ -360,18 +361,27 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
       { label: '교육', ref: educationRef },
       { label: '자격·면허', ref: certificationRef },
       { label: '근무기관', ref: workplaceRef },
-      { label: '직군', ref: professionRef },
-      { label: '전문분야', ref: specialtyRef },
       { label: '상세정보 이미지', ref: galleryRef },
     ];
 
-    const results = await Promise.all(
+    // Remove a restricted specialty before leaving its profession; add the profession first when entering it.
+    const selectionSections = medicalTechnician === false
+      ? [{ label: '전문분야', ref: specialtyRef }, { label: '직군', ref: professionRef }]
+      : [{ label: '직군', ref: professionRef }, { label: '전문분야', ref: specialtyRef }];
+    const selectionResults: { label: string; ok: boolean; error?: string }[] = [];
+    for (const { label, ref } of selectionSections) {
+      if (!ref.current) continue;
+      const result = await ref.current.save();
+      selectionResults.push({ label, ...result });
+      if (!result.ok) break;
+    }
+    const results = [...selectionResults, ...await Promise.all(
       sections.map(async ({ label, ref }) => {
         if (!ref.current) return { label, ok: true as const };
         const result = await ref.current.save();
         return { label, ok: result.ok, error: result.error };
       })
-    );
+    )];
 
     for (const r of results) {
       if (!r.ok) failed.push(r.error ? `${r.label}(${r.error})` : r.label);
@@ -605,12 +615,12 @@ export default function EditForm({ evidenceArchive, embedded = false, commonOnly
                     <h3 className="text-sm font-semibold text-gray-900 mb-3">
                       직군 <span className="text-red-500">*</span>
                     </h3>
-                    <ProfessionSection ref={professionRef} compact={embedded} />
+                    <ProfessionSection ref={professionRef} compact={embedded} onMedicalTechnicianChange={setMedicalTechnician} />
                   </div>
 
                   <div className="pt-5 border-t border-gray-100">
                     <h3 className="text-sm font-semibold text-gray-900 mb-3">전문분야 <span className="text-red-500">*</span><span className="ml-2 text-xs font-normal text-slate-400">1~3개 선택</span></h3>
-                    <SpecialtySection ref={specialtyRef} compact={embedded} />
+                    <SpecialtySection ref={specialtyRef} compact={embedded} medicalTechnician={medicalTechnician} />
                   </div>
 
                     {!embedded && <>

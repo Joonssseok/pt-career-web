@@ -5,83 +5,10 @@ import { getNextOnboardingStep } from "@/lib/auth/get-next-onboarding-step";
 import { ExpertCard, type ExpertListItem } from "../experts/ExpertCard";
 import styles from "./home.module.css";
 import { HomeSectionNav } from "./HomeSectionNav";
+import { getSpecialties } from "@/app/actions/specialties";
+import { SpecialtyDirectory } from "@/components/specialties/SpecialtyDirectory";
 
 export const dynamic = "force-dynamic";
-
-const SPECIALTIES = [
-  {
-    slug: "weight-management",
-    name: "다이어트·체형관리",
-    hint: "건강한 일상의 시작",
-    path: "M7 4h10l2 16H5L7 4Zm2 4a3 3 0 0 1 6 0m-3-1v3",
-  },
-  {
-    slug: "strength-body-profile",
-    name: "근력강화·바디프로필",
-    hint: "꾸준히, 더 단단하게",
-    path: "M7 8v8m10-8v8M4 10v4m16-4v4M7 12h10",
-  },
-  {
-    slug: "posture-pain-management",
-    name: "자세교정·통증관리",
-    hint: "편안한 움직임을 위해",
-    path: "M12 3v3m0 3v3m0 3v6M7 7l5 2 5-2M6 18l6-3 6 3",
-  },
-  {
-    slug: "rehab-post-surgery",
-    name: "재활운동·수술 후 회복",
-    hint: "차근차근, 다시 일상으로",
-    path: "M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6V4Z",
-  },
-  {
-    slug: "prenatal-postnatal",
-    name: "산전·산후 운동",
-    hint: "변화하는 몸을 위한 움직임",
-    path: "M12 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm-3 4 3-2 3 3a4 4 0 0 1 0 7h-3m-2-6-2 5-1 4m5-3 3 3",
-  },
-  {
-    slug: "youth-exercise",
-    name: "소아·청소년 운동",
-    hint: "건강하게 자라는 시간",
-    path: "M12 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 3v6m-5-5 5 2 5-2m-5 5-4 5m4-5 4 5",
-  },
-  {
-    slug: "senior-fall-prevention",
-    name: "시니어·낙상예방",
-    hint: "안정적인 일상의 걸음",
-    path: "M10 6a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 3-2 5 4 2 1 5m-5-7-3 7m5-12 4 4h4m0 0v8",
-  },
-  {
-    slug: "conditioning",
-    name: "체력향상·컨디셔닝",
-    hint: "일상에 더하는 활력",
-    path: "m13 3-8 11h6l-1 7 9-12h-6l1-6Z",
-  },
-  {
-    slug: "chronic-special-populations",
-    name: "만성질환·특수집단 운동",
-    hint: "나의 상태에 맞춘 운동",
-    path: "M20 5c-3-3-6-1-8 1C10 4 7 2 4 5c-4 4 1 9 8 15 7-6 12-11 8-15ZM5 12h4l2-4 2 7 2-3h4",
-  },
-  {
-    slug: "sport-specific-training",
-    name: "종목별 트레이닝",
-    hint: "나의 종목에 맞는 훈련",
-    path: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 0c-5 5-5 13 0 18m0-18c5 5 5 13 0 18M3 12h18",
-  },
-  {
-    slug: "pilates-yoga-flexibility",
-    name: "필라테스·요가·유연성",
-    hint: "몸의 균형을 찾는 시간",
-    path: "M12 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm0 3v5m-6-5 6 2 6-2M4 20l8-4 8 4H4Z",
-  },
-  {
-    slug: "sports-performance",
-    name: "스포츠 퍼포먼스",
-    hint: "움직임의 다음 단계",
-    path: "m4 18 5-5 4 3 7-10m-6 0h6v6",
-  },
-];
 
 function Arrow({ diagonal = false }: { diagonal?: boolean }) {
   return (
@@ -103,10 +30,12 @@ function Arrow({ diagonal = false }: { diagonal?: boolean }) {
 
 export default async function Home() {
   const supabase = await createClient();
-  const [{ data: expertsData, error }, expertEntryHref] = await Promise.all([
-    supabase.from("public_expert_list").select("*").limit(3),
-    getNextOnboardingStep(),
-  ]);
+  const [{ data: expertsData, error }, expertEntryHref, specialtiesResult] =
+    await Promise.all([
+      supabase.from("public_expert_list").select("*").limit(3),
+      getNextOnboardingStep(),
+      getSpecialties(),
+    ]);
   const experts = await representativeCards(
     supabase,
     (expertsData ?? []) as ExpertListItem[],
@@ -225,38 +154,13 @@ export default async function Home() {
             <h2 id="specialty-title">원하는 분야에서 시작하세요.</h2>
           </div>
         </div>
-        <div className={styles.specialties}>
-          {SPECIALTIES.map((s) => (
-            <Link
-              key={s.slug}
-              href={`/experts?specialty=${s.slug}`}
-              className={styles.specialty}
-            >
-              <span className={styles.specialtyIcon}>
-                <svg
-                  aria-hidden="true"
-                  width="27"
-                  height="27"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d={s.path} />
-                </svg>
-              </span>
-              <span>
-                <strong>{s.name}</strong>
-                <span className={styles.hint}>{s.hint}</span>
-              </span>
-              <span className={styles.specialtyArrow}>
-                <Arrow diagonal />
-              </span>
-            </Link>
-          ))}
-        </div>
+        {specialtiesResult.ok ? (
+          <SpecialtyDirectory options={specialtiesResult.specialties} />
+        ) : (
+          <p className={styles.disclosure} role="status">
+            분야 목록을 잠시 불러오지 못했습니다.
+          </p>
+        )}
       </section>
 
       <section

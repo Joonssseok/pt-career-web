@@ -22,6 +22,46 @@
   outline-offset: 3px;
 }
 .root
+  [data-editor-step="basic"]
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    select
+  ) {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #c8d1da;
+  border-radius: 0;
+  min-height: 44px;
+  padding: 10px 2px;
+  box-shadow: none;
+}
+.root
+  [data-editor-step="basic"]
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    select
+  ):hover {
+  border-bottom-color: #8494a4;
+}
+.root
+  [data-editor-step="basic"]
+  :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    select
+  ):focus {
+  border-bottom-color: #42668f;
+  box-shadow: 0 1px 0 #42668f;
+  outline: none;
+}
+.root
+  [data-editor-step="basic"]
+  input:not([type="checkbox"]):not([type="radio"]):not(
+    [type="file"]
+  )[aria-invalid="true"] {
+  border-bottom-color: #b91c1c;
+  box-shadow: 0 1px 0 #b91c1c;
+}
+.root
   :is(
     [id="profile-basics"],
     [id="profile-introduction"],

@@ -9,6 +9,8 @@ import { getProfilePhotoUrl } from "@/lib/storage/profile-photo-url";
 import { ProfileEditorShell } from "./ProfileEditorShell";
 import contentStyles from "./ProfileEditorContent.module.css";
 import { ContactInquiryFields, ContactInquiryCard, emptyContactInquiry } from "@/components/profile-editor/ContactInquiryPreview";
+import { hasHospitalWork } from "@/lib/specialties/catalog";
+import { SpecialtyLabel } from "@/components/specialties/SpecialtyLabel";
 import {
   loadEvidenceReviews,
   storeEvidenceFile,
@@ -909,13 +911,15 @@ export function ProfileVersionManager({
       {content.headline && <p data-editor-headline>{content.headline}</p>}
       <div data-editor-specialties>
         {previewExpert.specialties.map((row) => (
-          <span key={row.slug}>{row.name}</span>
+          <SpecialtyLabel key={row.slug} slug={row.slug} name={row.name} />
         ))}
       </div>
       <button type="button" onClick={openPreview}>
         전체 미리보기
       </button>
-      <ContactInquiryCard value={contactInquiry} />
+      <ContactInquiryCard value={hasHospitalWork(previewExpert.specialties)
+        ? { ...contactInquiry, inquiry: { ...contactInquiry.inquiry, visible: false } }
+        : contactInquiry} />
     </div>
   );
   return (

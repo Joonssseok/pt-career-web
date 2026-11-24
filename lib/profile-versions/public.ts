@@ -1,6 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ExpertListItem } from "@/app/experts/ExpertCard";
-import { applyVersion, LIVE_PROFILE_PUBLISH_ENABLED, type Representative } from "./types";
+import {
+  applyVersion,
+  publicActivities,
+  LIVE_PROFILE_PUBLISH_ENABLED,
+  type Representative,
+} from "./types";
+import { profileExperienceYears } from "./experience-years";
 
 export function representativeExpert(
   representative: Representative,
@@ -8,7 +14,10 @@ export function representativeExpert(
 ): Representative["expert"] {
   // The portrait belongs to the account; the selected history stays published.
   return applyVersion(
-    { ...representative.expert, profile_image_path: current.profile_image_path },
+    {
+      ...representative.expert,
+      profile_image_path: current.profile_image_path,
+    },
     representative.content,
   );
 }
@@ -29,7 +38,14 @@ export async function representativeCards(
           ...row,
           display_name: v.expert.display_name,
           headline: v.content.headline,
-          total_experience_years: v.expert.total_experience_years,
+          total_experience_years: profileExperienceYears(
+            v.expert.experiences ?? [],
+            publicActivities({
+              ...v.content,
+              activities: v.content.activities ?? [],
+            }),
+            v.expert.total_experience_years ?? null,
+          ),
           workplace_region: v.expert.workplace_region,
           workplace_center_name: v.expert.workplace_center_name,
         }

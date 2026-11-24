@@ -7,6 +7,7 @@ import {
 } from "@/lib/profile-versions/introduction-format";
 import { getProfilePhotoUrl } from "@/lib/storage/profile-photo-url";
 import { ProfileEditorShell } from "./ProfileEditorShell";
+import { ProfilePublishNotices } from "@/components/profile-editor/ProfilePublishNotices";
 import contentStyles from "./ProfileEditorContent.module.css";
 import { ContactInquiryFields, ContactInquiryCard, emptyContactInquiry } from "@/components/profile-editor/ContactInquiryPreview";
 import { hasHospitalWork } from "@/lib/specialties/catalog";
@@ -1634,68 +1635,69 @@ export function ProfileVersionManager({
             onCancel={(event) => {
               if (pending) event.preventDefault();
             }}
-            className="m-auto max-h-[85svh] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-2xl border border-slate-200 bg-white p-6 shadow-xl backdrop:bg-slate-900/25"
+            className="m-auto max-h-[85svh] w-[calc(100%-2rem)] max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl backdrop:bg-slate-900/25 open:flex open:flex-col"
           >
             <h2
               id="profile-publish-title"
-              className="text-lg font-bold text-slate-900"
+              className="shrink-0 px-6 pt-6 text-lg font-bold text-slate-900"
             >
               프로필 게시 전 확인해주세요
             </h2>
-            <p
-              id="profile-publish-description"
-              className="mt-4 text-sm leading-6 text-slate-600"
-            >
-              {reviewCount
-                ? `프로필이 공개되고, 연결된 증빙자료 중 새로 확인이 필요한 ${reviewCount}건이 관리자에게 심사 제출됩니다.`
-                : "새로 심사 제출할 증빙자료가 없습니다. 프로필만 게시됩니다."}
-            </p>
-            <div className="mt-4 space-y-3 rounded-xl bg-slate-50 p-4 text-xs leading-6 text-slate-500">
-              <p>
-                관리자는 자료에 개인정보가 포함되어 있는지와 해당 항목에 맞는
-                자료인지 확인합니다.
+            <div className="min-h-0 overflow-y-auto px-6 pb-5 pt-4">
+              <p
+                id="profile-publish-description"
+                className="text-sm leading-6 text-slate-600"
+              >
+                {reviewCount
+                  ? `프로필이 공개되고, 새 증빙자료 ${reviewCount}건이 관리자에게 심사 제출됩니다.`
+                  : "새 심사 자료 없이 프로필만 게시됩니다."}
               </p>
-              <p>
-                파일은 기본 비공개이며, 공개를 선택한 파일도 관리자 승인 후에만
-                공개됩니다.
-              </p>
+              <div className="mt-4 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-600">
+                <p className="font-medium text-slate-700">증빙자료 심사</p>
+                <p className="mt-1">
+                  자료 제출 → 관리자가 개인정보 가림·항목 일치 확인
+                </p>
+              </div>
+              <ProfilePublishNotices />
             </div>
-            <label className="mt-5 flex cursor-pointer items-start gap-3 text-sm leading-6 text-slate-700">
-              <input
-                type="checkbox"
-                checked={publishAgreed}
-                disabled={pending}
-                onChange={(event) => setPublishAgreed(event.target.checked)}
-                className="mt-1 size-4 shrink-0 accent-blue-600"
-              />
-              <span>
-                위 안내를 확인했으며, 프로필 게시 및 필요한 증빙자료 심사 제출에
-                동의합니다.
-              </span>
-            </label>
-            {error && (
-              <p role="alert" className="mt-4 text-sm leading-6 text-red-600">
-                {error}
-              </p>
-            )}
-            <div className="mt-6 flex justify-end gap-2">
-              <button
-                type="button"
-                autoFocus
-                disabled={pending}
-                onClick={() => publishDialog.current?.close()}
-                className="min-h-11 rounded-xl px-4 text-sm text-slate-500 hover:bg-slate-50 disabled:opacity-40"
-              >
-                취소
-              </button>
-              <button
-                type="button"
-                disabled={!publishAgreed || publishBlocked}
-                onClick={publish}
-                className="min-h-11 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
-              >
-                {pending ? "게시하고 있습니다…" : "동의하고 게시"}
-              </button>
+            <div className="shrink-0 border-t border-slate-100 px-6 pb-6 pt-4">
+              <label className="flex cursor-pointer items-start gap-3 text-sm leading-6 text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={publishAgreed}
+                  disabled={pending}
+                  onChange={(event) => setPublishAgreed(event.target.checked)}
+                  className="mt-1 size-4 shrink-0 accent-blue-600"
+                />
+                <span>
+                  위 안내를 확인했으며, 프로필 게시 및 필요한 증빙자료 심사
+                  제출에 동의합니다.
+                </span>
+              </label>
+              {error && (
+                <p role="alert" className="mt-4 text-sm leading-6 text-red-600">
+                  {error}
+                </p>
+              )}
+              <div className="mt-6 flex justify-end gap-2">
+                <button
+                  type="button"
+                  autoFocus
+                  disabled={pending}
+                  onClick={() => publishDialog.current?.close()}
+                  className="min-h-11 rounded-xl px-4 text-sm text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  disabled={!publishAgreed || publishBlocked}
+                  onClick={publish}
+                  className="min-h-11 rounded-xl bg-primary px-5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
+                >
+                  {pending ? "게시하고 있습니다…" : "동의하고 게시"}
+                </button>
+              </div>
             </div>
           </dialog>
         </>

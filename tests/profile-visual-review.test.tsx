@@ -238,7 +238,7 @@ test("unrequested items do not create empty review tabs or an always-expanded li
   expect(screen.queryByText("심사 미요청")).toBeNull();
 });
 
-test("workplace stays on home with its name above the map and address below it", () => {
+test("legacy workplace block stays absent while activity records remain in career", () => {
   render(
     <ExpertProfileView
       expert={{
@@ -261,34 +261,18 @@ test("workplace stays on home with its name above the map and address below it",
     />,
   );
   fireEvent.click(screen.getByRole("tab", { name: "상세정보" }));
-  const workplace = screen.getByText("선택한 근무 기관").closest("section")!;
+  expect(screen.queryByText("선택한 근무 기관")).toBeNull();
+  expect(screen.queryByText("공개 기관 주소")).toBeNull();
+  expect(screen.queryByRole("heading", { name: "지금 일하는 곳" })).toBeNull();
   expect(screen.queryByRole("heading", { name: "근무 기관" })).toBeNull();
   expect(screen.queryByText("본인이 입력한 근무기관 정보")).toBeNull();
-  expect(
-    workplace
-      .closest("[data-profile-panel]")
-      ?.getAttribute("data-profile-panel"),
-  ).toBe("home");
+  fireEvent.click(screen.getByRole("tab", { name: /^이력/ }));
   expect(
     screen
       .getByText(activity.title)
       .closest("[data-profile-panel]")
       ?.getAttribute("data-profile-panel"),
   ).toBe("career");
-  const mapArea = workplace.querySelector(".max-w-80")!;
-  const name = within(workplace as HTMLElement).getByText("선택한 근무 기관");
-  const address = within(workplace as HTMLElement).getByText("공개 기관 주소");
-  expect(
-    mapArea.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_PRECEDING,
-  ).toBeTruthy();
-  expect(
-    name.compareDocumentPosition(address) & Node.DOCUMENT_POSITION_FOLLOWING,
-  ).toBeTruthy();
-  expect(
-    within(workplace as HTMLElement).queryByRole("link", {
-      name: "네이버 지도에서 보기",
-    }),
-  ).toBeNull();
 });
 
 beforeEach(() => window.history.replaceState(null, "", "/"));

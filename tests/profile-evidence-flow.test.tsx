@@ -16,6 +16,7 @@ import {
 } from "../app/actions/profile-versions";
 import type { Activity } from "../lib/damoa/categories";
 import { storeEvidenceFile } from "../lib/profile-versions/evidence";
+import { profileItemKey } from "../lib/profile-versions/types";
 jest.mock("@/components/profile-editor/IntroductionEditor", () => ({
   IntroductionEditor: () => null,
 }));
@@ -63,7 +64,7 @@ jest.mock("../app/actions/profile-evidence", () => ({
 const content = {
   headline: "소개",
   introduction: "내용",
-  sections: [],
+  sections: ["academic_records"],
   activities: [],
 };
 const version = {
@@ -75,6 +76,14 @@ const version = {
   updated_at: "",
   published_at: null,
 };
+const evidenceEducation = {
+  school_name: "시험 학교",
+  degree: "시험 학력",
+  major: null,
+  start_date: null,
+  end_date: null,
+};
+const evidenceItemKey = profileItemKey("academic_records", evidenceEducation);
 const expert = {
   id: "p",
   display_name: "전문가",
@@ -82,7 +91,7 @@ const expert = {
   introduction: "내용",
   professions: [],
   specialties: [],
-  academic_records: [],
+  academic_records: [evidenceEducation],
   educations: [],
   experiences: [],
   licenses: [],
@@ -194,8 +203,8 @@ test("attachment choices are staged locally with one apply button and no separat
           {
             id: "r",
             version_id: "v",
-            item_key: "introduction:0",
-            title: "소개",
+            item_key: evidenceItemKey,
+            title: "시험 학교",
             file_ids: ["f"],
             public_file_ids: [],
             status: "draft",
@@ -209,7 +218,8 @@ test("attachment choices are staged locally with one apply button and no separat
       }}
     />,
   );
-  fireEvent.click(screen.getByRole("button", { name: "소개 세부항목" }));
+  fireEvent.click(screen.getByRole("tab", { name: /^이력\s*\d*$/ }));
+  fireEvent.click(screen.getByRole("button", { name: "시험 학교 세부항목" }));
   fireEvent.click(screen.getByRole("button", { name: "증빙자료 확인" }));
   const dialog = screen.getByRole("dialog", { name: "증빙자료 확인" });
   expect(
@@ -232,7 +242,7 @@ test("attachment choices are staged locally with one apply button and no separat
   expect(change).not.toHaveBeenCalled();
   fireEvent.click(screen.getByRole("button", { name: "시험 사본 확인" }));
   const staged = change.mock.calls[0][0];
-  expect(staged.key).toBe("introduction:0");
+  expect(staged.key).toBe(evidenceItemKey);
   expect(staged.files[0]).toMatchObject({
     name: "증빙자료-가린사본.jpg",
     maskedCopy: true,
@@ -279,7 +289,8 @@ test("the picker includes own Damoa files even from activities absent from this 
   await waitFor(() =>
     expect(screen.queryByText("자료를 불러오는 중입니다.")).toBeNull(),
   );
-  fireEvent.click(screen.getByRole("button", { name: "소개 세부항목" }));
+  fireEvent.click(screen.getByRole("tab", { name: /^이력\s*\d*$/ }));
+  fireEvent.click(screen.getByRole("button", { name: "시험 학교 세부항목" }));
   fireEvent.click(screen.getByRole("button", { name: "증빙자료 확인" }));
   const dialog = screen.getByRole("dialog", { name: "증빙자료 확인" });
   expect(
@@ -313,7 +324,8 @@ test("selecting an existing Damoa file stages a new confirmed copy and keeps the
       onAttachmentChange={save}
     />,
   );
-  fireEvent.click(screen.getByRole("button", { name: "소개 세부항목" }));
+  fireEvent.click(screen.getByRole("tab", { name: /^이력\s*\d*$/ }));
+  fireEvent.click(screen.getByRole("button", { name: "시험 학교 세부항목" }));
   fireEvent.click(screen.getByRole("button", { name: "증빙자료 확인" }));
   const dialog = screen.getByRole("dialog", { name: "증빙자료 확인" });
   fireEvent.click(within(dialog).getByRole("checkbox", { name: file.name }));
@@ -325,7 +337,7 @@ test("selecting an existing Damoa file stages a new confirmed copy and keeps the
   fireEvent.click(screen.getByRole("button", { name: "시험 사본 확인" }));
   await waitFor(() =>
     expect(save).toHaveBeenCalledWith({
-      key: "introduction:0",
+      key: evidenceItemKey,
       files: [
         expect.objectContaining({
           name: "증빙자료-가린사본.jpg",
@@ -414,6 +426,8 @@ test("publishing cannot send an original file that has not passed masking confir
   const confirmation = screen.getByRole("dialog", {
     name: "프로필 게시 전 확인해주세요",
   });
+  expect(within(confirmation).getByText("자료 제출 → 관리자가 개인정보 가림·항목 일치 확인")).toBeTruthy();
+  expect(within(within(confirmation).getByRole("list", { name: "게시 전 주의사항" })).getAllByRole("listitem")).toHaveLength(4);
   expect(
     within(confirmation).getByText(/1건이 관리자에게 심사 제출/),
   ).toBeTruthy();

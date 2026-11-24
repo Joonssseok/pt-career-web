@@ -11,6 +11,7 @@ import {
 import {
   ContactInquiryCard,
   ContactInquiryFields,
+  PublicContactInquiryCard,
   emptyContactInquiry,
 } from "@/components/profile-editor/ContactInquiryPreview";
 import { searchNaverBusinesses } from "@/app/actions/naver-location-search";
@@ -74,6 +75,8 @@ test("public contact preview validates links and reacts without saving", () => {
     target: { value: "02-0000-0000" },
   });
   fireEvent.click(screen.getByLabelText("공개 전화번호 공개"));
+  expect(screen.queryByRole("link", { name: "02-0000-0000" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "전화연결" }));
   expect(
     screen.getByRole("link", { name: "02-0000-0000" }).getAttribute("href"),
   ).toBe("tel:0200000000");
@@ -82,6 +85,37 @@ test("public contact preview validates links and reacts without saving", () => {
   );
   fireEvent.click(screen.getByLabelText("공개 이메일 공개"));
   expect(card.queryByRole("link", { name: "hello@example.com" })).toBeNull();
+});
+
+test("phone reveal toggles without dialing and resets when the public number changes or disappears", () => {
+  const { container, rerender } = render(
+    <PublicContactInquiryCard value={{ phone: "02-0000-0000" }} />,
+  );
+  const toggle = screen.getByRole("button", { name: "전화연결" });
+  expect(toggle.getAttribute("aria-expanded")).toBe("false");
+  expect(container.querySelector('a[href^="tel:"]')).toBeNull();
+  expect(screen.queryByText("02-0000-0000")).toBeNull();
+  fireEvent.click(toggle);
+  expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  expect(
+    screen.getByRole("link", { name: "02-0000-0000" }).getAttribute("href"),
+  ).toBe("tel:0200000000");
+  fireEvent.click(toggle);
+  expect(container.querySelector('a[href^="tel:"]')).toBeNull();
+  fireEvent.click(toggle);
+  rerender(<PublicContactInquiryCard value={{ phone: "02-0000-0001" }} />);
+  expect(screen.queryByText("02-0000-0000")).toBeNull();
+  expect(container.querySelector('a[href^="tel:"]')).toBeNull();
+  expect(
+    screen
+      .getByRole("button", { name: "전화연결" })
+      .getAttribute("aria-expanded"),
+  ).toBe("false");
+  fireEvent.click(screen.getByRole("button", { name: "전화연결" }));
+  rerender(<PublicContactInquiryCard value={{}} />);
+  expect(screen.queryByRole("button", { name: "전화연결" })).toBeNull();
+  rerender(<PublicContactInquiryCard value={{ phone: "02-0000-0001" }} />);
+  expect(container.querySelector('a[href^="tel:"]')).toBeNull();
 });
 
 test("NAVER selections keep address and map privacy separate and clear old unit on replacement", async () => {

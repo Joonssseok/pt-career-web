@@ -115,6 +115,19 @@
 .card a:hover {
   color: var(--color-profile-ink);
 }
+.card .phoneToggle {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.card .phoneToggle:hover {
+  color: var(--color-profile-ink);
+}
+.card .phoneNumber {
+  padding-left: 28px;
+}
 .card .inquiry {
   justify-content: center;
   min-height: 44px;

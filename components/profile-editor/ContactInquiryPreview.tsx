@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import styles from "./ContactInquiryPreview.module.css";
 import { NaverContactMap, NaverLocationPicker } from "./NaverLocationPicker";
 import type { ContactKey } from "@/lib/profile-versions/contact-inquiry";
@@ -243,6 +243,37 @@ export function ContactInquiryCard({ value }: { value: ContactInquiryDraft }) {
   );
 }
 
+function PhoneContact({ phone, href }: { phone: string; href: string }) {
+  const [shown, setShown] = useState(false);
+  const id = useId();
+  return (
+    <div>
+      <button
+        type="button"
+        data-profile-contact
+        className={`${styles.contact} ${styles.phoneToggle}`}
+        aria-expanded={shown}
+        aria-controls={id}
+        onClick={() => setShown((previous) => !previous)}
+      >
+        <ContactIcon kind="phone" />
+        <span>전화연결</span>
+      </button>
+      <div id={id} hidden={!shown}>
+        {shown && (
+          <a
+            data-profile-contact
+            className={`${styles.contact} ${styles.phoneNumber}`}
+            href={href}
+          >
+            {phone}
+          </a>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function PublicContactInquiryCard({
   value,
   preview = false,
@@ -273,21 +304,25 @@ export function PublicContactInquiryCard({
       className={styles.card}
       aria-label={preview ? "연락·문의 안내 미리보기" : "연락·문의 안내"}
     >
-      {links.map(({ key, text, href }) => (
-        <a
-          key={key}
-          data-profile-contact
-          className={
-            styles.contact + (key === "inquiry" ? " " + styles.inquiry : "")
-          }
-          href={href!}
-          target={key === "inquiry" ? "_blank" : undefined}
-          rel={key === "inquiry" ? "noopener noreferrer" : undefined}
-        >
-          <ContactIcon kind={key} />
-          <span>{text}</span>
-        </a>
-      ))}
+      {links.map(({ key, text, href }) =>
+        key === "phone" ? (
+          <PhoneContact key={href} phone={text!} href={href!} />
+        ) : (
+          <a
+            key={key}
+            data-profile-contact
+            className={
+              styles.contact + (key === "inquiry" ? " " + styles.inquiry : "")
+            }
+            href={href!}
+            target={key === "inquiry" ? "_blank" : undefined}
+            rel={key === "inquiry" ? "noopener noreferrer" : undefined}
+          >
+            <ContactIcon kind={key} />
+            <span>{text}</span>
+          </a>
+        ),
+      )}
       {value.address && (
         <p className={`${styles.contact} ${styles.address}`}>
           <ContactIcon kind="address" />

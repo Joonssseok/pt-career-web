@@ -240,14 +240,6 @@
 .document [data-order-group]:not([data-order-group="sections"]) {
   padding-left: 52px;
 }
-.legend {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: var(--color-profile-sub);
-  margin-top: 32px;
-}
 .detail > * + * {
   margin-top: 32px;
 }

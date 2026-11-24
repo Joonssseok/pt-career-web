@@ -220,6 +220,8 @@ test("hospital profile suppresses new and legacy inquiry links while preserving 
   expect(
     container.querySelector('a[href="https://example.test/legacy-inquiry"]'),
   ).toBeNull();
+  expect(container.querySelector('a[href="tel:0212345678"]')).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "전화연결" }));
   expect(container.querySelector('a[href="tel:0212345678"]')).toBeTruthy();
   expect(
     container.querySelector('a[href="mailto:public%40example.test"]'),

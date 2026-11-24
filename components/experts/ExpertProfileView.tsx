@@ -689,9 +689,6 @@ export function ExpertProfileView({
 
         {activitySections}
       </ProfileOrderLayout>
-      <p className={styles.legend}>
-        <span aria-hidden="true">✓</span> 서류로 확인된 이력에 표시됩니다.
-      </p>
     </div>
   );
   const detail = (

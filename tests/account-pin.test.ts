@@ -5,11 +5,14 @@ import {
   parseAccountPinState,
 } from "../lib/auth/account-pin";
 import {
+  beginPinEnrollment,
   getAccountPinState,
   saveAccountPin,
   confirmAccountPin,
   requestPinRecovery,
 } from "../app/actions/account-pin";
+import { startPinEnrollment } from "../lib/auth/pin-enrollment";
+import { revalidatePath } from "next/cache";
 
 const rpc = jest.fn();
 const getUser = jest.fn();
@@ -32,6 +35,15 @@ beforeEach(() => {
   getUser.mockResolvedValue({
     data: { user: { id: "test-user", email: "pin-test@example.invalid" } },
   });
+});
+
+test.each([true, false])("enrollment preparation delegates cookie handling without explicit path revalidation: %s", async (ok) => {
+  jest.mocked(startPinEnrollment).mockResolvedValueOnce(ok);
+  const result = await beginPinEnrollment();
+  expect(result.ok).toBe(ok);
+  expect(startPinEnrollment).toHaveBeenCalledTimes(1);
+  expect(result.error).toBe(ok ? "" : "로그인 상태를 확인하지 못했습니다. 다시 로그인해주세요.");
+  expect(revalidatePath).not.toHaveBeenCalled();
 });
 test("exactly six ASCII digits, preserving leading zero; no whitespace or arbitrary values", () => {
   expect(isAccountPin("012345")).toBe(true);
@@ -74,6 +86,8 @@ test("setup and reset use the authenticated RPC, no caller-supplied owner", asyn
     p_pin: "012345",
     p_reset: true,
   });
+  expect(revalidatePath).toHaveBeenCalledTimes(2);
+  expect(revalidatePath).toHaveBeenCalledWith("/", "layout");
 });
 test("wrong, locked, expired recovery and backend errors stay closed and do not expose backend text", async () => {
   for (const code of [

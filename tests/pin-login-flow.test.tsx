@@ -60,6 +60,8 @@ test("email login success starts enrollment before navigation", async () => {
   expect(beginPinEnrollment.mock.invocationCallOrder[0]).toBeLessThan(
     push.mock.invocationCallOrder[0],
   );
+  expect(push).toHaveBeenCalledTimes(1);
+  expect(refresh).not.toHaveBeenCalled();
 });
 test.each(["", "next=https%3A%2F%2Foutside.invalid"])(
   "email login without a valid return path lands on home: %s",
@@ -70,6 +72,7 @@ test.each(["", "next=https%3A%2F%2Foutside.invalid"])(
     fillLogin();
     await waitFor(() => expect(push).toHaveBeenCalledWith("/home"));
     expect(beginPinEnrollment).toHaveBeenCalledTimes(1);
+    expect(refresh).not.toHaveBeenCalled();
   },
 );
 test.each([
@@ -95,6 +98,7 @@ test("failed login never starts enrollment", async () => {
   await screen.findByText("이메일 또는 비밀번호가 올바르지 않습니다");
   expect(beginPinEnrollment).not.toHaveBeenCalled();
   expect(push).not.toHaveBeenCalled();
+  expect(refresh).not.toHaveBeenCalled();
 });
 test("email login leaves a retryable error if enrollment initiation fails", async () => {
   signInWithPassword.mockResolvedValue({ error: null });
@@ -106,6 +110,24 @@ test("email login leaves a retryable error if enrollment initiation fails", asyn
   fillLogin();
   await screen.findByText("다시 시도해주세요.");
   expect(push).not.toHaveBeenCalled();
+  expect(refresh).not.toHaveBeenCalled();
+});
+
+test("email login waits for enrollment to finish before navigating without a refresh", async () => {
+  let finish!: (result: { ok: boolean }) => void;
+  beginPinEnrollment.mockImplementationOnce(
+    () => new Promise((resolve) => { finish = resolve; }),
+  );
+  signInWithPassword.mockResolvedValue({ error: null });
+  render(<LoginForm />);
+  fillLogin();
+  await waitFor(() => expect(beginPinEnrollment).toHaveBeenCalledTimes(1));
+  expect(push).not.toHaveBeenCalled();
+  expect(refresh).not.toHaveBeenCalled();
+  finish({ ok: true });
+  await waitFor(() => expect(push).toHaveBeenCalledWith("/my/profiles"));
+  expect(push).toHaveBeenCalledTimes(1);
+  expect(refresh).not.toHaveBeenCalled();
 });
 test("immediately authenticated signup also starts enrollment", async () => {
   signUp.mockResolvedValue({

@@ -22,6 +22,13 @@ const props = {
 };
 const url = "https://ptcareer.co.kr/experts/" + props.profileId;
 const copy = jest.fn();
+
+test("QR은 마이페이지 진입 시 생성하지 않고 요청할 때만 준비한다", async () => {
+  render(<ProfileSharingTools {...props} published />);
+  expect(profileQrImage).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "QR코드", exact: true }));
+  await waitFor(() => expect(profileQrImage).toHaveBeenCalledTimes(1));
+});
 beforeEach(() => {
   jest.clearAllMocks();
   copy.mockResolvedValue(undefined);

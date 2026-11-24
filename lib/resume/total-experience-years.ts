@@ -10,15 +10,15 @@
 // 그대로 계산한다(호출부에서 이미 전체 목록을 넘기면 됨).
 
 export type ExperienceRangeInput = {
-  // 'YYYY-MM' (또는 빈 문자열). getOwnExperiences()가 이 형식으로 내려준다.
+  // 'YYYY-MM', 'YYYY-MM-DD', or an empty string.
   startDate: string;
   endDate: string;
   isCurrently: boolean;
 };
 
-function monthStringToUTCDays(value: string): number {
-  const [y, m] = value.split('-').map(Number);
-  return Date.UTC(y, m - 1, 1) / 86_400_000;
+function dateStringToUTCDays(value: string): number {
+  const [y, m, d = 1] = value.split('-').map(Number);
+  return Date.UTC(y, m - 1, d) / 86_400_000;
 }
 
 function todayUTCDays(): number {
@@ -34,8 +34,8 @@ export function calculateTotalExperienceYears(experiences: ExperienceRangeInput[
     if (!exp.startDate) continue;
     if (!exp.endDate && !exp.isCurrently) continue;
 
-    const start = monthStringToUTCDays(exp.startDate);
-    const effectiveEnd = exp.isCurrently ? today : monthStringToUTCDays(exp.endDate);
+    const start = dateStringToUTCDays(exp.startDate);
+    const effectiveEnd = exp.isCurrently ? today : dateStringToUTCDays(exp.endDate);
     if (start > effectiveEnd) continue; // start_date <= COALESCE(end_date, CURRENT_DATE)
 
     // daterange 상한은 배타적이라 +1일(뷰의 `+ 1`과 동일).

@@ -1,4 +1,5 @@
 import { workplaceExpertFields, type CurrentWorkplace } from "./workplace";
+import { profileExperienceYears } from "./experience-years";
 import type { ExpertProfileViewProps } from "@/components/experts/ExpertProfileView";
 import type { IntroductionDocument } from "./introduction-format";
 import { publicContactInquiry, type ContactInquiry } from "./contact-inquiry";
@@ -96,6 +97,11 @@ export function applyVersion(
 ): ExpertProfileViewProps["expert"] {
   const hidden = (key: string) => content.excluded?.includes(key) === true;
   const show = (section: string) => content.sections.includes(section);
+  const experiences = show("experiences")
+    ? base.experiences.filter(
+        (row) => !hidden(profileItemKey("experiences", row)),
+      )
+    : [];
   return {
     ...base,
     headline: content.headline,
@@ -107,18 +113,17 @@ export function applyVersion(
     ...(content.contactInquiry !== undefined
       ? { contact_inquiry: publicContactInquiry(content.contactInquiry) }
       : {}),
-    experiences: show("experiences")
-      ? base.experiences.filter(
-          (row) => !hidden(profileItemKey("experiences", row)),
-        )
-      : [],
-    total_experience_years:
+    experiences,
+    total_experience_years: profileExperienceYears(
+      experiences,
+      publicActivities(content),
       show("experiences") &&
-      !base.experiences.some((row) =>
-        hidden(profileItemKey("experiences", row)),
-      )
-        ? base.total_experience_years
+        !base.experiences.some((row) =>
+          hidden(profileItemKey("experiences", row)),
+        )
+        ? (base.total_experience_years ?? null)
         : null,
+    ),
     academic_records: show("academic_records")
       ? base.academic_records.filter(
           (row) => !hidden(profileItemKey("academic_records", row)),

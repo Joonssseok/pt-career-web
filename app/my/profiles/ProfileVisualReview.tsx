@@ -1,4 +1,6 @@
 "use client";
+
+import { profileExperienceYears } from "@/lib/profile-versions/experience-years";
 import { useEffect, useRef, useState } from "react";
 import {
   ExpertProfileView,
@@ -405,6 +407,19 @@ export function ProfileVisualReview({
           : {}),
       }
     : null;
+  if (shownExpert) {
+    const shownActivities = activities.filter(
+      (row) => choices["damoa:" + row.id]?.visible !== false,
+    );
+    shownExpert.total_experience_years = profileExperienceYears(
+      shownExpert.experiences,
+      shownActivities,
+      shownActivities.length === activities.length &&
+        shownExpert.experiences.length === expert!.experiences.length
+        ? shownExpert.total_experience_years
+        : null,
+    );
+  }
   function addFiles(files: FileList | null) {
     if (!target || !files) return;
     const incoming = Array.from(files);

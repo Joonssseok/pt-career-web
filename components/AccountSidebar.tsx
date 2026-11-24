@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { ComingSoonButton } from "@/components/ComingSoonButton";
-import { createClient } from "@/lib/supabase/server";
+import {
+  getCurrentUser,
+  getCurrentProfile,
+  getCurrentProfileVersions,
+} from "@/lib/account/current-account";
 import { ProfileVersionLinks } from "@/components/ProfileVersionLinks";
 
 import { AccountMenu, AccountMenuSection } from "@/components/AccountMenu";
@@ -9,23 +13,12 @@ import { AccountMobileDrawer } from "@/components/AccountMobileDrawer";
 export async function AccountSidebar({
   compact = false,
 }: { compact?: boolean } = {}) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   if (!user) return null;
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select(
-      "id, verification_status, owner_visible, is_public, suspended_at, deletion_requested_at",
-    )
-    .eq("user_id", user.id)
-    .maybeSingle();
-  const { data: versions } = await supabase
-    .from("profile_versions")
-    .select("id,title,is_representative")
-    .eq("owner_id", user.id)
-    .order("created_at");
+  const [{ data: profile }, { data: versions }] = await Promise.all([
+    getCurrentProfile(),
+    getCurrentProfileVersions(),
+  ]);
   const canPreview =
     profile?.verification_status === "approved" &&
     profile.owner_visible &&
@@ -60,10 +53,13 @@ export async function AccountSidebar({
       </AccountMenuSection>
       <AccountMenuSection id="profile" title="프로필 관리">
         <ProfileVersionLinks
-          versions={(versions || []).map((v) => ({
-            ...v,
-            is_representative: v.is_representative && !!canPreview,
-          }))}
+          versions={[...(versions || [])]
+            .sort((a, b) => a.created_at.localeCompare(b.created_at))
+            .map((v) => ({
+              id: v.id,
+              title: v.title,
+              is_representative: v.is_representative && !!canPreview,
+            }))}
         />
       </AccountMenuSection>
       <Link

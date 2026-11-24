@@ -37,6 +37,7 @@ export function ProfileSharingTools({
   const [qr, setQr] = useState({ url: "", image: "", downloadUrl: "" });
   const [qrError, setQrError] = useState("");
   const [qrAttempt, setQrAttempt] = useState(0);
+  const [qrRequested, setQrRequested] = useState(false);
   const [copyingQr, setCopyingQr] = useState(false);
   const address = useRef<HTMLInputElement>(null);
   const dialogAddress = useRef<HTMLInputElement>(null);
@@ -46,7 +47,7 @@ export function ProfileSharingTools({
       : "";
   const qrImage = qr.url === url ? qr.image : "";
   useEffect(() => {
-    if (!url) return;
+    if (!url || !qrRequested) return;
     let cancelled = false;
     let downloadUrl = "";
     setQrError("");
@@ -65,7 +66,7 @@ export function ProfileSharingTools({
       cancelled = true;
       if (downloadUrl) URL.revokeObjectURL(downloadUrl);
     };
-  }, [url, qrAttempt]);
+  }, [url, qrAttempt, qrRequested]);
   const name = displayName.trim() || "내 프로필";
   const introduction = headline.trim();
   const focusClass =
@@ -301,6 +302,7 @@ export function ProfileSharingTools({
               type="button"
               onClick={() => {
                 setMessage("");
+                setQrRequested(true);
                 qrDialog.current?.showModal();
               }}
               className={actionClass}

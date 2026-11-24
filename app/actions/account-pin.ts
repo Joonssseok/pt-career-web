@@ -17,7 +17,6 @@ import {
 export async function beginPinEnrollment() {
   try {
     const ok = await startPinEnrollment(await createClient());
-    if (ok) revalidatePath("/", "layout");
     return {
       ok,
       error: ok

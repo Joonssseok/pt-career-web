@@ -1,21 +1,15 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { getCurrentUser, getCurrentProfile } from '@/lib/account/current-account';
 
 export async function SiteHeader() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   // 환영 문구 이름: 전문가 프로필 활동명 > 소셜 로그인 이름 > 이메일 앞부분
   let welcomeName: string | null = null;
   if (user) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('display_name')
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const { data: profile } = await getCurrentProfile();
     welcomeName =
       profile?.display_name ||
       (user.user_metadata?.full_name as string | undefined) ||

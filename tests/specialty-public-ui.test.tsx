@@ -173,11 +173,12 @@ test("home reports unavailable directory without fabricating preview rows", asyn
   expect(screen.queryByText("병원 근무")).toBeNull();
 });
 
-test("expert cards show the hospital notice only for a visible hospital specialty", () => {
+test("expert cards retain the hospital specialty without the long notice", () => {
   const { rerender } = render(
     <ExpertCard expert={expert as unknown as ExpertListItem} />,
   );
-  expect(screen.getByText(HOSPITAL_WORK_NOTICE)).toBeTruthy();
+  expect(screen.getByText("병원 근무")).toBeTruthy();
+  expect(screen.queryByText(HOSPITAL_WORK_NOTICE)).toBeNull();
   rerender(
     <ExpertCard
       expert={

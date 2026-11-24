@@ -539,33 +539,39 @@ export function ProfileVisualReview({
         aria-label="공개 프로필 편집 미리보기"
       >
         {shownExpert ? (
-          <ExpertProfileView
-            ownerPreview
-            itemReviews={previewReviews}
-            activityReviewCounts={profileActivityReviewCounts(
-              activities.filter(
-                (row) => choices["damoa:" + row.id]?.visible !== false,
-              ),
-              previewReviews,
-            )}
-            verifiedCareerCount={verifiedCareerCount}
-            order={order}
-            onOrderChange={onOrderChange}
-            activitySections={profileActivityCards({
-              activities: activities.filter(
-                (row) => choices["damoa:" + row.id]?.visible !== false,
-              ),
-              itemReviews: previewReviews,
-              renderItemActions: (id) =>
-                actions(records.find((row) => row.key === "damoa:" + id)),
-            })}
-            expert={shownExpert}
-            galleryImages={galleryImages}
-            detailImages={detailImages}
-            renderItemActions={(section, index) =>
-              actions(indexes(section)[index])
-            }
-          />
+          <>
+            <ExpertProfileView
+              ownerPreview
+              itemReviews={previewReviews}
+              activityReviewCounts={profileActivityReviewCounts(
+                activities.filter(
+                  (row) => choices["damoa:" + row.id]?.visible !== false,
+                ),
+                previewReviews,
+              )}
+              verifiedCareerCount={verifiedCareerCount}
+              order={order}
+              onOrderChange={onOrderChange}
+              activitySections={profileActivityCards({
+                activities: activities.filter(
+                  (row) => choices["damoa:" + row.id]?.visible !== false,
+                ),
+                itemReviews: previewReviews,
+                renderItemActions: (id) =>
+                  actions(records.find((row) => row.key === "damoa:" + id)),
+              })}
+              expert={shownExpert}
+              galleryImages={galleryImages}
+              detailImages={detailImages}
+              renderItemActions={(section, index) =>
+                actions(indexes(section)[index])
+              }
+            />
+            <p className="mt-5 text-xs leading-6 text-slate-500">
+              콘텐츠 양과 화면 크기에 따라 홈의 ‘주요 이력’이 전체 이력으로
+              펼쳐질 수 있습니다. 공개로 선택한 항목만 표시됩니다.
+            </p>
+          </>
         ) : (
           <p className="rounded-2xl border border-slate-200 p-6 text-sm text-slate-500">
             기본정보를 작성하면 공개 프로필 모습이 여기에 표시됩니다.

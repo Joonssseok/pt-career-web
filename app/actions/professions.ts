@@ -14,16 +14,19 @@ export async function getProfessions() {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('professions')
-    .select('id, name, slug, sort_order')
+    .select('*')
     .eq('is_active', true)
     .order('sort_order');
 
   if (error) {
-    console.error('[getProfessions] Supabase error:', error);
-    return { ok: false as const, error: error.message, professions: [] };
+    return { ok: false as const, error: '직군을 불러오지 못했습니다.', professions: [] };
   }
 
-  return { ok: true as const, error: '', professions: data };
+  return { ok: true as const, error: '', professions: data.map(row => ({
+    id: row.id as string, name: row.name as string, slug: row.slug as string,
+    sort_order: row.sort_order as number,
+    is_medical_technician: row.is_medical_technician === true,
+  })) };
 }
 
 // 현재 선택된 직군 조회 (getOwnSelectedSpecialtyIds 템플릿)

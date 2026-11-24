@@ -1,0 +1,465 @@
+.page {
+  max-width: 1216px;
+  margin: 0 auto;
+  padding: 36px 24px 72px;
+  color: #17212b;
+}
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+.eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  color: #677583;
+  letter-spacing: 0.04em;
+}
+.page h1 {
+  font-size: 29px;
+  font-weight: 650;
+  letter-spacing: -0.04em;
+  margin: 9px 0 12px;
+}
+.lead {
+  color: #55626f;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.previewBadge {
+  margin-top: 4px;
+  flex-shrink: 0;
+  padding: 7px 11px;
+  border: 1px solid #dfe5eb;
+  border-radius: 5px;
+  font-size: 11px;
+  color: #677583;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e7ec;
+}
+.choices {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.choices button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #55626f;
+  font-size: 13px;
+}
+.choices button > span {
+  font-size: 11px;
+  color: #83909c;
+}
+.choices button[aria-pressed="true"] {
+  background: #eef2f6;
+  border-color: #e2e7ec;
+  color: #17212b;
+  font-weight: 600;
+}
+.choices button:hover {
+  background: #f4f6f8;
+}
+.deviceControls {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 3px;
+}
+.deviceControls button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  color: #75818d;
+}
+.deviceControls button[aria-pressed="true"] {
+  background: #eef2f6;
+  color: #17212b;
+}
+.page button {
+  cursor: pointer;
+}
+.page button:focus-visible {
+  outline: 2px solid #5375a2;
+  outline-offset: 3px;
+}
+.localNote {
+  font-size: 12px;
+  color: #6c7884;
+  margin: 12px 0 26px;
+  line-height: 1.7;
+}
+.gallery {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 32px 28px;
+}
+.option {
+  min-width: 0;
+}
+.optionHeader {
+  margin-bottom: 13px;
+}
+.optionTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.letter {
+  font-size: 12px;
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  border: 1px solid #dfe5eb;
+  border-radius: 5px;
+  color: #677583;
+}
+.optionTitle h2 {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.recommendation {
+  font-size: 10px;
+  padding: 3px 6px;
+  color: #46658a;
+  background: #edf3fb;
+  border-radius: 4px;
+}
+.optionHeader > p {
+  margin-top: 7px;
+  font-size: 12px;
+  color: #677583;
+}
+.stage {
+  padding: 26px 23px;
+  background: #f4f6f8;
+  border: 1px solid #e7ebef;
+  border-radius: 10px;
+}
+.sample {
+  min-width: 0;
+}
+.sampleHeader {
+  margin-bottom: 22px;
+}
+.sampleEyebrow {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 10px;
+  color: #7b8793;
+}
+.sampleHeader h2 {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.sampleHeader h2 span {
+  margin-left: 7px;
+  font-size: 11px;
+  font-weight: 400;
+  color: #7b8793;
+}
+.sampleHeader p {
+  margin-top: 7px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #677583;
+}
+.rows {
+  display: grid;
+  gap: 13px;
+}
+.row {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.fieldLabel {
+  font-size: 13px;
+  color: #465360;
+  white-space: nowrap;
+}
+.sample .input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 11px;
+  color: #273440;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: normal;
+  outline: none;
+  box-shadow: none;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s,
+    box-shadow 0.15s;
+}
+.sample .input::placeholder {
+  color: #8a96a2;
+  opacity: 1;
+}
+.visibility {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  cursor: pointer;
+  min-height: 36px;
+  color: #6c7884;
+  font-size: 10px;
+  white-space: nowrap;
+}
+.visibility input {
+  width: 13px;
+  height: 13px;
+  accent-color: #566c85;
+  cursor: pointer;
+}
+.sampleFooter {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 18px;
+  color: #768390;
+  font-size: 10px;
+  line-height: 1.6;
+}
+.outline .input {
+  border: 1px solid #ced7df;
+  border-radius: 6px;
+  background: #fff;
+}
+.outline .input:hover {
+  border-color: #a4b2bf;
+}
+.outline .input:focus {
+  border-color: #57789f;
+  box-shadow: 0 0 0 2px #57789f13;
+}
+.underline .input {
+  border: 0;
+  border-bottom: 1px solid #c8d1da;
+  border-radius: 0;
+  background: transparent;
+  padding: 0 2px;
+}
+.underline .input:hover {
+  border-bottom-color: #8494a4;
+}
+.underline .input:focus {
+  border-bottom-color: #42668f;
+  box-shadow: 0 1px 0 #42668f;
+}
+.grouped .rows {
+  gap: 0;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #fff;
+}
+.grouped .row {
+  padding: 6px 12px;
+}
+.grouped .row + .row {
+  border-top: 1px solid #e9edf1;
+}
+.grouped .row:first-child {
+  border-radius: 7px 7px 0 0;
+}
+.grouped .row:last-child {
+  border-radius: 0 0 7px 7px;
+}
+.grouped .input {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0 2px;
+}
+.grouped .row:focus-within {
+  background: #f3f7fc;
+  box-shadow: inset 2px 0 #57789f;
+}
+.filled .input {
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: #e9eef3;
+}
+.filled .input:hover {
+  background: #e3eaf1;
+}
+.filled .input:focus {
+  border-color: #8da5be;
+  background: #fff;
+  box-shadow: 0 0 0 2px #57789f10;
+}
+.optionFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 12px;
+}
+.optionFooter p {
+  font-size: 12px;
+  color: #677583;
+}
+.optionFooter button {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: #46658a;
+  padding: 5px 0 5px 8px;
+}
+.focused {
+  display: block;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.focused .stage {
+  padding: 36px 44px;
+}
+.focused .row {
+  grid-template-columns: 104px minmax(0, 1fr) auto;
+}
+.focused .fieldLabel {
+  font-size: 13px;
+}
+.focused .sample .input {
+  font-size: 14px;
+  height: 44px;
+}
+.focused .visibility {
+  font-size: 12px;
+}
+.mobile {
+  display: block;
+}
+.mobile .option {
+  max-width: 375px;
+  margin: 0 auto 32px;
+}
+.mobile .stage {
+  padding: 24px 18px;
+}
+.mobile .row {
+  grid-template-columns: 80px minmax(0, 1fr) auto;
+  gap: 7px;
+}
+.mobile .fieldLabel {
+  font-size: 12px;
+}
+.mobile .sample .input {
+  font-size: 13px;
+  padding-left: 7px;
+  padding-right: 7px;
+}
+.mobile .grouped .row {
+  padding-left: 9px;
+  padding-right: 9px;
+}
+.mobile .visibility {
+  font-size: 10px;
+}
+@media (max-width: 800px) {
+  .gallery {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+  }
+  .option {
+    max-width: 600px;
+    width: 100%;
+    margin: auto;
+  }
+  .toolbar {
+    align-items: flex-start;
+  }
+  .choices {
+    gap: 3px;
+  }
+  .choices button {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .focused .stage {
+    padding: 26px 23px;
+  }
+}
+@media (max-width: 480px) {
+  .page {
+    padding: 24px 16px 48px;
+  }
+  .pageHeader {
+    gap: 10px;
+  }
+  .page h1 {
+    font-size: 24px;
+  }
+  .lead {
+    font-size: 12px;
+  }
+  .previewBadge {
+    display: none;
+  }
+  .toolbar {
+    gap: 8px;
+  }
+  .choices button {
+    font-size: 11px;
+  }
+  .deviceControls {
+    gap: 0;
+  }
+  .deviceControls button {
+    width: 30px;
+  }
+  .stage,
+  .focused .stage {
+    padding: 22px 14px;
+  }
+  .row,
+  .focused .row {
+    grid-template-columns: 78px minmax(0, 1fr) auto;
+    gap: 6px;
+  }
+  .focused .fieldLabel {
+    font-size: 12px;
+  }
+  .focused .sample .input {
+    font-size: 13px;
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+  .focused .visibility {
+    font-size: 10px;
+  }
+  .grouped .row {
+    padding: 6px 8px;
+  }
+  .optionFooter p {
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sample .input {
+    transition: none;
+  }
+}

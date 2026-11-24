@@ -319,11 +319,15 @@ export function ProfileTemplate({
       }}
     >
       <div className={styles.wrap}>
-        <aside className={styles.identity} aria-label="전문가 소개">
+        <aside
+          data-profile-identity
+          className={styles.identity}
+          aria-label="전문가 소개"
+        >
           {identity}
         </aside>
-        <div className={styles.read}>
-          <div className={styles.nav}>
+        <div data-profile-read className={styles.read}>
+          <div data-profile-navigation className={styles.nav}>
             <div className={styles.tabRow}>
               <div
                 className={styles.tabs}

@@ -16,11 +16,16 @@ import {
 import { CommonProfileSaveContext } from "@/components/CommonProfileSaveContext";
 import type { SectionSaveHandle } from "./types";
 import { SelectionDisclosure } from "./SelectionDisclosure";
+import { HOSPITAL_WORK_SELECTION_NOTE, type SpecialtyOption } from "@/lib/specialties/catalog";
 
-type Specialty = { id: string; name: string; sort_order: number };
+type Specialty = SpecialtyOption;
 
-const SpecialtySection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
-  function SpecialtySection({ compact = false }, ref) {
+const SpecialtySection = forwardRef<SectionSaveHandle, {
+  compact?: boolean;
+  medicalTechnician?: boolean;
+  previewData?: { specialties: Specialty[]; selected: { specialtyId: string; ownerVisible: boolean }[] };
+}>(
+  function SpecialtySection({ compact = false, medicalTechnician = false, previewData }, ref) {
     const previewRegistry = useContext(CommonProfileSaveContext);
     const requiredDialog = useRef<HTMLDialogElement>(null);
     const selectionList = useRef<HTMLDetailsElement>(null);
@@ -38,7 +43,11 @@ const SpecialtySection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
     const [showWarning, setShowWarning] = useState(false);
 
     useEffect(() => {
-      Promise.all([getSpecialties(), getOwnSelectedSpecialtyIds()])
+      (previewData
+        ? Promise.resolve([{ ok: true, error: "", specialties: previewData.specialties }, {
+            ok: true, error: "", specialtyIds: previewData.selected.map(row => row.specialtyId), specialties: previewData.selected,
+          }] as const)
+        : Promise.all([getSpecialties(), getOwnSelectedSpecialtyIds()]))
         .then(([specialtiesResult, selectedResult]) => {
           if (!specialtiesResult.ok || !selectedResult.ok) {
             setLoadError(
@@ -65,18 +74,22 @@ const SpecialtySection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
             "전문분야를 불러오지 못했습니다. 새로고침 후 다시 시도해주세요.",
           ),
         );
-    }, []);
+    }, [previewData]);
+
+    const unavailableSelections = specialties.filter(row =>
+      row.medical_technician_only && !medicalTechnician && selectedIds.includes(row.id),
+    );
 
     useEffect(() => {
       if (!loaded || !previewRegistry.preview) return;
       previewRegistry.preview({
         specialties: selectedIds.flatMap((id, index) => {
           const item = specialties.find((row) => row.id === id);
-          if (!item || visibilityMap[id] === false) return [];
-          return [{ slug: id, name: item.name, is_primary: index === 0 }];
+          if (!item || visibilityMap[id] === false || (item.medical_technician_only && !medicalTechnician)) return [];
+          return [{ slug: item.slug, name: item.name, is_primary: index === 0 }];
         }),
       });
-    }, [loaded, selectedIds, specialties, visibilityMap, previewRegistry]);
+    }, [loaded, selectedIds, specialties, visibilityMap, previewRegistry, medicalTechnician]);
 
     const MIN_SELECTION = 1;
     const MAX_SELECTION = 3;
@@ -111,6 +124,10 @@ const SpecialtySection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
           error:
             loadError || "전문분야를 불러오는 중입니다. 잠시 후 저장해주세요.",
         };
+      if (unavailableSelections.length) return {
+        ok: false,
+        error: "병원 근무는 의료기사 직군만 선택할 수 있습니다. 선택을 해제하거나 직군을 확인해주세요.",
+      };
       if (selectedIds.length === 0) {
         setShowWarning(true);
         if (selectionList.current) selectionList.current.open = true;
@@ -122,6 +139,7 @@ const SpecialtySection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
     const save = async (): Promise<{ ok: boolean; error?: string }> => {
       const checked = validate();
       if (!checked.ok) return checked;
+      if (previewData) return { ok: true };
       const result = await replaceProfileSpecialties(
         selectedIds.map((id) => ({
           specialtyId: id,
@@ -136,6 +154,9 @@ const SpecialtySection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
       visibilityMap,
       loaded,
       loadError,
+      medicalTechnician,
+      specialties,
+      previewData,
     ]);
 
     return (
@@ -187,8 +208,10 @@ const SpecialtySection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
               .map((id) => specialties.find((s) => s.id === id)?.name || "")
               .filter(Boolean)}
             max={MAX_SELECTION}
+            scrollable={false}
           >
-            {specialties.map((specialty) => (
+            <div className="grid grid-cols-1 gap-2 py-2 sm:grid-cols-2">
+            {specialties.filter(specialty => !specialty.medical_technician_only || medicalTechnician).map((specialty) => (
               <button
                 key={specialty.id}
                 type="button"
@@ -221,7 +244,17 @@ const SpecialtySection = forwardRef<SectionSaveHandle, { compact?: boolean }>(
                 </div>
               </button>
             ))}
+            </div>
           </SelectionDisclosure>
+          {unavailableSelections.length > 0 && (
+            <div role="alert" className="text-sm leading-6 text-red-700">
+              <p>병원 근무는 의료기사 직군만 선택할 수 있습니다. 다른 직군으로 바꾸려면 먼저 선택을 해제해주세요.</p>
+              <button type="button" data-profile-dirty-control className="min-h-11 underline underline-offset-4" onClick={() => setSelectedIds(previous => previous.filter(id => !unavailableSelections.some(row => row.id === id)))}>
+                병원 근무 선택 해제
+              </button>
+            </div>
+          )}
+          {medicalTechnician && <p className="text-xs leading-6 text-slate-500">{HOSPITAL_WORK_SELECTION_NOTE}</p>}
         </div>
       </div>
     );

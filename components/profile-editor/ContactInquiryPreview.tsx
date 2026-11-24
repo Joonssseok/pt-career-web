@@ -81,6 +81,27 @@ export function ContactInquiryFields({
             )}
             <div className={styles.fieldHeading}>
               <label htmlFor={`${id}-${key}`}>{label}</label>
+              <input
+                id={`${id}-${key}`}
+                type={type}
+                value={value[key].value}
+                readOnly={key === "address"}
+                placeholder={placeholder}
+                maxLength={
+                  key === "inquiry" ? 500 : key === "address" ? 300 : 160
+                }
+                aria-invalid={invalid || undefined}
+                aria-describedby={invalid ? `${id}-${key}-error` : undefined}
+                onChange={
+                  key === "address"
+                    ? undefined
+                    : (event) =>
+                        onChange({
+                          ...value,
+                          [key]: { ...value[key], value: event.target.value },
+                        })
+                }
+              />
               <label className={styles.visibility}>
                 <input
                   type="checkbox"
@@ -96,38 +117,21 @@ export function ContactInquiryFields({
                 공개
               </label>
             </div>
-            <input
-              id={`${id}-${key}`}
-              type={type}
-              value={value[key].value}
-              readOnly={key === "address"}
-              placeholder={placeholder}
-              maxLength={key === "inquiry" ? 500 : key === "address" ? 300 : 160}
-              aria-invalid={invalid || undefined}
-              aria-describedby={invalid ? `${id}-${key}-error` : undefined}
-              onChange={
-                key === "address"
-                  ? undefined
-                  : (event) =>
-                      onChange({
-                        ...value,
-                        [key]: { ...value[key], value: event.target.value },
-                      })
-              }
-            />
             {key === "address" && (
               <>
                 {value.location && (
                   <button
                     type="button"
                     className={styles.clearLocation}
-                    onClick={() => onChange({
-                      ...value,
-                      location: null,
-                      address: { value: "", visible: false },
-                      detailAddress: "",
-                      mapVisible: false,
-                    })}
+                    onClick={() =>
+                      onChange({
+                        ...value,
+                        location: null,
+                        address: { value: "", visible: false },
+                        detailAddress: "",
+                        mapVisible: false,
+                      })
+                    }
                   >
                     주소 선택 해제
                   </button>
@@ -285,12 +289,19 @@ export function PublicContactInquiryCard({
         </a>
       ))}
       {value.address && (
-        <p className={styles.contact}>
+        <p className={`${styles.contact} ${styles.address}`}>
           <ContactIcon kind="address" />
-          <span>
-            {[value.address.base, value.address.detail]
-              .filter(Boolean)
-              .join(" ")}
+          <span className={styles.addressText}>
+            {value.address.name && (
+              <span className={styles.workplaceName}>{value.address.name}</span>
+            )}
+            <span
+              className={value.address.name ? styles.addressDetail : undefined}
+            >
+              {[value.address.base, value.address.detail]
+                .filter(Boolean)
+                .join(" ")}
+            </span>
           </span>
         </p>
       )}

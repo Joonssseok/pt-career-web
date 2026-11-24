@@ -296,7 +296,6 @@ export default async function ExpertDetailPage({
               />
             ) : undefined
           }
-          workplaceMapAutoLoad
           stickySummary
           profileActions={
             <ProfileHeaderActions

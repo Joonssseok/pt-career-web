@@ -8,6 +8,8 @@ import { getProfessions } from '@/app/actions/professions';
 import { type ExpertListItem } from './ExpertCard';
 import { ExpertFilters } from './ExpertFilters';
 import { LoadMoreExperts, EXPERTS_PAGE_SIZE } from './LoadMoreExperts';
+import { redirect } from 'next/navigation';
+import { canonicalSpecialtySlugs } from '@/lib/specialties/catalog';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,6 +59,7 @@ function parseMulti(value: string | undefined): string[] | undefined {
 
 async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
   const { profession, region, specialty, query } = await searchParams;
+  const specialtySlugs = canonicalSpecialtySlugs(specialty);
   const filters = {
     profession: profession || null,
     region: region || null,
@@ -71,7 +74,7 @@ async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
     supabase.rpc('search_public_experts', {
       p_professions: parseMulti(profession) ?? null,
       p_regions: parseMulti(region) ?? null,
-      p_specialty_slugs: parseMulti(specialty) ?? null,
+      p_specialty_slugs: specialtySlugs.length ? specialtySlugs : null,
       p_query: filters.query,
       p_limit: EXPERTS_PAGE_SIZE,
       p_offset: 0,
@@ -125,7 +128,15 @@ async function ExpertResults({ searchParams }: { searchParams: SearchParams }) {
   );
 }
 
-export default function ExpertsPage({ searchParams }: { searchParams: SearchParams }) {
+export default async function ExpertsPage({ searchParams }: { searchParams: SearchParams }) {
+  const requested = await searchParams;
+  const canonical = canonicalSpecialtySlugs(requested.specialty).join(',');
+  if (canonical && canonical !== requested.specialty) {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(requested)) if (value) params.set(key, value);
+    params.set('specialty', canonical);
+    redirect(`/experts?${params.toString()}`);
+  }
   return (
     <main className="relative isolate mx-auto min-h-screen max-w-4xl bg-white pb-16 pt-5 sm:pb-24 sm:pt-8">
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" style={{ maskImage: 'linear-gradient(to right, transparent, black 10%, black 90%, transparent)' }}>

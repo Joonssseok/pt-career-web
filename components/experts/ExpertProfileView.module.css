@@ -100,6 +100,11 @@
   font-size: 15.5px;
   color: var(--color-profile-sub);
 }
+.homeSection .document article {
+  background: transparent;
+  border-radius: 0;
+  margin-top: 0;
+}
 .verifiedGroups {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -392,15 +397,6 @@
 .highlightCard li + li {
   margin-top: 8px;
 }
-.homeMap {
-  margin-top: 16px;
-}
-.homeMap > p {
-  font-size: 15px;
-  color: var(--color-profile-sub);
-  margin-top: 8px;
-}
-
 .formattedIntroduction {
   min-width: 0;
 }
